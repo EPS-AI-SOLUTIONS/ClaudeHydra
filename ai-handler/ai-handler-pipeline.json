@@ -1,0 +1,477 @@
+{
+  "name": "AI Handler Pipeline",
+  "version": "1.0.0",
+  "description": "Complete AI model management system with local-first execution, parallel processing, and multi-provider fallback",
+  "author": "HYDRA System",
+  "created": "2025-01-12",
+
+  "architecture": {
+    "core_module": {
+      "path": "ai-handler/AIModelHandler.psm1",
+      "description": "Main PowerShell module with all AI handling functions",
+      "exported_functions": [
+        "Get-AIConfig",
+        "Save-AIConfig",
+        "Initialize-AIState",
+        "Get-OptimalModel",
+        "Get-FallbackModel",
+        "Get-RateLimitStatus",
+        "Update-UsageTracking",
+        "Invoke-AIRequest",
+        "Invoke-AIRequestParallel",
+        "Invoke-AIBatch",
+        "Get-LocalModels",
+        "Get-AIStatus",
+        "Reset-AIState",
+        "Test-AIProviders",
+        "Test-OllamaAvailable",
+        "Install-OllamaAuto"
+      ]
+    },
+    "config_file": {
+      "path": "ai-handler/ai-config.json",
+      "description": "JSON configuration for providers, models, and settings"
+    },
+    "launcher_integration": {
+      "path": "_launcher.ps1",
+      "description": "Main launcher with AI Handler auto-initialization"
+    }
+  },
+
+  "providers": {
+    "ollama": {
+      "priority": 1,
+      "type": "local",
+      "cost": 0.00,
+      "base_url": "http://localhost:11434/api",
+      "requires_api_key": false,
+      "auto_install": true,
+      "models": {
+        "llama3.2:3b": {
+          "tier": "standard",
+          "size_gb": 2.0,
+          "context_window": 128000,
+          "use_case": "default_general_purpose",
+          "capabilities": ["code", "analysis", "creative"]
+        },
+        "qwen2.5-coder:1.5b": {
+          "tier": "lite",
+          "size_gb": 0.9,
+          "context_window": 32768,
+          "use_case": "code_generation",
+          "capabilities": ["code"]
+        },
+        "phi3:mini": {
+          "tier": "lite",
+          "size_gb": 2.2,
+          "context_window": 128000,
+          "use_case": "reasoning",
+          "capabilities": ["code", "analysis"]
+        },
+        "llama3.2:1b": {
+          "tier": "lite",
+          "size_gb": 1.3,
+          "context_window": 128000,
+          "use_case": "fast_responses",
+          "capabilities": ["code", "analysis"]
+        }
+      }
+    },
+    "openai": {
+      "priority": 2,
+      "type": "cloud",
+      "base_url": "https://api.openai.com/v1",
+      "requires_api_key": true,
+      "api_key_env": "OPENAI_API_KEY",
+      "models": {
+        "gpt-4o": {
+          "tier": "pro",
+          "cost_per_1k": {"input": 2.50, "output": 10.00},
+          "context_window": 128000,
+          "use_case": "high_quality_cloud"
+        },
+        "gpt-4o-mini": {
+          "tier": "lite",
+          "cost_per_1k": {"input": 0.15, "output": 0.60},
+          "context_window": 128000,
+          "use_case": "cheap_cloud_fallback"
+        }
+      }
+    },
+    "anthropic": {
+      "priority": 3,
+      "type": "cloud",
+      "base_url": "https://api.anthropic.com/v1",
+      "requires_api_key": true,
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "models": {
+        "claude-sonnet-4-20250514": {
+          "tier": "pro",
+          "cost_per_1k": {"input": 3.00, "output": 15.00},
+          "context_window": 200000,
+          "use_case": "highest_quality"
+        },
+        "claude-3-5-haiku-20241022": {
+          "tier": "lite",
+          "cost_per_1k": {"input": 0.80, "output": 4.00},
+          "context_window": 200000,
+          "use_case": "balanced_cloud"
+        }
+      }
+    }
+  },
+
+  "decision_matrix": {
+    "description": "Rules for selecting provider and model",
+    "rules": [
+      {
+        "id": 1,
+        "name": "check_ollama_first",
+        "condition": "ANY request",
+        "action": "Test-OllamaAvailable before cloud API",
+        "priority": "critical"
+      },
+      {
+        "id": 2,
+        "name": "prefer_local",
+        "condition": "settings.preferLocal == true AND Ollama available",
+        "action": "Use ollama provider",
+        "priority": "high"
+      },
+      {
+        "id": 3,
+        "name": "parallel_for_batch",
+        "condition": "Multiple independent prompts",
+        "action": "Use Invoke-AIBatch with runspace pool",
+        "priority": "high"
+      },
+      {
+        "id": 4,
+        "name": "code_specialist",
+        "condition": "Query matches code patterns",
+        "action": "Use qwen2.5-coder:1.5b",
+        "priority": "medium"
+      },
+      {
+        "id": 5,
+        "name": "fast_mode",
+        "condition": "User requests -Fast OR simple query",
+        "action": "Use llama3.2:1b",
+        "priority": "medium"
+      },
+      {
+        "id": 6,
+        "name": "cloud_fallback",
+        "condition": "Ollama unavailable OR quality insufficient",
+        "action": "Fallback to openai/anthropic",
+        "priority": "low"
+      }
+    ],
+    "code_detection_patterns": [
+      "write.*(function|code|script|class|method)",
+      "create.*(function|code|script|class|method)",
+      "implement\\s+",
+      "fix.*(bug|error|code)",
+      "\\b(regex|regexp)\\b",
+      "\\b(sql|query)\\s+(to|for|that)",
+      "\\bapi\\s+(endpoint|call|request)",
+      "in\\s+(python|javascript|powershell|bash|rust|go|java|c#|typescript)"
+    ],
+    "model_selection_flow": {
+      "start": "receive_request",
+      "steps": [
+        {
+          "step": 1,
+          "action": "check_ollama_available",
+          "true": "step_2",
+          "false": "use_cloud_provider"
+        },
+        {
+          "step": 2,
+          "action": "check_if_batch_request",
+          "true": "use_parallel_execution",
+          "false": "step_3"
+        },
+        {
+          "step": 3,
+          "action": "check_code_patterns",
+          "true": "use_qwen_coder",
+          "false": "step_4"
+        },
+        {
+          "step": 4,
+          "action": "check_fast_flag",
+          "true": "use_llama_1b",
+          "false": "use_llama_3b"
+        }
+      ]
+    }
+  },
+
+  "fallback_chains": {
+    "ollama": ["llama3.2:3b", "qwen2.5-coder:1.5b", "phi3:mini", "llama3.2:1b"],
+    "openai": ["gpt-4o", "gpt-4o-mini"],
+    "anthropic": ["claude-sonnet-4-20250514", "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022"],
+    "cross_provider": ["ollama", "openai", "anthropic"]
+  },
+
+  "parallel_execution": {
+    "engine": "PowerShell Runspace Pool",
+    "implementation": {
+      "method": "InitialSessionState with pre-loaded module",
+      "max_concurrent": 4,
+      "timeout_ms": 30000,
+      "batch_size": 10
+    },
+    "workflow": [
+      "Create InitialSessionState",
+      "Import AIModelHandler module into ISS",
+      "Create RunspacePool with ISS",
+      "Create PowerShell instance per request",
+      "BeginInvoke all requests",
+      "Collect results with timeout",
+      "Dispose runspaces"
+    ],
+    "performance": {
+      "4_requests": "~2s parallel vs ~12s sequential",
+      "speedup_factor": "4-6x",
+      "cpu_utilization_target": ">80%"
+    }
+  },
+
+  "commands": {
+    "/ai": {
+      "script": "Invoke-QuickAI.ps1",
+      "description": "Single local AI query",
+      "flags": ["-Code", "-Fast", "-MaxTokens"],
+      "auto_detection": true,
+      "default_model": "llama3.2:3b",
+      "examples": [
+        "/ai What is 2+2?",
+        "/ai -Code Write a Python function",
+        "/ai -Fast Quick answer please"
+      ]
+    },
+    "/ai-batch": {
+      "script": "Invoke-QuickAIBatch.ps1",
+      "description": "Multiple parallel queries",
+      "flags": ["-File", "-Model", "-MaxConcurrent", "-MaxTokens"],
+      "input_format": "semicolon_separated OR file",
+      "examples": [
+        "/ai-batch \"Q1; Q2; Q3; Q4\"",
+        "/ai-batch -File queries.txt"
+      ]
+    },
+    "/ai-status": {
+      "script": "Invoke-AIStatus.ps1",
+      "description": "Provider and model status",
+      "flags": ["-Test"],
+      "shows": [
+        "provider_status",
+        "local_models",
+        "configuration",
+        "fallback_chain",
+        "connectivity_test",
+        "cost_summary"
+      ]
+    },
+    "/ai-config": {
+      "script": "Invoke-AIConfig.ps1",
+      "description": "Configuration management",
+      "flags": [
+        "-Show",
+        "-PreferLocal",
+        "-AutoFallback",
+        "-CostOptimization",
+        "-DefaultModel",
+        "-MaxConcurrent",
+        "-Timeout",
+        "-Priority",
+        "-Reset"
+      ],
+      "examples": [
+        "/ai-config -Show",
+        "/ai-config -PreferLocal true",
+        "/ai-config -MaxConcurrent 8",
+        "/ai-config -Priority \"anthropic,openai,ollama\""
+      ]
+    },
+    "/ai-pull": {
+      "script": "Invoke-AIPull.ps1",
+      "description": "Ollama model management",
+      "flags": ["-List", "-Popular", "-Remove"],
+      "examples": [
+        "/ai-pull -List",
+        "/ai-pull -Popular",
+        "/ai-pull mistral:7b",
+        "/ai-pull -Remove phi3:mini"
+      ]
+    },
+    "/ai-help": {
+      "script": "Invoke-AIHelp.ps1",
+      "description": "Command reference"
+    }
+  },
+
+  "launcher_integration": {
+    "steps": [
+      {
+        "step": 1,
+        "name": "load_ai_handler",
+        "action": "Import-Module AIModelHandler.psm1 -Force -Global"
+      },
+      {
+        "step": 2,
+        "name": "check_ollama",
+        "action": "Test-OllamaAvailable",
+        "on_fail": "auto_start_ollama"
+      },
+      {
+        "step": 3,
+        "name": "display_status",
+        "action": "Show providers, models, mode"
+      },
+      {
+        "step": 4,
+        "name": "launch_claude",
+        "action": "Start Claude CLI with AI Handler available"
+      }
+    ],
+    "auto_start_ollama": {
+      "exe_path": "$env:LOCALAPPDATA\\Programs\\Ollama\\ollama.exe",
+      "arguments": "serve",
+      "window_style": "Hidden",
+      "wait_time_seconds": 3
+    }
+  },
+
+  "error_handling": {
+    "error_types": {
+      "RateLimit": {
+        "pattern": "rate.?limit|429|too many requests",
+        "action": "fallback_to_next_model",
+        "retry": true
+      },
+      "Overloaded": {
+        "pattern": "overloaded|503|capacity",
+        "action": "fallback_to_next_provider",
+        "retry": true
+      },
+      "AuthError": {
+        "pattern": "401|403|unauthorized|forbidden|invalid.*key",
+        "action": "skip_provider",
+        "retry": false
+      },
+      "ServerError": {
+        "pattern": "500|502|504|server error",
+        "action": "retry_with_backoff",
+        "retry": true
+      }
+    },
+    "retry_config": {
+      "max_retries": 3,
+      "retry_delay_ms": 1000,
+      "backoff_multiplier": 2
+    }
+  },
+
+  "cost_optimization": {
+    "strategy": "local_first_then_cheapest",
+    "cost_tiers": {
+      "free": ["ollama/*"],
+      "cheap": ["gpt-4o-mini", "claude-3-5-haiku"],
+      "standard": ["gpt-4o", "claude-3-5-sonnet"],
+      "premium": ["claude-sonnet-4"]
+    },
+    "selection_priority": [
+      "local_available",
+      "lowest_cost",
+      "best_capability_match"
+    ]
+  },
+
+  "files_created": {
+    "core": [
+      "ai-handler/AIModelHandler.psm1",
+      "ai-handler/ai-config.json"
+    ],
+    "commands": [
+      "ai-handler/Invoke-QuickAI.ps1",
+      "ai-handler/Invoke-QuickAIBatch.ps1",
+      "ai-handler/Invoke-AIStatus.ps1",
+      "ai-handler/Invoke-AIConfig.ps1",
+      "ai-handler/Invoke-AIPull.ps1",
+      "ai-handler/Invoke-AIHelp.ps1"
+    ],
+    "command_definitions": [
+      ".claude/commands/ai.md",
+      ".claude/commands/ai-batch.md",
+      ".claude/commands/ai-status.md",
+      ".claude/commands/ai-config.md",
+      ".claude/commands/ai-pull.md",
+      ".claude/commands/ai-help.md"
+    ],
+    "tests": [
+      "ai-handler/test-ollama.ps1",
+      "ai-handler/test-fallback.ps1",
+      "ai-handler/test-api-failure.ps1",
+      "ai-handler/test-parallel.ps1",
+      "ai-handler/test-matrix-real.ps1",
+      "ai-handler/test-all-ollama.ps1"
+    ],
+    "utilities": [
+      "ai-handler/Install-Ollama.ps1",
+      "ai-handler/Initialize-AIHandler.ps1"
+    ]
+  },
+
+  "integration_points": {
+    "claude_md": {
+      "section": "10. AI Handler - Matryca Decyzyjna",
+      "content": "Decision matrix, commands, rules for Claude"
+    },
+    "launcher": {
+      "file": "_launcher.ps1",
+      "features": ["auto_load_module", "auto_start_ollama", "status_display"]
+    }
+  },
+
+  "performance_benchmarks": {
+    "single_query": {
+      "ollama_llama3.2_3b": "2-5s",
+      "ollama_llama3.2_1b": "1-2s",
+      "ollama_qwen_coder": "2-4s",
+      "openai_gpt4o_mini": "1-2s",
+      "anthropic_haiku": "0.5-1s"
+    },
+    "batch_4_queries": {
+      "parallel": "2-5s",
+      "sequential": "12-20s",
+      "speedup": "4-6x"
+    }
+  },
+
+  "usage_examples": {
+    "simple_query": {
+      "command": "/ai What is the capital of Poland?",
+      "model_used": "llama3.2:3b",
+      "cost": "$0.00"
+    },
+    "code_generation": {
+      "command": "/ai Write a Python function to sort a list",
+      "model_used": "qwen2.5-coder:1.5b (auto-detected)",
+      "cost": "$0.00"
+    },
+    "batch_analysis": {
+      "command": "/ai-batch \"Analyze security; Check performance; Suggest improvements\"",
+      "model_used": "llama3.2:3b x3 parallel",
+      "cost": "$0.00",
+      "time": "~3s"
+    },
+    "cloud_fallback": {
+      "scenario": "Ollama not available",
+      "fallback_chain": "openai/gpt-4o-mini -> anthropic/claude-3-5-haiku",
+      "cost": "$0.001-0.01"
+    }
+  }
+}

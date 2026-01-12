@@ -1,0 +1,66 @@
+# HYDRA 10.0 - Git Ignore Rules
+# ==============================
+
+# API Keys & Secrets (CRITICAL!)
+.env
+.env.local
+.env.*.local
+*_secrets.json
+*_secrets.yml
+api-keys.txt
+
+# Serena Cache & Memories
+.serena/cache/*
+.serena/memories/*.json
+.serena/temp/*
+
+# Claude CLI Local Settings
+.claude/settings.local.json
+.claude/.session
+
+# Node Modules & Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build Outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.backup
+tmpclaude-*
+
+# AI Handler Runtime State
+ai-handler/ai-state.json
+ai-handler/cache/*.json
+
+# Test Coverage
+coverage/
+.nyc_output/
+
+# Lock Files (optional, uncomment if needed)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
