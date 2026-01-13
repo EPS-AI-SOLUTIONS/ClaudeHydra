@@ -4,15 +4,53 @@
 
 #Requires -Version 5.1
 
+[CmdletBinding()]
 param(
-    [int]$TimeoutSeconds = 5
+    [int]$TimeoutSeconds = 5,
+    [int]$RetryCount = 3,
+    [int]$RetryBaseDelayMs = 200,
+    [string]$HostName = "127.0.0.1",
+    [string[]]$Server = @(),
+    [switch]$NoColor,
+    [switch]$Json,
+    [string]$ExportJsonPath,
+    [string]$ExportCsvPath,
+    [string]$LogPath,
+    [switch]$AutoRestart
 )
 
 # Error handling zgodnie z Protocols (CLAUDE.md sekcja 6)
 $ErrorActionPreference = "Stop"
 
 # Absolute paths zgodnie z Best Practices (CLAUDE.md sekcja 7)
-$ProjectRoot = "C:\Users\BIURODOM\Desktop\ClaudeCLI"
+# Prefer env override for portability in CI or custom installs.
+$ProjectRoot = if ($env:CLAUDECLI_ROOT) {
+    $env:CLAUDECLI_ROOT
+} elseif ($PSScriptRoot) {
+    $PSScriptRoot
+} else {
+    (Get-Location).Path
+}
+
+if (-not (Test-Path -LiteralPath $ProjectRoot)) {
+    throw "Nie znaleziono katalogu projektu: $ProjectRoot"
+}
+
+$ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
+
+$aiHandlerInit = Join-Path $ProjectRoot "ai-handler\\Initialize-AIHandler.ps1"
+if (Test-Path -LiteralPath $aiHandlerInit) {
+    # Initialize AI Handler on startup.
+    . $aiHandlerInit
+}
+
+$LogDirectory = Join-Path $ProjectRoot "logs"
+if (-not $LogPath) {
+    if (-not (Test-Path -LiteralPath $LogDirectory)) {
+        New-Item -Path $LogDirectory -ItemType Directory -Force | Out-Null
+    }
+$LogPath = Join-Path $LogDirectory ("mcp-health-check-{0}.log" -f (Get-Date -Format "yyyyMMdd"))
+}
 
 # Configuration - MCP servers (CLAUDE.md sekcja 1 - MCP Tools)
 $mcpServers = @(
@@ -21,18 +59,24 @@ $mcpServers = @(
         Port = 9000
         Type = "Port"
         HealthUrl = "http://localhost:9000/sse"
+        CommandName = "serena"
+        TimeoutSeconds = 5
     },
     @{
         Name = "Desktop-Commander"
         Port = 8100
         Type = "Stdio"
         ProcessName = "desktop-commander"
+        CommandName = "desktop-commander"
+        TimeoutSeconds = 5
     },
     @{
         Name = "Playwright"
         Port = 5200
         Type = "Stdio"
         ProcessName = "playwright"
+        CommandName = "playwright"
+        TimeoutSeconds = 5
     }
 )
 
@@ -40,85 +84,297 @@ function Write-ColorLog {
     param(
         [string]$Message,
         [ValidateSet("White", "Cyan", "Green", "Yellow", "Red", "Gray", "Magenta")]
-        [string]$Color = "White"
+        [string]$Color = "White",
+        [ValidateSet("debug", "info", "warn", "error")]
+        [string]$Level = "info"
     )
-    Write-Host $Message -ForegroundColor $Color
+
+    $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    $prefix = "[{0}] [HYDRA] [{1}]" -f $timestamp, $Level.ToUpperInvariant()
+    $line = "$prefix $Message"
+
+    if (-not $NoColor) {
+        Write-Host $line -ForegroundColor $Color
+    } else {
+        Write-Host $line
+    }
+
+    Add-Content -LiteralPath $LogPath -Value $line
+}
+
+function Write-JsonLog {
+    param(
+        [string]$Message,
+        [ValidateSet("debug", "info", "warn", "error")]
+        [string]$Level = "info",
+        [hashtable]$Data = @{}
+    )
+
+    $payload = [ordered]@{
+        timestamp = (Get-Date).ToString("o")
+        level = $Level
+        message = $Message
+    }
+
+    if ($Data.Keys.Count -gt 0) {
+        $payload.data = $Data
+    }
+
+    $jsonLine = $payload | ConvertTo-Json -Compress
+    Write-Host $jsonLine
+    Add-Content -LiteralPath $LogPath -Value $jsonLine
+}
+
+function Write-Log {
+    param(
+        [string]$Message,
+        [ValidateSet("White", "Cyan", "Green", "Yellow", "Red", "Gray", "Magenta")]
+        [string]$Color = "White",
+        [ValidateSet("debug", "info", "warn", "error")]
+        [string]$Level = "info",
+        [hashtable]$Data = @{}
+    )
+
+    if ($Json) {
+        Write-JsonLog -Message $Message -Level $Level -Data $Data
+    } else {
+        Write-ColorLog -Message $Message -Color $Color -Level $Level
+    }
+}
+
+function Get-CommandVersion {
+    param(
+        [string]$CommandName
+    )
+
+    try {
+        $command = Get-Command $CommandName -ErrorAction Stop
+        if ($command.Version) {
+            return $command.Version.ToString()
+        }
+        if ($command.Source -and (Test-Path -LiteralPath $command.Source)) {
+            return (Get-Item -LiteralPath $command.Source).VersionInfo.FileVersion
+        }
+    } catch {
+        return $null
+    }
+
+    return $null
+}
+
+function Get-ServerVersion {
+    param(
+        [hashtable]$Server
+    )
+
+    if ($Server.CommandName) {
+        return Get-CommandVersion -CommandName $Server.CommandName
+    }
+
+    if ($Server.ProcessName) {
+        return Get-CommandVersion -CommandName $Server.ProcessName
+    }
+
+    return $null
+}
+
+function Restart-ServerProcess {
+    param(
+        [hashtable]$Server
+    )
+
+    if (-not $AutoRestart) {
+        return @{ Attempted = $false; Message = "Auto-restart wyłączony." }
+    }
+
+    if (-not $Server.ProcessName) {
+        return @{ Attempted = $false; Message = "Brak skonfigurowanej nazwy procesu." }
+    }
+
+    try {
+        $processes = Get-Process -Name $Server.ProcessName -ErrorAction SilentlyContinue
+        if ($processes) {
+            $processes | Stop-Process -Force
+        }
+        Start-Sleep -Milliseconds 300
+        Start-Process $Server.ProcessName | Out-Null
+        return @{ Attempted = $true; Message = "Wydano polecenie restartu." }
+    } catch {
+        return @{ Attempted = $true; Message = $_.Exception.Message }
+    }
+}
+
+function Resolve-Servers {
+    param(
+        [array]$Servers,
+        [string[]]$Names
+    )
+
+    if (-not $Names -or $Names.Count -eq 0) {
+        return $Servers
+    }
+
+    $filtered = $Servers | Where-Object { $Names -contains $_.Name }
+    if (-not $filtered) {
+        throw "Brak pasujących serwerów: $($Names -join ', ')"
+    }
+
+    return $filtered
+}
+
+$jobInit = {
+    function Test-Port {
+        param(
+            [string]$TargetHost,
+            [int]$Port,
+            [int]$TimeoutSeconds,
+            [int]$RetryCount,
+            [int]$RetryBaseDelayMs
+        )
+
+        $attempt = 0
+        $latencyMs = $null
+        while ($attempt -lt $RetryCount) {
+            $attempt++
+            $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+            try {
+                $tcp = New-Object System.Net.Sockets.TcpClient
+                $asyncResult = $tcp.BeginConnect($TargetHost, $Port, $null, $null)
+                $success = $asyncResult.AsyncWaitHandle.WaitOne($TimeoutSeconds * 1000, $false)
+
+                if ($success) {
+                    $tcp.EndConnect($asyncResult)
+                    $tcp.Close()
+                    $stopwatch.Stop()
+                    $latencyMs = [Math]::Round($stopwatch.Elapsed.TotalMilliseconds, 2)
+                    return @{ Success = $true; LatencyMs = $latencyMs; Attempts = $attempt }
+                }
+
+                $tcp.Close()
+                $stopwatch.Stop()
+            } catch {
+                $stopwatch.Stop()
+            }
+
+            if ($attempt -lt $RetryCount) {
+                $delay = [Math]::Min($RetryBaseDelayMs * [Math]::Pow(2, $attempt - 1), 2000)
+                Start-Sleep -Milliseconds $delay
+            }
+        }
+
+        return @{ Success = $false; LatencyMs = $null; Attempts = $attempt }
+    }
+
+    function Test-HttpHealth {
+        param(
+            [string]$Url,
+            [int]$TimeoutSeconds
+        )
+
+        try {
+            $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+            $response = Invoke-WebRequest -Uri $Url -TimeoutSec $TimeoutSeconds -Method Get
+            $stopwatch.Stop()
+            return @{ Success = $true; StatusCode = $response.StatusCode; LatencyMs = [Math]::Round($stopwatch.Elapsed.TotalMilliseconds, 2) }
+        } catch {
+            return @{ Success = $false; StatusCode = $null; LatencyMs = $null; Error = $_.Exception.Message }
+        }
+    }
+}
+
+$psVersion = $PSVersionTable.PSVersion.Major
+if ($psVersion -lt 7) {
+    Write-Log -Message "Wykryto PowerShell $psVersion. Zalecany PowerShell 7+ dla lepszej kompatybilności." -Color "Yellow" -Level "warn"
 }
 
 # Header
 Write-Host ""
-Write-ColorLog "=============================================================" "Cyan"
-Write-ColorLog "     HYDRA MCP Health Check (Parallel Mode)                " "Cyan"
-Write-ColorLog "=============================================================" "Cyan"
+Write-Log -Message "=============================================================" -Color "Cyan"
+Write-Log -Message "     HYDRA MCP Health Check (Parallel Mode)                " -Color "Cyan"
+Write-Log -Message "=============================================================" -Color "Cyan"
+Write-Log -Message "Katalog projektu: $ProjectRoot" -Color "Gray"
 Write-Host ""
 
 try {
     # PARALLEL EXECUTION (CLAUDE.md sekcja 1 - Zasada Nadrzedna)
     # "Kazda operacja, ktora moze byc wykonana rownolegle, MUSI byc wykonana rownolegle."
 
-    Write-ColorLog "Running parallel health checks on all MCP servers..." "Cyan"
+    Write-Log -Message "Uruchamiam równoległe sprawdzenie wszystkich serwerów MCP..." -Color "Cyan"
     Write-Host ""
+
+    $targets = Resolve-Servers -Servers $mcpServers -Names $Server
 
     # Start parallel jobs for all servers
     $jobs = @()
 
-    foreach ($server in $mcpServers) {
-        $job = Start-Job -ArgumentList $server, $TimeoutSeconds -ScriptBlock {
-            param($server, $timeout)
+    foreach ($server in $targets) {
+        $job = Start-Job -InitializationScript $jobInit -ArgumentList $server, $TimeoutSeconds, $RetryCount, $RetryBaseDelayMs, $HostName -ScriptBlock {
+            param($server, $defaultTimeout, $retryCount, $retryBaseDelayMs, $hostName)
 
+            $timeout = if ($server.TimeoutSeconds) { $server.TimeoutSeconds } else { $defaultTimeout }
             $result = @{
                 Name = $server.Name
                 Port = $server.Port
                 Type = $server.Type
                 Status = "Unknown"
                 Message = ""
+                Attempts = 0
+                LatencyMs = $null
+                HttpStatus = $null
+                Error = $null
             }
 
             if ($server.Type -eq "Port" -and $server.Port) {
-                # Test TCP port
-                try {
-                    $tcp = New-Object System.Net.Sockets.TcpClient
-                    $asyncResult = $tcp.BeginConnect("127.0.0.1", $server.Port, $null, $null)
-                    $success = $asyncResult.AsyncWaitHandle.WaitOne($timeout * 1000, $false)
-
-                    if ($success) {
-                        $tcp.EndConnect($asyncResult)
-                        $tcp.Close()
+                if ($server.HealthUrl) {
+                    $healthUrl = $server.HealthUrl -replace "localhost", $hostName -replace "127.0.0.1", $hostName
+                    $healthResult = Test-HttpHealth -Url $healthUrl -TimeoutSeconds $timeout
+                    $result.Attempts = 1
+                    if ($healthResult.Success) {
                         $result.Status = "Healthy"
-                        $result.Message = "Running on port $($server.Port)"
+                        $result.Message = "HTTP OK"
+                        $result.LatencyMs = $healthResult.LatencyMs
+                        $result.HttpStatus = $healthResult.StatusCode
                     } else {
-                        $tcp.Close()
                         $result.Status = "Down"
-                        $result.Message = "Not responding on port $($server.Port)"
+                        $result.Message = "Błąd sprawdzenia HTTP"
+                        $result.Error = $healthResult.Error
                     }
-                } catch {
-                    $result.Status = "Error"
-                    $result.Message = $_.Exception.Message
+                } else {
+                    $portResult = Test-Port -TargetHost $hostName -Port $server.Port -TimeoutSeconds $timeout -RetryCount $retryCount -RetryBaseDelayMs $retryBaseDelayMs
+                    $result.Attempts = $portResult.Attempts
+                    if ($portResult.Success) {
+                        $result.Status = "Healthy"
+                        $result.Message = "Działa na porcie $($server.Port)"
+                        $result.LatencyMs = $portResult.LatencyMs
+                    } else {
+                        $result.Status = "Down"
+                        $result.Message = "Brak odpowiedzi na porcie $($server.Port)"
+                    }
                 }
             } else {
                 # Stdio server - starts with Claude automatically
                 $result.Status = "Stdio"
-                $result.Message = "Uses stdio transport (starts with Claude)"
+                $result.Message = "Transport stdio (uruchamia się z Claude)"
             }
 
             return $result
         }
 
         $jobs += $job
-        Write-ColorLog "  > Started check for $($server.Name)" "Gray"
+        Write-Log -Message "  > Rozpoczęto sprawdzenie: $($server.Name)" -Color "Gray" -Level "debug"
     }
 
     Write-Host ""
-    Write-ColorLog "Waiting for parallel checks to complete..." "Yellow"
+    Write-Log -Message "Czekam na zakończenie sprawdzeń równoległych..." -Color "Yellow"
 
     # Wait for all jobs to complete (parallel wait)
     $results = $jobs | Wait-Job | Receive-Job
     $jobs | Remove-Job
 
     Write-Host ""
-    Write-ColorLog "=============================================================" "Gray"
-    Write-ColorLog "RESULTS:" "Cyan"
-    Write-ColorLog "=============================================================" "Gray"
+    Write-Log -Message "=============================================================" -Color "Gray"
+    Write-Log -Message "WYNIKI:" -Color "Cyan"
+    Write-Log -Message "=============================================================" -Color "Gray"
     Write-Host ""
 
     # Display results
@@ -143,37 +399,83 @@ try {
             default   { "Yellow" }
         }
 
-        Write-ColorLog "$statusIcon $($result.Name)" $color
-        Write-ColorLog "    $($result.Message)" "Gray"
+        $data = @{
+            name = $result.Name
+            status = $result.Status
+            port = $result.Port
+            attempts = $result.Attempts
+            latency_ms = $result.LatencyMs
+            http_status = $result.HttpStatus
+            error = $result.Error
+        }
+
+        Write-Log -Message "$statusIcon $($result.Name)" -Color $color -Data $data
+        Write-Log -Message "    $($result.Message)" -Color "Gray" -Data $data
 
         if ($result.Port) {
-            Write-ColorLog "    Port: $($result.Port)" "Gray"
+            Write-Log -Message "    Port: $($result.Port)" -Color "Gray" -Data $data
         }
+
+        if ($result.LatencyMs) {
+            Write-Log -Message "    Opóźnienie: $($result.LatencyMs) ms" -Color "Gray" -Data $data
+        }
+
+        if ($result.HttpStatus) {
+            Write-Log -Message "    HTTP: $($result.HttpStatus)" -Color "Gray" -Data $data
+        }
+
+        if ($result.Error) {
+            Write-Log -Message "    Błąd: $($result.Error)" -Color "Red" -Level "error" -Data $data
+        }
+
+        $serverConfig = $targets | Where-Object { $_.Name -eq $result.Name }
+        $serverVersion = if ($serverConfig) { Get-ServerVersion -Server $serverConfig } else { $null }
+        if ($serverVersion) {
+            Write-Log -Message "    Wersja: $serverVersion" -Color "Gray" -Data $data
+        }
+
+        if ($result.Status -eq "Down") {
+            $restartResult = Restart-ServerProcess -Server ($targets | Where-Object { $_.Name -eq $result.Name })
+            if ($restartResult.Attempted) {
+                Write-Log -Message "    Restart: $($restartResult.Message)" -Color "Yellow" -Level "warn" -Data $data
+            }
+        }
+
         Write-Host ""
     }
 
     # Summary
-    Write-ColorLog "=============================================================" "Gray"
-    Write-ColorLog "SUMMARY:" "Cyan"
-    Write-ColorLog "  * Healthy: $healthyCount" "Green"
-    Write-ColorLog "  * Down: $downCount" "Red"
-    Write-ColorLog "  * Stdio: $stdioCount" "Gray"
-    Write-ColorLog "  * Total: $($results.Count)" "Cyan"
+    Write-Log -Message "=============================================================" -Color "Gray"
+    Write-Log -Message "PODSUMOWANIE:" -Color "Cyan"
+    Write-Log -Message "  * Zdrowe: $healthyCount" -Color "Green"
+    Write-Log -Message "  * Niedostępne: $downCount" -Color "Red"
+    Write-Log -Message "  * Stdio: $stdioCount" -Color "Gray"
+    Write-Log -Message "  * Razem: $($results.Count)" -Color "Cyan"
     Write-Host ""
 
     if ($downCount -gt 0) {
-        Write-ColorLog "WARNING: Some MCP servers are down. They may need manual restart." "Yellow"
+        Write-Log -Message "UWAGA: część serwerów MCP jest niedostępna. Może być potrzebny ręczny restart." -Color "Yellow" -Level "warn"
     } else {
-        Write-ColorLog "SUCCESS: All MCP servers operational or managed by Claude." "Green"
+        Write-Log -Message "SUKCES: wszystkie serwery MCP działają lub są zarządzane przez Claude." -Color "Green"
+    }
+
+    if ($ExportJsonPath) {
+        $results | ConvertTo-Json -Depth 5 | Out-File -FilePath $ExportJsonPath -Encoding utf8
+        Write-Log -Message "Wyeksportowano wyniki do JSON: $ExportJsonPath" -Color "Gray"
+    }
+
+    if ($ExportCsvPath) {
+        $results | Export-Csv -Path $ExportCsvPath -NoTypeInformation
+        Write-Log -Message "Wyeksportowano wyniki do CSV: $ExportCsvPath" -Color "Gray"
     }
 
     Write-Host ""
 
 } catch {
     Write-Host ""
-    Write-ColorLog "=============================================================" "Red"
-    Write-ColorLog "ERROR: $($_.Exception.Message)" "Red"
-    Write-ColorLog "Stack Trace: $($_.ScriptStackTrace)" "Gray"
+    Write-Log -Message "=============================================================" -Color "Red" -Level "error"
+    Write-Log -Message "BŁĄD: $($_.Exception.Message)" -Color "Red" -Level "error"
+    Write-Log -Message "Ślad stosu: $($_.ScriptStackTrace)" -Color "Gray" -Level "error"
     Write-Host ""
     exit 1
 }

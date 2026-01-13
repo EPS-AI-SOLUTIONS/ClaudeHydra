@@ -188,6 +188,14 @@ powershell -ExecutionPolicy Bypass -File _launcher.ps1
 ```powershell
 # Ręczne sprawdzenie MCP servers (parallel execution)
 .\mcp-health-check.ps1 -TimeoutSeconds 5
+
+# Skrypt zawsze inicjalizuje AI Handler przy starcie (banner + dostępne modele)
+
+# Przykłady rozszerzonych opcji
+.\mcp-health-check.ps1 -Server Serena -HostName 127.0.0.1 -RetryCount 3
+.\mcp-health-check.ps1 -Json -ExportJsonPath .\\logs\\health.json
+.\mcp-health-check.ps1 -NoColor -ExportCsvPath .\\logs\\health.csv
+.\mcp-health-check.ps1 -AutoRestart
 ```
 
 ### Tworzenie skrótu na pulpicie
@@ -209,6 +217,13 @@ $env:ANTHROPIC_API_KEY = "sk-ant-api03-..."
 
 # CMD
 setx ANTHROPIC_API_KEY "sk-ant-api03-..."
+```
+
+### Dodatkowa konfiguracja
+
+```powershell
+# (Opcjonalnie) Nadpisanie katalogu projektu
+$env:CLAUDECLI_ROOT = "C:\\Users\\%USERNAME%\\Desktop\\ClaudeCLI"
 ```
 
 ### Weryfikacja
