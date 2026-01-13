@@ -1,0 +1,26 @@
+[
+  {
+    "Name": "Serena",
+    "Port": 9000,
+    "Type": "Port",
+    "HealthUrl": "http://localhost:9000/sse",
+    "CommandName": "serena",
+    "TimeoutSeconds": 5
+  },
+  {
+    "Name": "Desktop-Commander",
+    "Port": 8100,
+    "Type": "Stdio",
+    "ProcessName": "desktop-commander",
+    "CommandName": "desktop-commander",
+    "TimeoutSeconds": 5
+  },
+  {
+    "Name": "Playwright",
+    "Port": 5200,
+    "Type": "Stdio",
+    "ProcessName": "playwright",
+    "CommandName": "playwright",
+    "TimeoutSeconds": 5
+  }
+]

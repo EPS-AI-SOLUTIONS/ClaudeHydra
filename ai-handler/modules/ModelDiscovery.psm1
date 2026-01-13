@@ -3,7 +3,7 @@
 .SYNOPSIS
     HYDRA 10.0 - Model Discovery Module
 .DESCRIPTION
-    Fetches available models from AI providers (Anthropic, OpenAI, Ollama)
+    Fetches available models from AI providers (Anthropic, OpenAI, Google, Mistral, Groq, Ollama)
     at startup based on API keys
 .NOTES
     Author: HYDRA System
@@ -29,7 +29,8 @@ function Get-AnthropicModels {
     [CmdletBinding()]
     param(
         [string]$ApiKey = $env:ANTHROPIC_API_KEY,
-        [switch]$Force
+        [switch]$Force,
+        [switch]$SkipValidation
     )
 
     if (-not $ApiKey) {
@@ -96,21 +97,23 @@ function Get-AnthropicModels {
             }
         )
 
-        # Verify API key works with a minimal request
-        $headers = @{
-            "x-api-key" = $ApiKey
-            "anthropic-version" = "2023-06-01"
-            "Content-Type" = "application/json"
+        if (-not $SkipValidation) {
+            # Verify API key works with a minimal request
+            $headers = @{
+                "x-api-key" = $ApiKey
+                "anthropic-version" = "2023-06-01"
+                "Content-Type" = "application/json"
+            }
+
+            $testBody = @{
+                model = "claude-3-5-haiku-20241022"
+                max_tokens = 1
+                messages = @(@{ role = "user"; content = "Hi" })
+            } | ConvertTo-Json
+
+            $response = Invoke-RestMethod -Uri "https://api.anthropic.com/v1/messages" `
+                -Method Post -Headers $headers -Body $testBody -ErrorAction Stop
         }
-
-        $testBody = @{
-            model = "claude-3-5-haiku-20241022"
-            max_tokens = 1
-            messages = @(@{ role = "user"; content = "Hi" })
-        } | ConvertTo-Json
-
-        $response = Invoke-RestMethod -Uri "https://api.anthropic.com/v1/messages" `
-            -Method Post -Headers $headers -Body $testBody -ErrorAction Stop
 
         # API key is valid
         $result = @{
@@ -120,7 +123,6 @@ function Get-AnthropicModels {
             Models = $knownModels
             FetchedAt = (Get-Date).ToString('o')
             ApiKeyValid = $true
-            ApiKeyPrefix = $ApiKey.Substring(0, [Math]::Min(15, $ApiKey.Length)) + "..."
         }
 
         # Cache result
@@ -286,7 +288,6 @@ function Get-OpenAIModels {
             FetchedAt = (Get-Date).ToString('o')
             TotalModelsInAPI = $response.data.Count
             ApiKeyValid = $true
-            ApiKeyPrefix = $ApiKey.Substring(0, [Math]::Min(15, $ApiKey.Length)) + "..."
         }
 
         # Cache result
@@ -317,6 +318,224 @@ function Get-OpenAIModels {
     }
 }
 
+#region Google Models
+
+function Get-GoogleModels {
+    <#
+    .SYNOPSIS
+        Fetches available models from Google Generative Language API
+    .PARAMETER ApiKey
+        Google API key (defaults to env var)
+    .PARAMETER Force
+        Bypass cache and fetch fresh data
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$ApiKey = $env:GOOGLE_API_KEY,
+        [switch]$Force
+    )
+
+    if (-not $ApiKey) {
+        Write-Verbose "No Google API key found"
+        return @{
+            Success = $false
+            Provider = "google"
+            Error = "API key not configured"
+            Models = @()
+        }
+    }
+
+    if (-not $Force -and $script:ModelCache['google'] -and $script:CacheExpiry['google'] -gt (Get-Date)) {
+        Write-Verbose "Returning cached Google models"
+        return $script:ModelCache['google']
+    }
+
+    try {
+        $response = Invoke-RestMethod -Uri "https://generativelanguage.googleapis.com/v1beta/models?key=$ApiKey" `
+            -Method Get -ErrorAction Stop
+
+        $models = $response.models | Where-Object { $_.name -match "gemini" } | ForEach-Object {
+            @{
+                id = $_.name -replace "^models/", ""
+                name = $_.displayName
+                tier = if ($_.name -match "pro") { "pro" } else { "standard" }
+                contextWindow = 128000
+                maxOutput = 8192
+                inputCost = 0.0
+                outputCost = 0.0
+                capabilities = @("vision", "code", "analysis")
+            }
+        }
+
+        $result = @{
+            Success = $true
+            Provider = "google"
+            Error = $null
+            Models = @($models)
+            FetchedAt = (Get-Date).ToString('o')
+        }
+
+        $script:ModelCache['google'] = $result
+        $script:CacheExpiry['google'] = (Get-Date).AddMinutes($script:CacheDurationMinutes)
+
+        return $result
+    } catch {
+        return @{
+            Success = $false
+            Provider = "google"
+            Error = $_.Exception.Message
+            Models = @()
+        }
+    }
+}
+
+#endregion
+
+#region Mistral Models
+
+function Get-MistralModels {
+    <#
+    .SYNOPSIS
+        Fetches available models from Mistral API
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$ApiKey = $env:MISTRAL_API_KEY,
+        [switch]$Force
+    )
+
+    if (-not $ApiKey) {
+        Write-Verbose "No Mistral API key found"
+        return @{
+            Success = $false
+            Provider = "mistral"
+            Error = "API key not configured"
+            Models = @()
+        }
+    }
+
+    if (-not $Force -and $script:ModelCache['mistral'] -and $script:CacheExpiry['mistral'] -gt (Get-Date)) {
+        Write-Verbose "Returning cached Mistral models"
+        return $script:ModelCache['mistral']
+    }
+
+    try {
+        $headers = @{
+            "Authorization" = "Bearer $ApiKey"
+            "Content-Type" = "application/json"
+        }
+
+        $response = Invoke-RestMethod -Uri "https://api.mistral.ai/v1/models" -Method Get -Headers $headers -ErrorAction Stop
+
+        $models = $response.data | ForEach-Object {
+            @{
+                id = $_.id
+                name = $_.id
+                tier = if ($_.id -match "large") { "pro" } else { "standard" }
+                contextWindow = 128000
+                maxOutput = 8192
+                inputCost = 0.0
+                outputCost = 0.0
+                capabilities = @("code", "analysis")
+            }
+        }
+
+        $result = @{
+            Success = $true
+            Provider = "mistral"
+            Error = $null
+            Models = @($models)
+            FetchedAt = (Get-Date).ToString('o')
+        }
+
+        $script:ModelCache['mistral'] = $result
+        $script:CacheExpiry['mistral'] = (Get-Date).AddMinutes($script:CacheDurationMinutes)
+
+        return $result
+    } catch {
+        return @{
+            Success = $false
+            Provider = "mistral"
+            Error = $_.Exception.Message
+            Models = @()
+        }
+    }
+}
+
+#endregion
+
+#region Groq Models
+
+function Get-GroqModels {
+    <#
+    .SYNOPSIS
+        Fetches available models from Groq API
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$ApiKey = $env:GROQ_API_KEY,
+        [switch]$Force
+    )
+
+    if (-not $ApiKey) {
+        Write-Verbose "No Groq API key found"
+        return @{
+            Success = $false
+            Provider = "groq"
+            Error = "API key not configured"
+            Models = @()
+        }
+    }
+
+    if (-not $Force -and $script:ModelCache['groq'] -and $script:CacheExpiry['groq'] -gt (Get-Date)) {
+        Write-Verbose "Returning cached Groq models"
+        return $script:ModelCache['groq']
+    }
+
+    try {
+        $headers = @{
+            "Authorization" = "Bearer $ApiKey"
+            "Content-Type" = "application/json"
+        }
+
+        $response = Invoke-RestMethod -Uri "https://api.groq.com/openai/v1/models" -Method Get -Headers $headers -ErrorAction Stop
+
+        $models = $response.data | ForEach-Object {
+            @{
+                id = $_.id
+                name = $_.id
+                tier = if ($_.id -match "70b") { "pro" } else { "standard" }
+                contextWindow = 128000
+                maxOutput = 8192
+                inputCost = 0.0
+                outputCost = 0.0
+                capabilities = @("code", "analysis")
+            }
+        }
+
+        $result = @{
+            Success = $true
+            Provider = "groq"
+            Error = $null
+            Models = @($models)
+            FetchedAt = (Get-Date).ToString('o')
+        }
+
+        $script:ModelCache['groq'] = $result
+        $script:CacheExpiry['groq'] = (Get-Date).AddMinutes($script:CacheDurationMinutes)
+
+        return $result
+    } catch {
+        return @{
+            Success = $false
+            Provider = "groq"
+            Error = $_.Exception.Message
+            Models = @()
+        }
+    }
+}
+
+#endregion
 #endregion
 
 #region Ollama Models
@@ -454,17 +673,21 @@ function Get-AllAvailableModels {
     [CmdletBinding()]
     param(
         [switch]$Force,
-        [switch]$Parallel
+        [switch]$Parallel,
+        [switch]$SkipValidation
     )
 
     $startTime = Get-Date
 
     if ($Parallel -and $PSVersionTable.PSVersion.Major -ge 7) {
         # Parallel fetch (PS 7+)
-        $results = @("anthropic", "openai", "ollama") | ForEach-Object -Parallel {
+        $results = @("anthropic", "openai", "google", "mistral", "groq", "ollama") | ForEach-Object -Parallel {
             switch ($_) {
-                "anthropic" { Get-AnthropicModels -Force:$using:Force }
+                "anthropic" { Get-AnthropicModels -Force:$using:Force -SkipValidation:$using:SkipValidation }
                 "openai" { Get-OpenAIModels -Force:$using:Force }
+                "google" { Get-GoogleModels -Force:$using:Force }
+                "mistral" { Get-MistralModels -Force:$using:Force }
+                "groq" { Get-GroqModels -Force:$using:Force }
                 "ollama" { Get-OllamaModels -Force:$using:Force }
             }
         } -ThrottleLimit 3
@@ -473,7 +696,10 @@ function Get-AllAvailableModels {
         $results = @(
             Get-OllamaModels -Force:$Force      # Local first (fastest)
             Get-OpenAIModels -Force:$Force
-            Get-AnthropicModels -Force:$Force
+            Get-GoogleModels -Force:$Force
+            Get-MistralModels -Force:$Force
+            Get-GroqModels -Force:$Force
+            Get-AnthropicModels -Force:$Force -SkipValidation:$SkipValidation
         )
     }
 
@@ -539,16 +765,16 @@ function Update-ModelConfig {
     # Load current config
     $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
 
-    # Update Ollama models dynamically
-    if ($discovery.Summary.ollama.Success) {
-        $ollamaModels = @{}
-        $discovery.Models | Where-Object { $_.provider -eq "ollama" } | ForEach-Object {
-            $ollamaModels[$_.id] = @{
+    foreach ($providerName in $discovery.Summary.Keys) {
+        if (-not $discovery.Summary[$providerName].Success) { continue }
+        $providerModels = @{}
+        $discovery.Models | Where-Object { $_.provider -eq $providerName } | ForEach-Object {
+            $providerModels[$_.id] = @{
                 tier = $_.tier
                 contextWindow = $_.contextWindow
                 maxOutput = $_.maxOutput
-                inputCost = 0.00
-                outputCost = 0.00
+                inputCost = if ($_.inputCost) { $_.inputCost } else { 0.0 }
+                outputCost = if ($_.outputCost) { $_.outputCost } else { 0.0 }
                 tokensPerMinute = 999999
                 requestsPerMinute = 999999
                 capabilities = $_.capabilities
@@ -556,11 +782,11 @@ function Update-ModelConfig {
                 parameterSize = $_.parameterSize
             }
         }
-        $config.providers.ollama.models = $ollamaModels
 
-        # Update fallback chain
-        $config.fallbackChain.ollama = @($discovery.Models | Where-Object { $_.provider -eq "ollama" } |
-            Sort-Object { $_.sizeBytes } -Descending | Select-Object -ExpandProperty id)
+        if ($config.providers.$providerName) {
+            $config.providers.$providerName.models = $providerModels
+            $config.fallbackChain.$providerName = @($providerModels.Keys)
+        }
     }
 
     # Add discovery metadata
@@ -587,13 +813,13 @@ function Show-AvailableModels {
     .SYNOPSIS
         Displays available models in a formatted table
     .PARAMETER Provider
-        Filter by provider (anthropic, openai, ollama)
+        Filter by provider (anthropic, openai, google, mistral, groq, ollama)
     .PARAMETER Tier
         Filter by tier (flagship, pro, standard, lite)
     #>
     [CmdletBinding()]
     param(
-        [ValidateSet("anthropic", "openai", "ollama", "all")]
+        [ValidateSet("anthropic", "openai", "google", "mistral", "groq", "ollama", "all")]
         [string]$Provider = "all",
         [ValidateSet("flagship", "pro", "standard", "lite", "all")]
         [string]$Tier = "all"
@@ -650,14 +876,16 @@ function Initialize-ModelDiscovery {
     [CmdletBinding()]
     param(
         [switch]$UpdateConfig,
-        [switch]$Silent
+        [switch]$Silent,
+        [switch]$SkipValidation,
+        [switch]$Parallel
     )
 
     if (-not $Silent) {
         Write-Host "[ModelDiscovery] Discovering available models..." -ForegroundColor Cyan
     }
 
-    $discovery = Get-AllAvailableModels
+    $discovery = Get-AllAvailableModels -SkipValidation:$SkipValidation -Parallel:$Parallel
 
     if (-not $Silent) {
         foreach ($p in $discovery.Summary.GetEnumerator()) {
@@ -681,6 +909,9 @@ function Initialize-ModelDiscovery {
 Export-ModuleMember -Function @(
     'Get-AnthropicModels',
     'Get-OpenAIModels',
+    'Get-GoogleModels',
+    'Get-MistralModels',
+    'Get-GroqModels',
     'Get-OllamaModels',
     'Get-AllAvailableModels',
     'Update-ModelConfig',

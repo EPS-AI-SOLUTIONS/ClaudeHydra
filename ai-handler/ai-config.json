@@ -1,216 +1,347 @@
-﻿{
-    "providers":  {
-                      "anthropic":  {
-                                        "name":  "Anthropic",
-                                        "baseUrl":  "https://api.anthropic.com/v1",
-                                        "apiKeyEnv":  "ANTHROPIC_API_KEY",
-                                        "priority":  3,
-                                        "enabled":  true,
-                                        "models":  {
-                                                       "claude-sonnet-4-20250514":  {
-                                                                                        "tier":  "pro",
-                                                                                        "contextWindow":  200000,
-                                                                                        "maxOutput":  16000,
-                                                                                        "inputCost":  3.00,
-                                                                                        "outputCost":  15.00,
-                                                                                        "tokensPerMinute":  80000,
-                                                                                        "requestsPerMinute":  100,
-                                                                                        "capabilities":  [
-                                                                                                             "vision",
-                                                                                                             "code",
-                                                                                                             "analysis",
-                                                                                                             "creative"
-                                                                                                         ]
-                                                                                    },
-                                                       "claude-3-5-sonnet-20241022":  {
-                                                                                          "tier":  "standard",
-                                                                                          "contextWindow":  200000,
-                                                                                          "maxOutput":  8192,
-                                                                                          "inputCost":  3.00,
-                                                                                          "outputCost":  15.00,
-                                                                                          "tokensPerMinute":  80000,
-                                                                                          "requestsPerMinute":  100,
-                                                                                          "capabilities":  [
-                                                                                                               "vision",
-                                                                                                               "code",
-                                                                                                               "analysis"
-                                                                                                           ]
-                                                                                      },
-                                                       "claude-3-5-haiku-20241022":  {
-                                                                                         "tier":  "lite",
-                                                                                         "contextWindow":  200000,
-                                                                                         "maxOutput":  8192,
-                                                                                         "inputCost":  0.80,
-                                                                                         "outputCost":  4.00,
-                                                                                         "tokensPerMinute":  100000,
-                                                                                         "requestsPerMinute":  200,
-                                                                                         "capabilities":  [
-                                                                                                              "code",
-                                                                                                              "analysis"
-                                                                                                          ]
-                                                                                     }
-                                                   }
-                                    },
-                      "openai":  {
-                                     "name":  "OpenAI",
-                                     "baseUrl":  "https://api.openai.com/v1",
-                                     "apiKeyEnv":  "OPENAI_API_KEY",
-                                     "priority":  2,
-                                     "enabled":  true,
-                                     "models":  {
-                                                    "gpt-4o":  {
-                                                                   "tier":  "pro",
-                                                                   "contextWindow":  128000,
-                                                                   "maxOutput":  16384,
-                                                                   "inputCost":  2.50,
-                                                                   "outputCost":  10.00,
-                                                                   "tokensPerMinute":  30000,
-                                                                   "requestsPerMinute":  500,
-                                                                   "capabilities":  [
-                                                                                        "vision",
-                                                                                        "code",
-                                                                                        "analysis"
-                                                                                    ]
-                                                               },
-                                                    "gpt-4o-mini":  {
-                                                                        "tier":  "lite",
-                                                                        "contextWindow":  128000,
-                                                                        "maxOutput":  16384,
-                                                                        "inputCost":  0.15,
-                                                                        "outputCost":  0.60,
-                                                                        "tokensPerMinute":  200000,
-                                                                        "requestsPerMinute":  500,
-                                                                        "capabilities":  [
-                                                                                             "code",
-                                                                                             "analysis"
-                                                                                         ]
-                                                                    }
-                                                }
-                                 },
-                      "ollama":  {
-                                     "name":  "Ollama (Local)",
-                                     "baseUrl":  "http://localhost:11434/api",
-                                     "apiKeyEnv":  null,
-                                     "priority":  1,
-                                     "enabled":  true,
-                                     "models":  {
-                                                    "llama3.2:3b":  {
-                                                                        "tier":  "standard",
-                                                                        "contextWindow":  128000,
-                                                                        "maxOutput":  4096,
-                                                                        "inputCost":  0.00,
-                                                                        "outputCost":  0.00,
-                                                                        "tokensPerMinute":  999999,
-                                                                        "requestsPerMinute":  999999,
-                                                                        "capabilities":  [
-                                                                                             "code",
-                                                                                             "analysis",
-                                                                                             "creative"
-                                                                                         ]
-                                                                    },
-                                                    "qwen2.5-coder:1.5b":  {
-                                                                               "tier":  "lite",
-                                                                               "contextWindow":  32768,
-                                                                               "maxOutput":  4096,
-                                                                               "inputCost":  0.00,
-                                                                               "outputCost":  0.00,
-                                                                               "tokensPerMinute":  999999,
-                                                                               "requestsPerMinute":  999999,
-                                                                               "capabilities":  [
-                                                                                                    "code"
-                                                                                                ]
-                                                                           },
-                                                    "phi3:mini":  {
-                                                                      "tier":  "lite",
-                                                                      "contextWindow":  128000,
-                                                                      "maxOutput":  4096,
-                                                                      "inputCost":  0.00,
-                                                                      "outputCost":  0.00,
-                                                                      "tokensPerMinute":  999999,
-                                                                      "requestsPerMinute":  999999,
-                                                                      "capabilities":  [
-                                                                                           "code",
-                                                                                           "analysis"
-                                                                                       ]
-                                                                  },
-                                                    "llama3.2:1b":  {
-                                                                        "tier":  "lite",
-                                                                        "contextWindow":  128000,
-                                                                        "maxOutput":  4096,
-                                                                        "inputCost":  0.00,
-                                                                        "outputCost":  0.00,
-                                                                        "tokensPerMinute":  999999,
-                                                                        "requestsPerMinute":  999999,
-                                                                        "capabilities":  [
-                                                                                             "code",
-                                                                                             "analysis"
-                                                                                         ]
-                                                                    }
-                                                }
-                                 }
-                  },
-    "fallbackChain":  {
-                          "anthropic":  [
-                                            "claude-sonnet-4-20250514",
-                                            "claude-3-5-sonnet-20241022",
-                                            "claude-3-5-haiku-20241022"
-                                        ],
-                          "openai":  [
-                                         "gpt-4o",
-                                         "gpt-4o-mini"
-                                     ],
-                          "ollama":  [
-                                         "llama3.2:3b",
-                                         "qwen2.5-coder:1.5b",
-                                         "phi3:mini",
-                                         "llama3.2:1b"
-                                     ]
-                      },
-    "providerFallbackOrder":  [
-                                  "ollama",
-                                  "openai",
-                                  "anthropic"
-                              ],
-    "settings":  {
-                     "costOptimization":  true,
-                     "ollamaDefaultModel":  "llama3.2:3b",
-                     "autoInstallOllama":  true,
-                     "maxRetries":  3,
-                     "autoFallback":  true,
-                     "logLevel":  "info",
-                     "preferLocal":  true,
-                     "rateLimitThreshold":  0.85,
-                     "parallelExecution":  {
-                                               "maxConcurrent":  4,
-                                               "batchSize":  10,
-                                               "timeoutMs":  30000,
-                                               "enabled":  true
-                                           },
-                     "retryDelayMs":  1000,
-                     "advancedAI": {
-                         "selfCorrection": {
-                             "enabled": true,
-                             "validationModel": "phi3:mini",
-                             "maxAttempts": 3
-                         },
-                         "fewShotLearning": {
-                             "enabled": true,
-                             "maxExamples": 3,
-                             "maxHistoryEntries": 100
-                         },
-                         "speculativeDecoding": {
-                             "enabled": true,
-                             "fastModel": "llama3.2:1b",
-                             "accurateModel": "llama3.2:3b",
-                             "codeModel": "qwen2.5-coder:1.5b",
-                             "timeoutMs": 30000
-                         },
-                         "promptOptimizer": {
-                             "enabled": true,
-                             "autoOptimize": true,
-                             "minClarityThreshold": 60,
-                             "showEnhancements": true
-                         }
-                     }
-                 }
+{
+  "providers": {
+    "anthropic": {
+      "name": "Anthropic",
+      "baseUrl": "https://api.anthropic.com/v1",
+      "apiKeyEnv": "ANTHROPIC_API_KEY",
+      "priority": 1,
+      "enabled": true,
+      "models": {
+        "claude-sonnet-4-20250514": {
+          "tier": "pro",
+          "contextWindow": 200000,
+          "maxOutput": 16000,
+          "inputCost": 3.0,
+          "outputCost": 15.0,
+          "tokensPerMinute": 80000,
+          "requestsPerMinute": 100,
+          "capabilities": [
+            "vision",
+            "code",
+            "analysis",
+            "creative"
+          ]
+        },
+        "claude-3-5-sonnet-20241022": {
+          "tier": "standard",
+          "contextWindow": 200000,
+          "maxOutput": 8192,
+          "inputCost": 3.0,
+          "outputCost": 15.0,
+          "tokensPerMinute": 80000,
+          "requestsPerMinute": 100,
+          "capabilities": [
+            "vision",
+            "code",
+            "analysis"
+          ]
+        },
+        "claude-3-5-haiku-20241022": {
+          "tier": "lite",
+          "contextWindow": 200000,
+          "maxOutput": 8192,
+          "inputCost": 0.8,
+          "outputCost": 4.0,
+          "tokensPerMinute": 100000,
+          "requestsPerMinute": 200,
+          "capabilities": [
+            "code",
+            "analysis"
+          ]
+        }
+      }
+    },
+    "openai": {
+      "name": "OpenAI",
+      "baseUrl": "https://api.openai.com/v1",
+      "apiKeyEnv": "OPENAI_API_KEY",
+      "priority": 2,
+      "enabled": true,
+      "models": {
+        "gpt-4o": {
+          "tier": "pro",
+          "contextWindow": 128000,
+          "maxOutput": 16384,
+          "inputCost": 2.5,
+          "outputCost": 10.0,
+          "tokensPerMinute": 30000,
+          "requestsPerMinute": 500,
+          "capabilities": [
+            "vision",
+            "code",
+            "analysis"
+          ]
+        },
+        "gpt-4o-mini": {
+          "tier": "lite",
+          "contextWindow": 128000,
+          "maxOutput": 16384,
+          "inputCost": 0.15,
+          "outputCost": 0.6,
+          "tokensPerMinute": 200000,
+          "requestsPerMinute": 500,
+          "capabilities": [
+            "code",
+            "analysis"
+          ]
+        }
+      }
+    },
+    "google": {
+      "name": "Google",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+      "apiKeyEnv": "GOOGLE_API_KEY",
+      "priority": 3,
+      "enabled": true,
+      "models": {
+        "gemini-1.5-pro": {
+          "tier": "pro",
+          "contextWindow": 128000,
+          "maxOutput": 8192,
+          "inputCost": 3.5,
+          "outputCost": 10.5,
+          "tokensPerMinute": 60000,
+          "requestsPerMinute": 60,
+          "capabilities": [
+            "vision",
+            "code",
+            "analysis"
+          ]
+        },
+        "gemini-1.5-flash": {
+          "tier": "lite",
+          "contextWindow": 128000,
+          "maxOutput": 8192,
+          "inputCost": 0.35,
+          "outputCost": 1.05,
+          "tokensPerMinute": 120000,
+          "requestsPerMinute": 120,
+          "capabilities": [
+            "vision",
+            "code",
+            "analysis"
+          ]
+        }
+      }
+    },
+    "mistral": {
+      "name": "Mistral",
+      "baseUrl": "https://api.mistral.ai/v1",
+      "apiKeyEnv": "MISTRAL_API_KEY",
+      "priority": 4,
+      "enabled": true,
+      "models": {
+        "mistral-large-latest": {
+          "tier": "pro",
+          "contextWindow": 128000,
+          "maxOutput": 8192,
+          "inputCost": 2.0,
+          "outputCost": 6.0,
+          "tokensPerMinute": 60000,
+          "requestsPerMinute": 60,
+          "capabilities": [
+            "code",
+            "analysis"
+          ]
+        },
+        "mistral-small-latest": {
+          "tier": "lite",
+          "contextWindow": 32000,
+          "maxOutput": 8192,
+          "inputCost": 0.2,
+          "outputCost": 0.6,
+          "tokensPerMinute": 120000,
+          "requestsPerMinute": 120,
+          "capabilities": [
+            "code",
+            "analysis"
+          ]
+        }
+      }
+    },
+    "groq": {
+      "name": "Groq",
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "apiKeyEnv": "GROQ_API_KEY",
+      "priority": 5,
+      "enabled": true,
+      "models": {
+        "llama-3.1-70b-versatile": {
+          "tier": "pro",
+          "contextWindow": 128000,
+          "maxOutput": 8192,
+          "inputCost": 0.59,
+          "outputCost": 0.79,
+          "tokensPerMinute": 70000,
+          "requestsPerMinute": 120,
+          "capabilities": [
+            "code",
+            "analysis"
+          ]
+        },
+        "llama-3.1-8b-instant": {
+          "tier": "lite",
+          "contextWindow": 128000,
+          "maxOutput": 8192,
+          "inputCost": 0.05,
+          "outputCost": 0.08,
+          "tokensPerMinute": 120000,
+          "requestsPerMinute": 300,
+          "capabilities": [
+            "code",
+            "analysis"
+          ]
+        }
+      }
+    },
+    "ollama": {
+      "name": "Ollama (Local)",
+      "baseUrl": "http://localhost:11434/api",
+      "apiKeyEnv": null,
+      "priority": 6,
+      "enabled": true,
+      "models": {
+        "llama3.2:3b": {
+          "tier": "standard",
+          "contextWindow": 128000,
+          "maxOutput": 4096,
+          "inputCost": 0.0,
+          "outputCost": 0.0,
+          "tokensPerMinute": 999999,
+          "requestsPerMinute": 999999,
+          "capabilities": [
+            "code",
+            "analysis",
+            "creative"
+          ]
+        },
+        "qwen2.5-coder:1.5b": {
+          "tier": "lite",
+          "contextWindow": 32768,
+          "maxOutput": 4096,
+          "inputCost": 0.0,
+          "outputCost": 0.0,
+          "tokensPerMinute": 999999,
+          "requestsPerMinute": 999999,
+          "capabilities": [
+            "code"
+          ]
+        },
+        "phi3:mini": {
+          "tier": "lite",
+          "contextWindow": 128000,
+          "maxOutput": 4096,
+          "inputCost": 0.0,
+          "outputCost": 0.0,
+          "tokensPerMinute": 999999,
+          "requestsPerMinute": 999999,
+          "capabilities": [
+            "code",
+            "analysis"
+          ]
+        },
+        "llama3.2:1b": {
+          "tier": "lite",
+          "contextWindow": 128000,
+          "maxOutput": 4096,
+          "inputCost": 0.0,
+          "outputCost": 0.0,
+          "tokensPerMinute": 999999,
+          "requestsPerMinute": 999999,
+          "capabilities": [
+            "code",
+            "analysis"
+          ]
+        }
+      }
+    }
+  },
+  "fallbackChain": {
+    "anthropic": [
+      "claude-sonnet-4-20250514",
+      "claude-3-5-sonnet-20241022",
+      "claude-3-5-haiku-20241022"
+    ],
+    "openai": [
+      "gpt-4o",
+      "gpt-4o-mini"
+    ],
+    "google": [
+      "gemini-1.5-pro",
+      "gemini-1.5-flash"
+    ],
+    "mistral": [
+      "mistral-large-latest",
+      "mistral-small-latest"
+    ],
+    "groq": [
+      "llama-3.1-70b-versatile",
+      "llama-3.1-8b-instant"
+    ],
+    "ollama": [
+      "llama3.2:3b",
+      "qwen2.5-coder:1.5b",
+      "phi3:mini",
+      "llama3.2:1b"
+    ]
+  },
+  "providerFallbackOrder": [
+    "anthropic",
+    "openai",
+    "google",
+    "mistral",
+    "groq",
+    "ollama"
+  ],
+  "settings": {
+    "costOptimization": true,
+    "ollamaDefaultModel": "llama3.2:3b",
+    "autoInstallOllama": true,
+    "maxRetries": 3,
+    "autoFallback": true,
+    "logLevel": "info",
+    "logFormat": "json",
+    "preferLocal": true,
+    "rateLimitThreshold": 0.85,
+    "streamResponses": true,
+    "outputTokenRatio": 0.5,
+    "parallelExecution": {
+      "maxConcurrent": 4,
+      "batchSize": 10,
+      "timeoutMs": 30000,
+      "enabled": true
+    },
+    "retryDelayMs": 1000,
+    "modelDiscovery": {
+      "enabled": true,
+      "updateConfigOnStart": true,
+      "parallel": true,
+      "skipValidation": false
+    },
+    "advancedAI": {
+      "selfCorrection": {
+        "enabled": true,
+        "validationModel": "phi3:mini",
+        "maxAttempts": 3
+      },
+      "fewShotLearning": {
+        "enabled": true,
+        "maxExamples": 3,
+        "maxHistoryEntries": 100
+      },
+      "speculativeDecoding": {
+        "enabled": true,
+        "fastModel": "llama3.2:1b",
+        "accurateModel": "llama3.2:3b",
+        "codeModel": "qwen2.5-coder:1.5b",
+        "timeoutMs": 30000
+      },
+      "promptOptimizer": {
+        "enabled": true,
+        "autoOptimize": true,
+        "minClarityThreshold": 60,
+        "showEnhancements": true
+      }
+    }
+  }
 }

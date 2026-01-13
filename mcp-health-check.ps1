@@ -52,33 +52,46 @@ if (-not $LogPath) {
 $LogPath = Join-Path $LogDirectory ("mcp-health-check-{0}.log" -f (Get-Date -Format "yyyyMMdd"))
 }
 
-# Configuration - MCP servers (CLAUDE.md sekcja 1 - MCP Tools)
-$mcpServers = @(
-    @{
-        Name = "Serena"
-        Port = 9000
-        Type = "Port"
-        HealthUrl = "http://localhost:9000/sse"
-        CommandName = "serena"
-        TimeoutSeconds = 5
-    },
-    @{
-        Name = "Desktop-Commander"
-        Port = 8100
-        Type = "Stdio"
-        ProcessName = "desktop-commander"
-        CommandName = "desktop-commander"
-        TimeoutSeconds = 5
-    },
-    @{
-        Name = "Playwright"
-        Port = 5200
-        Type = "Stdio"
-        ProcessName = "playwright"
-        CommandName = "playwright"
-        TimeoutSeconds = 5
+function Get-McpServerConfig {
+    $configPath = Join-Path $ProjectRoot "mcp-servers.json"
+    if (Test-Path -LiteralPath $configPath) {
+        try {
+            return Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+        } catch {
+            throw "Nieprawidłowy plik konfiguracji MCP: $configPath"
+        }
     }
-)
+
+    return @(
+        @{
+            Name = "Serena"
+            Port = 9000
+            Type = "Port"
+            HealthUrl = "http://localhost:9000/sse"
+            CommandName = "serena"
+            TimeoutSeconds = 5
+        },
+        @{
+            Name = "Desktop-Commander"
+            Port = 8100
+            Type = "Stdio"
+            ProcessName = "desktop-commander"
+            CommandName = "desktop-commander"
+            TimeoutSeconds = 5
+        },
+        @{
+            Name = "Playwright"
+            Port = 5200
+            Type = "Stdio"
+            ProcessName = "playwright"
+            CommandName = "playwright"
+            TimeoutSeconds = 5
+        }
+    )
+}
+
+# Configuration - MCP servers (CLAUDE.md sekcja 1 - MCP Tools)
+$mcpServers = Get-McpServerConfig
 
 function Write-ColorLog {
     param(
@@ -164,7 +177,7 @@ function Get-CommandVersion {
 
 function Get-ServerVersion {
     param(
-        [hashtable]$Server
+        [psobject]$Server
     )
 
     if ($Server.CommandName) {
@@ -180,7 +193,7 @@ function Get-ServerVersion {
 
 function Restart-ServerProcess {
     param(
-        [hashtable]$Server
+        [psobject]$Server
     )
 
     if (-not $AutoRestart) {
@@ -191,16 +204,27 @@ function Restart-ServerProcess {
         return @{ Attempted = $false; Message = "Brak skonfigurowanej nazwy procesu." }
     }
 
-    try {
-        $processes = Get-Process -Name $Server.ProcessName -ErrorAction SilentlyContinue
-        if ($processes) {
-            $processes | Stop-Process -Force
+    $attempts = 0
+    $maxAttempts = 3
+    $delayMs = 300
+
+    while ($attempts -lt $maxAttempts) {
+        $attempts++
+        try {
+            $processes = Get-Process -Name $Server.ProcessName -ErrorAction SilentlyContinue
+            if ($processes) {
+                $processes | Stop-Process -Force
+            }
+            Start-Sleep -Milliseconds $delayMs
+            Start-Process $Server.ProcessName | Out-Null
+            return @{ Attempted = $true; Message = "Wydano polecenie restartu (próba $attempts)." }
+        } catch {
+            $delayMs = [Math]::Min($delayMs * 2, 2000)
+            if ($attempts -ge $maxAttempts) {
+                return @{ Attempted = $true; Message = $_.Exception.Message }
+            }
+            Start-Sleep -Milliseconds $delayMs
         }
-        Start-Sleep -Milliseconds 300
-        Start-Process $Server.ProcessName | Out-Null
-        return @{ Attempted = $true; Message = "Wydano polecenie restartu." }
-    } catch {
-        return @{ Attempted = $true; Message = $_.Exception.Message }
     }
 }
 

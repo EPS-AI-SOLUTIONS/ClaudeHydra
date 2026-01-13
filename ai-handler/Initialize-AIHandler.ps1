@@ -20,7 +20,7 @@ Write-Host @"
   ║    • Auto-retry with model downgrade (Opus→Sonnet→Haiku)     ║
   ║    • Rate limit aware switching                               ║
   ║    • Cost optimizer for model selection                       ║
-  ║    • Multi-provider fallback (Anthropic→OpenAI→Ollama)       ║
+  ║    • Multi-provider fallback (Anthropic→OpenAI→Google→...)   ║
   ╚═══════════════════════════════════════════════════════════════╝
 
 "@ -ForegroundColor Cyan
@@ -65,11 +65,13 @@ if ($available.Count -eq 0) {
 # Create convenience aliases
 Set-Alias -Name ai -Value (Join-Path $script:AIHandlerRoot "Invoke-AI.ps1") -Scope Global -Force
 Set-Alias -Name aistat -Value { Get-AIStatus } -Scope Global -Force
+Set-Alias -Name aihealth -Value (Join-Path $script:AIHandlerRoot "Invoke-AIHealth.ps1") -Scope Global -Force
 
 Write-Host @"
 
 Quick Commands:
   Get-AIStatus          - View all providers and rate limits
+  Get-AIHealth          - Health dashboard (status, tokens, cost)
   Test-AIProviders      - Test connectivity to all providers
   Get-OptimalModel      - Auto-select best model for task
   Invoke-AIRequest      - Make AI request with auto-fallback

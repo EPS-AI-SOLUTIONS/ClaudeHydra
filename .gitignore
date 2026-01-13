@@ -55,6 +55,7 @@ tmpclaude-*
 # AI Handler Runtime State
 ai-handler/ai-state.json
 ai-handler/cache/*.json
+ai-handler/queue/*.json
 
 # Test Coverage
 coverage/

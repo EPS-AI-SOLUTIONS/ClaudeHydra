@@ -64,6 +64,19 @@ New-AICode "Download file function"                  # Code with validation
 Invoke-SemanticQuery -FilePath "app.py" -Query "How does auth work?"
 ```
 
+### 📊 AI Health Dashboard
+- Podgląd stanu providerów, tokenów i kosztów
+- Tryb JSON do integracji z monitoringiem
+
+```powershell
+.\ai-handler\Invoke-AIHealth.ps1
+.\ai-handler\Invoke-AIHealth.ps1 -Json
+```
+
+### 🔐 Szyfrowanie danych
+- Stan AI i kolejki są szyfrowane AES-256
+- Klucz: `CLAUDECLI_ENCRYPTION_KEY` w zmiennych środowiskowych
+
 ### 🛠️ MCP Tools Integration
 | Tool | Port | Transport | Funkcja |
 |------|------|-----------|---------|
@@ -75,9 +88,10 @@ Invoke-SemanticQuery -FilePath "app.py" -Query "How does auth work?"
 
 ### Prerequisites
 - Windows 11
-- PowerShell 7+
+- PowerShell 7+ (pełne funkcje: streaming, równoległość); 5.1 działa dla podstawowych komend
 - Claude CLI
 - API Key: `ANTHROPIC_API_KEY`
+- Encryption Key: `CLAUDECLI_ENCRYPTION_KEY`
 
 ### Quick Start
 
@@ -86,6 +100,11 @@ Invoke-SemanticQuery -FilePath "app.py" -Query "How does auth work?"
 
 # 2. Ustaw API Key
 [Environment]::SetEnvironmentVariable('ANTHROPIC_API_KEY', 'sk-ant-api03-...', 'User')
+[Environment]::SetEnvironmentVariable('OPENAI_API_KEY', 'sk-...', 'User')
+[Environment]::SetEnvironmentVariable('GOOGLE_API_KEY', '...', 'User')
+[Environment]::SetEnvironmentVariable('MISTRAL_API_KEY', '...', 'User')
+[Environment]::SetEnvironmentVariable('GROQ_API_KEY', '...', 'User')
+[Environment]::SetEnvironmentVariable('CLAUDECLI_ENCRYPTION_KEY', '...', 'User')
 
 # 3. Uruchom launcher
 .\ClaudeCLI.vbs
@@ -110,6 +129,7 @@ C:\Users\BIURODOM\Desktop\ClaudeCLI\
 ├── ai-handler/              # 🤖 AI Model Handler
 │   ├── AIModelHandler.psm1  # Main module
 │   ├── ai-config.json       # Provider/model configuration
+│   ├── Invoke-AIHealth.ps1  # Health dashboard
 │   ├── modules/             # 🧠 Advanced AI Modules
 │   │   ├── SelfCorrection.psm1
 │   │   ├── FewShotLearning.psm1
@@ -124,6 +144,7 @@ C:\Users\BIURODOM\Desktop\ClaudeCLI\
 ├── CLAUDE.md                # System instructions (900+ lines)
 ├── README.md                # This file
 ├── _launcher.ps1            # Main launcher
+├── mcp-servers.json         # MCP server configuration
 └── mcp-health-check.ps1     # MCP diagnostics
 ```
 
@@ -197,6 +218,9 @@ powershell -ExecutionPolicy Bypass -File _launcher.ps1
 .\mcp-health-check.ps1 -NoColor -ExportCsvPath .\\logs\\health.csv
 .\mcp-health-check.ps1 -AutoRestart
 ```
+
+### Konfiguracja MCP servers
+- Edytuj `mcp-servers.json`, aby dodać/zmienić serwery MCP bez dotykania skryptu.
 
 ### Tworzenie skrótu na pulpicie
 

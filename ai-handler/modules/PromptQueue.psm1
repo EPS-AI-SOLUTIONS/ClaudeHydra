@@ -20,6 +20,11 @@ $script:QueuePath = Join-Path $PSScriptRoot "..\queue"
 $script:QueueFile = Join-Path $script:QueuePath "prompt-queue.json"
 $script:StateFile = Join-Path $script:QueuePath "queue-state.json"
 $script:HistoryFile = Join-Path $script:QueuePath "queue-history.json"
+$script:SecureStoragePath = Join-Path $PSScriptRoot "SecureStorage.psm1"
+
+if (Test-Path $script:SecureStoragePath) {
+    Import-Module $script:SecureStoragePath -Force -ErrorAction SilentlyContinue
+}
 
 # In-memory queue
 $script:Queue = [System.Collections.ArrayList]::new()
@@ -27,11 +32,7 @@ $script:RetryQueue = [System.Collections.ArrayList]::new()
 $script:ProcessingQueue = [System.Collections.ArrayList]::new()
 
 # Rate limiting state
-$script:RateLimits = @{
-    anthropic = @{ requestsPerMinute = 100; tokensPerMinute = 80000; currentRequests = 0; currentTokens = 0; windowStart = $null }
-    openai = @{ requestsPerMinute = 500; tokensPerMinute = 200000; currentRequests = 0; currentTokens = 0; windowStart = $null }
-    ollama = @{ requestsPerMinute = 9999; tokensPerMinute = 999999; currentRequests = 0; currentTokens = 0; windowStart = $null }
-}
+$script:RateLimits = @{}
 
 # Queue state
 $script:QueueState = @{
@@ -79,7 +80,11 @@ function Initialize-PromptQueue {
     # Load persisted queue
     if ($LoadPersisted -and (Test-Path $script:QueueFile)) {
         try {
-            $persisted = Get-Content $script:QueueFile -Raw | ConvertFrom-Json
+            if (Get-Command Read-EncryptedJson -ErrorAction SilentlyContinue) {
+                $persisted = Read-EncryptedJson -Path $script:QueueFile
+            } else {
+                $persisted = Get-Content $script:QueueFile -Raw | ConvertFrom-Json
+            }
             $script:Queue = [System.Collections.ArrayList]@($persisted.queue)
             $script:RetryQueue = [System.Collections.ArrayList]@($persisted.retryQueue)
             Write-Host "[Queue] Loaded $($script:Queue.Count) items from disk" -ForegroundColor Cyan
@@ -91,9 +96,15 @@ function Initialize-PromptQueue {
     # Load state
     if (Test-Path $script:StateFile) {
         try {
-            $script:QueueState = Get-Content $script:StateFile -Raw | ConvertFrom-Json | ConvertTo-Hashtable
+            if (Get-Command Read-EncryptedJson -ErrorAction SilentlyContinue) {
+                $script:QueueState = Read-EncryptedJson -Path $script:StateFile
+            } else {
+                $script:QueueState = Get-Content $script:StateFile -Raw | ConvertFrom-Json | ConvertTo-Hashtable
+            }
         } catch { }
     }
+
+    Sync-RateLimits
 
     return @{
         QueueCount = $script:Queue.Count
@@ -115,7 +126,7 @@ function Add-AIPrompt {
     .PARAMETER Priority
         Priority level: high, normal, low (default: normal)
     .PARAMETER Provider
-        Target provider (anthropic, openai, ollama, auto)
+        Target provider (anthropic, openai, google, mistral, groq, ollama, auto)
     .PARAMETER Model
         Specific model to use
     .PARAMETER SystemPrompt
@@ -139,7 +150,7 @@ function Add-AIPrompt {
         [ValidateSet("high", "normal", "low")]
         [string]$Priority = "normal",
 
-        [ValidateSet("anthropic", "openai", "ollama", "auto")]
+        [ValidateSet("anthropic", "openai", "google", "mistral", "groq", "ollama", "auto")]
         [string]$Provider = "auto",
 
         [string]$Model,
@@ -264,6 +275,9 @@ function Get-AIQueue {
             ByProvider = @{
                 anthropic = ($script:Queue | Where-Object { $_.provider -eq "anthropic" }).Count
                 openai = ($script:Queue | Where-Object { $_.provider -eq "openai" }).Count
+                google = ($script:Queue | Where-Object { $_.provider -eq "google" }).Count
+                mistral = ($script:Queue | Where-Object { $_.provider -eq "mistral" }).Count
+                groq = ($script:Queue | Where-Object { $_.provider -eq "groq" }).Count
                 ollama = ($script:Queue | Where-Object { $_.provider -eq "ollama" }).Count
                 auto = ($script:Queue | Where-Object { $_.provider -eq "auto" }).Count
             }
@@ -490,6 +504,8 @@ function Add-ToRetryQueue {
         $script:QueueConfig.baseRetryDelayMs * [Math]::Pow(2, $item.attempts - 1),
         $script:QueueConfig.maxRetryDelayMs
     )
+    $jitter = [int]($delay * 0.2)
+    $delay = [int]($delay + (Get-Random -Minimum (-$jitter) -Maximum $jitter))
     $item.nextRetryAt = (Get-Date).AddMilliseconds($delay).ToString('o')
 
     if ($item.attempts -ge $script:QueueConfig.maxRetries) {
@@ -658,12 +674,14 @@ function Start-AIQueue {
                 $processed++
                 $script:QueueState.processedCount++
                 Write-Verbose "[Queue] Completed: $($item.id)"
+                Add-QueueHistoryItem -Item $item
 
             } catch {
                 Write-Warning "[Queue] Failed: $($item.id) - $_"
                 Add-ToRetryQueue -Item $item -Error $_.Exception.Message
                 $failed++
                 $script:QueueState.failedCount++
+                Add-QueueHistoryItem -Item $item
             } finally {
                 # Remove from processing queue
                 $script:ProcessingQueue.Remove($item) | Out-Null
@@ -762,17 +780,90 @@ function Save-QueueState {
 
     try {
         # Save queue
-        @{
+        $payload = @{
             queue = @($script:Queue)
             retryQueue = @($script:RetryQueue)
             savedAt = (Get-Date).ToString('o')
-        } | ConvertTo-Json -Depth 10 | Set-Content $script:QueueFile -Encoding UTF8
-
-        # Save state
-        $script:QueueState | ConvertTo-Json -Depth 5 | Set-Content $script:StateFile -Encoding UTF8
+        }
+        if (Get-Command Write-EncryptedJson -ErrorAction SilentlyContinue) {
+            Write-EncryptedJson -Data $payload -Path $script:QueueFile
+            Write-EncryptedJson -Data $script:QueueState -Path $script:StateFile
+        } else {
+            $payload | ConvertTo-Json -Depth 10 | Set-Content $script:QueueFile -Encoding UTF8
+            $script:QueueState | ConvertTo-Json -Depth 5 | Set-Content $script:StateFile -Encoding UTF8
+        }
 
     } catch {
         Write-Warning "Failed to save queue: $_"
+    }
+}
+
+function Sync-RateLimits {
+    <#
+    .SYNOPSIS
+        Sync rate limits from AI config.
+    #>
+    [CmdletBinding()]
+    param()
+
+    if (-not (Get-Command Get-AIConfig -ErrorAction SilentlyContinue)) {
+        return
+    }
+
+    $config = Get-AIConfig
+    foreach ($providerName in $config.providers.Keys) {
+        $models = $config.providers[$providerName].models.Values
+        if (-not $models) { continue }
+
+        $maxRequests = ($models | Measure-Object -Property requestsPerMinute -Maximum).Maximum
+        $maxTokens = ($models | Measure-Object -Property tokensPerMinute -Maximum).Maximum
+
+        if (-not $script:RateLimits[$providerName]) {
+            $script:RateLimits[$providerName] = @{
+                requestsPerMinute = $maxRequests
+                tokensPerMinute = $maxTokens
+                currentRequests = 0
+                currentTokens = 0
+                windowStart = $null
+            }
+        } else {
+            $script:RateLimits[$providerName].requestsPerMinute = $maxRequests
+            $script:RateLimits[$providerName].tokensPerMinute = $maxTokens
+        }
+    }
+}
+
+function Add-QueueHistoryItem {
+    <#
+    .SYNOPSIS
+        Append a queue item to history and trim to limit.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]$Item
+    )
+
+    $history = @()
+    if (Test-Path $script:HistoryFile) {
+        try {
+            if (Get-Command Read-EncryptedJson -ErrorAction SilentlyContinue) {
+                $history = Read-EncryptedJson -Path $script:HistoryFile
+            } else {
+                $history = Get-Content $script:HistoryFile -Raw | ConvertFrom-Json
+            }
+        } catch { $history = @() }
+    }
+
+    $history = @($history) + @($Item)
+    if ($history.Count -gt $script:QueueConfig.historyMaxItems) {
+        $history = $history | Select-Object -Last $script:QueueConfig.historyMaxItems
+    }
+
+    if (Get-Command Write-EncryptedJson -ErrorAction SilentlyContinue) {
+        Write-EncryptedJson -Data $history -Path $script:HistoryFile
+    } else {
+        $history | ConvertTo-Json -Depth 10 | Set-Content $script:HistoryFile -Encoding UTF8
     }
 }
 
@@ -835,7 +926,7 @@ function Show-AIQueue {
 
     # By provider
     Write-Host "`nBy Provider:" -ForegroundColor White
-    foreach ($p in @("ollama", "openai", "anthropic", "auto")) {
+    foreach ($p in @("anthropic", "openai", "google", "mistral", "groq", "ollama", "auto")) {
         $count = $summary.ByProvider[$p]
         if ($count -gt 0) {
             Write-Host "  ${p}: $count" -ForegroundColor White
@@ -844,7 +935,7 @@ function Show-AIQueue {
 
     # Rate limits
     Write-Host "`nRate Limits:" -ForegroundColor White
-    foreach ($p in @("ollama", "anthropic", "openai")) {
+    foreach ($p in @("ollama", "anthropic", "openai", "google", "mistral", "groq")) {
         $limit = $summary.RateLimits[$p]
         if ($limit.windowStart) {
             $pct = [int](($limit.currentRequests / $limit.requestsPerMinute) * 100)

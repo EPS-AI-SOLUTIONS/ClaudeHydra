@@ -44,6 +44,9 @@ param(
     [Parameter(ParameterSetName = 'Query')]
     [switch]$NoFallback,
 
+    [Parameter(ParameterSetName = 'Query')]
+    [switch]$Stream,
+
     [Parameter(ParameterSetName = 'Status')]
     [switch]$Status,
 
@@ -87,7 +90,7 @@ switch ($PSCmdlet.ParameterSetName) {
             Write-Host "`nOptions:" -ForegroundColor Cyan
             Write-Host "  -Task          : simple, complex, creative, code, vision, analysis"
             Write-Host "  -SystemPrompt  : Custom system prompt"
-            Write-Host "  -Provider      : Force specific provider (anthropic, openai, ollama)"
+            Write-Host "  -Provider      : Force specific provider (anthropic, openai, google, mistral, groq, ollama)"
             Write-Host "  -Model         : Force specific model"
             Write-Host "  -PreferCheapest: Use cheapest suitable model"
             Write-Host "  -NoFallback    : Disable automatic fallback"
@@ -115,16 +118,21 @@ switch ($PSCmdlet.ParameterSetName) {
             }
         }
 
+        $config = Get-AIConfig
+        $streamEnabled = $Stream -or ($config.settings.streamResponses -eq $true)
+
         # Make request
         try {
             $response = Invoke-AIRequest -Messages $messages `
                 -Provider $Provider -Model $Model `
                 -MaxTokens $MaxTokens -Temperature $Temperature `
-                -AutoFallback:(-not $NoFallback)
+                -AutoFallback:(-not $NoFallback) -Stream:$streamEnabled
 
             # Output response
             Write-Host "`n--- Response ---" -ForegroundColor Green
-            Write-Host $response.content
+            if (-not $streamEnabled) {
+                Write-Host $response.content
+            }
 
             # Show metadata
             Write-Host "`n--- Metadata ---" -ForegroundColor Gray

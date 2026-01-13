@@ -7,7 +7,7 @@
     - Auto-retry with model downgrade (Opus → Sonnet → Haiku)
     - Rate limit aware switching
     - Cost optimizer for model selection
-    - Multi-provider fallback (Anthropic → OpenAI → Local)
+    - Multi-provider fallback (Anthropic → OpenAI → Google → Mistral → Groq → Local)
 .VERSION
     1.0.0
 .AUTHOR
@@ -19,6 +19,7 @@ $script:StatePath = Join-Path $PSScriptRoot "ai-state.json"
 $script:PromptOptimizerPath = Join-Path $PSScriptRoot "modules\PromptOptimizer.psm1"
 $script:ModelDiscoveryPath = Join-Path $PSScriptRoot "modules\ModelDiscovery.psm1"
 $script:PromptQueuePath = Join-Path $PSScriptRoot "modules\PromptQueue.psm1"
+$script:SecureStoragePath = Join-Path $PSScriptRoot "modules\SecureStorage.psm1"
 $script:DiscoveredModels = $null
 
 # Auto-load PromptOptimizer if available
@@ -34,6 +35,11 @@ if (Test-Path $script:ModelDiscoveryPath) {
 # Auto-load PromptQueue if available
 if (Test-Path $script:PromptQueuePath) {
     Import-Module $script:PromptQueuePath -Force -ErrorAction SilentlyContinue
+}
+
+# Auto-load SecureStorage if available
+if (Test-Path $script:SecureStoragePath) {
+    Import-Module $script:SecureStoragePath -Force -ErrorAction SilentlyContinue
 }
 
 #region Helper Functions for PS 5.1 Compatibility
@@ -54,6 +60,31 @@ function ConvertTo-Hashtable {
         } else {
             return $InputObject
         }
+    }
+}
+
+#endregion
+
+#region Logging
+
+function Write-AIHandlerLog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Message,
+        [ValidateSet("debug", "info", "warn", "error")]
+        [string]$Level = "info",
+        [hashtable]$Data = @{}
+    )
+
+    $config = Get-AIConfig
+    $levels = @("debug", "info", "warn", "error")
+    $currentIndex = $levels.IndexOf($config.settings.logLevel)
+    $messageIndex = $levels.IndexOf($Level)
+    if ($messageIndex -lt $currentIndex) { return }
+
+    if (Get-Command Write-AILog -ErrorAction SilentlyContinue) {
+        Write-AILog -Message $Message -Level $Level -Data $Data
     }
 }
 
@@ -131,11 +162,98 @@ $script:DefaultConfig = @{
                 }
             }
         }
+        google = @{
+            name = "Google"
+            baseUrl = "https://generativelanguage.googleapis.com/v1beta"
+            apiKeyEnv = "GOOGLE_API_KEY"
+            priority = 3
+            enabled = $true
+            models = @{
+                "gemini-1.5-pro" = @{
+                    tier = "pro"
+                    contextWindow = 128000
+                    maxOutput = 8192
+                    inputCost = 3.50
+                    outputCost = 10.50
+                    tokensPerMinute = 60000
+                    requestsPerMinute = 60
+                    capabilities = @("vision", "code", "analysis")
+                }
+                "gemini-1.5-flash" = @{
+                    tier = "lite"
+                    contextWindow = 128000
+                    maxOutput = 8192
+                    inputCost = 0.35
+                    outputCost = 1.05
+                    tokensPerMinute = 120000
+                    requestsPerMinute = 120
+                    capabilities = @("vision", "code", "analysis")
+                }
+            }
+        }
+        mistral = @{
+            name = "Mistral"
+            baseUrl = "https://api.mistral.ai/v1"
+            apiKeyEnv = "MISTRAL_API_KEY"
+            priority = 4
+            enabled = $true
+            models = @{
+                "mistral-large-latest" = @{
+                    tier = "pro"
+                    contextWindow = 128000
+                    maxOutput = 8192
+                    inputCost = 2.00
+                    outputCost = 6.00
+                    tokensPerMinute = 60000
+                    requestsPerMinute = 60
+                    capabilities = @("code", "analysis")
+                }
+                "mistral-small-latest" = @{
+                    tier = "lite"
+                    contextWindow = 32000
+                    maxOutput = 8192
+                    inputCost = 0.20
+                    outputCost = 0.60
+                    tokensPerMinute = 120000
+                    requestsPerMinute = 120
+                    capabilities = @("code", "analysis")
+                }
+            }
+        }
+        groq = @{
+            name = "Groq"
+            baseUrl = "https://api.groq.com/openai/v1"
+            apiKeyEnv = "GROQ_API_KEY"
+            priority = 5
+            enabled = $true
+            models = @{
+                "llama-3.1-70b-versatile" = @{
+                    tier = "pro"
+                    contextWindow = 128000
+                    maxOutput = 8192
+                    inputCost = 0.59
+                    outputCost = 0.79
+                    tokensPerMinute = 70000
+                    requestsPerMinute = 120
+                    capabilities = @("code", "analysis")
+                }
+                "llama-3.1-8b-instant" = @{
+                    tier = "lite"
+                    contextWindow = 128000
+                    maxOutput = 8192
+                    inputCost = 0.05
+                    outputCost = 0.08
+                    tokensPerMinute = 120000
+                    requestsPerMinute = 300
+                    capabilities = @("code", "analysis")
+                }
+            }
+        }
         ollama = @{
             name = "Ollama (Local)"
             baseUrl = "http://localhost:11434/api"
             apiKeyEnv = $null
-            priority = 3
+            priority = 6
             enabled = $true
             models = @{
                 "llama3.3:70b" = @{
@@ -164,9 +282,12 @@ $script:DefaultConfig = @{
     fallbackChain = @{
         anthropic = @("claude-opus-4-5-20251101", "claude-sonnet-4-5-20250929", "claude-haiku-4-20250604")
         openai = @("gpt-4o", "gpt-4o-mini")
+        google = @("gemini-1.5-pro", "gemini-1.5-flash")
+        mistral = @("mistral-large-latest", "mistral-small-latest")
+        groq = @("llama-3.1-70b-versatile", "llama-3.1-8b-instant")
         ollama = @("llama3.3:70b", "qwen2.5-coder:32b")
     }
-    providerFallbackOrder = @("anthropic", "openai", "ollama")
+    providerFallbackOrder = @("anthropic", "openai", "google", "mistral", "groq", "ollama")
     settings = @{
         maxRetries = 3
         retryDelayMs = 1000
@@ -174,6 +295,15 @@ $script:DefaultConfig = @{
         costOptimization = $true
         autoFallback = $true
         logLevel = "info"
+        logFormat = "json"
+        streamResponses = $true
+        outputTokenRatio = 0.5
+        modelDiscovery = @{
+            enabled = $true
+            updateConfigOnStart = $true
+            parallel = $true
+            skipValidation = $false
+        }
     }
 }
 
@@ -208,7 +338,12 @@ function Save-AIConfig {
     [CmdletBinding()]
     param([hashtable]$Config)
 
-    $Config | ConvertTo-Json -Depth 10 | Set-Content $script:ConfigPath -Encoding UTF8
+    $json = $Config | ConvertTo-Json -Depth 10
+    if (Get-Command Write-AtomicFile -ErrorAction SilentlyContinue) {
+        Write-AtomicFile -Path $script:ConfigPath -Content $json
+    } else {
+        $json | Set-Content $script:ConfigPath -Encoding UTF8
+    }
     Write-Host "[AI] Config saved to $script:ConfigPath" -ForegroundColor Green
 }
 
@@ -218,6 +353,10 @@ function Get-AIState {
 
     if (Test-Path $script:StatePath) {
         try {
+            if (Get-Command Read-EncryptedJson -ErrorAction SilentlyContinue) {
+                $state = Read-EncryptedJson -Path $script:StatePath
+                if ($state) { return $state }
+            }
             return Get-Content $script:StatePath -Raw | ConvertFrom-Json | ConvertTo-Hashtable
         } catch {
             Write-Warning "Failed to load state, using runtime state"
@@ -230,7 +369,11 @@ function Save-AIState {
     [CmdletBinding()]
     param([hashtable]$State)
 
-    $State | ConvertTo-Json -Depth 10 | Set-Content $script:StatePath -Encoding UTF8
+    if (Get-Command Write-EncryptedJson -ErrorAction SilentlyContinue) {
+        Write-EncryptedJson -Data $State -Path $script:StatePath
+    } else {
+        $State | ConvertTo-Json -Depth 10 | Set-Content $script:StatePath -Encoding UTF8
+    }
 }
 
 function Initialize-AIState {
@@ -238,6 +381,18 @@ function Initialize-AIState {
     param()
 
     $config = Get-AIConfig
+    if ($config.settings.modelDiscovery.enabled -and (Get-Command Initialize-ModelDiscovery -ErrorAction SilentlyContinue)) {
+        try {
+            $discovery = Initialize-ModelDiscovery -UpdateConfig:$config.settings.modelDiscovery.updateConfigOnStart `
+                -Silent -SkipValidation:$config.settings.modelDiscovery.skipValidation `
+                -Parallel:$config.settings.modelDiscovery.parallel -ErrorAction SilentlyContinue
+            if ($discovery) {
+                $script:DiscoveredModels = $discovery
+            }
+        } catch {
+            Write-Warning "Model discovery failed: $($_.Exception.Message)"
+        }
+    }
     $state = Get-AIState
 
     # Initialize usage tracking per provider/model
@@ -406,6 +561,7 @@ function Get-OptimalModel {
         [ValidateSet("simple", "complex", "creative", "code", "vision", "analysis")]
         [string]$Task = "simple",
         [int]$EstimatedTokens = 1000,
+        [int]$EstimatedOutputTokens = 0,
         [string[]]$RequiredCapabilities = @(),
         [switch]$PreferCheapest,
         [string]$PreferredProvider = "anthropic"
@@ -454,8 +610,13 @@ function Get-OptimalModel {
             if (-not $rateStatus.available) { continue }
 
             # Calculate estimated cost
+            $outputTokens = if ($EstimatedOutputTokens -gt 0) {
+                $EstimatedOutputTokens
+            } else {
+                [math]::Round($EstimatedTokens * $config.settings.outputTokenRatio)
+            }
             $estimatedCost = ($EstimatedTokens / 1000000) * $model.inputCost +
-                            ($EstimatedTokens / 1000000 * 0.5) * $model.outputCost
+                            ($outputTokens / 1000000) * $model.outputCost
 
             # Calculate score
             $tierScore = switch ($model.tier) {
@@ -468,6 +629,9 @@ function Get-OptimalModel {
             if ($tierPreference -eq -1) { $tierPreference = 99 }
 
             $providerPreference = $config.providerFallbackOrder.IndexOf($providerName)
+            if ($providerName -eq $PreferredProvider) {
+                $providerPreference = -1
+            }
 
             $candidates += @{
                 provider = $providerName
@@ -568,7 +732,7 @@ function Invoke-AIRequest {
     .PARAMETER Messages
         Array of message objects
     .PARAMETER Provider
-        Provider name (anthropic, openai, ollama)
+        Provider name (anthropic, openai, google, mistral, groq, ollama)
     .PARAMETER Model
         Model identifier
     .PARAMETER MaxTokens
@@ -639,7 +803,7 @@ function Invoke-AIRequest {
             $Provider = $optimal.provider
             $Model = $optimal.model
         } else {
-            throw "No available models"
+            throw "Brak dostępnych modeli."
         }
     }
 
@@ -653,6 +817,11 @@ function Invoke-AIRequest {
 
         try {
             Write-Host "[AI] Request #$attempt to $currentProvider/$currentModel" -ForegroundColor Cyan
+            Write-AIHandlerLog -Level "info" -Message "AI request started." -Data @{
+                provider = $currentProvider
+                model = $currentModel
+                attempt = $attempt
+            }
 
             # Check rate limits before request
             $rateStatus = Get-RateLimitStatus -Provider $currentProvider -Model $currentModel
@@ -669,7 +838,7 @@ function Invoke-AIRequest {
                     }
                 }
 
-                throw "Rate limit exceeded and no fallback available"
+                throw "Przekroczono limit i brak dostępnego fallbacku."
             }
 
             # Make the actual API call
@@ -677,8 +846,8 @@ function Invoke-AIRequest {
                 -Messages $Messages -MaxTokens $MaxTokens -Temperature $Temperature -Stream:$Stream
 
             # Update usage tracking
-            $inputTokens = $result.usage.input_tokens
-            $outputTokens = $result.usage.output_tokens
+            $inputTokens = if ($result.usage) { $result.usage.input_tokens } else { 0 }
+            $outputTokens = if ($result.usage) { $result.usage.output_tokens } else { 0 }
             Update-UsageTracking -Provider $currentProvider -Model $currentModel `
                 -InputTokens $inputTokens -OutputTokens $outputTokens
 
@@ -701,11 +870,30 @@ function Invoke-AIRequest {
 
             $result | Add-Member -NotePropertyName "_meta" -NotePropertyValue $metaData -Force
 
+            Write-AIHandlerLog -Level "info" -Message "AI request completed." -Data @{
+                provider = $currentProvider
+                model = $currentModel
+                attempt = $attempt
+                inputTokens = $inputTokens
+                outputTokens = $outputTokens
+            }
+
+            if (($inputTokens + $outputTokens) -eq 0 -and (Get-Command Write-AILog -ErrorAction SilentlyContinue)) {
+                Write-AILog -Level "warn" -Message "Token usage unavailable for streamed response." `
+                    -Data @{ provider = $currentProvider; model = $currentModel }
+            }
+
             return $result
 
         } catch {
             $lastError = $_
             Write-Warning "[AI] Error on attempt $attempt`: $($_.Exception.Message)"
+            Write-AIHandlerLog -Level "warn" -Message "AI request failed." -Data @{
+                provider = $currentProvider
+                model = $currentModel
+                attempt = $attempt
+                error = $_.Exception.Message
+            }
 
             # Update error tracking
             Update-UsageTracking -Provider $currentProvider -Model $currentModel -IsError $true
@@ -748,7 +936,7 @@ function Invoke-AIRequest {
                         continue
                     }
                 }
-                throw "Authentication failed for $currentProvider and no fallback available"
+                throw "Uwierzytelnienie nieudane dla $currentProvider i brak dostępnego fallbacku."
 
             } else {
                 # Unknown error - standard retry
@@ -757,7 +945,7 @@ function Invoke-AIRequest {
         }
     }
 
-    throw "All retry attempts failed. Last error: $lastError"
+    throw "Wszystkie próby nieudane. Ostatni błąd: $lastError"
 }
 
 function Get-ErrorType {
@@ -801,13 +989,55 @@ function Invoke-ProviderAPI {
             return Invoke-OpenAIAPI -Model $Model -Messages $Messages `
                 -MaxTokens $MaxTokens -Temperature $Temperature -Stream:$Stream
         }
+        "google" {
+            return Invoke-GoogleAPI -Model $Model -Messages $Messages `
+                -MaxTokens $MaxTokens -Temperature $Temperature -Stream:$Stream
+        }
+        "mistral" {
+            return Invoke-MistralAPI -Model $Model -Messages $Messages `
+                -MaxTokens $MaxTokens -Temperature $Temperature -Stream:$Stream
+        }
+        "groq" {
+            return Invoke-GroqAPI -Model $Model -Messages $Messages `
+                -MaxTokens $MaxTokens -Temperature $Temperature -Stream:$Stream
+        }
         "ollama" {
             return Invoke-OllamaAPI -Model $Model -Messages $Messages `
                 -MaxTokens $MaxTokens -Temperature $Temperature -Stream:$Stream
         }
         default {
-            throw "Unknown provider: $Provider"
+            throw "Nieznany provider: $Provider"
         }
+    }
+}
+
+function Invoke-StreamingRequest {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Uri,
+        [Parameter(Mandatory)]
+        [string]$Body,
+        [hashtable]$Headers = @{},
+        [Parameter(Mandatory)]
+        [scriptblock]$OnData
+    )
+
+    $client = New-Object System.Net.Http.HttpClient
+    $request = New-Object System.Net.Http.HttpRequestMessage([System.Net.Http.HttpMethod]::Post, $Uri)
+    foreach ($header in $Headers.Keys) {
+        $request.Headers.TryAddWithoutValidation($header, $Headers[$header]) | Out-Null
+    }
+    $request.Content = New-Object System.Net.Http.StringContent($Body, [System.Text.Encoding]::UTF8, "application/json")
+
+    $response = $client.SendAsync($request, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).Result
+    $stream = $response.Content.ReadAsStreamAsync().Result
+    $reader = New-Object System.IO.StreamReader($stream)
+
+    while (-not $reader.EndOfStream) {
+        $line = $reader.ReadLine()
+        if (-not $line) { continue }
+        & $OnData $line
     }
 }
 
@@ -822,7 +1052,7 @@ function Invoke-AnthropicAPI {
 
     $apiKey = $env:ANTHROPIC_API_KEY
     if (-not $apiKey) {
-        throw "ANTHROPIC_API_KEY not set"
+        throw "Brak zmiennej ANTHROPIC_API_KEY w środowisku."
     }
 
     # Convert messages to Anthropic format
@@ -846,6 +1076,40 @@ function Invoke-AnthropicAPI {
         "x-api-key" = $apiKey
         "anthropic-version" = "2023-06-01"
         "content-type" = "application/json"
+    }
+
+    if ($Stream) {
+        $contentBuffer = ""
+        Invoke-StreamingRequest -Uri "https://api.anthropic.com/v1/messages" `
+            -Headers $headers -Body ($body | ConvertTo-Json -Depth 10) -OnData {
+                param($line)
+                if ($line -notmatch "^data:") { return }
+                $payload = $line -replace "^data:\s*", ""
+                if ($payload -eq "[DONE]") { return }
+                try {
+                    $json = $payload | ConvertFrom-Json
+                    if ($json.delta -and $json.delta.text) {
+                        $contentBuffer += $json.delta.text
+                        Write-Host $json.delta.text -NoNewline
+                    } elseif ($json.content_block -and $json.content_block.text) {
+                        $contentBuffer += $json.content_block.text
+                        Write-Host $json.content_block.text -NoNewline
+                    } elseif ($json.message -and $json.message.content) {
+                        $text = $json.message.content | Select-Object -First 1
+                        if ($text.text) {
+                            $contentBuffer += $text.text
+                            Write-Host $text.text -NoNewline
+                        }
+                    }
+                } catch { }
+            }
+        Write-Host ""
+        return @{
+            content = $contentBuffer
+            usage = @{ input_tokens = 0; output_tokens = 0 }
+            model = $Model
+            stop_reason = "stream"
+        }
     }
 
     $response = Invoke-RestMethod -Uri "https://api.anthropic.com/v1/messages" `
@@ -873,7 +1137,7 @@ function Invoke-OpenAIAPI {
 
     $apiKey = $env:OPENAI_API_KEY
     if (-not $apiKey) {
-        throw "OPENAI_API_KEY not set"
+        throw "Brak zmiennej OPENAI_API_KEY w środowisku."
     }
 
     $body = @{
@@ -890,7 +1154,189 @@ function Invoke-OpenAIAPI {
         "Content-Type" = "application/json"
     }
 
+    if ($Stream) {
+        return Invoke-OpenAICompatibleStream -Uri "https://api.openai.com/v1/chat/completions" `
+            -Headers $headers -Body ($body | ConvertTo-Json -Depth 10) -Model $Model
+    }
+
     $response = Invoke-RestMethod -Uri "https://api.openai.com/v1/chat/completions" `
+        -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 10)
+
+    return @{
+        content = $response.choices[0].message.content
+        usage = @{
+            input_tokens = $response.usage.prompt_tokens
+            output_tokens = $response.usage.completion_tokens
+        }
+        model = $response.model
+        stop_reason = $response.choices[0].finish_reason
+    }
+}
+
+function Invoke-OpenAICompatibleStream {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Uri,
+        [Parameter(Mandatory)]
+        [hashtable]$Headers,
+        [Parameter(Mandatory)]
+        [string]$Body,
+        [string]$Model
+    )
+
+    $streamBody = ($Body | ConvertFrom-Json)
+    $streamBody.stream = $true
+    $contentBuffer = ""
+
+    Invoke-StreamingRequest -Uri $Uri -Headers $Headers -Body ($streamBody | ConvertTo-Json -Depth 10) -OnData {
+        param($line)
+        if ($line -notmatch "^data:") { return }
+        $payload = $line -replace "^data:\s*", ""
+        if ($payload -eq "[DONE]") { return }
+        try {
+            $json = $payload | ConvertFrom-Json
+            $delta = $json.choices[0].delta.content
+            if ($delta) {
+                $contentBuffer += $delta
+                Write-Host $delta -NoNewline
+            }
+        } catch { }
+    }
+
+    Write-Host ""
+    return @{
+        content = $contentBuffer
+        usage = @{ input_tokens = 0; output_tokens = 0 }
+        model = $Model
+        stop_reason = "stream"
+    }
+}
+
+function Invoke-GoogleAPI {
+    param(
+        [string]$Model,
+        [array]$Messages,
+        [int]$MaxTokens,
+        [float]$Temperature,
+        [switch]$Stream
+    )
+
+    $apiKey = $env:GOOGLE_API_KEY
+    if (-not $apiKey) {
+        throw "Brak zmiennej GOOGLE_API_KEY w środowisku."
+    }
+
+    $systemMessage = ($Messages | Where-Object { $_.role -eq "system" } | Select-Object -First 1).content
+    $contents = @($Messages | Where-Object { $_.role -ne "system" } | ForEach-Object {
+        @{ role = $_.role; parts = @(@{ text = $_.content }) }
+    })
+
+    $body = @{
+        contents = $contents
+        generationConfig = @{
+            maxOutputTokens = $MaxTokens
+            temperature = $Temperature
+        }
+    }
+
+    if ($systemMessage) {
+        $body.systemInstruction = @{ parts = @(@{ text = $systemMessage }) }
+    }
+
+    $uri = "https://generativelanguage.googleapis.com/v1beta/models/$Model`:generateContent?key=$apiKey"
+    $response = Invoke-RestMethod -Uri $uri -Method Post -Body ($body | ConvertTo-Json -Depth 10) `
+        -ContentType "application/json"
+
+    $text = $response.candidates[0].content.parts[0].text
+    return @{
+        content = $text
+        usage = @{
+            input_tokens = $response.usageMetadata.promptTokenCount
+            output_tokens = $response.usageMetadata.candidatesTokenCount
+        }
+        model = $Model
+        stop_reason = $response.candidates[0].finishReason
+    }
+}
+
+function Invoke-MistralAPI {
+    param(
+        [string]$Model,
+        [array]$Messages,
+        [int]$MaxTokens,
+        [float]$Temperature,
+        [switch]$Stream
+    )
+
+    $apiKey = $env:MISTRAL_API_KEY
+    if (-not $apiKey) {
+        throw "Brak zmiennej MISTRAL_API_KEY w środowisku."
+    }
+
+    $body = @{
+        model = $Model
+        max_tokens = $MaxTokens
+        temperature = $Temperature
+        messages = @($Messages | ForEach-Object { @{ role = $_.role; content = $_.content } })
+    }
+
+    $headers = @{
+        "Authorization" = "Bearer $apiKey"
+        "Content-Type" = "application/json"
+    }
+
+    if ($Stream) {
+        return Invoke-OpenAICompatibleStream -Uri "https://api.mistral.ai/v1/chat/completions" `
+            -Headers $headers -Body ($body | ConvertTo-Json -Depth 10) -Model $Model
+    }
+
+    $response = Invoke-RestMethod -Uri "https://api.mistral.ai/v1/chat/completions" `
+        -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 10)
+
+    return @{
+        content = $response.choices[0].message.content
+        usage = @{
+            input_tokens = $response.usage.prompt_tokens
+            output_tokens = $response.usage.completion_tokens
+        }
+        model = $response.model
+        stop_reason = $response.choices[0].finish_reason
+    }
+}
+
+function Invoke-GroqAPI {
+    param(
+        [string]$Model,
+        [array]$Messages,
+        [int]$MaxTokens,
+        [float]$Temperature,
+        [switch]$Stream
+    )
+
+    $apiKey = $env:GROQ_API_KEY
+    if (-not $apiKey) {
+        throw "Brak zmiennej GROQ_API_KEY w środowisku."
+    }
+
+    $body = @{
+        model = $Model
+        max_tokens = $MaxTokens
+        temperature = $Temperature
+        messages = @($Messages | ForEach-Object { @{ role = $_.role; content = $_.content } })
+    }
+
+    $headers = @{
+        "Authorization" = "Bearer $apiKey"
+        "Content-Type" = "application/json"
+    }
+
+    if ($Stream) {
+        return Invoke-OpenAICompatibleStream -Uri "https://api.groq.com/openai/v1/chat/completions" `
+            -Headers $headers -Body ($body | ConvertTo-Json -Depth 10) -Model $Model
+    }
+
+    $response = Invoke-RestMethod -Uri "https://api.groq.com/openai/v1/chat/completions" `
         -Method Post -Headers $headers -Body ($body | ConvertTo-Json -Depth 10)
 
     return @{
@@ -981,7 +1427,7 @@ function Invoke-OllamaAPI {
 
     # Check if Ollama is running, try to start or install if not
     if (-not (Test-OllamaAvailable)) {
-        Write-Host "[AI] Ollama not running, attempting to start..." -ForegroundColor Yellow
+        Write-Host "[AI] Ollama nie działa, próba uruchomienia..." -ForegroundColor Yellow
 
         # Try to start existing installation
         $ollamaExe = "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe"
@@ -1016,10 +1462,32 @@ function Invoke-OllamaAPI {
             num_predict = $MaxTokens
             temperature = $Temperature
         }
-        stream = $false
+        stream = $Stream.IsPresent
     }
 
     try {
+        if ($Stream) {
+            $contentBuffer = ""
+            Invoke-StreamingRequest -Uri "http://localhost:11434/api/chat" `
+                -Headers @{ "Content-Type" = "application/json" } -Body ($body | ConvertTo-Json -Depth 10) -OnData {
+                    param($line)
+                    try {
+                        $json = $line | ConvertFrom-Json
+                        if ($json.message -and $json.message.content) {
+                            $contentBuffer += $json.message.content
+                            Write-Host $json.message.content -NoNewline
+                        }
+                    } catch { }
+                }
+            Write-Host ""
+            return @{
+                content = $contentBuffer
+                usage = @{ input_tokens = 0; output_tokens = 0 }
+                model = $Model
+                stop_reason = "stream"
+            }
+        }
+
         $response = Invoke-RestMethod -Uri "http://localhost:11434/api/chat" `
             -Method Post -Body ($body | ConvertTo-Json -Depth 10) -ContentType "application/json"
 
@@ -1087,6 +1555,60 @@ function Get-AIStatus {
     Write-Host "  Cost Optimization: $($config.settings.costOptimization)" -ForegroundColor Gray
     Write-Host "  Rate Limit Threshold: $($config.settings.rateLimitThreshold * 100)%" -ForegroundColor Gray
     Write-Host "  Max Retries: $($config.settings.maxRetries)" -ForegroundColor Gray
+}
+
+function Get-AIHealth {
+    <#
+    .SYNOPSIS
+        Returns a health dashboard snapshot with status, tokens, and cost.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $config = Get-AIConfig
+    $state = Get-AIState
+    $providers = @()
+
+    foreach ($providerName in $config.providerFallbackOrder) {
+        $provider = $config.providers[$providerName]
+        $hasKey = -not $provider.apiKeyEnv -or [Environment]::GetEnvironmentVariable($provider.apiKeyEnv)
+
+        $models = @()
+        foreach ($modelName in $provider.models.Keys) {
+            $usage = $state.usage[$providerName][$modelName]
+            $rate = Get-RateLimitStatus -Provider $providerName -Model $modelName
+            $models += @{
+                name = $modelName
+                tier = $provider.models[$modelName].tier
+                status = if ($rate.available) { "ok" } else { "limited" }
+                tokens = @{
+                    percent = $rate.tokensPercent
+                    remaining = $rate.tokensRemaining
+                }
+                requests = @{
+                    percent = $rate.requestsPercent
+                    remaining = $rate.requestsRemaining
+                }
+                usage = @{
+                    totalRequests = $usage.totalRequests
+                    totalTokens = $usage.totalTokens
+                    totalCost = [math]::Round($usage.totalCost, 4)
+                }
+            }
+        }
+
+        $providers += @{
+            name = $providerName
+            enabled = $provider.enabled
+            hasKey = $hasKey
+            models = $models
+        }
+    }
+
+    return @{
+        timestamp = (Get-Date).ToString("o")
+        providers = $providers
+    }
 }
 
 function Reset-AIState {
@@ -1444,7 +1966,7 @@ function Sync-AIModels {
     .SYNOPSIS
         Synchronize available models from all providers
     .DESCRIPTION
-        Fetches current model list from Anthropic, OpenAI, and Ollama APIs
+        Fetches current model list from Anthropic, OpenAI, Google, Mistral, Groq, and Ollama APIs
         Updates config with discovered models
     .PARAMETER Force
         Force refresh, bypass cache
@@ -1469,7 +1991,10 @@ function Sync-AIModels {
         Write-Host "[AI] Synchronizing models from providers..." -ForegroundColor Cyan
     }
 
-    $script:DiscoveredModels = Get-AllAvailableModels -Force:$Force
+    $config = Get-AIConfig
+    $script:DiscoveredModels = Get-AllAvailableModels -Force:$Force `
+        -Parallel:$config.settings.modelDiscovery.parallel `
+        -SkipValidation:$config.settings.modelDiscovery.skipValidation
 
     if (-not $Silent) {
         foreach ($p in $script:DiscoveredModels.Summary.GetEnumerator()) {
@@ -1565,6 +2090,7 @@ Export-ModuleMember -Function @(
     'Invoke-AIBatch',
     'Get-LocalModels',
     'Get-AIStatus',
+    'Get-AIHealth',
     'Reset-AIState',
     'Test-AIProviders',
     'Test-OllamaAvailable',

@@ -39,6 +39,12 @@ Write-Host "Show providers & models status" -ForegroundColor Gray
 Write-Host "  /ai-status -Test         " -NoNewline -ForegroundColor White
 Write-Host "Test connectivity to all providers" -ForegroundColor Gray
 
+Write-Host "  /ai-health               " -NoNewline -ForegroundColor White
+Write-Host "Health dashboard (status/tokeny/koszt)" -ForegroundColor Gray
+
+Write-Host "  /ai-health -Json          " -NoNewline -ForegroundColor White
+Write-Host "Export dashboard as JSON" -ForegroundColor Gray
+
 Write-Host "  /ai-config -Show         " -NoNewline -ForegroundColor White
 Write-Host "Show current configuration" -ForegroundColor Gray
 
@@ -101,7 +107,7 @@ Write-Host "  [*] Auto-detect     " -NoNewline -ForegroundColor Green
 Write-Host "Code queries use specialist model" -ForegroundColor Gray
 
 Write-Host "  [*] Multi-provider  " -NoNewline -ForegroundColor Green
-Write-Host "Ollama + OpenAI + Anthropic" -ForegroundColor Gray
+Write-Host "Anthropic + OpenAI + Google + Mistral + Groq + Ollama" -ForegroundColor Gray
 
 Write-Host ""
 Write-Host "  ============================================" -ForegroundColor Cyan

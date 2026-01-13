@@ -399,6 +399,7 @@
       "ai-handler/Invoke-QuickAI.ps1",
       "ai-handler/Invoke-QuickAIBatch.ps1",
       "ai-handler/Invoke-AIStatus.ps1",
+      "ai-handler/Invoke-AIHealth.ps1",
       "ai-handler/Invoke-AIConfig.ps1",
       "ai-handler/Invoke-AIPull.ps1",
       "ai-handler/Invoke-AIHelp.ps1"

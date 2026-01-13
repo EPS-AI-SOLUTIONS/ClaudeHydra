@@ -36,7 +36,7 @@ Write-Host @"
 When a model fails or rate limits, the system automatically:
   1. Retries with exponential backoff
   2. Falls back: Opus → Sonnet → Haiku
-  3. Switches providers: Anthropic → OpenAI → Ollama
+  3. Switches providers: Anthropic → OpenAI → Google → Mistral → Groq → Ollama
 
 Fallback Chain Configuration:
 "@ -ForegroundColor White
