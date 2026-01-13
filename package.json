@@ -1,0 +1,17 @@
+{
+  "name": "ollama-hydra",
+  "version": "1.0.0",
+  "description": "HYDRA AI Handler for Gemini CLI - Ollama MCP Server",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.23.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
