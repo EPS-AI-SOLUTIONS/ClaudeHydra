@@ -4,7 +4,9 @@
 
 !include "MUI2.nsh"
 !include "FileFunc.nsh"
+!include "WordFunc.nsh"
 !include "LogicLib.nsh"
+!include "WinVer.nsh"
 !include "nsDialogs.nsh"
 
 ; ==========================================
@@ -37,8 +39,7 @@ SetCompressorDictSize 64
 !define MUI_ABORTWARNING
 !define MUI_ICON "..\assets\hydra.ico"
 !define MUI_UNICON "..\assets\hydra.ico"
-!define MUI_HEADERIMAGE
-!define MUI_WELCOMEFINISHPAGE_BITMAP "..\assets\wizard.bmp"
+; Note: wizard.bmp removed - using default MUI graphics
 
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
@@ -84,7 +85,7 @@ Section "HYDRA Core (Required)" SEC_CORE
     File "..\..\LICENSE"
     File "..\..\README.md"
     File "..\..\mcp-health-check.ps1"
-    File "..\.._launcher.ps1"
+    File "..\..\_launcher.ps1"
 
     ; Create directories
     CreateDirectory "$INSTDIR\.claude"
@@ -108,12 +109,8 @@ Section "HYDRA Core (Required)" SEC_CORE
 
     ; Create Start Menu shortcuts
     CreateDirectory "$SMPROGRAMS\HYDRA"
-    CreateShortcut "$SMPROGRAMS\HYDRA\HYDRA Launcher.lnk" "powershell.exe" \
-        '-ExecutionPolicy Bypass -File "$INSTDIR\_launcher.ps1"' \
-        "$INSTDIR\assets\hydra.ico"
-    CreateShortcut "$SMPROGRAMS\HYDRA\MCP Health Check.lnk" "powershell.exe" \
-        '-ExecutionPolicy Bypass -File "$INSTDIR\mcp-health-check.ps1"' \
-        "$INSTDIR\assets\hydra.ico"
+    CreateShortcut "$SMPROGRAMS\HYDRA\HYDRA Launcher.lnk" "powershell.exe" '-ExecutionPolicy Bypass -File "$INSTDIR\_launcher.ps1"'
+    CreateShortcut "$SMPROGRAMS\HYDRA\MCP Health Check.lnk" "powershell.exe" '-ExecutionPolicy Bypass -File "$INSTDIR\mcp-health-check.ps1"'
     CreateShortcut "$SMPROGRAMS\HYDRA\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
 
     ; Registry entries
@@ -156,8 +153,7 @@ Section "AI Model Handler" SEC_AI
     CreateDirectory "$INSTDIR\ai-handler\cache"
 
     ; Shortcut
-    CreateShortcut "$SMPROGRAMS\HYDRA\AI Handler Status.lnk" "powershell.exe" \
-        '-ExecutionPolicy Bypass -Command "Import-Module ''$INSTDIR\ai-handler\AIModelHandler.psm1''; Get-AIStatus; Read-Host ''Press Enter''"'
+    CreateShortcut "$SMPROGRAMS\HYDRA\AI Handler Status.lnk" "powershell.exe" '-ExecutionPolicy Bypass -Command "Import-Module $INSTDIR\ai-handler\AIModelHandler.psm1; Get-AIStatus; pause"'
 SectionEnd
 
 Section "Parallel Execution System" SEC_PARALLEL
@@ -193,8 +189,7 @@ Section "MCP Server Configs" SEC_MCP
     FileClose $0
 
     ; MCP health check shortcut
-    CreateShortcut "$SMPROGRAMS\HYDRA\MCP Servers.lnk" "powershell.exe" \
-        '-ExecutionPolicy Bypass -File "$INSTDIR\mcp-health-check.ps1"'
+    CreateShortcut "$SMPROGRAMS\HYDRA\MCP Servers.lnk" "powershell.exe" '-ExecutionPolicy Bypass -File "$INSTDIR\mcp-health-check.ps1"'
 SectionEnd
 
 Section "Ollama (Local AI)" SEC_OLLAMA
@@ -228,7 +223,7 @@ Section "Ollama (Local AI)" SEC_OLLAMA
     SetOutPath "$INSTDIR\scripts"
     FileOpen $0 "$INSTDIR\scripts\Pull-OllamaModels.ps1" w
     FileWrite $0 '# Pull recommended Ollama models for HYDRA$\r$\n'
-    FileWrite $0 '$models = @("llama3.2:3b", "llama3.2:1b", "qwen2.5-coder:1.5b", "phi3:mini")$\r$\n'
+    FileWrite $0 '$$models = @("llama3.2:3b", "llama3.2:1b", "qwen2.5-coder:1.5b", "phi3:mini")$\r$\n'
     FileWrite $0 'foreach ($$m in $$models) {$\r$\n'
     FileWrite $0 '    Write-Host "Pulling $$m..." -ForegroundColor Cyan$\r$\n'
     FileWrite $0 '    ollama pull $$m$\r$\n'
@@ -236,14 +231,11 @@ Section "Ollama (Local AI)" SEC_OLLAMA
     FileWrite $0 'Write-Host "Done! All models ready." -ForegroundColor Green$\r$\n'
     FileClose $0
 
-    CreateShortcut "$SMPROGRAMS\HYDRA\Pull Ollama Models.lnk" "powershell.exe" \
-        '-ExecutionPolicy Bypass -File "$INSTDIR\scripts\Pull-OllamaModels.ps1"'
+    CreateShortcut "$SMPROGRAMS\HYDRA\Pull Ollama Models.lnk" "powershell.exe" '-ExecutionPolicy Bypass -File "$INSTDIR\scripts\Pull-OllamaModels.ps1"'
 SectionEnd
 
 Section "Desktop Shortcut" SEC_DESKTOP
-    CreateShortcut "$DESKTOP\HYDRA.lnk" "powershell.exe" \
-        '-ExecutionPolicy Bypass -File "$INSTDIR\_launcher.ps1"' \
-        "$INSTDIR\assets\hydra.ico"
+    CreateShortcut "$DESKTOP\HYDRA.lnk" "powershell.exe" '-ExecutionPolicy Bypass -File "$INSTDIR\_launcher.ps1"' "$INSTDIR\assets\hydra.ico"
 SectionEnd
 
 Section "Add to PATH" SEC_PATH
