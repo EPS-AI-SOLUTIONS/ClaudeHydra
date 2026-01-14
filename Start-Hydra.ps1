@@ -1,10 +1,10 @@
 # Wrapper to start Hydra Client
 
 Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop' # Changed from 'Stop' to 'Continue' to allow for more graceful error handling
+$ErrorActionPreference = 'Continue' # Changed from 'Stop' to 'Continue' to allow for more graceful error handling
 $Root = $PSScriptRoot
 
-$clientModule = Join-Path $Root 'src\Hydra.Client\Hydra.Client.psd1'
+$clientModule = Join-Path $Root 'src/Hydra.Client/Hydra.Client.psd1'
 
 if (Test-Path $clientModule) {
     try {
@@ -21,7 +21,14 @@ if (Test-Path $clientModule) {
 }
 
 # Ensure the HYDRA roaming directory exists
-$HydraRoamingPath = Join-Path $env:APPDATA 'HYDRA'
+if ($env:APPDATA) {
+    $HydraRoamingPath = Join-Path $env:APPDATA 'HYDRA'
+} else {
+    # Fallback for non-Windows or when APPDATA is not set
+    # Using .config/HYDRA as a standard location for Linux/macOS
+    $HydraRoamingPath = Join-Path $env:HOME '.config/HYDRA'
+}
+
 if (-not (Test-Path $HydraRoamingPath)) {
     New-Item -Path $HydraRoamingPath -ItemType Directory -Force | Out-Null
 }
