@@ -14,7 +14,11 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$script:Root = $PSScriptRoot
+$script:Root = if ($env:CLAUDECLI_ROOT -and (Test-Path $env:CLAUDECLI_ROOT)) {
+    $env:CLAUDECLI_ROOT
+} else {
+    $PSScriptRoot
+}
 
 function Write-Log {
     param($Message, $Color="Gray")
@@ -61,8 +65,14 @@ foreach ($server in $config.mcpServers.PSObject.Properties) {
 
 if ($Json) {
     $results | ConvertTo-Json
-} elseif ($ExportJsonPath) {
+}
+
+if ($ExportJsonPath) {
     $results | ConvertTo-Json | Set-Content $ExportJsonPath
+}
+
+if ($ExportCsvPath) {
+    $results | ConvertTo-Csv -NoTypeInformation | Set-Content $ExportCsvPath
 }
 
 Write-Log "Health Check Complete." "Green"
