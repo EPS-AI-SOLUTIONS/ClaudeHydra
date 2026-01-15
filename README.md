@@ -110,6 +110,8 @@ Invoke-SemanticQuery -FilePath "app.py" -Query "How does auth work?"
 .\ClaudeCLI.vbs
 # LUB
 powershell -ExecutionPolicy Bypass -File _launcher.ps1
+# LUB (macOS/Linux z PowerShell 7+)
+./_launcher.sh Dev
 
 # 4. (Opcjonalnie) Utwórz shortcut na pulpicie
 .\create-shortcuts.ps1
@@ -144,6 +146,8 @@ C:\Users\BIURODOM\Desktop\ClaudeCLI\
 ├── CLAUDE.md                # System instructions (900+ lines)
 ├── README.md                # This file
 ├── _launcher.ps1            # Main launcher
+├── _launcher.sh             # Cross-platform wrapper (macOS/Linux)
+├── logs/                    # Launcher logs & last-run summary
 ├── mcp-servers.json         # MCP server configuration
 └── mcp-health-check.ps1     # MCP diagnostics
 ```

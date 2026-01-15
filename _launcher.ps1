@@ -4,6 +4,13 @@
     Initializes the ClaudeCLI environment with Maximum Autonomy and AI Orchestration.
 #>
 
+param(
+    [ValidateSet("Dev", "Prod", "Offline")]
+    [string]$Profile = "Dev",
+    [switch]$NoClear,
+    [switch]$Diagnostics
+)
+
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
@@ -11,9 +18,27 @@ $ErrorActionPreference = "Stop"
 $script:Root = $PSScriptRoot
 $env:CLAUDECLI_ROOT = $script:Root
 
+$launcherModules = @(
+    "launcher\Launcher.Logging.psm1",
+    "launcher\Launcher.Env.psm1",
+    "launcher\Launcher.Preflight.psm1"
+)
+
+foreach ($module in $launcherModules) {
+    $modulePath = Join-Path $script:Root $module
+    if (-not (Test-Path $modulePath)) {
+        throw "Launcher module missing: $modulePath"
+    }
+    Import-Module $modulePath -Force
+}
+
+$script:LogState = Initialize-LauncherLogging -Root $script:Root
+
 # === UTILITIES ===
 function Write-Banner {
-    Clear-Host
+    if (-not $NoClear) {
+        Clear-Host
+    }
     Write-Host @"
  _   ___   ______  ____   ___
 | | | \ \ / /  _ \|  _ \ / \ \
@@ -26,19 +51,6 @@ Three Heads, One Goal. Hydra Executes In Parallel.
 "@ -ForegroundColor Cyan
 }
 
-function Check-Requirements {
-    Write-Host "Checking requirements..." -ForegroundColor Gray
-
-    # Check PowerShell version
-    if ($PSVersionTable.PSVersion.Major -lt 7) {
-        Write-Host "[WARN] PowerShell 7+ recommended for full parallel features." -ForegroundColor Yellow
-    }
-
-    # Check Environment Variables
-    if (-not $env:ANTHROPIC_API_KEY) {
-        Write-Host "[WARN] ANTHROPIC_API_KEY not set. Cloud features will fail." -ForegroundColor Yellow
-    }
-}
 
 # === AI HANDLER ===
 function Initialize-AI {
@@ -48,20 +60,34 @@ function Initialize-AI {
     if (Test-Path $aiInit) {
         . $aiInit -Quiet
         # Initialize-AIHandler.ps1 loads AIFacade globally
+        Write-Log "AI Handler initialized."
     } else {
         Write-Host "[ERROR] AI Handler init script not found at $aiInit" -ForegroundColor Red
+        Write-Log "AI Handler init script missing at $aiInit" "ERROR"
     }
 }
 
 # === STARTUP SEQUENCE ===
 try {
+    Import-EnvFile -Root $script:Root
     Write-Banner
-    Check-Requirements
+    Check-Requirements -Profile $Profile -Root $script:Root
     Initialize-AI
 
     Write-Host "`n[READY] System initialized." -ForegroundColor Green
     Write-Host "Type 'ai <query>' to use the AI assistant." -ForegroundColor Gray
     Write-Host "Type 'exit' to quit." -ForegroundColor Gray
+
+    Write-LauncherSummary -Profile $Profile -Root $script:Root -PowerShellVersion $PSVersionTable.PSVersion.ToString() -Offline ([bool]$env:HYDRA_OFFLINE)
+
+    if ($Diagnostics) {
+        Write-Panel -Title "Diagnostics" -Color Cyan -Lines @(
+            "Profile: $Profile",
+            "Offline: $($env:HYDRA_OFFLINE -eq '1')",
+            "Logs: $($script:LogState.LogFile)",
+            "Last run: $($script:LogState.LastRunFile)"
+        )
+    }
 
     # Enter interactive mode if not run from another script
     if ($MyInvocation.InvocationName -notmatch "\\.") {
@@ -74,5 +100,6 @@ try {
 }
 catch {
     Write-Host "[FATAL] Startup failed: $_" -ForegroundColor Red
+    Write-Log "Startup failed: $_" "ERROR"
     exit 1
 }
