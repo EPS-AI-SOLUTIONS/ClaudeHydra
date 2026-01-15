@@ -225,7 +225,11 @@ powershell -ExecutionPolicy Bypass -File _launcher.ps1
 ./scripts/run-pester.sh
 ```
 
-Skrypt automatycznie użyje `pwsh` lub `powershell`, a jeśli nie są dostępne, wyświetli instrukcję instalacji.
+Skrypt automatycznie użyje `pwsh` lub `powershell`, a jeśli nie są dostępne, zasugeruje instalację.
+
+```bash
+./scripts/install-powershell.sh
+```
 
 ### Konfiguracja MCP servers
 - Edytuj `mcp-servers.json`, aby dodać/zmienić serwery MCP bez dotykania skryptu.

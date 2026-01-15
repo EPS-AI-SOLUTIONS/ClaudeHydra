@@ -11,5 +11,5 @@ if command -v powershell >/dev/null 2>&1; then
   exit 0
 fi
 
-echo "PowerShell not found. Install pwsh (PowerShell 7+) or run tests on a Windows host with PowerShell." >&2
+echo "PowerShell not found. Run ./scripts/install-powershell.sh or install pwsh (PowerShell 7+)." >&2
 exit 1
