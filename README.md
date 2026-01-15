@@ -231,6 +231,16 @@ Skrypt automatycznie użyje `pwsh` lub `powershell`, a jeśli nie są dostępne,
 ./scripts/install-powershell.sh
 ```
 
+### Git push (brak remote)
+
+Jeśli repo nie ma skonfigurowanego remote, możesz użyć:
+
+```bash
+GIT_REMOTE_URL="https://example.com/your/repo.git" ./scripts/git-push-safe.sh
+```
+
+Skrypt doda `origin` z `GIT_REMOTE_URL`, a następnie wykona `git push`.
+
 ### Konfiguracja MCP servers
 - Edytuj `mcp-servers.json`, aby dodać/zmienić serwery MCP bez dotykania skryptu.
 
