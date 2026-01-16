@@ -1,0 +1,10 @@
+description = "Generate code with automatic self-correction and validation"
+
+prompt = """
+Use @ollama-hydra ollama_code to generate validated code for:
+
+{{args}}
+
+The code will be automatically validated and corrected if needed.
+Return clean, working code with proper error handling.
+"""

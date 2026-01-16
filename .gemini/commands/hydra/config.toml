@@ -1,0 +1,12 @@
+description = "Show HYDRA configuration and settings"
+
+prompt = """
+Display the current HYDRA configuration:
+
+1. Read .gemini/settings.json and show MCP server configurations
+2. Show enabled features: speculative decoding, self-correction, caching
+3. Display model preferences: default, fast, coder models
+4. Show fallback chain
+
+Format as a readable configuration summary.
+"""

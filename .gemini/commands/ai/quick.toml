@@ -1,0 +1,9 @@
+description = "Quick AI query using local Ollama (fastest response)"
+
+prompt = """
+Use @ollama-hydra ollama_speculative to answer this question with racing between fast and accurate models:
+
+{{args}}
+
+Return the response directly without explanation of the process.
+"""

@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 const parseNumber = (value, fallback) => {
   if (value === undefined || value === null || value === '') return fallback;
   const parsed = Number(value);

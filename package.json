@@ -1,10 +1,12 @@
 {
   "name": "ollama-hydra",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "HYDRA AI Handler for Gemini CLI - Ollama MCP Server",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
+    "doctor": "node scripts/doctor.mjs",
+    "launcher": "node scripts/launcher/index.mjs",
     "start": "node src/server.js",
     "test": "node --test",
     "lint": "eslint .",
@@ -13,13 +15,17 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.23.0"
+    "@modelcontextprotocol/sdk": "^1.23.0",
+    "ajv": "^8.17.1",
+    "dotenv": "^16.4.5",
+    "envalid": "^8.0.0",
+    "i18next": "^25.5.2"
   },
   "devDependencies": {
     "eslint": "^9.0.0",
     "husky": "^9.0.0",
     "prettier": "^3.2.5",
-    "vitest": "^1.6.0"
+    "vitest": "^4.0.17"
   },
   "engines": {
     "node": ">=20"

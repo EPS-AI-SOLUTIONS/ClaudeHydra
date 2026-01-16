@@ -1,0 +1,26 @@
+# Queue Status Command - View and manage prompt queue
+# Usage: /queue:status [action]
+
+name = "status"
+description = "View and manage the prompt queue"
+category = "queue"
+requires_mcp = "ollama-hydra"
+
+prompt = """
+Use @ollama-hydra MCP server to manage the prompt queue.
+
+Available actions:
+- status: Show queue status (queue_status)
+- pause: Pause processing (queue_pause)
+- resume: Resume processing (queue_resume)
+- cancel-all: Cancel all items (queue_cancel_all)
+
+If no action specified, show status.
+
+Format the output nicely showing:
+- Queued items count
+- Running items count
+- Completed/Failed counts
+- Average processing time
+- Rate limit status
+"""

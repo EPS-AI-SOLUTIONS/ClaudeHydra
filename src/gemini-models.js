@@ -39,7 +39,7 @@ function getApiKey() {
         return settings.security.auth.apiKey;
       }
     }
-  } catch (e) {
+  } catch (_error) {
     // Ignore errors
   }
 
@@ -180,7 +180,7 @@ function saveModelsCache(models) {
       cachedAt: Date.now()
     }, null, 2), 'utf-8');
     return true;
-  } catch (e) {
+  } catch (_error) {
     return false;
   }
 }

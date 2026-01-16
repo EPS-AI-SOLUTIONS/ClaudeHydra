@@ -1,0 +1,29 @@
+description = "Optimize a prompt for better AI responses"
+
+prompt = """
+Use @ollama-hydra prompt_optimize to analyze and enhance the user's prompt.
+
+Steps:
+1. Call prompt_analyze first to understand the prompt
+2. Call prompt_optimize with the detected category
+3. Show comparison: original vs optimized
+4. Display clarity score and suggestions
+
+Format output as:
+## Original Prompt
+{original}
+
+## Analysis
+- Category: {category}
+- Language: {language}
+- Clarity: {score}/100 ({quality})
+
+## Optimized Prompt
+{optimized}
+
+## Enhancements Applied
+{enhancements}
+
+## Suggestions
+{suggestions}
+"""

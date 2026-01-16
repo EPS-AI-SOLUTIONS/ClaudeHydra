@@ -1,12 +1,22 @@
-# ═══════════════════════════════════════════════════════════════════════════════
+# ======================================================================
 # GEMINI CLI - HYDRA LAUNCHER
 # Enhanced terminal experience with Ollama integration
-# ═══════════════════════════════════════════════════════════════════════════════
+# ======================================================================
+
+# Start Ollama as early as possible
+$ollamaCmd = Get-Command ollama -ErrorAction SilentlyContinue
+if ($ollamaCmd) {
+    $ollamaRunning = Get-Process -Name 'ollama' -ErrorAction SilentlyContinue
+    if (-not $ollamaRunning) {
+        Start-Process -FilePath 'ollama' -ArgumentList 'serve' -WindowStyle Hidden
+        Start-Sleep -Milliseconds 800
+    }
+}
 
 Set-Location 'C:\Users\BIURODOM\Desktop\GeminiCLI'
 $Host.UI.RawUI.WindowTitle = 'Gemini CLI (HYDRA)'
 
-# ═══ COLORS ═══
+# === COLORS ===
 $colors = @{
     Primary   = 'Blue'
     Secondary = 'Cyan'
@@ -18,81 +28,75 @@ $colors = @{
     Text      = 'White'
 }
 
-# ═══ SPLASH SCREEN ═══
+# === SPLASH SCREEN ===
 function Show-SplashScreen {
     Clear-Host
     $splash = @"
 
-    [36m██████╗ ███████╗███╗   ███╗██╗███╗   ██╗██╗[0m
-    [36m██╔════╝ ██╔════╝████╗ ████║██║████╗  ██║██║[0m
-    [34m██║  ███╗█████╗  ██╔████╔██║██║██╔██╗ ██║██║[0m
-    [34m██║   ██║██╔══╝  ██║╚██╔╝██║██║██║╚██╗██║██║[0m
-    [35m╚██████╔╝███████╗██║ ╚═╝ ██║██║██║ ╚████║██║[0m
-    [35m ╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝[0m
-
-    [33m╦ ╦╦ ╦╔╦╗╦═╗╔═╗[0m  [90mOllama + Prompt Optimizer[0m
-    [33m╠═╣╚╦╝ ║║╠╦╝╠═╣[0m  [90mSpeculative Decoding Engine[0m
-    [33m╩ ╩ ╩ ═╩╝╩╚═╩ ╩[0m  [90mv2.2.0 | MCP Server[0m
+    GEMINI CLI (HYDRA)
+    Ollama + Prompt Optimizer
+    Speculative Decoding Engine
+    v2.2.0 | MCP Server
 
 "@
     Write-Host $splash
     Write-Host ""
 }
 
-# ═══ STATUS BAR ═══
+# === STATUS BAR ===
 function Show-StatusBar {
-    Write-Host "  ┌─────────────────────────────────────────────────────────────┐" -ForegroundColor $colors.Muted
+    Write-Host "  +-------------------------------------------------------------+" -ForegroundColor $colors.Muted
 
     # Working Directory
     $dir = (Get-Location).Path
     if ($dir.Length -gt 45) { $dir = "..." + $dir.Substring($dir.Length - 42) }
-    Write-Host "  │ " -NoNewline -ForegroundColor $colors.Muted
-    Write-Host "📁 " -NoNewline
+    Write-Host "  | " -NoNewline -ForegroundColor $colors.Muted
+    Write-Host "DIR " -NoNewline
     Write-Host $dir.PadRight(56) -NoNewline -ForegroundColor $colors.Text
-    Write-Host " │" -ForegroundColor $colors.Muted
+    Write-Host " |" -ForegroundColor $colors.Muted
 
-    Write-Host "  ├─────────────────────────────────────────────────────────────┤" -ForegroundColor $colors.Muted
+    Write-Host "  +-------------------------------------------------------------+" -ForegroundColor $colors.Muted
 
     # Ollama Status
-    Write-Host "  │ " -NoNewline -ForegroundColor $colors.Muted
+    Write-Host "  | " -NoNewline -ForegroundColor $colors.Muted
     $ollamaStatus = try {
         $response = Invoke-RestMethod -Uri 'http://localhost:11434/api/tags' -TimeoutSec 2
         $response.models.Count
     } catch { 0 }
 
     if ($ollamaStatus -gt 0) {
-        Write-Host "🟢 Ollama: " -NoNewline
+        Write-Host "Ollama: " -NoNewline
         Write-Host "$ollamaStatus models ready".PadRight(44) -NoNewline -ForegroundColor $colors.Success
     } else {
-        Write-Host "🔴 Ollama: " -NoNewline
+        Write-Host "Ollama: " -NoNewline
         Write-Host "Not responding".PadRight(44) -NoNewline -ForegroundColor $colors.Error
     }
-    Write-Host " │" -ForegroundColor $colors.Muted
+    Write-Host " |" -ForegroundColor $colors.Muted
 
     # API Key Status
-    Write-Host "  │ " -NoNewline -ForegroundColor $colors.Muted
+    Write-Host "  | " -NoNewline -ForegroundColor $colors.Muted
     $apiKey = Get-APIKey -KeyName 'GEMINI_API_KEY'
     if ($apiKey) {
         $masked = $apiKey.Value.Substring(0, [Math]::Min(12, $apiKey.Value.Length)) + "..."
-        Write-Host "🔑 API Key: " -NoNewline
+        Write-Host "API Key: " -NoNewline
         Write-Host "$masked ($($apiKey.Source))".PadRight(44) -NoNewline -ForegroundColor $colors.Success
     } else {
-        Write-Host "🔑 API Key: " -NoNewline
+        Write-Host "API Key: " -NoNewline
         Write-Host "Not found".PadRight(44) -NoNewline -ForegroundColor $colors.Warning
     }
-    Write-Host " │" -ForegroundColor $colors.Muted
+    Write-Host " |" -ForegroundColor $colors.Muted
 
     # MCP Status
-    Write-Host "  │ " -NoNewline -ForegroundColor $colors.Muted
-    Write-Host "🔷 MCP: " -NoNewline
+    Write-Host "  | " -NoNewline -ForegroundColor $colors.Muted
+    Write-Host "MCP: " -NoNewline
     Write-Host "ollama-hydra, serena, desktop-commander, playwright".PadRight(47) -NoNewline -ForegroundColor $colors.Secondary
-    Write-Host " │" -ForegroundColor $colors.Muted
+    Write-Host " |" -ForegroundColor $colors.Muted
 
-    Write-Host "  └─────────────────────────────────────────────────────────────┘" -ForegroundColor $colors.Muted
+    Write-Host "  +-------------------------------------------------------------+" -ForegroundColor $colors.Muted
     Write-Host ""
 }
 
-# ═══ FUNCTION: Get API Key with fallback chain ═══
+# === FUNCTION: Get API Key with fallback chain ===
 function Get-APIKey {
     param([string]$KeyName)
 
@@ -101,7 +105,7 @@ function Get-APIKey {
     if (Test-Path $envFile) {
         $match = Get-Content $envFile | Where-Object { $_ -match "^$KeyName=" }
         if ($match) {
-            $value = ($match -split '=', 2)[1].Trim() -replace '^["'']|["'']$', ''
+            $value = ($match -split '=', 2)[1].Trim().Trim([char]34, [char]39)
             if ($value) { return @{ Value = $value; Source = '.env' } }
         }
     }
@@ -121,35 +125,35 @@ function Get-APIKey {
     return $null
 }
 
-# ═══ LOAD ENVIRONMENT ═══
+# === LOAD ENVIRONMENT ===
 function Initialize-Environment {
     $envFile = Join-Path $PSScriptRoot '.env'
     if (Test-Path $envFile) {
         Get-Content $envFile | ForEach-Object {
             if ($_ -match '^([^#=]+)=(.*)$') {
                 $name = $matches[1].Trim()
-                $value = $matches[2].Trim() -replace '^["'']|["'']$', ''
+                $value = $matches[2].Trim().Trim([char]34, [char]39)
                 [Environment]::SetEnvironmentVariable($name, $value, 'Process')
             }
         }
     }
 }
 
-# ═══ TIPS ═══
+# === TIPS ===
 function Show-Tips {
     $tips = @(
-        "💡 Use /help to see available commands",
-        "💡 Type /ollama to switch to local Ollama models",
-        "💡 Use /gemini:models to list available Gemini models",
-        "💡 Try /queue:status to check prompt queue",
-        "💡 Press Ctrl+C to cancel current generation"
+        "TIP: Use /help to see available commands",
+        "TIP: Type /ollama to switch to local Ollama models",
+        "TIP: Use /gemini:models to list available Gemini models",
+        "TIP: Try /queue:status to check prompt queue",
+        "TIP: Press Ctrl+C to cancel current generation"
     )
     $tip = $tips | Get-Random
     Write-Host "  $tip" -ForegroundColor $colors.Muted
     Write-Host ""
 }
 
-# ═══ MAIN ═══
+# === MAIN ===
 Show-SplashScreen
 Initialize-Environment
 Show-StatusBar
@@ -161,12 +165,11 @@ Write-Host ""
 try {
     gemini
 } catch {
-    Write-Host "  ❌ ERROR: $_" -ForegroundColor $colors.Error
+    Write-Host "  ERROR: $_" -ForegroundColor $colors.Error
     Write-Host "  Trying npx @google/gemini-cli..." -ForegroundColor $colors.Warning
     npx @google/gemini-cli
 }
 
 Write-Host ""
-Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor $colors.Muted
-Write-Host "  Gemini CLI session ended. Press any key to close..." -ForegroundColor $colors.Accent
-$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+Write-Host "  -------------------------------------------------------------" -ForegroundColor $colors.Muted
+Write-Host "  Gemini CLI session ended." -ForegroundColor $colors.Accent

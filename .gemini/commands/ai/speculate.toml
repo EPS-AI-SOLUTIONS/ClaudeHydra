@@ -1,0 +1,9 @@
+description = "Speculative decoding - race multiple models for best response"
+
+prompt = """
+Use @ollama-hydra ollama_race to race these models: llama3.2:1b, phi3:mini, llama3.2:3b
+
+Query: {{args}}
+
+Return the winning response with timing information.
+"""

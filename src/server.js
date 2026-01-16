@@ -345,7 +345,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         result = autoFixPrompt(safeArgs.prompt);
         break;
 
-      case 'prompt_template':
+      case 'prompt_template': {
         const template = getPromptTemplate(safeArgs.category, safeArgs.variant || 'basic');
         result = {
           category: safeArgs.category,
@@ -354,6 +354,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           available: template !== null
         };
         break;
+      }
 
       // === BATCH & UTILITY TOOLS ===
       case 'ollama_batch': {
@@ -418,10 +419,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
       }
 
-      case 'ollama_pull':
+      case 'ollama_pull': {
         const success = await pullModel(safeArgs.model);
         result = { model: safeArgs.model, pulled: success };
         break;
+      }
 
       case 'ollama_cache_clear': {
         const { readdirSync, unlinkSync, statSync } = await import('fs');
