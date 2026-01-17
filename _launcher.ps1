@@ -80,6 +80,30 @@ function Test-OllamaReady {
     }
 }
 
+# Ensure Gemini API Key is available
+function Ensure-GeminiApiKey {
+    $apiKeyInfo = Get-APIKey -KeyName 'GEMINI_API_KEY'
+    if (-not $apiKeyInfo -or -not $apiKeyInfo.Value) {
+        Write-Host "`n[API] No GEMINI_API_KEY found. Gemini CLI requires it." -ForegroundColor $colors.Warning
+        Write-Host "  Get free key: https://aistudio.google.com/app/apikey" -ForegroundColor $colors.Secondary
+        $key = Read-Host "Enter your GEMINI_API_KEY (paste and Enter)"
+        if ($key -and $key.Trim()) {
+            [Environment]::SetEnvironmentVariable('GEMINI_API_KEY', $key.Trim(), 'Process')
+            $envFile = Join-Path $PSScriptRoot '.env'
+            $envLine = "GEMINI_API_KEY=$($key.Trim())"
+            if (-not (Select-String -Path $envFile -Pattern '^GEMINI_API_KEY=')) {
+                Add-Content -Path $envFile -Value $envLine -Encoding UTF8
+            }
+            Write-Host "  ✓ API Key set for session and .env updated." -ForegroundColor $colors.Success
+            # Refresh
+            $apiKeyInfo = @{ Value = $key.Trim(); Source = 'Prompt' }
+        } else {
+            Write-Host "  ⚠ No key entered. Some features may not work." -ForegroundColor $colors.Warning
+        }
+        Write-Host ""
+    }
+}
+
 function Start-OllamaIfNeeded {
     $ollamaHost = Get-OllamaHost
     if (-not (Test-LocalOllamaHost -HostUrl $ollamaHost)) {
@@ -100,6 +124,19 @@ function Start-OllamaIfNeeded {
     if (-not $ollamaRunning) {
         Start-Process -FilePath 'ollama' -ArgumentList 'serve' -WindowStyle Hidden
         Start-Sleep -Milliseconds 800
+
+        # Wait for Ollama to be ready (max 15s)
+        $ollamaHost = Get-OllamaHost  # refresh
+        $startTime = Get-Date
+        $timeoutSec = 15
+        while (-not (Test-OllamaReady -HostUrl $ollamaHost) -and ((Get-Date) - $startTime).TotalSeconds -lt $timeoutSec) {
+            Start-Sleep -Milliseconds 500
+        }
+        if (-not (Test-OllamaReady -HostUrl $ollamaHost)) {
+            Write-Host "  ⚠ Ollama not ready after ${timeoutSec}s (but process started). Local models may be slow." -ForegroundColor $colors.Warning
+        } else {
+            Write-Host "  ✓ Ollama ready!" -ForegroundColor $colors.Success
+        }
     }
 }
 
