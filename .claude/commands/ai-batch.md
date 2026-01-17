@@ -1,5 +1,5 @@
 ---
-description: "Parallel batch AI queries using local Ollama (cost=$0)"
+description: 'Parallel batch AI queries using local Ollama (cost=$0)'
 ---
 
 # /ai-batch - Parallel Batch Processing
@@ -28,6 +28,7 @@ Invoke-AIBatch -Prompts $prompts -Model "llama3.2:3b" -MaxConcurrent 4
 ```
 
 **Features:**
+
 - Parallel execution (up to 4 concurrent)
 - Auto load balancing
 - Zero cost (local Ollama)

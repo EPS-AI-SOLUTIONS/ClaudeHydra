@@ -1,5 +1,5 @@
 ---
-description: "Show AI Handler command reference"
+description: 'Show AI Handler command reference'
 ---
 
 # /ai-help - AI Handler Help

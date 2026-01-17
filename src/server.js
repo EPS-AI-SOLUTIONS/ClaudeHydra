@@ -14,11 +14,20 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
-  ListToolsRequestSchema,
+  ListToolsRequestSchema
 } from '@modelcontextprotocol/sdk/types.js';
 
-import { generate, checkHealth, listModels, pullModel } from './ollama-client.js';
-import { speculativeGenerate, modelRace, consensusGenerate } from './speculative.js';
+import {
+  generate,
+  checkHealth,
+  listModels,
+  pullModel
+} from './ollama-client.js';
+import {
+  speculativeGenerate,
+  modelRace,
+  consensusGenerate
+} from './speculative.js';
 import { selfCorrect, generateWithCorrection } from './self-correction.js';
 import { getCache, setCache, getCacheStats } from './cache.js';
 import { CONFIG } from './config.js';
@@ -55,6 +64,7 @@ import {
 } from './prompt-queue.js';
 import { TOOLS } from './tools.js';
 import { resolveNodeEngines, resolveServerVersion } from './version.js';
+import { runSwarm, isComplexPrompt } from './swarm.js';
 
 const logger = createLogger('server');
 const SERVER_VERSION = resolveServerVersion();
@@ -63,16 +73,16 @@ const SERVER_VERSION = resolveServerVersion();
 const server = new Server(
   {
     name: 'ollama-hydra',
-    version: SERVER_VERSION,
+    version: SERVER_VERSION
   },
   {
     capabilities: {
-      tools: {},
-    },
+      tools: {}
+    }
   }
 );
 
-const toolByName = new Map(TOOLS.map(tool => [tool.name, tool]));
+const toolByName = new Map(TOOLS.map((tool) => [tool.name, tool]));
 const modelCache = { models: null, updatedAt: 0 };
 
 const createErrorResponse = (code, message, tool) => {
@@ -108,7 +118,10 @@ const validateToolArgs = (tool, args) => {
       errors.push(`Pole ${key} powinno być tekstem`);
     } else if (expected === 'boolean' && typeof value !== 'boolean') {
       errors.push(`Pole ${key} powinno być wartością true/false`);
-    } else if (expected === 'object' && (typeof value !== 'object' || Array.isArray(value))) {
+    } else if (
+      expected === 'object' &&
+      (typeof value !== 'object' || Array.isArray(value))
+    ) {
       errors.push(`Pole ${key} powinno być obiektem`);
     }
   }
@@ -117,7 +130,10 @@ const validateToolArgs = (tool, args) => {
 
 const getCachedModels = async () => {
   const now = Date.now();
-  if (modelCache.models && now - modelCache.updatedAt < CONFIG.MODEL_CACHE_TTL_MS) {
+  if (
+    modelCache.models &&
+    now - modelCache.updatedAt < CONFIG.MODEL_CACHE_TTL_MS
+  ) {
     return modelCache.models;
   }
 
@@ -138,7 +154,9 @@ const resolveModelOrFallback = async (requestedModel) => {
     return { model: CONFIG.DEFAULT_MODEL, fallbackUsed: false };
   }
   const models = await getCachedModels();
-  const available = models.map(model => model.name ?? model.model).filter(Boolean);
+  const available = models
+    .map((model) => model.name ?? model.model)
+    .filter(Boolean);
   if (available.includes(requestedModel)) {
     return { model: requestedModel, fallbackUsed: false };
   }
@@ -157,11 +175,30 @@ const getMajorVersion = (version) => {
 const detectPromptRisk = (prompt) => {
   if (!prompt) return [];
   const checks = [
-    { pattern: /ignore (all|previous|earlier) instructions/i, message: 'Wykryto możliwą próbę obejścia instrukcji.' },
-    { pattern: /system prompt/i, message: 'Wykryto prośbę o ujawnienie promptu systemowego.' },
-    { pattern: /exfiltrate|leak|steal/i, message: 'Wykryto możliwą próbę eksfiltracji danych.' }
+    {
+      pattern: /ignore (all|previous|earlier) instructions/i,
+      message: 'Wykryto możliwą próbę obejścia instrukcji.'
+    },
+    {
+      pattern: /system prompt/i,
+      message: 'Wykryto prośbę o ujawnienie promptu systemowego.'
+    },
+    {
+      pattern: /exfiltrate|leak|steal/i,
+      message: 'Wykryto możliwą próbę eksfiltracji danych.'
+    }
   ];
-  return checks.filter(({ pattern }) => pattern.test(prompt)).map(({ message }) => message);
+  return checks
+    .filter(({ pattern }) => pattern.test(prompt))
+    .map(({ message }) => message);
+};
+
+const evaluatePromptRisk = (prompt) => {
+  const warnings = detectPromptRisk(prompt);
+  return {
+    warnings,
+    blocked: warnings.length > 0 && CONFIG.RISK_BLOCKING
+  };
 };
 
 // List tools handler
@@ -178,12 +215,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     if (!tool) {
-      return createErrorResponse('HYDRA_TOOL_UNKNOWN', 'Nieznane narzędzie.', name);
+      return createErrorResponse(
+        'HYDRA_TOOL_UNKNOWN',
+        'Nieznane narzędzie.',
+        name
+      );
     }
 
     const validationErrors = validateToolArgs(tool, safeArgs);
     if (validationErrors.length > 0) {
-      return createErrorResponse('HYDRA_TOOL_INVALID', validationErrors.join(' '), name);
+      return createErrorResponse(
+        'HYDRA_TOOL_INVALID',
+        validationErrors.join(' '),
+        name
+      );
     }
 
     let result;
@@ -192,8 +237,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // === GENERATION TOOLS ===
       case 'ollama_generate': {
         let prompt = safeArgs.prompt;
-        const securityWarnings = detectPromptRisk(prompt);
-        if (securityWarnings.length) {
+        const risk = evaluatePromptRisk(prompt);
+        if (risk.blocked) {
+          return createErrorResponse(
+            'HYDRA_RISK_BLOCKED',
+            risk.warnings.join(' '),
+            name
+          );
+        }
+        if (risk.warnings.length) {
           logger.warn('Potential prompt risk detected', { tool: name });
         }
 
@@ -213,11 +265,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const resolved = await resolveModelOrFallback(safeArgs.model);
-        const response = await generate(
-          resolved.model,
-          prompt,
-          { temperature: safeArgs.temperature, maxTokens: safeArgs.maxTokens }
-        );
+        const response = await generate(resolved.model, prompt, {
+          temperature: safeArgs.temperature,
+          maxTokens: safeArgs.maxTokens
+        });
 
         // Save to cache
         if (safeArgs.useCache !== false) {
@@ -228,16 +279,36 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ...response,
           fallbackUsed: resolved.fallbackUsed,
           model: resolved.model,
-          securityWarnings
+          securityWarnings: risk.warnings
         };
         break;
       }
 
       case 'ollama_smart': {
         // Smart generation: optimize → detect category → select model → generate
-        const securityWarnings = detectPromptRisk(safeArgs.prompt);
-        if (securityWarnings.length) {
+        const risk = evaluatePromptRisk(safeArgs.prompt);
+        if (risk.blocked) {
+          return createErrorResponse(
+            'HYDRA_RISK_BLOCKED',
+            risk.warnings.join(' '),
+            name
+          );
+        }
+        if (risk.warnings.length) {
           logger.warn('Potential prompt risk detected', { tool: name });
+        }
+        const useSwarm = safeArgs.useSwarm ?? isComplexPrompt(safeArgs.prompt);
+        if (useSwarm) {
+          result = await runSwarm({
+            prompt: safeArgs.prompt,
+            title: safeArgs.title,
+            agents: safeArgs.agents,
+            includeTranscript: safeArgs.includeTranscript || false,
+            saveMemory: safeArgs.saveMemory !== false,
+            logger
+          });
+          result.securityWarnings = risk.warnings;
+          break;
         }
         const optimization = optimizePrompt(safeArgs.prompt);
         const category = optimization.category;
@@ -246,7 +317,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         let model = safeArgs.model;
         if (!model) {
           if (category === 'code') model = CONFIG.CODER_MODEL;
-          else if (category === 'question') model = CONFIG.FAST_MODEL; // Fast for simple questions
+          else if (category === 'question')
+            model = CONFIG.FAST_MODEL; // Fast for simple questions
           else model = CONFIG.DEFAULT_MODEL;
         }
 
@@ -261,39 +333,83 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           });
           result.optimization = optimization;
         }
-        result.securityWarnings = securityWarnings;
+        result.securityWarnings = risk.warnings;
         break;
       }
 
       case 'ollama_speculative':
-        result = await speculativeGenerate(safeArgs.prompt, safeArgs);
-        result.securityWarnings = detectPromptRisk(safeArgs.prompt);
+        {
+          const risk = evaluatePromptRisk(safeArgs.prompt);
+          if (risk.blocked) {
+            return createErrorResponse(
+              'HYDRA_RISK_BLOCKED',
+              risk.warnings.join(' '),
+              name
+            );
+          }
+          result = await speculativeGenerate(safeArgs.prompt, safeArgs);
+          result.securityWarnings = risk.warnings;
+        }
         break;
 
       case 'ollama_race':
-        result = await modelRace(
-          safeArgs.prompt,
-          safeArgs.models || [CONFIG.FAST_MODEL, 'phi3:mini', CONFIG.DEFAULT_MODEL],
-          { firstWins: safeArgs.firstWins ?? true }
-        );
-        result.securityWarnings = detectPromptRisk(safeArgs.prompt);
+        {
+          const risk = evaluatePromptRisk(safeArgs.prompt);
+          if (risk.blocked) {
+            return createErrorResponse(
+              'HYDRA_RISK_BLOCKED',
+              risk.warnings.join(' '),
+              name
+            );
+          }
+          result = await modelRace(
+            safeArgs.prompt,
+            safeArgs.models || [
+              CONFIG.FAST_MODEL,
+              'phi3:mini',
+              CONFIG.DEFAULT_MODEL
+            ],
+            { firstWins: safeArgs.firstWins ?? true }
+          );
+          result.securityWarnings = risk.warnings;
+        }
         break;
 
       case 'ollama_consensus':
-        result = await consensusGenerate(
-          safeArgs.prompt,
-          safeArgs.models || [CONFIG.DEFAULT_MODEL, 'phi3:mini']
-        );
-        result.securityWarnings = detectPromptRisk(safeArgs.prompt);
+        {
+          const risk = evaluatePromptRisk(safeArgs.prompt);
+          if (risk.blocked) {
+            return createErrorResponse(
+              'HYDRA_RISK_BLOCKED',
+              risk.warnings.join(' '),
+              name
+            );
+          }
+          result = await consensusGenerate(
+            safeArgs.prompt,
+            safeArgs.models || [CONFIG.DEFAULT_MODEL, 'phi3:mini']
+          );
+          result.securityWarnings = risk.warnings;
+        }
         break;
 
       // === CODE TOOLS ===
       case 'ollama_code':
-        result = await generateWithCorrection(safeArgs.prompt, {
-          generatorModel: safeArgs.model || CONFIG.DEFAULT_MODEL,
-          coderModel: safeArgs.coderModel || CONFIG.CODER_MODEL
-        });
-        result.securityWarnings = detectPromptRisk(safeArgs.prompt);
+        {
+          const risk = evaluatePromptRisk(safeArgs.prompt);
+          if (risk.blocked) {
+            return createErrorResponse(
+              'HYDRA_RISK_BLOCKED',
+              risk.warnings.join(' '),
+              name
+            );
+          }
+          result = await generateWithCorrection(safeArgs.prompt, {
+            generatorModel: safeArgs.model || CONFIG.DEFAULT_MODEL,
+            coderModel: safeArgs.coderModel || CONFIG.CODER_MODEL
+          });
+          result.securityWarnings = risk.warnings;
+        }
         break;
 
       case 'ollama_validate':
@@ -325,12 +441,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
 
       case 'prompt_batch_optimize':
-        result = optimizePromptBatch(safeArgs.prompts, { model: safeArgs.model });
+        result = optimizePromptBatch(safeArgs.prompts, {
+          model: safeArgs.model
+        });
         break;
 
       case 'prompt_smart_suggest':
         result = {
-          prompt: safeArgs.prompt.substring(0, 50) + (safeArgs.prompt.length > 50 ? '...' : ''),
+          prompt:
+            safeArgs.prompt.substring(0, 50) +
+            (safeArgs.prompt.length > 50 ? '...' : ''),
           analysis: analyzePrompt(safeArgs.prompt),
           smartSuggestions: getSmartSuggestions(safeArgs.prompt),
           standardSuggestions: getSuggestions(safeArgs.prompt)
@@ -346,7 +466,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
 
       case 'prompt_template': {
-        const template = getPromptTemplate(safeArgs.category, safeArgs.variant || 'basic');
+        const template = getPromptTemplate(
+          safeArgs.category,
+          safeArgs.variant || 'basic'
+        );
         result = {
           category: safeArgs.category,
           variant: safeArgs.variant || 'basic',
@@ -358,14 +481,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // === BATCH & UTILITY TOOLS ===
       case 'ollama_batch': {
-        const maxConcurrent = safeArgs.maxConcurrent || CONFIG.QUEUE_MAX_CONCURRENT;
+        const maxConcurrent =
+          safeArgs.maxConcurrent || CONFIG.QUEUE_MAX_CONCURRENT;
         const resolved = await resolveModelOrFallback(safeArgs.model);
         const model = resolved.model;
         let prompts = safeArgs.prompts;
+        const batchWarnings = safeArgs.prompts.flatMap((prompt) =>
+          detectPromptRisk(prompt)
+        );
+        const uniqueWarnings = [...new Set(batchWarnings)];
+        if (uniqueWarnings.length && CONFIG.RISK_BLOCKING) {
+          return createErrorResponse(
+            'HYDRA_RISK_BLOCKED',
+            uniqueWarnings.join(' '),
+            name
+          );
+        }
+        if (uniqueWarnings.length) {
+          logger.warn('Potential prompt risk detected', { tool: name });
+        }
 
         // Optimize prompts if requested
         if (safeArgs.optimize) {
-          prompts = prompts.map(p => getBetterPrompt(p, model));
+          prompts = prompts.map((p) => getBetterPrompt(p, model));
         }
 
         // Process in batches
@@ -373,7 +511,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         for (let i = 0; i < prompts.length; i += maxConcurrent) {
           const batch = prompts.slice(i, i + maxConcurrent);
           const batchResults = await Promise.all(
-            batch.map(prompt => generate(model, prompt).catch(e => ({ error: e.message })))
+            batch.map((prompt) =>
+              generate(model, prompt).catch((e) => ({ error: e.message }))
+            )
           );
           results.push(...batchResults);
         }
@@ -385,9 +525,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             error: r.error || null
           })),
           total: prompts.length,
-          successful: results.filter(r => r.response).length,
+          successful: results.filter((r) => r.response).length,
           optimized: safeArgs.optimize || false,
-          fallbackUsed: resolved.fallbackUsed
+          fallbackUsed: resolved.fallbackUsed,
+          securityWarnings: uniqueWarnings
         };
         break;
       }
@@ -411,7 +552,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             speculativeDecoding: true,
             selfCorrection: true,
             caching: true,
-            batchProcessing: true
+            batchProcessing: true,
+            swarm: true,
+            riskBlocking: CONFIG.RISK_BLOCKING
           },
           apiVersion: CONFIG.API_VERSION,
           serverVersion: SERVER_VERSION
@@ -434,11 +577,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         let cleared = 0;
 
         try {
-          const files = readdirSync(cacheDir).filter(f => f.endsWith('.json'));
+          const files = readdirSync(cacheDir).filter((f) =>
+            f.endsWith('.json')
+          );
           for (const file of files) {
             const path = join(cacheDir, file);
             const stat = statSync(path);
-            if (olderThan === 0 || (now - stat.mtimeMs) > olderThan) {
+            if (olderThan === 0 || now - stat.mtimeMs > olderThan) {
               unlinkSync(path);
               cleared++;
             }
@@ -451,7 +596,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // === GEMINI MODELS TOOLS ===
       case 'gemini_models': {
-        result = await getGeminiModels(safeArgs.forceRefresh || false, safeArgs.apiKey);
+        result = await getGeminiModels(
+          safeArgs.forceRefresh || false,
+          safeArgs.apiKey
+        );
         break;
       }
 
@@ -461,7 +609,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'gemini_models_summary': {
-        const modelsResult = await getGeminiModels(safeArgs.forceRefresh || false);
+        const modelsResult = await getGeminiModels(
+          safeArgs.forceRefresh || false
+        );
         if (modelsResult.success) {
           result = {
             source: modelsResult.source,
@@ -474,7 +624,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'gemini_models_recommend': {
-        const modelsResult = await getGeminiModels(safeArgs.forceRefresh || false);
+        const modelsResult = await getGeminiModels(
+          safeArgs.forceRefresh || false
+        );
         if (modelsResult.success) {
           result = {
             source: modelsResult.source,
@@ -487,13 +639,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'gemini_models_filter': {
-        const modelsResult = await getGeminiModels(safeArgs.forceRefresh || false);
+        const modelsResult = await getGeminiModels(
+          safeArgs.forceRefresh || false
+        );
         if (modelsResult.success) {
-          const filtered = filterModelsByCapability(modelsResult.models, safeArgs.capability);
+          const filtered = filterModelsByCapability(
+            modelsResult.models,
+            safeArgs.capability
+          );
           result = {
             capability: safeArgs.capability,
             count: filtered.length,
-            models: filtered.map(m => ({
+            models: filtered.map((m) => ({
               name: m.name,
               displayName: m.displayName,
               inputTokenLimit: m.inputTokenLimit,
@@ -563,12 +720,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             status: item.status,
             priority: item.priority,
             attempts: item.attempts,
-            prompt: item.prompt.substring(0, 100) + (item.prompt.length > 100 ? '...' : ''),
+            prompt:
+              item.prompt.substring(0, 100) +
+              (item.prompt.length > 100 ? '...' : ''),
             result: item.result,
             error: item.error,
-            createdAt: item.createdAt ? new Date(item.createdAt).toISOString() : null,
-            startedAt: item.startedAt ? new Date(item.startedAt).toISOString() : null,
-            completedAt: item.completedAt ? new Date(item.completedAt).toISOString() : null
+            createdAt: item.createdAt
+              ? new Date(item.createdAt).toISOString()
+              : null,
+            startedAt: item.startedAt
+              ? new Date(item.startedAt).toISOString()
+              : null,
+            completedAt: item.completedAt
+              ? new Date(item.completedAt).toISOString()
+              : null
           };
         } else {
           result = { error: `Nie znaleziono elementu ${safeArgs.id}` };
@@ -602,17 +767,43 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'queue_wait': {
         try {
-          const item = await getQueue().waitFor(safeArgs.id, safeArgs.timeout || CONFIG.QUEUE_TIMEOUT_MS);
+          const item = await getQueue().waitFor(
+            safeArgs.id,
+            safeArgs.timeout || CONFIG.QUEUE_TIMEOUT_MS
+          );
           result = {
             id: item.id,
             status: item.status,
             result: item.result,
             error: item.error,
-            duration: item.completedAt ? item.completedAt - item.startedAt : null
+            duration: item.completedAt
+              ? item.completedAt - item.startedAt
+              : null
           };
         } catch (e) {
           result = { error: `Nie udało się pobrać wyniku: ${e.message}` };
         }
+        break;
+      }
+
+      case 'hydra_swarm': {
+        const risk = evaluatePromptRisk(safeArgs.prompt);
+        if (risk.blocked) {
+          return createErrorResponse(
+            'HYDRA_RISK_BLOCKED',
+            risk.warnings.join(' '),
+            name
+          );
+        }
+        result = await runSwarm({
+          prompt: safeArgs.prompt,
+          title: safeArgs.title,
+          agents: safeArgs.agents,
+          includeTranscript: safeArgs.includeTranscript || false,
+          saveMemory: safeArgs.saveMemory !== false,
+          logger
+        });
+        result.securityWarnings = risk.warnings;
         break;
       }
 
@@ -628,6 +819,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           cache: cacheStats,
           version: SERVER_VERSION,
           apiVersion: CONFIG.API_VERSION,
+          runtime: {
+            yoloMode: CONFIG.YOLO_MODE,
+            riskBlocking: CONFIG.RISK_BLOCKING
+          },
           node: {
             runtime: process.versions.node,
             engines: nodeEngines
@@ -643,6 +838,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             defaultModel: CONFIG.DEFAULT_MODEL,
             fastModel: CONFIG.FAST_MODEL,
             coderModel: CONFIG.CODER_MODEL
+          },
+          runtime: {
+            yoloMode: CONFIG.YOLO_MODE,
+            riskBlocking: CONFIG.RISK_BLOCKING
           },
           cache: {
             enabled: CONFIG.CACHE_ENABLED,
@@ -665,7 +864,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       default:
-        return createErrorResponse('HYDRA_TOOL_UNKNOWN', 'Nieznane narzędzie.', name);
+        return createErrorResponse(
+          'HYDRA_TOOL_UNKNOWN',
+          'Nieznane narzędzie.',
+          name
+        );
     }
 
     logger.info('Tool executed', {
@@ -677,18 +880,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       content: [
         {
           type: 'text',
-          text: typeof result === 'string' ? result : JSON.stringify(result, null, 2)
+          text:
+            typeof result === 'string'
+              ? result
+              : JSON.stringify(result, null, 2)
         }
       ]
     };
-
   } catch (error) {
     logger.error('Tool execution failed', { tool: name, error: error.message });
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({ error: `Wystąpił błąd podczas przetwarzania: ${error.message}`, tool: name })
+          text: JSON.stringify({
+            error: `Wystąpił błąd podczas przetwarzania: ${error.message}`,
+            tool: name
+          })
         }
       ],
       isError: true
@@ -728,7 +936,10 @@ async function main() {
     maxRetries: CONFIG.QUEUE_MAX_RETRIES,
     retryDelayBase: CONFIG.QUEUE_RETRY_DELAY_BASE,
     timeout: CONFIG.QUEUE_TIMEOUT_MS,
-    rateLimit: { maxTokens: CONFIG.QUEUE_RATE_LIMIT_TOKENS, refillRate: CONFIG.QUEUE_RATE_LIMIT_REFILL }
+    rateLimit: {
+      maxTokens: CONFIG.QUEUE_RATE_LIMIT_TOKENS,
+      refillRate: CONFIG.QUEUE_RATE_LIMIT_REFILL
+    }
   });
 
   // Set default handler for prompt processing
@@ -757,7 +968,9 @@ async function main() {
   });
 
   await server.connect(transport);
-  logger.info('HYDRA Ollama MCP Server running on stdio', { version: SERVER_VERSION });
+  logger.info('HYDRA Ollama MCP Server running on stdio', {
+    version: SERVER_VERSION
+  });
 }
 
 main().catch((error) => {

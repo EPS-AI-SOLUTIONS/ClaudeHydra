@@ -22,17 +22,22 @@ const hasFile = (path) => {
 };
 
 const canRun = (command) => {
-  const result = spawnSync(command, ['-NoProfile', '-Command', '$PSVersionTable.PSVersion'], {
-    stdio: 'ignore'
-  });
+  const result = spawnSync(
+    command,
+    ['-NoProfile', '-Command', '$PSVersionTable.PSVersion'],
+    {
+      stdio: 'ignore'
+    }
+  );
   if (result.error) return false;
   return result.status === 0;
 };
 
 const resolvePowerShell = () => {
-  const candidates = process.platform === 'win32'
-    ? ['powershell.exe', 'pwsh']
-    : ['pwsh', 'powershell'];
+  const candidates =
+    process.platform === 'win32'
+      ? ['powershell.exe', 'pwsh']
+      : ['pwsh', 'powershell'];
   for (const cmd of candidates) {
     if (canRun(cmd)) return cmd;
   }
@@ -41,7 +46,9 @@ const resolvePowerShell = () => {
 
 const runFallback = () => {
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  log('PowerShell not available or launcher missing; falling back to npm start.');
+  log(
+    'PowerShell not available or launcher missing; falling back to npm start.'
+  );
   const child = spawn(npmCmd, ['start'], { stdio: 'inherit', cwd: repoRoot });
   child.on('exit', (code) => process.exit(code ?? 0));
   child.on('error', (error) => {
@@ -51,9 +58,10 @@ const runFallback = () => {
 };
 
 const runLauncher = (psCommand) => {
-  const args = process.platform === 'win32'
-    ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', launcherPath]
-    : ['-NoProfile', '-File', launcherPath];
+  const args =
+    process.platform === 'win32'
+      ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', launcherPath]
+      : ['-NoProfile', '-File', launcherPath];
   if (userArgs.length) args.push(...userArgs);
   const child = spawn(psCommand, args, { stdio: 'inherit', cwd: repoRoot });
   child.on('exit', (code) => process.exit(code ?? 0));

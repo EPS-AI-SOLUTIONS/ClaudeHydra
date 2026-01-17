@@ -61,7 +61,7 @@ class PriorityQueue {
   }
 
   remove(id) {
-    const index = this.heap.findIndex(item => item.id === id);
+    const index = this.heap.findIndex((item) => item.id === id);
     if (index === -1) return false;
 
     if (index === this.heap.length - 1) {
@@ -86,7 +86,10 @@ class PriorityQueue {
     while (index > 0) {
       const parentIndex = Math.floor((index - 1) / 2);
       if (this._compare(this.heap[index], this.heap[parentIndex]) >= 0) break;
-      [this.heap[index], this.heap[parentIndex]] = [this.heap[parentIndex], this.heap[index]];
+      [this.heap[index], this.heap[parentIndex]] = [
+        this.heap[parentIndex],
+        this.heap[index]
+      ];
       index = parentIndex;
     }
   }
@@ -98,15 +101,24 @@ class PriorityQueue {
       const rightChild = 2 * index + 2;
       let smallest = index;
 
-      if (leftChild < length && this._compare(this.heap[leftChild], this.heap[smallest]) < 0) {
+      if (
+        leftChild < length &&
+        this._compare(this.heap[leftChild], this.heap[smallest]) < 0
+      ) {
         smallest = leftChild;
       }
-      if (rightChild < length && this._compare(this.heap[rightChild], this.heap[smallest]) < 0) {
+      if (
+        rightChild < length &&
+        this._compare(this.heap[rightChild], this.heap[smallest]) < 0
+      ) {
         smallest = rightChild;
       }
 
       if (smallest === index) break;
-      [this.heap[index], this.heap[smallest]] = [this.heap[smallest], this.heap[index]];
+      [this.heap[index], this.heap[smallest]] = [
+        this.heap[smallest],
+        this.heap[index]
+      ];
       index = smallest;
     }
   }
@@ -151,12 +163,15 @@ class RateLimiter {
   _refill() {
     const now = Date.now();
     const elapsed = (now - this.lastRefill) / 1000;
-    this.tokens = Math.min(this.maxTokens, this.tokens + elapsed * this.refillRate);
+    this.tokens = Math.min(
+      this.maxTokens,
+      this.tokens + elapsed * this.refillRate
+    );
     this.lastRefill = now;
   }
 
   _sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   getStatus() {
@@ -231,7 +246,11 @@ export class PromptQueue extends EventEmitter {
     this.queue.enqueue(item);
     this.stats.totalQueued++;
 
-    this.emit('enqueued', { id: item.id, priority: item.priority, prompt: prompt.substring(0, 50) });
+    this.emit('enqueued', {
+      id: item.id,
+      priority: item.priority,
+      prompt: prompt.substring(0, 50)
+    });
 
     // Start processing if not already running
     if (!this.isProcessing && !this.isPaused) {
@@ -249,7 +268,11 @@ export class PromptQueue extends EventEmitter {
       const itemOptions = {
         ...options,
         priority: options.priority ?? Priority.NORMAL,
-        metadata: { ...options.metadata, batchIndex: index, batchSize: prompts.length }
+        metadata: {
+          ...options.metadata,
+          batchIndex: index,
+          batchSize: prompts.length
+        }
       };
       return this.enqueue(prompt, itemOptions);
     });
@@ -348,7 +371,7 @@ export class PromptQueue extends EventEmitter {
     }
 
     // Check queue
-    const queued = this.queue.getAll().find(item => item.id === id);
+    const queued = this.queue.getAll().find((item) => item.id === id);
     if (queued) {
       return { ...queued };
     }
@@ -365,14 +388,20 @@ export class PromptQueue extends EventEmitter {
       throw new Error(`Item ${id} not found`);
     }
 
-    if (item.status === Status.COMPLETED || item.status === Status.FAILED || item.status === Status.CANCELLED) {
+    if (
+      item.status === Status.COMPLETED ||
+      item.status === Status.FAILED ||
+      item.status === Status.CANCELLED
+    ) {
       return item;
     }
 
     return new Promise((resolve, reject) => {
-      const timeoutId = timeout ? setTimeout(() => {
-        reject(new Error(`Timeout waiting for item ${id}`));
-      }, timeout) : null;
+      const timeoutId = timeout
+        ? setTimeout(() => {
+            reject(new Error(`Timeout waiting for item ${id}`));
+          }, timeout)
+        : null;
 
       const handler = (event) => {
         if (event.id === id) {
@@ -394,7 +423,7 @@ export class PromptQueue extends EventEmitter {
    * Wait for all items to complete
    */
   async waitForAll(ids, timeout = null) {
-    return Promise.all(ids.map(id => this.waitFor(id, timeout)));
+    return Promise.all(ids.map((id) => this.waitFor(id, timeout)));
   }
 
   /**
@@ -480,10 +509,11 @@ export class PromptQueue extends EventEmitter {
 
       // Update average time
       const duration = item.completedAt - item.startedAt;
-      this.stats.averageTime = (this.stats.averageTime * (this.stats.totalCompleted - 1) + duration) / this.stats.totalCompleted;
+      this.stats.averageTime =
+        (this.stats.averageTime * (this.stats.totalCompleted - 1) + duration) /
+        this.stats.totalCompleted;
 
       this.emit('completed', { id: item.id, result, duration });
-
     } catch (error) {
       // Check if cancelled
       if (item.status === Status.CANCELLED) {
@@ -504,7 +534,12 @@ export class PromptQueue extends EventEmitter {
           this.options.retryDelayMax
         );
 
-        this.emit('retrying', { id: item.id, attempt: item.attempts, delay, error: error.message });
+        this.emit('retrying', {
+          id: item.id,
+          attempt: item.attempts,
+          delay,
+          error: error.message
+        });
 
         await this._sleep(delay);
 
@@ -521,7 +556,11 @@ export class PromptQueue extends EventEmitter {
         this.completed.set(item.id, item);
         this.stats.totalFailed++;
 
-        this.emit('failed', { id: item.id, error: error.message, attempts: item.attempts });
+        this.emit('failed', {
+          id: item.id,
+          error: error.message,
+          attempts: item.attempts
+        });
       }
     }
 
@@ -533,7 +572,7 @@ export class PromptQueue extends EventEmitter {
    * Internal: Wait for a processing slot
    */
   async _waitForSlot() {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const handler = () => {
         if (this.running.size < this.options.maxConcurrent) {
           this.off('completed', handler);
@@ -549,7 +588,7 @@ export class PromptQueue extends EventEmitter {
   }
 
   _sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

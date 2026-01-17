@@ -1,5 +1,5 @@
 ---
-description: "Check AI providers, models and configuration status"
+description: 'Check AI providers, models and configuration status'
 ---
 
 # /ai-status - AI Handler Status
@@ -15,6 +15,7 @@ powershell -ExecutionPolicy Bypass -Command "[Environment]::SetEnvironmentVariab
 ```
 
 Display the output showing:
+
 - Provider status (OK/NO KEY/ERROR)
 - Available models per provider
 - Rate limit usage

@@ -1,5 +1,5 @@
 ---
-description: "Quick local AI query using Ollama (cost=$0)"
+description: 'Quick local AI query using Ollama (cost=$0)'
 ---
 
 # /ai - Quick Local AI Query
@@ -29,16 +29,17 @@ powershell -ExecutionPolicy Bypass -Command "[Environment]::SetEnvironmentVariab
 ```
 
 **Important:**
+
 1. Always use local Ollama (cost=$0)
 2. Display the full response to user
 3. If Ollama not running, it auto-starts
 
 ## Model Selection
 
-| Query Type | Model | Why |
-|------------|-------|-----|
-| General questions | `llama3.2:3b` | Best quality |
-| Code generation | `qwen2.5-coder:1.5b` | Code specialist |
-| Quick/simple | `llama3.2:1b` | Fastest |
+| Query Type        | Model                | Why             |
+| ----------------- | -------------------- | --------------- |
+| General questions | `llama3.2:3b`        | Best quality    |
+| Code generation   | `qwen2.5-coder:1.5b` | Code specialist |
+| Quick/simple      | `llama3.2:1b`        | Fastest         |
 
 ## Query: $ARGUMENTS

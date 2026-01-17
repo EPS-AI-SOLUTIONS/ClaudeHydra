@@ -7,7 +7,10 @@
   "mcpServers": {
     "ollama-hydra": {
       "command": "node",
-      "args": ["--env-file=.env", "C:/Users/BIURODOM/Desktop/GeminiCLI/src/server.js"],
+      "args": [
+        "--env-file=.env",
+        "C:/Users/BIURODOM/Desktop/GeminiCLI/src/server.js"
+      ],
       "cwd": "C:/Users/BIURODOM/Desktop/GeminiCLI",
       "env": {
         "OLLAMA_HOST": "http://localhost:11434",

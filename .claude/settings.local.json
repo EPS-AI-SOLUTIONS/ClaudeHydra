@@ -18,11 +18,7 @@
     ],
     "deny": []
   },
-  "enabledMcpjsonServers": [
-    "serena",
-    "desktop-commander",
-    "playwright"
-  ],
+  "enabledMcpjsonServers": ["serena", "desktop-commander", "playwright"],
   "hooks": {
     "UserPromptSubmit": [
       {

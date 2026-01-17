@@ -12,10 +12,25 @@ const MAX_ATTEMPTS = 3;
  */
 export function detectLanguage(code) {
   const patterns = {
-    python: [/\bdef\s+\w+\s*\(/, /\bimport\s+\w+/, /\bclass\s+\w+:/, /print\s*\(/],
-    javascript: [/\bfunction\s+\w+/, /\bconst\s+\w+\s*=/, /\blet\s+\w+/, /=>\s*{/],
+    python: [
+      /\bdef\s+\w+\s*\(/,
+      /\bimport\s+\w+/,
+      /\bclass\s+\w+:/,
+      /print\s*\(/
+    ],
+    javascript: [
+      /\bfunction\s+\w+/,
+      /\bconst\s+\w+\s*=/,
+      /\blet\s+\w+/,
+      /=>\s*{/
+    ],
     typescript: [/:\s*(string|number|boolean|any)/, /interface\s+\w+/, /<\w+>/],
-    powershell: [/\$\w+\s*=/, /function\s+\w+-\w+/, /\bparam\s*\(/, /Write-Host/],
+    powershell: [
+      /\$\w+\s*=/,
+      /function\s+\w+-\w+/,
+      /\bparam\s*\(/,
+      /Write-Host/
+    ],
     rust: [/\bfn\s+\w+/, /\blet\s+mut\s+/, /\bimpl\s+/, /\bstruct\s+\w+/],
     go: [/\bfunc\s+\w+/, /\bpackage\s+\w+/, /\btype\s+\w+\s+struct/],
     sql: [/\bSELECT\b/i, /\bFROM\b/i, /\bWHERE\b/i, /\bINSERT\b/i],
@@ -26,7 +41,7 @@ export function detectLanguage(code) {
   };
 
   for (const [lang, pats] of Object.entries(patterns)) {
-    if (pats.some(p => p.test(code))) {
+    if (pats.some((p) => p.test(code))) {
       return lang;
     }
   }
@@ -62,7 +77,9 @@ export function validateSyntax(code, language) {
   const openParens = (code.match(/\(/g) || []).length;
   const closeParens = (code.match(/\)/g) || []).length;
   if (openParens !== closeParens) {
-    issues.push(`Mismatched parentheses: ${openParens} open, ${closeParens} close`);
+    issues.push(
+      `Mismatched parentheses: ${openParens} open, ${closeParens} close`
+    );
   }
 
   const openBraces = (code.match(/\{/g) || []).length;
@@ -74,7 +91,9 @@ export function validateSyntax(code, language) {
   const openBrackets = (code.match(/\[/g) || []).length;
   const closeBrackets = (code.match(/\]/g) || []).length;
   if (openBrackets !== closeBrackets) {
-    issues.push(`Mismatched brackets: ${openBrackets} open, ${closeBrackets} close`);
+    issues.push(
+      `Mismatched brackets: ${openBrackets} open, ${closeBrackets} close`
+    );
   }
 
   // Language-specific checks
@@ -85,7 +104,11 @@ export function validateSyntax(code, language) {
   }
 
   if (language === 'javascript' || language === 'typescript') {
-    if (code.includes('async ') && !code.includes('await') && !code.includes('Promise')) {
+    if (
+      code.includes('async ') &&
+      !code.includes('await') &&
+      !code.includes('Promise')
+    ) {
       issues.push('Warning: async function without await');
     }
   }
@@ -143,7 +166,8 @@ ${currentCode}`;
       if (result.response) {
         // Extract code if wrapped in markdown
         const blocks = extractCodeBlocks('```\n' + result.response + '\n```');
-        currentCode = blocks.length > 0 ? blocks[0].code : result.response.trim();
+        currentCode =
+          blocks.length > 0 ? blocks[0].code : result.response.trim();
       }
     } catch (error) {
       history.push({ attempt: attempts, error: error.message });
@@ -166,7 +190,8 @@ ${currentCode}`;
  * Generate code with automatic self-correction
  */
 export async function generateWithCorrection(prompt, options = {}) {
-  const model = options.generatorModel || process.env.DEFAULT_MODEL || 'llama3.2:3b';
+  const model =
+    options.generatorModel || process.env.DEFAULT_MODEL || 'llama3.2:3b';
   const coderModel = options.coderModel || CODER_MODEL;
 
   // Generate initial code
@@ -204,8 +229,14 @@ Provide clean, working code with proper error handling.`;
   // Rebuild response with corrected code
   let correctedResponse = result.response;
   for (let i = 0; i < blocks.length; i++) {
-    const original = '```' + (blocks[i].language || '') + '\n' + blocks[i].code + '\n```';
-    const fixed = '```' + correctedBlocks[i].language + '\n' + correctedBlocks[i].code + '\n```';
+    const original =
+      '```' + (blocks[i].language || '') + '\n' + blocks[i].code + '\n```';
+    const fixed =
+      '```' +
+      correctedBlocks[i].language +
+      '\n' +
+      correctedBlocks[i].code +
+      '\n```';
     correctedResponse = correctedResponse.replace(original, fixed);
   }
 
@@ -214,8 +245,8 @@ Provide clean, working code with proper error handling.`;
     model: result.model,
     hasCode: true,
     codeBlocks: correctedBlocks.length,
-    allValid: correctedBlocks.every(b => b.valid),
-    corrections: correctedBlocks.filter(b => b.corrected).length,
+    allValid: correctedBlocks.every((b) => b.valid),
+    corrections: correctedBlocks.filter((b) => b.corrected).length,
     verified: true
   };
 }

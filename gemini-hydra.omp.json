@@ -99,7 +99,7 @@
   "tooltips": [
     {
       "type": "command",
-      "tips": [ "g" ],
+      "tips": ["g"],
       "style": "plain",
       "foreground": "p:silver",
       "properties": {

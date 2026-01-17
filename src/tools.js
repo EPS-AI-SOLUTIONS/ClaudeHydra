@@ -4,42 +4,100 @@ export const TOOLS = [
   // === GENERATION TOOLS ===
   {
     name: 'ollama_generate',
-    description: 'Generate text using Ollama. Supports local models like llama3.2, qwen2.5-coder, phi3.',
+    description:
+      'Generate text using Ollama. Supports local models like llama3.2, qwen2.5-coder, phi3.',
     inputSchema: {
       type: 'object',
       properties: {
         prompt: { type: 'string', description: 'The prompt to generate from' },
-        model: { type: 'string', description: `Model name (default: ${CONFIG.DEFAULT_MODEL})`, default: CONFIG.DEFAULT_MODEL },
-        temperature: { type: 'number', description: 'Temperature 0-1 (default: 0.3)', default: 0.3 },
-        maxTokens: { type: 'number', description: 'Max tokens to generate', default: 2048 },
-        useCache: { type: 'boolean', description: 'Use response cache', default: true },
-        optimize: { type: 'boolean', description: 'Optimize prompt before sending', default: false }
+        model: {
+          type: 'string',
+          description: `Model name (default: ${CONFIG.DEFAULT_MODEL})`,
+          default: CONFIG.DEFAULT_MODEL
+        },
+        temperature: {
+          type: 'number',
+          description: 'Temperature 0-1 (default: 0.3)',
+          default: 0.3
+        },
+        maxTokens: {
+          type: 'number',
+          description: 'Max tokens to generate',
+          default: 2048
+        },
+        useCache: {
+          type: 'boolean',
+          description: 'Use response cache',
+          default: true
+        },
+        optimize: {
+          type: 'boolean',
+          description: 'Optimize prompt before sending',
+          default: false
+        }
       },
       required: ['prompt']
     }
   },
   {
     name: 'ollama_smart',
-    description: 'Smart generation with automatic prompt optimization, speculative decoding, and caching.',
+    description:
+      'Smart generation with automatic prompt optimization, speculative decoding, and caching.',
     inputSchema: {
       type: 'object',
       properties: {
         prompt: { type: 'string', description: 'The prompt to process' },
-        model: { type: 'string', description: 'Model (default: auto-select based on task)' }
+        model: {
+          type: 'string',
+          description: 'Model (default: auto-select based on task)'
+        },
+        useSwarm: {
+          type: 'boolean',
+          description: 'Force 6-step swarm execution for complex tasks'
+        },
+        includeTranscript: {
+          type: 'boolean',
+          description: 'Include full swarm transcript',
+          default: false
+        },
+        saveMemory: {
+          type: 'boolean',
+          description: 'Save swarm archive to .serena/memories',
+          default: true
+        },
+        title: {
+          type: 'string',
+          description: 'Optional task title for swarm logging'
+        },
+        agents: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional swarm agent names to use'
+        }
       },
       required: ['prompt']
     }
   },
   {
     name: 'ollama_speculative',
-    description: 'Speculative decoding - race fast model (1b) vs accurate model (3b). Returns first valid response.',
+    description:
+      'Speculative decoding - race fast model (1b) vs accurate model (3b). Returns first valid response.',
     inputSchema: {
       type: 'object',
       properties: {
         prompt: { type: 'string', description: 'The prompt to generate from' },
-        fastModel: { type: 'string', description: `Fast model (default: ${CONFIG.FAST_MODEL})` },
-        accurateModel: { type: 'string', description: `Accurate model (default: ${CONFIG.DEFAULT_MODEL})` },
-        timeout: { type: 'number', description: 'Timeout in ms (default: 30000)' }
+        fastModel: {
+          type: 'string',
+          description: `Fast model (default: ${CONFIG.FAST_MODEL})`
+        },
+        accurateModel: {
+          type: 'string',
+          description: `Accurate model (default: ${CONFIG.DEFAULT_MODEL})`
+        },
+        timeout: {
+          type: 'number',
+          description: 'Timeout in ms (default: 30000)'
+        }
       },
       required: ['prompt']
     }
@@ -54,9 +112,14 @@ export const TOOLS = [
         models: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Models to race (default: [llama3.2:1b, phi3:mini, llama3.2:3b])'
+          description:
+            'Models to race (default: [llama3.2:1b, phi3:mini, llama3.2:3b])'
         },
-        firstWins: { type: 'boolean', description: 'Return first valid (true) or best (false)', default: true }
+        firstWins: {
+          type: 'boolean',
+          description: 'Return first valid (true) or best (false)',
+          default: true
+        }
       },
       required: ['prompt']
     }
@@ -86,9 +149,18 @@ export const TOOLS = [
       type: 'object',
       properties: {
         prompt: { type: 'string', description: 'Code generation prompt' },
-        language: { type: 'string', description: 'Programming language (auto-detected if not specified)' },
-        model: { type: 'string', description: `Generator model (default: ${CONFIG.DEFAULT_MODEL})` },
-        coderModel: { type: 'string', description: `Validator model (default: ${CONFIG.CODER_MODEL})` }
+        language: {
+          type: 'string',
+          description: 'Programming language (auto-detected if not specified)'
+        },
+        model: {
+          type: 'string',
+          description: `Generator model (default: ${CONFIG.DEFAULT_MODEL})`
+        },
+        coderModel: {
+          type: 'string',
+          description: `Validator model (default: ${CONFIG.CODER_MODEL})`
+        }
       },
       required: ['prompt']
     }
@@ -100,8 +172,14 @@ export const TOOLS = [
       type: 'object',
       properties: {
         code: { type: 'string', description: 'Code to validate' },
-        language: { type: 'string', description: 'Programming language (auto-detected if not specified)' },
-        maxAttempts: { type: 'number', description: 'Max correction attempts (default: 3)' }
+        language: {
+          type: 'string',
+          description: 'Programming language (auto-detected if not specified)'
+        },
+        maxAttempts: {
+          type: 'number',
+          description: 'Max correction attempts (default: 3)'
+        }
       },
       required: ['code']
     }
@@ -110,7 +188,8 @@ export const TOOLS = [
   // === PROMPT OPTIMIZATION TOOLS ===
   {
     name: 'prompt_optimize',
-    description: 'Analyze and enhance a prompt for better AI responses. Returns optimized prompt with enhancements.',
+    description:
+      'Analyze and enhance a prompt for better AI responses. Returns optimized prompt with enhancements.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -118,17 +197,32 @@ export const TOOLS = [
         model: { type: 'string', description: 'Target model for optimization' },
         category: {
           type: 'string',
-          enum: ['auto', 'code', 'analysis', 'question', 'creative', 'task', 'summary', 'debug', 'optimize'],
+          enum: [
+            'auto',
+            'code',
+            'analysis',
+            'question',
+            'creative',
+            'task',
+            'summary',
+            'debug',
+            'optimize'
+          ],
           description: 'Force specific category (default: auto-detect)'
         },
-        addExamples: { type: 'boolean', description: 'Add few-shot examples if available', default: false }
+        addExamples: {
+          type: 'boolean',
+          description: 'Add few-shot examples if available',
+          default: false
+        }
       },
       required: ['prompt']
     }
   },
   {
     name: 'prompt_analyze',
-    description: 'Analyze a prompt for clarity, completeness, and improvements.',
+    description:
+      'Analyze a prompt for clarity, completeness, and improvements.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -166,7 +260,11 @@ export const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        prompts: { type: 'array', items: { type: 'string' }, description: 'Prompts to optimize' },
+        prompts: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Prompts to optimize'
+        },
         model: { type: 'string', description: 'Target model' }
       },
       required: ['prompts']
@@ -174,7 +272,8 @@ export const TOOLS = [
   },
   {
     name: 'prompt_smart_suggest',
-    description: 'Get smart suggestions by combining analysis and recommendations.',
+    description:
+      'Get smart suggestions by combining analysis and recommendations.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -212,7 +311,10 @@ export const TOOLS = [
       type: 'object',
       properties: {
         category: { type: 'string', description: 'Template category' },
-        variant: { type: 'string', description: 'Template variant (default: basic)' }
+        variant: {
+          type: 'string',
+          description: 'Template variant (default: basic)'
+        }
       },
       required: ['category']
     }
@@ -225,10 +327,24 @@ export const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        prompts: { type: 'array', items: { type: 'string' }, description: 'Prompts to process' },
-        model: { type: 'string', description: `Model (default: ${CONFIG.DEFAULT_MODEL})` },
-        maxConcurrent: { type: 'number', description: 'Max concurrent jobs (default: 4)' },
-        optimize: { type: 'boolean', description: 'Optimize prompts before sending', default: false }
+        prompts: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Prompts to process'
+        },
+        model: {
+          type: 'string',
+          description: `Model (default: ${CONFIG.DEFAULT_MODEL})`
+        },
+        maxConcurrent: {
+          type: 'number',
+          description: 'Max concurrent jobs (default: 4)'
+        },
+        optimize: {
+          type: 'boolean',
+          description: 'Optimize prompts before sending',
+          default: false
+        }
       },
       required: ['prompts']
     }
@@ -272,7 +388,11 @@ export const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        forceRefresh: { type: 'boolean', description: 'Force refresh from API', default: false },
+        forceRefresh: {
+          type: 'boolean',
+          description: 'Force refresh from API',
+          default: false
+        },
         apiKey: { type: 'string', description: 'Optional API key override' }
       },
       required: []
@@ -296,7 +416,11 @@ export const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        forceRefresh: { type: 'boolean', description: 'Force refresh from API', default: false }
+        forceRefresh: {
+          type: 'boolean',
+          description: 'Force refresh from API',
+          default: false
+        }
       },
       required: []
     }
@@ -307,7 +431,11 @@ export const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        forceRefresh: { type: 'boolean', description: 'Force refresh from API', default: false }
+        forceRefresh: {
+          type: 'boolean',
+          description: 'Force refresh from API',
+          default: false
+        }
       },
       required: []
     }
@@ -319,7 +447,11 @@ export const TOOLS = [
       type: 'object',
       properties: {
         capability: { type: 'string', description: 'Capability to filter by' },
-        forceRefresh: { type: 'boolean', description: 'Force refresh from API', default: false }
+        forceRefresh: {
+          type: 'boolean',
+          description: 'Force refresh from API',
+          default: false
+        }
       },
       required: ['capability']
     }
@@ -334,7 +466,11 @@ export const TOOLS = [
       properties: {
         prompt: { type: 'string', description: 'Prompt to enqueue' },
         model: { type: 'string', description: 'Model to use' },
-        priority: { type: 'string', enum: ['urgent', 'high', 'normal', 'low', 'background'], description: 'Queue priority' },
+        priority: {
+          type: 'string',
+          enum: ['urgent', 'high', 'normal', 'low', 'background'],
+          description: 'Queue priority'
+        },
         metadata: { type: 'object', description: 'Optional metadata' }
       },
       required: ['prompt']
@@ -346,9 +482,17 @@ export const TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
-        prompts: { type: 'array', items: { type: 'string' }, description: 'Prompts to enqueue' },
+        prompts: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Prompts to enqueue'
+        },
         model: { type: 'string', description: 'Model to use' },
-        priority: { type: 'string', enum: ['urgent', 'high', 'normal', 'low', 'background'], description: 'Queue priority' }
+        priority: {
+          type: 'string',
+          enum: ['urgent', 'high', 'normal', 'low', 'background'],
+          description: 'Queue priority'
+        }
       },
       required: ['prompts']
     }
@@ -418,13 +562,47 @@ export const TOOLS = [
       type: 'object',
       properties: {
         id: { type: 'number', description: 'The item ID to wait for' },
-        timeout: { type: 'number', description: 'Timeout in ms (default: 60000)' }
+        timeout: {
+          type: 'number',
+          description: 'Timeout in ms (default: 60000)'
+        }
       },
       required: ['id']
     }
   },
 
   // === HYDRA TOOLS ===
+  {
+    name: 'hydra_swarm',
+    description:
+      'Run the 6-step AgentSwarm protocol with parallel agents and optional memory logging.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string', description: 'Task prompt to execute' },
+        title: {
+          type: 'string',
+          description: 'Optional task title for logging'
+        },
+        agents: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional swarm agent names to use'
+        },
+        includeTranscript: {
+          type: 'boolean',
+          description: 'Include full swarm transcript',
+          default: false
+        },
+        saveMemory: {
+          type: 'boolean',
+          description: 'Save swarm archive to .serena/memories',
+          default: true
+        }
+      },
+      required: ['prompt']
+    }
+  },
   {
     name: 'hydra_health',
     description: 'Get overall server health, queue status, and version info.',

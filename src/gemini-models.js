@@ -31,7 +31,11 @@ function getApiKey() {
 
   // Try to read from settings.json
   try {
-    const settingsPath = join(process.env.USERPROFILE || process.env.HOME, '.gemini', 'settings.json');
+    const settingsPath = join(
+      process.env.USERPROFILE || process.env.HOME,
+      '.gemini',
+      'settings.json'
+    );
     if (existsSync(settingsPath)) {
       const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
       // Gemini CLI stores key differently - check common locations
@@ -81,7 +85,7 @@ export async function fetchGeminiModels(apiKey = null) {
     }
 
     const data = await response.json();
-    const models = (data.models || []).map(m => ({
+    const models = (data.models || []).map((m) => ({
       name: m.name.replace('models/', ''),
       displayName: m.displayName,
       description: m.description,
@@ -125,7 +129,9 @@ export async function getModelDetails(modelName, apiKey = null) {
   }
 
   // Normalize model name
-  const model = modelName.startsWith('models/') ? modelName : `models/${modelName}`;
+  const model = modelName.startsWith('models/')
+    ? modelName
+    : `models/${modelName}`;
 
   try {
     const response = await fetch(
@@ -175,10 +181,18 @@ export async function getModelDetails(modelName, apiKey = null) {
  */
 function saveModelsCache(models) {
   try {
-    writeFileSync(MODELS_CACHE_FILE, JSON.stringify({
-      models,
-      cachedAt: Date.now()
-    }, null, 2), 'utf-8');
+    writeFileSync(
+      MODELS_CACHE_FILE,
+      JSON.stringify(
+        {
+          models,
+          cachedAt: Date.now()
+        },
+        null,
+        2
+      ),
+      'utf-8'
+    );
     return true;
   } catch (_error) {
     return false;
@@ -255,12 +269,15 @@ export function filterModelsByCapability(models, capability) {
   ];
 
   if (!validCapabilities.includes(capability)) {
-    return { error: `Invalid capability. Valid: ${validCapabilities.join(', ')}` };
+    return {
+      error: `Invalid capability. Valid: ${validCapabilities.join(', ')}`
+    };
   }
 
-  return models.filter(m =>
-    m.supportedGenerationMethods &&
-    m.supportedGenerationMethods.includes(capability)
+  return models.filter(
+    (m) =>
+      m.supportedGenerationMethods &&
+      m.supportedGenerationMethods.includes(capability)
   );
 }
 
@@ -292,7 +309,11 @@ export function getRecommendedModels(models) {
     if (name.includes('flash')) {
       recommendations.flash.push(model.name);
     }
-    if (name.includes('exp') || name.includes('preview') || name.includes('latest')) {
+    if (
+      name.includes('exp') ||
+      name.includes('preview') ||
+      name.includes('latest')
+    ) {
       recommendations.experimental.push(model.name);
     }
   }
@@ -318,12 +339,15 @@ export function getModelsSummary(models) {
     summary.byFamily[family] = (summary.byFamily[family] || 0) + 1;
 
     // Count by capability
-    for (const cap of (model.supportedGenerationMethods || [])) {
+    for (const cap of model.supportedGenerationMethods || []) {
       summary.byCapability[cap] = (summary.byCapability[cap] || 0) + 1;
     }
 
     // Track largest context
-    if (!summary.largestContext || model.inputTokenLimit > summary.largestContext.inputTokenLimit) {
+    if (
+      !summary.largestContext ||
+      model.inputTokenLimit > summary.largestContext.inputTokenLimit
+    ) {
       summary.largestContext = {
         name: model.name,
         inputTokenLimit: model.inputTokenLimit,
@@ -334,8 +358,8 @@ export function getModelsSummary(models) {
 
   // Find newest (by version or name pattern)
   summary.newest = models
-    .filter(m => m.name.includes('2.5') || m.name.includes('latest'))
-    .map(m => m.name)
+    .filter((m) => m.name.includes('2.5') || m.name.includes('latest'))
+    .map((m) => m.name)
     .slice(0, 5);
 
   return summary;
@@ -350,16 +374,22 @@ export async function initializeModels() {
   const result = await getGeminiModels(false);
 
   if (result.success) {
-    console.error(`[HYDRA] Loaded ${result.count} models from ${result.source}`);
+    console.error(
+      `[HYDRA] Loaded ${result.count} models from ${result.source}`
+    );
     if (result.source === 'cache') {
       console.error(`[HYDRA] Cache age: ${result.ageMinutes} minutes`);
     }
 
     const summary = getModelsSummary(result.models);
-    console.error(`[HYDRA] Model families: ${Object.keys(summary.byFamily).join(', ')}`);
+    console.error(
+      `[HYDRA] Model families: ${Object.keys(summary.byFamily).join(', ')}`
+    );
 
     if (summary.largestContext) {
-      console.error(`[HYDRA] Largest context: ${summary.largestContext.name} (${summary.largestContext.inputTokenLimit} tokens)`);
+      console.error(
+        `[HYDRA] Largest context: ${summary.largestContext.name} (${summary.largestContext.inputTokenLimit} tokens)`
+      );
     }
   } else {
     console.error(`[HYDRA] Failed to load models: ${result.error}`);

@@ -9,7 +9,10 @@ const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434';
  */
 export async function generate(model, prompt, options = {}) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeout || 60000);
+  const timeout = setTimeout(
+    () => controller.abort(),
+    options.timeout || 60000
+  );
 
   try {
     const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
@@ -29,7 +32,9 @@ export async function generate(model, prompt, options = {}) {
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Ollama error: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -59,7 +64,7 @@ export async function checkHealth() {
     const data = await response.json();
     return {
       available: true,
-      models: data.models?.map(m => m.name) || [],
+      models: data.models?.map((m) => m.name) || [],
       host: OLLAMA_HOST
     };
   } catch (error) {
@@ -74,11 +79,13 @@ export async function listModels() {
   try {
     const response = await fetch(`${OLLAMA_HOST}/api/tags`);
     const data = await response.json();
-    return data.models?.map(m => ({
-      name: m.name,
-      size: m.size,
-      modified: m.modified_at
-    })) || [];
+    return (
+      data.models?.map((m) => ({
+        name: m.name,
+        size: m.size,
+        modified: m.modified_at
+      })) || []
+    );
   } catch {
     return [];
   }

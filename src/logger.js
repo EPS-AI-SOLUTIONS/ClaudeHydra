@@ -24,8 +24,12 @@ export const createLogger = (module) => {
 
   const log = (level, message, meta = {}) => {
     if (getLevelIndex(level) < minLevel) return;
-    const payload = useJson ? formatJson(level, message, meta, module) : `[${module}] ${message}`;
-    const output = useJson ? payload : `${payload}${Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : ''}`;
+    const payload = useJson
+      ? formatJson(level, message, meta, module)
+      : `[${module}] ${message}`;
+    const output = useJson
+      ? payload
+      : `${payload}${Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : ''}`;
     switch (level) {
       case 'error':
         console.error(output);

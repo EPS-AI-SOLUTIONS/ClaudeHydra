@@ -2,8 +2,20 @@
  * HYDRA Cache System - SHA256-based response caching
  */
 
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'fs';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes
+} from 'crypto';
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync
+} from 'fs';
 import { join } from 'path';
 import { CONFIG } from './config.js';
 import { createLogger } from './logger.js';
@@ -21,7 +33,9 @@ if (!existsSync(CACHE_DIR)) {
 
 const resolveEncryptionKey = () => {
   if (!CONFIG.CACHE_ENCRYPTION_KEY) {
-    logger.warn('CACHE_ENCRYPTION_KEY not set; cache entries will be stored in plain text');
+    logger.warn(
+      'CACHE_ENCRYPTION_KEY not set; cache entries will be stored in plain text'
+    );
     return null;
   }
 
@@ -36,7 +50,9 @@ const resolveEncryptionKey = () => {
       return decoded;
     }
   } catch (error) {
-    logger.error('Failed to decode CACHE_ENCRYPTION_KEY', { error: error.message });
+    logger.error('Failed to decode CACHE_ENCRYPTION_KEY', {
+      error: error.message
+    });
   }
 
   logger.warn('Invalid CACHE_ENCRYPTION_KEY length; expected 32 bytes');
@@ -52,7 +68,10 @@ const encryptPayload = (payload) => {
 
   const iv = randomBytes(12);
   const cipher = createCipheriv(ENCRYPTION_ALGORITHM, ENCRYPTION_KEY, iv);
-  const encrypted = Buffer.concat([cipher.update(payload, 'utf-8'), cipher.final()]);
+  const encrypted = Buffer.concat([
+    cipher.update(payload, 'utf-8'),
+    cipher.final()
+  ]);
   const tag = cipher.getAuthTag();
 
   logger.info('Encrypted cache payload');
@@ -90,9 +109,7 @@ const decryptPayload = (entry) => {
  * Generate SHA256 hash for cache key
  */
 export function hashKey(prompt, model = '') {
-  return createHash('sha256')
-    .update(`${model}:${prompt}`)
-    .digest('hex');
+  return createHash('sha256').update(`${model}:${prompt}`).digest('hex');
 }
 
 /**
@@ -108,7 +125,9 @@ export function getCache(prompt, model = '') {
 
   try {
     const data = JSON.parse(readFileSync(cachePath, 'utf-8'));
-    const payload = data.encrypted ? decryptPayload(data) : JSON.stringify(data);
+    const payload = data.encrypted
+      ? decryptPayload(data)
+      : JSON.stringify(data);
     if (!payload) return null;
     const parsed = data.encrypted ? JSON.parse(payload) : data;
 
@@ -148,7 +167,9 @@ export function setCache(prompt, response, model = '', source = 'ollama') {
     });
 
     const entry = encryptPayload(payload);
-    const storedEntry = entry.encrypted ? entry : { ...JSON.parse(payload), encrypted: false };
+    const storedEntry = entry.encrypted
+      ? entry
+      : { ...JSON.parse(payload), encrypted: false };
     writeFileSync(cachePath, JSON.stringify(storedEntry, null, 2), 'utf-8');
     logger.info('Cache entry stored', { hash, encrypted: entry.encrypted });
     return true;
@@ -162,7 +183,7 @@ export function setCache(prompt, response, model = '', source = 'ollama') {
  */
 export function getCacheStats() {
   try {
-    const files = readdirSync(CACHE_DIR).filter(f => f.endsWith('.json'));
+    const files = readdirSync(CACHE_DIR).filter((f) => f.endsWith('.json'));
     let totalSize = 0;
     let validCount = 0;
     let expiredCount = 0;
@@ -173,7 +194,9 @@ export function getCacheStats() {
 
       try {
         const data = JSON.parse(readFileSync(join(CACHE_DIR, file), 'utf-8'));
-        const payload = data.encrypted ? decryptPayload(data) : JSON.stringify(data);
+        const payload = data.encrypted
+          ? decryptPayload(data)
+          : JSON.stringify(data);
         if (!payload) {
           expiredCount++;
           continue;
@@ -197,6 +220,12 @@ export function getCacheStats() {
       cacheDir: CACHE_DIR
     };
   } catch {
-    return { totalEntries: 0, validEntries: 0, expiredEntries: 0, totalSizeKB: 0, cacheDir: CACHE_DIR };
+    return {
+      totalEntries: 0,
+      validEntries: 0,
+      expiredEntries: 0,
+      totalSizeKB: 0,
+      cacheDir: CACHE_DIR
+    };
   }
 }

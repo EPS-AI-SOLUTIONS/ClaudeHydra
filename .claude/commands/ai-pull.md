@@ -1,5 +1,5 @@
 ---
-description: "Pull/download Ollama models"
+description: 'Pull/download Ollama models'
 ---
 
 # /ai-pull - AI Model Management
@@ -15,6 +15,7 @@ powershell -ExecutionPolicy Bypass -Command ". 'C:\Users\BIURODOM\Desktop\Gemini
 ```
 
 Available arguments:
+
 - `-List`: List installed models and their sizes
 - `-Popular`: Show recommended models to download
 - `<model-name>`: Pull/download specific model

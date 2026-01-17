@@ -1,5 +1,5 @@
 ---
-description: "Configure AI Handler settings"
+description: 'Configure AI Handler settings'
 ---
 
 # /ai-config - AI Handler Configuration
@@ -15,6 +15,7 @@ powershell -ExecutionPolicy Bypass -Command "[Environment]::SetEnvironmentVariab
 ```
 
 Available arguments:
+
 - `-Show`: View current configuration
 - `-PreferLocal true/false`: Set local Ollama preference
 - `-AutoFallback true/false`: Enable/disable automatic provider switching

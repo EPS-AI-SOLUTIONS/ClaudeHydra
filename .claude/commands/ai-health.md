@@ -1,5 +1,5 @@
 ---
-description: "Show AI Health Dashboard"
+description: 'Show AI Health Dashboard'
 ---
 
 # /ai-health - AI Handler Health
@@ -15,4 +15,5 @@ powershell -ExecutionPolicy Bypass -Command ". 'C:\Users\BIURODOM\Desktop\Gemini
 ```
 
 Available arguments:
+
 - `-Json`: Export health data in JSON format

@@ -136,7 +136,10 @@ export function getPromptLanguage(prompt) {
 
   for (const [lang, keywords] of Object.entries(config.languages || {})) {
     for (const keyword of keywords) {
-      const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      const regex = new RegExp(
+        `\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+        'i'
+      );
       if (regex.test(promptLower)) {
         return lang;
       }
@@ -195,7 +198,11 @@ export function optimizePrompt(prompt, options = {}) {
 
   // 2. Add category-specific enhancements
   const categoryData = config.categories[category];
-  if (categoryData && categoryData.enhancers && categoryData.enhancers.length > 0) {
+  if (
+    categoryData &&
+    categoryData.enhancers &&
+    categoryData.enhancers.length > 0
+  ) {
     const enhancerText = categoryData.enhancers.join(' ');
     // Check if not already present
     if (!enhanced.includes(enhancerText.substring(0, 20))) {
@@ -214,7 +221,10 @@ export function optimizePrompt(prompt, options = {}) {
 
   // 4. Add structure for low-clarity prompts
   const lowClarityThreshold = config.settings?.lowClarityThreshold || 60;
-  if (clarity.score < lowClarityThreshold && config.settings?.wrapLowClarity !== false) {
+  if (
+    clarity.score < lowClarityThreshold &&
+    config.settings?.wrapLowClarity !== false
+  ) {
     enhanced = `Task: ${enhanced}\n\nPlease provide a clear, well-structured response.`;
     enhancements.push('Added structure wrapper');
   }
@@ -222,7 +232,8 @@ export function optimizePrompt(prompt, options = {}) {
   // 5. Add an example template if requested
   if (addExamples) {
     const templates = config.promptTemplates?.[category];
-    const exampleTemplate = templates?.basic || (templates ? Object.values(templates)[0] : null);
+    const exampleTemplate =
+      templates?.basic || (templates ? Object.values(templates)[0] : null);
     if (exampleTemplate && !enhanced.includes(exampleTemplate)) {
       enhanced = `${enhanced}\n\nExample: ${exampleTemplate}`;
       enhancements.push('Added example template');
@@ -268,9 +279,10 @@ export function testPromptQuality(prompt) {
     language,
     issues: clarity.issues,
     suggestions: clarity.suggestions,
-    recommendation: clarity.score >= 60
-      ? 'Prompt is acceptable'
-      : 'Consider improving the prompt using suggestions'
+    recommendation:
+      clarity.score >= 60
+        ? 'Prompt is acceptable'
+        : 'Consider improving the prompt using suggestions'
   };
 }
 
@@ -278,7 +290,7 @@ export function testPromptQuality(prompt) {
  * Optimize multiple prompts
  */
 export function optimizePromptBatch(prompts, options = {}) {
-  return prompts.map(prompt => optimizePrompt(prompt, options));
+  return prompts.map((prompt) => optimizePrompt(prompt, options));
 }
 
 /**
@@ -293,9 +305,11 @@ export function analyzePrompt(prompt) {
     clarity: getPromptClarity(prompt),
     hasQuestion: prompt.includes('?'),
     hasCodeMarkers: /```/.test(prompt),
-    sentiment: prompt.toLowerCase().includes('error') || prompt.toLowerCase().includes('bug')
-      ? 'problem-solving'
-      : 'neutral'
+    sentiment:
+      prompt.toLowerCase().includes('error') ||
+      prompt.toLowerCase().includes('bug')
+        ? 'problem-solving'
+        : 'neutral'
   };
 }
 
@@ -313,7 +327,10 @@ export function getSuggestions(prompt, model = 'llama3.2:3b') {
     if (analysis.category === 'code' && !analysis.language) {
       suggestions.push('Specify the programming language');
     }
-    if (analysis.category === 'task' && !prompt.toLowerCase().includes('step')) {
+    if (
+      analysis.category === 'task' &&
+      !prompt.toLowerCase().includes('step')
+    ) {
       suggestions.push('Ask for step-by-step instructions');
     }
   }
@@ -345,7 +362,9 @@ export function getSmartSuggestions(prompt, analysis = null) {
 
   // Check for missing error handling mention in code prompts
   if (analysis.category === 'code') {
-    const mentionsErrors = /error|exception|try|catch|handle|throw/i.test(prompt);
+    const mentionsErrors = /error|exception|try|catch|handle|throw/i.test(
+      prompt
+    );
     if (!mentionsErrors) {
       suggestions.push('Consider specifying error handling requirements');
     }

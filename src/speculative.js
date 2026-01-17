@@ -29,11 +29,11 @@ export async function speculativeGenerate(prompt, options = {}) {
 
   // Create racing promises
   const fastPromise = generate(fastModel, prompt, { timeout })
-    .then(r => ({ ...r, source: 'speed', model: fastModel }))
+    .then((r) => ({ ...r, source: 'speed', model: fastModel }))
     .catch(() => null);
 
   const accuratePromise = generate(accurateModel, prompt, { timeout })
-    .then(r => ({ ...r, source: 'quality', model: accurateModel }))
+    .then((r) => ({ ...r, source: 'quality', model: accurateModel }))
     .catch(() => null);
 
   // Race with validation
@@ -43,7 +43,11 @@ export async function speculativeGenerate(prompt, options = {}) {
     // Wait for first result
     const winner = await Promise.race([fastPromise, accuratePromise]);
 
-    if (winner && winner.response && winner.response.length >= MIN_VALID_LENGTH) {
+    if (
+      winner &&
+      winner.response &&
+      winner.response.length >= MIN_VALID_LENGTH
+    ) {
       // Fast model won with valid response
       const result = {
         response: winner.response,
@@ -73,7 +77,6 @@ export async function speculativeGenerate(prompt, options = {}) {
     }
 
     throw new Error('Both models failed to produce valid output');
-
   } catch (error) {
     return {
       response: null,
@@ -91,16 +94,20 @@ export async function modelRace(prompt, models, options = {}) {
   const timeout = options.timeout || 30000;
   const startTime = Date.now();
 
-  const promises = models.map(model =>
+  const promises = models.map((model) =>
     generate(model, prompt, { timeout })
-      .then(r => ({ ...r, model, success: true }))
-      .catch(e => ({ model, success: false, error: e.message }))
+      .then((r) => ({ ...r, model, success: true }))
+      .catch((e) => ({ model, success: false, error: e.message }))
   );
 
   // Wait for all to complete (or use Promise.race for first)
   if (options.firstWins) {
-    const validPromises = promises.map(p =>
-      p.then(r => r.success && r.response?.length >= MIN_VALID_LENGTH ? r : Promise.reject())
+    const validPromises = promises.map((p) =>
+      p.then((r) =>
+        r.success && r.response?.length >= MIN_VALID_LENGTH
+          ? r
+          : Promise.reject()
+      )
     );
 
     try {
@@ -119,7 +126,9 @@ export async function modelRace(prompt, models, options = {}) {
 
   // Wait for all and return best
   const results = await Promise.all(promises);
-  const valid = results.filter(r => r.success && r.response?.length >= MIN_VALID_LENGTH);
+  const valid = results.filter(
+    (r) => r.success && r.response?.length >= MIN_VALID_LENGTH
+  );
 
   if (valid.length === 0) {
     return { error: 'No model produced valid output', models };
@@ -147,14 +156,14 @@ export async function consensusGenerate(prompt, models, options = {}) {
   const timeout = options.timeout || 60000;
   const startTime = Date.now();
 
-  const promises = models.map(model =>
+  const promises = models.map((model) =>
     generate(model, prompt, { timeout })
-      .then(r => ({ response: r.response, model, success: true }))
+      .then((r) => ({ response: r.response, model, success: true }))
       .catch(() => ({ model, success: false }))
   );
 
   const results = await Promise.all(promises);
-  const valid = results.filter(r => r.success && r.response);
+  const valid = results.filter((r) => r.success && r.response);
 
   if (valid.length === 0) {
     return { error: 'No model produced output', consensus: false };
@@ -171,9 +180,13 @@ export async function consensusGenerate(prompt, models, options = {}) {
   }
 
   // Simple similarity check (first 100 chars)
-  const normalized = valid.map(v => v.response.toLowerCase().substring(0, 100).trim());
-  const similar = normalized.every(n =>
-    normalized[0].includes(n.substring(0, 30)) || n.includes(normalized[0].substring(0, 30))
+  const normalized = valid.map((v) =>
+    v.response.toLowerCase().substring(0, 100).trim()
+  );
+  const similar = normalized.every(
+    (n) =>
+      normalized[0].includes(n.substring(0, 30)) ||
+      n.includes(normalized[0].substring(0, 30))
   );
 
   return {
