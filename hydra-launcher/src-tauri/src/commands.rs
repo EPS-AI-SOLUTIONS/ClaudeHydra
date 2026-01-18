@@ -115,15 +115,21 @@ pub async fn start_claude_session(_yolo_mode: bool) -> Result<String, String> {
         .as_millis()))
 }
 
+/// Safely truncate a UTF-8 string to approximately n characters
+fn safe_truncate(s: &str, max_chars: usize) -> String {
+    let truncated: String = s.chars().take(max_chars).collect();
+    if s.chars().count() > max_chars {
+        format!("{}...", truncated)
+    } else {
+        truncated
+    }
+}
+
 /// Send a message to Claude and get response
 #[tauri::command]
 pub async fn send_to_claude(message: String) -> Result<String, String> {
     let hydra_path = get_hydra_path()?;
-    let msg_preview = if message.len() > 100 {
-        format!("{}...", &message[..100])
-    } else {
-        message.clone()
-    };
+    let msg_preview = safe_truncate(&message, 100);
     log_claude_interaction("SEND", &msg_preview);
 
     // Find claude executable path
@@ -146,11 +152,7 @@ pub async fn send_to_claude(message: String) -> Result<String, String> {
 
     if output.status.success() {
         let response = String::from_utf8_lossy(&output.stdout).to_string();
-        let resp_preview = if response.len() > 100 {
-            format!("{}...", &response.trim()[..100.min(response.len())])
-        } else {
-            response.trim().to_string()
-        };
+        let resp_preview = safe_truncate(response.trim(), 100);
         log_claude_interaction("RECV", &resp_preview);
         Ok(response.trim().to_string())
     } else {
