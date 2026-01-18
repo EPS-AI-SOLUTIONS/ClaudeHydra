@@ -8,30 +8,43 @@ export default {
   theme: {
     extend: {
       colors: {
+        // B&W Monochrome palette
+        bw: {
+          bg: '#0a0a0a',
+          surface: '#141414',
+          card: '#1a1a1a',
+          border: '#2a2a2a',
+          'border-light': '#3a3a3a',
+          text: '#e5e5e5',
+          'text-dim': '#888888',
+          'text-muted': '#555555',
+          accent: '#ffffff',
+          'accent-dim': '#cccccc',
+        },
+        // Legacy mappings for compatibility
         witcher: {
           bg: {
-            primary: '#0a0a08',
-            secondary: '#0d0d0a',
+            primary: '#0a0a0a',
+            secondary: '#141414',
           },
-          gold: '#d4a50a',
-          'gold-light': '#ffd700',
-          amber: '#c9a227',
-          bronze: '#b8860b',
-          glass: 'rgba(15, 12, 8, 0.88)',
+          gold: '#e5e5e5',
+          'gold-light': '#ffffff',
+          amber: '#cccccc',
+          bronze: '#888888',
+          glass: 'rgba(20, 20, 20, 0.9)',
         },
-        // Legacy matrix colors (mapped to witcher)
         matrix: {
           bg: {
-            primary: '#0a0a08',
-            secondary: '#0d0d0a',
+            primary: '#0a0a0a',
+            secondary: '#141414',
           },
-          accent: '#d4a50a',
-          glass: 'rgba(15, 12, 8, 0.88)',
+          accent: '#ffffff',
+          glass: 'rgba(20, 20, 20, 0.9)',
         },
         hydra: {
-          gold: '#ffd700',
-          amber: '#c9a227',
-          bronze: '#b8860b',
+          gold: '#ffffff',
+          amber: '#cccccc',
+          bronze: '#888888',
         }
       },
       fontFamily: {
@@ -40,22 +53,13 @@ export default {
       },
       animation: {
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'matrix-rain': 'matrixRain 20s linear infinite',
-        'glow': 'glow 2s ease-in-out infinite alternate',
+        'pulse-soft': 'pulse-soft 1.5s ease-in-out infinite',
       },
       keyframes: {
-        witcherRain: {
-          '0%': { transform: 'translateY(-100%)' },
-          '100%': { transform: 'translateY(100%)' },
-        },
-        glow: {
-          '0%': { boxShadow: '0 0 5px #d4a50a, 0 0 10px #d4a50a' },
-          '100%': { boxShadow: '0 0 20px #ffd700, 0 0 30px #ffd700' },
-        },
-        bling: {
-          '0%, 100%': { opacity: '0.3' },
+        'pulse-soft': {
+          '0%, 100%': { opacity: '0.7' },
           '50%': { opacity: '1' },
-        }
+        },
       },
       transitionDuration: {
         '2000': '2000ms',

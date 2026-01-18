@@ -6,11 +6,8 @@ const Launcher: React.FC = () => {
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === 'light';
   const [progress, setProgress] = useState(0);
-  const [statusText, setStatusText] = useState('OTWIERANIE KODEKSU...');
+  const [statusText, setStatusText] = useState('INITIALIZING...');
   const startTimeRef = useRef<number>(0);
-
-  // Logo based on theme
-  const logoSrc = isLight ? '/logolight.webp' : '/logodark.webp';
 
   // Loading simulation
   useEffect(() => {
@@ -18,7 +15,7 @@ const Launcher: React.FC = () => {
 
     const updateProgress = () => {
       const elapsed = Date.now() - startTimeRef.current;
-      const newProgress = Math.min((elapsed / 3200) * 100, 100);
+      const newProgress = Math.min((elapsed / 2200) * 100, 100);
       setProgress(newProgress);
     };
 
@@ -32,14 +29,14 @@ const Launcher: React.FC = () => {
   // Update status text based on progress
   useEffect(() => {
     const statuses = [
-      { text: 'OTWIERANIE KODEKSU...', threshold: 0 },
-      { text: 'PRZYWOŁYWANIE SERENY...', threshold: 15 },
-      { text: 'BUDZENIE DESKTOP COMMANDERA...', threshold: 30 },
-      { text: 'AKTYWACJA PLAYWRIGHT...', threshold: 45 },
-      { text: 'SPRAWDZANIE OLLAMA...', threshold: 60 },
-      { text: 'ŁADOWANIE AGENT SWARM...', threshold: 75 },
-      { text: 'KONFIGURACJA AI HANDLER...', threshold: 88 },
-      { text: '⚔ KODEKS GOTOWY ⚔', threshold: 98 },
+      { text: 'INITIALIZING...', threshold: 0 },
+      { text: 'LOADING SERENA...', threshold: 15 },
+      { text: 'STARTING DESKTOP COMMANDER...', threshold: 30 },
+      { text: 'ACTIVATING PLAYWRIGHT...', threshold: 45 },
+      { text: 'CHECKING OLLAMA...', threshold: 60 },
+      { text: 'LOADING AGENT SWARM...', threshold: 75 },
+      { text: 'CONFIGURING AI HANDLER...', threshold: 88 },
+      { text: 'READY', threshold: 98 },
     ];
 
     for (let i = statuses.length - 1; i >= 0; i--) {
@@ -53,156 +50,111 @@ const Launcher: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center w-full h-full relative overflow-hidden">
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center w-full max-w-lg px-6">
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md px-6">
 
-        {/* Decorative Runes Top */}
-        <div className="mb-6 text-center">
-          <span className="text-xs tracking-[0.5em] text-amber-500/60">
-            ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ ᚷ
-          </span>
+        {/* Logo / Title */}
+        <div className="mb-8 text-center">
+          <h1 className={`text-3xl font-mono font-bold tracking-[0.2em] mb-2 ${
+            isLight ? 'text-black' : 'text-white'
+          }`}>
+            HYDRA
+          </h1>
+          <p className={`text-xs font-mono tracking-[0.3em] ${
+            isLight ? 'text-gray-500' : 'text-gray-500'
+          }`}>
+            v10.6.1
+          </p>
         </div>
 
-        {/* Logo Image */}
-        <div className="mb-6 relative">
-          <img
-            src={logoSrc}
-            alt="HYDRA"
-            className="w-72 h-auto object-contain transition-all duration-700 hydra-logo"
-          />
-          {/* Glow ring - removed for cleaner UI */}
-        </div>
-
-        {/* Title */}
-        <h1 className="codex-title text-2xl mb-2">
-          KODEKS HYDRY
-        </h1>
-
-        {/* Subtitle */}
-        <p className={`text-[10px] tracking-[0.3em] mb-8 ${isLight ? 'text-amber-700/60' : 'text-amber-500/50'}`}>
-          ⚔ CZTEROGŁOWA BESTIA ⚔
-        </p>
-
-        {/* Progress Section - Codex Style */}
-        <div
-          className="w-full max-w-md glass-card p-6"
-        >
+        {/* Progress Section */}
+        <div className="w-full glass-card p-6">
           {/* Status Text */}
           <div className="flex justify-between items-center mb-4">
-            <span className={`text-xs font-cinzel tracking-wider ${isLight ? 'text-amber-800' : 'text-amber-400'}`}>
+            <span className={`text-xs font-mono tracking-wider ${
+              isLight ? 'text-gray-700' : 'text-gray-300'
+            }`}>
               {statusText}
             </span>
-            <span className={`text-sm font-bold font-cinzel ${isLight ? 'text-amber-700' : 'text-amber-500'}`}>
+            <span className={`text-sm font-bold font-mono ${
+              isLight ? 'text-black' : 'text-white'
+            }`}>
               {Math.floor(progress)}%
             </span>
           </div>
 
-          {/* Progress Bar - Medieval Style */}
-          <div className="relative h-3 rounded-sm overflow-hidden bg-black/40 border border-amber-900/50">
-            {/* Track texture */}
-            <div className="absolute inset-0 opacity-20"
-              style={{
-                backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(212,165,10,0.1) 2px, rgba(212,165,10,0.1) 4px)'
-              }}
-            />
-
+          {/* Progress Bar - Minimal */}
+          <div className={`relative h-1 rounded-full overflow-hidden ${
+            isLight ? 'bg-gray-200' : 'bg-gray-800'
+          }`}>
             {/* Progress fill */}
             <div
-              className="h-full rounded-sm transition-all duration-300 relative overflow-hidden"
+              className="h-full rounded-full transition-all duration-200"
               style={{
                 width: `${progress}%`,
-                background: 'linear-gradient(90deg, #8b6914 0%, #d4a50a 50%, #ffd700 100%)',
+                background: isLight ? '#000' : '#fff',
               }}
-            >
-              {/* Shimmer effect - removed */}
-            </div>
+            />
           </div>
 
-          {/* Decorative line */}
-          <div className="codex-divider mt-4 mb-4" />
+          {/* Divider */}
+          <div className={`h-px my-5 ${isLight ? 'bg-gray-200' : 'bg-gray-800'}`} />
 
-          {/* System Check Icons - Witcher Signs Style */}
+          {/* System Check Icons */}
           <div className="flex justify-between px-2">
-            <WitcherSign icon={Shield} active={progress > 15} label="SERENA" isLight={isLight} sign="ᚨ" />
-            <WitcherSign icon={Terminal} active={progress > 30} label="DC" isLight={isLight} sign="ᚱ" />
-            <WitcherSign icon={Wifi} active={progress > 45} label="PLAY" isLight={isLight} sign="ᚲ" />
-            <WitcherSign icon={Database} active={progress > 60} label="OLLAMA" isLight={isLight} sign="ᚷ" />
-            <WitcherSign icon={Cpu} active={progress > 75} label="SWARM" isLight={isLight} sign="ᚹ" />
-            <WitcherSign icon={Zap} active={progress > 95} label="GOTOWY" isLight={isLight} sign="ᛉ" />
+            <StatusIcon icon={Shield} active={progress > 15} label="SRN" isLight={isLight} />
+            <StatusIcon icon={Terminal} active={progress > 30} label="DC" isLight={isLight} />
+            <StatusIcon icon={Wifi} active={progress > 45} label="PW" isLight={isLight} />
+            <StatusIcon icon={Database} active={progress > 60} label="OLL" isLight={isLight} />
+            <StatusIcon icon={Cpu} active={progress > 75} label="SWM" isLight={isLight} />
+            <StatusIcon icon={Zap} active={progress > 95} label="RDY" isLight={isLight} />
           </div>
         </div>
 
-        {/* Bottom Runes */}
-        <div className="mt-8 text-center">
-          <span className="text-xs tracking-[0.5em] text-amber-500/40">
-            ᛟ ᛞ ᛜ ᛗ ᛚ ᛖ ᛒ
-          </span>
+        {/* Version Footer */}
+        <div className={`mt-8 text-[10px] font-mono tracking-wider ${
+          isLight ? 'text-gray-400' : 'text-gray-600'
+        }`}>
+          CLAUDE HYDRA
         </div>
-      </div>
-
-      {/* Version Footer */}
-      <div
-        className={`absolute bottom-4 text-[9px] tracking-[0.4em] font-cinzel ${
-          isLight ? 'text-amber-700/50' : 'text-amber-500/40'
-        }`}
-      >
-        ◆ HYDRA 10.4 ◆
       </div>
     </div>
   );
 };
 
-const WitcherSign: React.FC<{
+const StatusIcon: React.FC<{
   icon: LucideIcon;
   active: boolean;
   label: string;
   isLight?: boolean;
-  sign: string;
-}> = ({ icon: Icon, active, label, isLight = false, sign }) => (
+}> = ({ icon: Icon, active, label, isLight = false }) => (
   <div
-    className={`flex flex-col items-center gap-2 transition-all duration-500 ${
+    className={`flex flex-col items-center gap-2 transition-all duration-300 ${
       active
-        ? 'opacity-100 transform translate-y-0 scale-100'
-        : 'opacity-25 transform translate-y-1 scale-90'
+        ? 'opacity-100'
+        : 'opacity-30'
     }`}
   >
-    {/* Rune */}
-    <span
-      className={`text-lg transition-all duration-500 ${
-        active
-          ? isLight ? 'text-amber-600' : 'text-amber-400'
-          : 'text-slate-600'
-      }`}
-      style={{}}
-    >
-      {sign}
-    </span>
-
     {/* Icon */}
     <div
-      className={`p-2 rounded transition-all duration-500 ${
+      className={`p-2 rounded transition-all duration-300 ${
         active
           ? isLight
-            ? 'text-amber-600 bg-amber-100/50'
-            : 'text-amber-400 bg-amber-500/10'
+            ? 'text-black bg-gray-100'
+            : 'text-white bg-gray-800'
           : isLight
-            ? 'text-slate-400'
-            : 'text-slate-600'
+            ? 'text-gray-400'
+            : 'text-gray-600'
       }`}
-      style={{}}
     >
       <Icon size={14} strokeWidth={active ? 2 : 1.5} />
     </div>
 
     {/* Label */}
     <span
-      className={`text-[7px] font-cinzel font-semibold tracking-wider transition-all duration-500 ${
+      className={`text-[8px] font-mono font-medium tracking-wider transition-all duration-300 ${
         active
-          ? isLight
-            ? 'text-amber-600'
-            : 'text-amber-400/80'
-          : isLight
-            ? 'text-slate-400'
-            : 'text-slate-600'
+          ? isLight ? 'text-black' : 'text-white'
+          : isLight ? 'text-gray-400' : 'text-gray-600'
       }`}
     >
       {label}

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import Launcher from "./components/Launcher";
 import Dashboard from "./components/Dashboard";
-import WitcherRain from "./components/WitcherRain";
 import { useTheme } from "./contexts/ThemeContext";
 
 function App() {
@@ -10,41 +9,33 @@ function App() {
   const isLight = resolvedTheme === 'light';
 
   useEffect(() => {
-    // Loading sequence - 3 seconds
+    // Loading sequence - 2 seconds (faster)
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 3000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
 
-  // Background images based on theme
-  const backgroundImage = isLight ? '/backgroundlight.webp' : '/background.webp';
-
   return (
     <div className="w-full h-full relative overflow-hidden">
-      {/* Background Image */}
+      {/* Solid B&W Background */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
-        style={{
-          backgroundImage: `url(${backgroundImage})`,
-          zIndex: 0,
-        }}
+        className={`absolute inset-0 transition-colors duration-300 ${
+          isLight ? 'bg-[#fafafa]' : 'bg-[#0a0a0a]'
+        }`}
+        style={{ zIndex: 0 }}
       />
 
-      {/* Witcher Runes Rain Overlay */}
-      <div className="absolute inset-0" style={{ zIndex: 1, opacity: isLight ? 0.5 : 0.6 }}>
-        <WitcherRain />
-      </div>
-
-      {/* Gradient Overlay for better readability */}
+      {/* Subtle grid pattern */}
       <div
-        className={`absolute inset-0 transition-colors duration-500 ${
-          isLight
-            ? 'bg-gradient-to-br from-white/30 via-transparent to-white/30'
-            : 'bg-gradient-to-br from-black/40 via-transparent to-black/40'
-        }`}
-        style={{ zIndex: 2 }}
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          zIndex: 1,
+          backgroundImage: `linear-gradient(${isLight ? '#000' : '#fff'} 1px, transparent 1px),
+                           linear-gradient(90deg, ${isLight ? '#000' : '#fff'} 1px, transparent 1px)`,
+          backgroundSize: '50px 50px',
+        }}
       />
 
       {/* Main Content */}
