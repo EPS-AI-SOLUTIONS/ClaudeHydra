@@ -4,6 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { safeInvoke, isTauri } from '../hooks/useTauri';
 import ProgressBar from './ProgressBar';
 import TheEndAnimation from './TheEndAnimation';
+import { useSoundEffects } from '../hooks/useSoundEffects';
 
 interface Message {
   id: string;
@@ -19,6 +20,7 @@ interface ChatInterfaceProps {
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ onConnectionChange }) => {
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === 'light';
+  const { playMessageSent, playMessageReceived, playError, playClick } = useSoundEffects();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '0',
@@ -89,6 +91,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onConnectionChange }) => 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    playMessageSent(); // Play send sound
 
     try {
       let response: string;
@@ -107,6 +110,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onConnectionChange }) => 
         content: response,
         timestamp: new Date(),
       }]);
+      playMessageReceived(); // Play receive sound
 
       // Check for task completion triggers
       const lower = response.toLowerCase();
@@ -116,6 +120,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onConnectionChange }) => 
         setTimeout(() => setShowTheEnd(true), 500);
       }
     } catch (e) {
+      playError(); // Play error sound
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'system',
@@ -218,7 +223,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onConnectionChange }) => 
           />
 
           <button
-            onClick={sendMessage}
+            onClick={() => { playClick(); sendMessage(); }}
             disabled={!input.trim() || isLoading}
             className={`shrink-0 p-2.5 rounded-lg transition-all duration-300 border ${
               input.trim() && !isLoading

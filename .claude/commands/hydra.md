@@ -1,176 +1,169 @@
 ---
-description: "HYDRA 10.1 - Four-Headed Beast (Serena + DC + Playwright + Swarm)"
+description: "HYDRA 10.6.1 - Unified Orchestration (Serena + DC + Agent Swarm)"
 ---
 
-# HYDRA 10.1 - Four-Headed Beast
+# HYDRA 10.6.1 - Unified Orchestration
 
-**Status: ACTIVE** | Unified Orchestration | MCP + Agent Swarm
+**Status: ACTIVE** | 10 Agents × 5 Domains | MCP Integration
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  🐉 HYDRA 10.1 - Four-Headed Beast                              │
+│  🐉 HYDRA 10.6.1 - CLI EDITION                                  │
 │  ════════════════════════════════════════════════════════       │
 │  [●] Serena            → Symbolic code analysis                 │
 │  [●] Desktop Commander → System operations                      │
-│  [●] Playwright        → Browser automation                     │
-│  [●] Agent Swarm       → 12 Witcher Agents (parallel AI)        │
+│  [●] Agent Swarm       → 10 Agents (5 domains)                  │
 │                                                                 │
-│  Mode: MCP + RunspacePool │ YOLO: $YOLO_STATUS                  │
+│  Mode: Claude CLI │ Autonomy: $AUTONOMY_LEVEL                   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## THE FOUR HEADS
+## AGENT SWARM (10 Agents × 5 Domains)
 
-| Head | Purpose | Key Tools/Agents |
-|------|---------|------------------|
-| 🧠 **Serena** | Code Intelligence | `find_symbol`, `replace_symbol_body`, `get_symbols_overview` |
-| ⚡ **Desktop Commander** | System Power | `start_process`, `read_file`, `write_file` |
-| 🌐 **Playwright** | Browser Automation | `browser_navigate`, `browser_click`, `browser_snapshot` |
-| 🐺 **Agent Swarm** | Parallel AI | Geralt, Yennefer, Triss, Ciri + 8 more |
+| Domain | Agents | Specialty |
+|--------|--------|-----------|
+| 🏗️ **ARCHITECTURE** | Architect, Planner | System design, task breakdown |
+| 🔍 **ANALYSIS** | Researcher, Analyst | Investigation, data analysis |
+| 💻 **IMPLEMENTATION** | Coder, Refactorer | Code writing, cleanup |
+| ✅ **QUALITY** | Tester, Reviewer | Testing, code review |
+| 📚 **DOCUMENTATION** | Documenter, Explainer | Docs, explanations |
+
+## ROUTING PATTERNS
+
+```
+design|architect|structure     → Architect
+plan|breakdown|sprint          → Planner
+research|investigate|find      → Researcher
+analyze|metrics|data           → Analyst
+implement|code|write|build     → Coder
+refactor|clean|optimize        → Refactorer
+test|validate|verify           → Tester
+review|pr|diff|feedback        → Reviewer
+document|readme|api docs       → Documenter
+explain|clarify|teach          → Explainer
+```
 
 ## UNIFIED WORKFLOWS
 
-### 1. Code Analysis + AI Review
-```powershell
-# MCP: Get code structure
-mcp__serena__get_symbols_overview("src/")
+### 1. Feature Implementation
+```bash
+# Step 1: Plan
+/hydra plan "Add dark mode toggle to settings"
 
-# Swarm: AI analysis
-Invoke-AgentSwarm -Query "Review this code architecture" -Agents @("Vesemir", "Yennefer")
-```
+# Step 2: Implement
+mcp__serena__find_symbol("ThemeProvider")
+mcp__serena__replace_symbol_body("ThemeProvider", $newCode)
 
-### 2. Implement Feature (Full Stack)
-```powershell
-# Step 1: Plan with Dijkstra
-Invoke-QuickAgent -Query "Plan implementation of: $FEATURE" -Agent "Dijkstra"
-
-# Step 2: Code with Yennefer (via Serena)
-mcp__serena__find_symbol("TargetComponent")
-mcp__serena__replace_symbol_body("TargetComponent", $newCode)
-
-# Step 3: Test with Triss
-Invoke-QuickAgent -Query "Write tests for: $FEATURE" -Agent "Triss"
+# Step 3: Test
 mcp__desktop-commander__start_process("pnpm test")
 
-# Step 4: E2E with Playwright
-mcp__playwright__browser_navigate("http://localhost:3000")
-mcp__playwright__browser_snapshot()
+# Step 4: Document
+/hydra document "Dark mode feature"
+```
+
+### 2. Code Review Pipeline
+```bash
+# Analyze changes
+/hydra review "src/auth/*.ts"
+
+# Security audit
+/hydra research "Security implications of JWT refresh"
+
+# Test coverage
+/hydra test "Generate edge cases for auth module"
 ```
 
 ### 3. Debug Workflow
-```powershell
-# Parallel: Gather context
+```bash
+# Gather context
 mcp__serena__find_symbol("ErrorComponent")
 mcp__desktop-commander__read_file("error.log")
 
-# Swarm: Analyze with Lambert (debugger)
-Invoke-QuickAgent -Query "Analyze this error: $ERROR" -Agent "Lambert"
+# Analyze with Analyst
+/hydra analyze "Error patterns in logs"
 
-# Fix via Serena
-mcp__serena__replace_symbol_body("ErrorComponent", $fixedCode)
-
-# Verify
-mcp__desktop-commander__start_process("pnpm test")
+# Fix
+/hydra refactor "Handle edge cases in ErrorComponent"
 ```
 
-### 4. Full Swarm Protocol
-```powershell
-# 6-Step Protocol (auto-routes to best agents)
-Invoke-AgentSwarm -Query "$ARGUMENTS"
+## SWARM PROTOCOL (6 Steps)
 
-# Steps executed:
-# 1. Speculate (Regis)     - Research context
-# 2. Plan (Dijkstra)       - Create task JSON
-# 3. Execute (Parallel)    - RunspacePool agents
-# 4. Synthesize (Vesemir)  - Merge results
-# 5. Log (Jaskier)         - Summary
-# 6. Archive               - Save transcript
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  1. ROUTE      → Analyze query, select agent(s)                 │
+│  2. SPECULATE  → Researcher gathers context                     │
+│  3. PLAN       → Planner creates task breakdown                 │
+│  4. EXECUTE    → Domain agents run (parallel reads, seq writes) │
+│  5. SYNTHESIZE → Combine results, resolve conflicts             │
+│  6. REPORT     → Format response per HYDRA contract             │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## YOLO MODE
+## MUTEX RULES
 
-Enable fast execution (10 threads, 15s timeout):
+| Operation | Allowed | Lock |
+|-----------|---------|------|
+| READ parallel | ✅ Yes | None |
+| WRITE sequential | ✅ Yes | File lock |
+| WRITE parallel | ❌ No | - |
+| Conflict | ⚠️ Abort + Report | - |
 
-```powershell
-# Toggle YOLO
-Set-YoloMode -Enable    # Fast & Dangerous
-Set-YoloMode -Disable   # Standard mode
-Get-YoloStatus          # Check current mode
+## RESPONSE CONTRACT (MANDATORY)
+
+Every HYDRA response MUST include:
+
+1. **📊 Visual Summary** - Table/diagram showing outcomes
+2. **✅ Actions Taken** - Numbered list of concrete actions
+3. **📌 Next Steps (5)** - Exactly five proposals
+4. **🎯 CONFIDENCE_SCORE** - 0.0 to 1.0
+
+## IRON LAW (NEVER BREAK)
+
 ```
-
-| Feature | Standard | YOLO |
-|---------|----------|------|
-| Concurrency | 5 | 10 |
-| Timeout | 60s | 15s |
-| Retries | 3 | 1 |
-
-## AGENT ROUTING
-
-| Task Pattern | Agent | Model |
-|--------------|-------|-------|
-| security, audit, scan | Geralt | llama3.2:3b |
-| code, implement, function | Yennefer | qwen2.5-coder |
-| test, validate, qa | Triss | qwen2.5-coder |
-| doc, readme, explain | Jaskier | llama3.2:3b |
-| review, refactor | Vesemir | llama3.2:3b |
-| quick, fast, simple | Ciri | llama3.2:1b |
-| deploy, ci, docker | Eskel | llama3.2:3b |
-| debug, profile, perf | Lambert | qwen2.5-coder |
-| data, database, sql | Zoltan | llama3.2:3b |
-| research, analyze | Regis | phi3:mini |
-| plan, strategy | Dijkstra | llama3.2:3b |
-| api, integration | Philippa | qwen2.5-coder |
-
-## PARALLEL EXECUTION
-
-**READ-ONLY (parallel):**
-- Serena: `find_symbol`, `get_symbols_overview`
-- DC: `read_file`, `list_directory`
-- Playwright: `browser_snapshot`
-- Swarm: All agents via RunspacePool
-
-**WRITE (sequential):**
-- Serena: `replace_symbol_body`, `rename_symbol`
-- DC: `write_file`, `start_process`
-- Playwright: `browser_click`, `browser_fill`
+⛔ SAFETY > AUTONOMY
+⛔ DETERMINISM > CREATIVITY
+⛔ NO GUESSING
+⛔ NO HALLUCINATIONS
+⛔ NO DESTRUCTIVE OPS WITHOUT CONFIRMATION
+```
 
 ## QUICK COMMANDS
 
-```powershell
-# Full swarm
-Invoke-AgentSwarm -Query "Implement user auth"
+```bash
+# Full swarm (auto-route)
+/hydra "Implement user authentication"
 
-# Single agent
-Invoke-QuickAgent -Query "Write SQL query" -Agent "Zoltan"
+# Specific domain
+/hydra architect "Design microservice structure"
+/hydra code "Add JWT refresh to auth.ts"
+/hydra test "Write unit tests for auth module"
+/hydra review "Check PR #42"
+/hydra explain "How does the caching layer work?"
 
-# List agents
-Get-SwarmAgents
-
-# Check stats
-Get-SwarmStats
+# Status & Config
+/hydra status      # Check swarm health
+/hydra config      # View/modify settings
 ```
 
-## EXAMPLE: Complete Feature Implementation
+## FALLBACK CHAIN
 
-```powershell
-# 1. YOLO mode for speed
-Set-YoloMode -Enable
-
-# 2. Research with Swarm
-Invoke-AgentSwarm -Query "Implement dark mode toggle"
-
-# 3. Code via Serena
-mcp__serena__find_symbol("ThemeProvider")
-mcp__serena__replace_symbol_body("ThemeProvider", $darkModeCode)
-
-# 4. Test
-mcp__desktop-commander__start_process("pnpm test")
-
-# 5. Visual verification
-mcp__playwright__browser_navigate("http://localhost:3000")
-mcp__playwright__browser_click("#dark-mode-toggle")
-mcp__playwright__browser_screenshot("dark-mode.png")
 ```
+Anthropic → OpenAI → Google → Mistral → Groq → Ollama
+```
+
+> ⚠️ Fallback is ALWAYS disclosed in response
+
+---
+
+## DOCUMENTS
+
+| File | Purpose |
+|------|---------|
+| `.claude/hydra/HYDRA_CORE.md` | Core specification |
+| `.claude/hydra/HYDRA_AGENTS.md` | Agent contracts |
+| `.claude/hydra/HYDRA_SECURITY.md` | Security policy |
+| `.claude/hydra/HYDRA_FILES.md` | File handling |
+| `.claude/hydra/rules.json` | Rule registry (28 rules) |
 
 ---
 

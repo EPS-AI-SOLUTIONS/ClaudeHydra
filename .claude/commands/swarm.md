@@ -1,71 +1,125 @@
-# Agent Swarm - 12 Witcher Agents
+---
+description: "HYDRA Full Swarm Protocol - Multi-agent orchestration"
+---
 
-Execute complex tasks using the 6-Step Swarm Protocol with 12 specialized Witcher agents.
+# HYDRA Swarm Protocol
 
-## Arguments
-- `$ARGUMENTS` - The query/task to execute
+**Mode:** Full orchestration with automatic agent routing
 
-## Instructions
-
-1. Import the AgentSwarm module if not loaded:
-```powershell
-Import-Module "C:\Users\BIURODOM\Desktop\ClaudeHYDRA\ai-handler\modules\AgentSwarm.psm1" -Force
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🐺 SWARM PROTOCOL (6 Steps)                                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. ROUTE      → Analyze query, select agent(s)                 │
+│  2. SPECULATE  → Researcher gathers context                     │
+│  3. PLAN       → Planner creates task breakdown                 │
+│  4. EXECUTE    → Domain agents run in parallel/sequential       │
+│  5. SYNTHESIZE → Combine results, resolve conflicts             │
+│  6. REPORT     → Format response per HYDRA contract             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-2. Execute the swarm with the user's query:
-```powershell
-Invoke-AgentSwarm -Query "$ARGUMENTS"
+## Usage
+
+```bash
+# Auto-route to best agents
+/swarm "Implement user authentication with OAuth2"
+
+# Specify agents
+/swarm --agents "coder,tester,reviewer" "Add login endpoint"
+
+# With priority
+/swarm --priority quality "Refactor auth module"
 ```
 
-3. The 6-Step Protocol will execute:
-   - **Step 1 (Speculate)**: Regis gathers context
-   - **Step 2 (Plan)**: Dijkstra creates task breakdown
-   - **Step 3 (Execute)**: Agents run in parallel via RunspacePool
-   - **Step 4 (Synthesize)**: Vesemir merges results
-   - **Step 5 (Log)**: Jaskier creates summary
-   - **Step 6 (Archive)**: Save transcript to `swarm-logs/`
+## Execution Modes
 
-## Available Agents
+| Mode | Behavior | Use When |
+|------|----------|----------|
+| **AUTO** | System selects agents | Default |
+| **MANUAL** | User specifies agents | Complex tasks |
+| **PRIORITY** | Favor specific domain | Domain-critical work |
 
-| Agent | Role | Model |
-|-------|------|-------|
-| Geralt | Security/Ops | llama3.2:3b |
-| Yennefer | Architecture/Code | qwen2.5-coder:1.5b |
-| Triss | QA/Testing | qwen2.5-coder:1.5b |
-| Jaskier | Docs/Communication | llama3.2:3b |
-| Vesemir | Mentoring/Review | llama3.2:3b |
-| Ciri | Speed/Quick | llama3.2:1b |
-| Eskel | DevOps/Infrastructure | llama3.2:3b |
-| Lambert | Debugging/Profiling | qwen2.5-coder:1.5b |
-| Zoltan | Data/Database | llama3.2:3b |
-| Regis | Research/Analysis | phi3:mini |
-| Dijkstra | Planning/Strategy | llama3.2:3b |
-| Philippa | Integration/API | qwen2.5-coder:1.5b |
+## Priority Domains
 
-## Quick Commands
-
-```powershell
-# Full swarm
-Invoke-AgentSwarm -Query "Implement user authentication"
-
-# Quick single agent
-Invoke-QuickAgent -Query "Write unit test" -Agent "Triss"
-
-# List all agents
-Get-SwarmAgents
-
-# Check swarm stats
-Get-SwarmStats
+```bash
+/swarm --priority architecture  # Design-focused
+/swarm --priority analysis      # Research-heavy
+/swarm --priority implementation # Code-heavy
+/swarm --priority quality       # Testing-focused
+/swarm --priority documentation # Docs-focused
 ```
 
-## YOLO Mode
+## Parallel vs Sequential
 
-Enable fast mode (10 threads, 15s timeout):
-```powershell
-Set-YoloMode -Enable
+### Parallel (READ operations)
+- File reading
+- Symbol lookup
+- Analysis
+- Research
+
+### Sequential (WRITE operations)
+- File modification
+- Code generation
+- Test execution
+
+## Example: Full Feature Implementation
+
+```
+Query: "Implement user profile page with avatar upload"
+
+Step 1 - ROUTE:
+  → Architect (design), Coder (implement), Tester (tests)
+
+Step 2 - SPECULATE:
+  → Researcher gathers: existing patterns, file upload libs
+
+Step 3 - PLAN:
+  → Planner creates:
+    - T1: Component structure
+    - T2: Avatar upload hook
+    - T3: API integration
+    - T4: Unit tests
+    - T5: E2E test
+
+Step 4 - EXECUTE:
+  → Parallel: T1, T2
+  → Sequential: T3 (depends on T1, T2)
+  → Parallel: T4, T5
+
+Step 5 - SYNTHESIZE:
+  → Merge all outputs
+  → Resolve conflicts
+  → Verify consistency
+
+Step 6 - REPORT:
+  → Visual summary
+  → Actions taken
+  → 5 next steps
+  → CONFIDENCE_SCORE
 ```
 
-Disable YOLO mode:
-```powershell
-Set-YoloMode -Disable
+## Conflict Resolution
+
 ```
+IF conflict_detected:
+    1. ABORT conflicting operations
+    2. REPORT conflict details
+    3. AWAIT resolution (auto or human)
+    4. RESUME with resolved state
+```
+
+## Response Contract
+
+Every swarm response includes:
+
+1. **📊 Visual Summary** - Multi-agent execution diagram
+2. **✅ Actions Taken** - Per-agent action list
+3. **📌 Next Steps (5)** - Coordinated follow-ups
+4. **🎯 CONFIDENCE_SCORE** - Aggregate confidence
+
+---
+
+ARGUMENTS: $ARGUMENTS

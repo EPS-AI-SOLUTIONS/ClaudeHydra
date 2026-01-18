@@ -68,6 +68,10 @@ ai-handler/fallback-telemetry.json
 coverage/
 .nyc_output/
 
+# Generated Artifacts
+repomix-output.xml
+repomix-output*.xml
+
 # Lock Files (optional, uncomment if needed)
 # package-lock.json
 # yarn.lock

@@ -1,7 +1,74 @@
 {
+  "$schema": "https://claude.ai/schemas/settings.json",
+  "version": "10.6.1",
+  "name": "HYDRA CLI",
+  
+  "hydra": {
+    "enabled": true,
+    "version": "10.6.1",
+    "autonomy_level": "STANDARD",
+    "security_mode": "NORMAL",
+    
+    "response_contract": {
+      "visual_summary": true,
+      "actions_list": true,
+      "next_steps_count": 5,
+      "confidence_score": true
+    },
+    
+    "fallback_chain": [
+      "anthropic",
+      "openai",
+      "google",
+      "mistral",
+      "groq",
+      "ollama"
+    ],
+    
+    "fallback_thresholds": {
+      "latency_ms": 1200,
+      "error_rate_pct": 5,
+      "token_budget_remaining_pct": 10
+    },
+    
+    "agents": {
+      "architecture": ["architect", "planner"],
+      "analysis": ["researcher", "analyst"],
+      "implementation": ["coder", "refactorer"],
+      "quality": ["tester", "reviewer"],
+      "documentation": ["documenter", "explainer"]
+    },
+    
+    "mutex": {
+      "read_parallel": true,
+      "write_sequential": true,
+      "conflict_action": "abort_report"
+    }
+  },
+  
+  "mcp": {
+    "servers": {
+      "serena": {
+        "enabled": true,
+        "port": 9000
+      },
+      "desktop-commander": {
+        "enabled": true,
+        "port": 8100
+      }
+    }
+  },
+  
   "permissions": {
-    "allow": [
-      "All"
-    ]
+    "file_write": true,
+    "process_execute": true,
+    "network_access": true,
+    "destructive_ops": "confirm"
+  },
+  
+  "logging": {
+    "enabled": true,
+    "level": "info",
+    "mask_secrets": true
   }
 }

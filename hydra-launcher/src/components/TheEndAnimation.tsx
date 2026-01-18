@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Sparkles, Trophy, Swords, Shield, Crown } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSoundEffects } from '../hooks/useSoundEffects';
 
 interface TheEndAnimationProps {
   isVisible: boolean;
@@ -34,6 +35,7 @@ const TheEndAnimation: React.FC<TheEndAnimationProps> = ({
   const [phase, setPhase] = useState<'hidden' | 'entering' | 'visible' | 'exiting'>('hidden');
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showStats, setShowStats] = useState(false);
+  const { playComplete, playSuccess, playClick } = useSoundEffects();
 
   // Generate particles
   const generateParticles = useCallback(() => {
@@ -59,10 +61,12 @@ const TheEndAnimation: React.FC<TheEndAnimationProps> = ({
     if (isVisible) {
       setPhase('entering');
       generateParticles();
+      playComplete(); // Play triumphant completion sound
 
       setTimeout(() => {
         setPhase('visible');
         setShowStats(true);
+        playSuccess(); // Play success chime
       }, 500);
     } else if (phase !== 'hidden') {
       setPhase('exiting');
@@ -72,7 +76,7 @@ const TheEndAnimation: React.FC<TheEndAnimationProps> = ({
         setParticles([]);
       }, 500);
     }
-  }, [isVisible, generateParticles]);
+  }, [isVisible, generateParticles, playComplete, playSuccess]);
 
   // Animate particles
   useEffect(() => {
@@ -108,7 +112,7 @@ const TheEndAnimation: React.FC<TheEndAnimationProps> = ({
         phase === 'visible' ? 'opacity-100 scale-100' :
         'opacity-0 scale-105'
       }`}
-      onClick={onDismiss}
+      onClick={() => { playClick(); onDismiss?.(); }}
     >
       {/* Backdrop */}
       <div className={`absolute inset-0 ${
