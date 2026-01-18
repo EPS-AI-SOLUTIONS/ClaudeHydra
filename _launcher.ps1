@@ -1,4 +1,4 @@
-# ======================================================================
+﻿# ======================================================================
 # GEMINI CLI - HYDRA LAUNCHER
 # Enhanced terminal experience with Ollama integration
 # ======================================================================
@@ -6,6 +6,11 @@
 param(
     [switch]$Yolo
 )
+
+# Set UTF-8 encoding for Windows console
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+chcp 65001 | Out-Null
 
 $script:YoloEnabled = $false
 
@@ -94,11 +99,11 @@ function Ensure-GeminiApiKey {
             if (-not (Select-String -Path $envFile -Pattern '^GEMINI_API_KEY=')) {
                 Add-Content -Path $envFile -Value $envLine -Encoding UTF8
             }
-            Write-Host "  ✓ API Key set for session and .env updated." -ForegroundColor $colors.Success
+            Write-Host "  âś“ API Key set for session and .env updated." -ForegroundColor $colors.Success
             # Refresh
             $apiKeyInfo = @{ Value = $key.Trim(); Source = 'Prompt' }
         } else {
-            Write-Host "  ⚠ No key entered. Some features may not work." -ForegroundColor $colors.Warning
+            Write-Host "  âš  No key entered. Some features may not work." -ForegroundColor $colors.Warning
         }
         Write-Host ""
     }
@@ -133,9 +138,9 @@ function Start-OllamaIfNeeded {
             Start-Sleep -Milliseconds 500
         }
         if (-not (Test-OllamaReady -HostUrl $ollamaHost)) {
-            Write-Host "  ⚠ Ollama not ready after ${timeoutSec}s (but process started). Local models may be slow." -ForegroundColor $colors.Warning
+            Write-Host "  âš  Ollama not ready after ${timeoutSec}s (but process started). Local models may be slow." -ForegroundColor $colors.Warning
         } else {
-            Write-Host "  ✓ Ollama ready!" -ForegroundColor $colors.Success
+            Write-Host "  âś“ Ollama ready!" -ForegroundColor $colors.Success
         }
     }
 }
