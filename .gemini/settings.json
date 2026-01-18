@@ -38,16 +38,16 @@
       ]
     },
     "desktop-commander": {
-      "command": "C:/Program Files/nodejs/npx.cmd",
-      "args": ["-y", "@wonderwhy-er/desktop-commander"],
+      "command": "C:/Users/BIURODOM/AppData/Roaming/npm/desktop-commander.cmd",
+      "args": [],
       "env": {
         "DC_SHELL": "powershell"
       },
       "timeout": 60000
     },
     "playwright": {
-      "command": "C:/Program Files/nodejs/npx.cmd",
-      "args": ["-y", "@playwright/mcp@latest"],
+      "command": "C:/Users/BIURODOM/AppData/Roaming/npm/mcp-server-playwright.cmd",
+      "args": [],
       "timeout": 60000
     }
   },
