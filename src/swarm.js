@@ -125,10 +125,17 @@ const runWithLimit = async (items, limit, handler) => {
     .map(async () => {
       while (nextIndex < items.length) {
         const currentIndex = nextIndex++;
-        results[currentIndex] = await handler(
-          items[currentIndex],
-          currentIndex
-        );
+        try {
+          results[currentIndex] = await handler(
+            items[currentIndex],
+            currentIndex
+          );
+        } catch (error) {
+          results[currentIndex] = {
+            error: error.message,
+            failed: true
+          };
+        }
       }
     });
   await Promise.all(workers);
@@ -194,6 +201,7 @@ const buildSynthesisPrompt = (prompt, speculation, plan, agentOutputs) =>
     '',
     'Agent Outputs:',
     agentOutputs
+      .filter((a) => !a.failed && !a.error)
       .map((agent) => `- ${agent.name}: ${truncate(agent.response, 1500)}`)
       .join('\n')
   ].join('\n');
@@ -216,124 +224,188 @@ export const runSwarm = async ({
   saveMemory = true,
   logger
 }) => {
-  const selectedAgents =
-    Array.isArray(agents) && agents.length
-      ? AGENTS.filter((agent) => agents.includes(agent.name))
-      : AGENTS;
-  const unknownAgents = Array.isArray(agents)
-    ? agents.filter((name) => !AGENTS.some((agent) => agent.name === name))
-    : [];
+  try {
+    const selectedAgents =
+      Array.isArray(agents) && agents.length
+        ? AGENTS.filter((agent) => agents.includes(agent.name))
+        : AGENTS;
+    const unknownAgents = Array.isArray(agents)
+      ? agents.filter((name) => !AGENTS.some((agent) => agent.name === name))
+      : [];
 
-  const speculationResult = await generate(
-    CONFIG.FAST_MODEL,
-    buildSpeculationPrompt(prompt),
-    {
-      temperature: 0.2,
-      maxTokens: 600
-    }
-  );
-
-  const planResult = await generate(
-    CONFIG.DEFAULT_MODEL,
-    buildPlanPrompt(prompt, speculationResult.response),
-    {
-      temperature: 0.2,
-      maxTokens: 900
-    }
-  );
-
-  const agentResults = await runWithLimit(
-    selectedAgents,
-    Math.max(1, CONFIG.QUEUE_MAX_CONCURRENT || 5),
-    async (agent) => {
-      const resolved = await resolveModel(agent.model);
-      const response = await generate(
-        resolved.model,
-        buildAgentPrompt(
-          agent,
-          prompt,
-          speculationResult.response,
-          planResult.response
-        ),
+    // Step 1: Speculation
+    let speculationResult;
+    try {
+      speculationResult = await generate(
+        CONFIG.FAST_MODEL,
+        buildSpeculationPrompt(prompt),
         {
-          temperature: 0.3,
-          maxTokens: 1400
+          temperature: 0.2,
+          maxTokens: 600
         }
       );
-      return {
-        name: agent.name,
-        model: resolved.model,
-        fallbackUsed: resolved.fallbackUsed,
-        response: response.response
+    } catch (e) {
+      if (logger)
+        logger.error('Swarm speculation failed', { error: e.message });
+      speculationResult = { response: 'Speculation failed: ' + e.message };
+    }
+
+    // Step 2: Planning
+    let planResult;
+    try {
+      planResult = await generate(
+        CONFIG.DEFAULT_MODEL,
+        buildPlanPrompt(prompt, speculationResult.response),
+        {
+          temperature: 0.2,
+          maxTokens: 900
+        }
+      );
+    } catch (e) {
+      if (logger) logger.error('Swarm planning failed', { error: e.message });
+      planResult = { response: 'Planning failed: ' + e.message };
+    }
+
+    // Step 3: Agents (Parallel)
+    const agentResults = await runWithLimit(
+      selectedAgents,
+      Math.max(1, CONFIG.QUEUE_MAX_CONCURRENT || 5),
+      async (agent) => {
+        const resolved = await resolveModel(agent.model);
+        const response = await generate(
+          resolved.model,
+          buildAgentPrompt(
+            agent,
+            prompt,
+            speculationResult.response,
+            planResult.response
+          ),
+          {
+            temperature: 0.3,
+            maxTokens: 1400
+          }
+        );
+        return {
+          name: agent.name,
+          model: resolved.model,
+          fallbackUsed: resolved.fallbackUsed,
+          response: response.response
+        };
+      }
+    );
+
+    const successfulAgents = agentResults.filter((r) => !r.failed && !r.error);
+    if (successfulAgents.length === 0) {
+      throw new Error('All swarm agents failed to generate responses.');
+    }
+
+    if (logger && agentResults.length > successfulAgents.length) {
+      logger.warn('Some swarm agents failed', {
+        total: agentResults.length,
+        successful: successfulAgents.length
+      });
+    }
+
+    // Step 4: Synthesis
+    let synthesisResult;
+    try {
+      synthesisResult = await generate(
+        CONFIG.DEFAULT_MODEL,
+        buildSynthesisPrompt(
+          prompt,
+          speculationResult.response,
+          planResult.response,
+          successfulAgents
+        ),
+        { temperature: 0.25, maxTokens: 1800 }
+      );
+    } catch (e) {
+      if (logger) logger.error('Swarm synthesis failed', { error: e.message });
+      // Fallback: just concatenate agent outputs
+      synthesisResult = {
+        response:
+          'Synthesis failed. Raw outputs:\n\n' +
+          successfulAgents
+            .map((a) => `### ${a.name}\n${a.response}`)
+            .join('\n\n')
       };
     }
-  );
 
-  const synthesisResult = await generate(
-    CONFIG.DEFAULT_MODEL,
-    buildSynthesisPrompt(
-      prompt,
-      speculationResult.response,
-      planResult.response,
-      agentResults
-    ),
-    { temperature: 0.25, maxTokens: 1800 }
-  );
-
-  const logResult = await generate(
-    CONFIG.FAST_MODEL,
-    buildLogPrompt(prompt, synthesisResult.response),
-    { temperature: 0.2, maxTokens: 400 }
-  );
-
-  let memoryInfo = null;
-  if (saveMemory) {
+    // Step 5: Logging (Summary)
+    let logResult = { response: 'Log generation skipped due to errors.' };
     try {
-      memoryInfo = await writeSwarmMemory({
-        title,
-        prompt,
-        steps: {
-          speculation: speculationResult.response,
-          plan: planResult.response
-        },
-        agents: agentResults,
-        summary: logResult.response,
-        finalAnswer: synthesisResult.response
-      });
-    } catch (error) {
-      if (logger) {
-        logger.warn('Failed to write swarm memory', { error: error.message });
-      }
-      memoryInfo = { error: error.message };
+      logResult = await generate(
+        CONFIG.FAST_MODEL,
+        buildLogPrompt(prompt, synthesisResult.response),
+        { temperature: 0.2, maxTokens: 400 }
+      );
+    } catch (e) {
+      if (logger)
+        logger.warn('Swarm log generation failed', { error: e.message });
     }
-  }
 
-  const result = {
-    mode: 'swarm',
-    title: title || null,
-    summary: logResult.response,
-    final: synthesisResult.response,
-    agents: agentResults.map((agent) => ({
-      name: agent.name,
-      model: agent.model,
-      fallbackUsed: agent.fallbackUsed,
-      preview: truncate(agent.response, 180)
-    })),
-    warnings: unknownAgents.length
-      ? [`Unknown agents: ${unknownAgents.join(', ')}`]
-      : [],
-    memory: memoryInfo
-  };
+    let memoryInfo = null;
+    if (saveMemory) {
+      try {
+        memoryInfo = await writeSwarmMemory({
+          title,
+          prompt,
+          steps: {
+            speculation: speculationResult.response,
+            plan: planResult.response
+          },
+          agents: agentResults, // Save full results including errors
+          summary: logResult.response,
+          finalAnswer: synthesisResult.response
+        });
+      } catch (error) {
+        if (logger) {
+          logger.warn('Failed to write swarm memory', { error: error.message });
+        }
+        memoryInfo = { error: error.message };
+      }
+    }
 
-  if (includeTranscript) {
-    result.transcript = {
-      speculation: speculationResult.response,
-      plan: planResult.response,
-      agents: agentResults,
-      synthesis: synthesisResult.response,
-      log: logResult.response
+    const result = {
+      mode: 'swarm',
+      title: title || null,
+      summary: logResult.response,
+      final: synthesisResult.response,
+      agents: agentResults.map((agent) => ({
+        name: agent?.name || 'Unknown',
+        model: agent?.model || 'Unknown',
+        fallbackUsed: agent?.fallbackUsed || false,
+        preview: agent?.response
+          ? truncate(agent.response, 180)
+          : agent.error || 'Failed'
+      })),
+      warnings: unknownAgents.length
+        ? [`Unknown agents: ${unknownAgents.join(', ')}`]
+        : [],
+      memory: memoryInfo
+    };
+
+    if (includeTranscript) {
+      result.transcript = {
+        speculation: speculationResult.response,
+        plan: planResult.response,
+        agents: agentResults,
+        synthesis: synthesisResult.response,
+        log: logResult.response
+      };
+    }
+
+    return result;
+  } catch (fatalError) {
+    if (logger) {
+      logger.error('Swarm execution fatal error', {
+        error: fatalError.message
+      });
+    }
+    return {
+      mode: 'swarm',
+      error: fatalError.message,
+      isError: true
     };
   }
-
-  return result;
 };

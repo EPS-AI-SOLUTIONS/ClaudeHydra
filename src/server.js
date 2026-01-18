@@ -265,22 +265,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const resolved = await resolveModelOrFallback(safeArgs.model);
-        const response = await generate(resolved.model, prompt, {
-          temperature: safeArgs.temperature,
-          maxTokens: safeArgs.maxTokens
+        
+        // Use queue for concurrency control
+        const queueId = enqueue(prompt, {
+          model: resolved.model,
+          priority: Priority.NORMAL,
+          metadata: {
+            temperature: safeArgs.temperature,
+            maxTokens: safeArgs.maxTokens
+          }
         });
 
-        // Save to cache
-        if (safeArgs.useCache !== false) {
-          setCache(prompt, response.response, resolved.model);
-        }
+        try {
+          const queueItem = await getQueue().waitFor(
+            queueId,
+            CONFIG.QUEUE_TIMEOUT_MS || 60000
+          );
 
-        result = {
-          ...response,
-          fallbackUsed: resolved.fallbackUsed,
-          model: resolved.model,
-          securityWarnings: risk.warnings
-        };
+          if (queueItem.error) {
+            throw new Error(queueItem.error);
+          }
+
+          const response = {
+            response: queueItem.result,
+            model: resolved.model
+          };
+
+          // Save to cache
+          if (safeArgs.useCache !== false) {
+            setCache(prompt, response.response, resolved.model);
+          }
+
+          result = {
+            ...response,
+            fallbackUsed: resolved.fallbackUsed,
+            model: resolved.model,
+            securityWarnings: risk.warnings
+          };
+        } catch (err) {
+          // Ensure we try to cancel if we timed out or crashed
+          cancelItem(queueId);
+          throw err;
+        }
         break;
       }
 
@@ -324,7 +350,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         // Use speculative for non-code tasks
         if (category !== 'code') {
-          result = await speculativeGenerate(optimization.optimizedPrompt);
+          result = await speculativeGenerate(optimization.optimizedPrompt, {
+            accurateModel: model
+          });
           result.optimization = optimization;
         } else {
           // Use code generation with self-correction
@@ -481,8 +509,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // === BATCH & UTILITY TOOLS ===
       case 'ollama_batch': {
-        const maxConcurrent =
-          safeArgs.maxConcurrent || CONFIG.QUEUE_MAX_CONCURRENT;
         const resolved = await resolveModelOrFallback(safeArgs.model);
         const model = resolved.model;
         let prompts = safeArgs.prompts;
@@ -506,26 +532,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           prompts = prompts.map((p) => getBetterPrompt(p, model));
         }
 
-        // Process in batches
-        const results = [];
-        for (let i = 0; i < prompts.length; i += maxConcurrent) {
-          const batch = prompts.slice(i, i + maxConcurrent);
-          const batchResults = await Promise.all(
-            batch.map((prompt) =>
-              generate(model, prompt).catch((e) => ({ error: e.message }))
-            )
-          );
-          results.push(...batchResults);
-        }
+        // Process in batch via Queue
+        const ids = enqueueBatch(prompts, {
+          model: model,
+          priority: Priority.LOW
+        });
+
+        // Wait for all results
+        const queueResults = await Promise.all(
+          ids.map((id) =>
+            getQueue()
+              .waitFor(id, CONFIG.QUEUE_TIMEOUT_MS * 2 || 120000)
+              .catch((e) => ({ error: e.message }))
+          )
+        );
 
         result = {
-          results: results.map((r, i) => ({
-            prompt: safeArgs.prompts[i].substring(0, 50) + '...',
-            response: r.response || null,
-            error: r.error || null
+          results: queueResults.map((item, i) => ({
+            prompt: prompts[i].substring(0, 50) + '...',
+            response: item.result || null,
+            error: item.error || null
           })),
           total: prompts.length,
-          successful: results.filter((r) => r.response).length,
+          successful: queueResults.filter((r) => r.result).length,
           optimized: safeArgs.optimize || false,
           fallbackUsed: resolved.fallbackUsed,
           securityWarnings: uniqueWarnings

@@ -8,45 +8,67 @@ const OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434';
  * Call Ollama generate API
  */
 export async function generate(model, prompt, options = {}) {
-  const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    options.timeout || 60000
-  );
+  let attempt = 0;
+  const maxRetries = options.retries ?? 2;
+  let lastError;
 
-  try {
-    const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        prompt,
-        stream: false,
-        options: {
-          temperature: options.temperature ?? 0.3,
-          num_predict: options.maxTokens ?? 2048,
-          ...options.modelOptions
-        }
-      }),
-      signal: controller.signal
-    });
+  while (attempt <= maxRetries) {
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      options.timeout || 60000
+    );
 
-    if (!response.ok) {
-      throw new Error(
-        `Ollama error: ${response.status} ${response.statusText}`
-      );
+    try {
+      const response = await fetch(`${OLLAMA_HOST}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          prompt,
+          stream: false,
+          options: {
+            temperature: options.temperature ?? 0.3,
+            num_predict: options.maxTokens ?? 2048,
+            ...options.modelOptions
+          }
+        }),
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Ollama error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      clearTimeout(timeout);
+      return {
+        response: data.response,
+        model: data.model,
+        totalDuration: data.total_duration,
+        evalCount: data.eval_count
+      };
+    } catch (error) {
+      clearTimeout(timeout);
+      lastError = error;
+      
+      // Don't retry on abort/timeout if specifically requested not to, 
+      // but usually we want to retry connection errors.
+      if (error.name === 'AbortError') {
+        throw error; // Don't retry timeouts if they are strict
+      }
+      
+      if (attempt < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt + 1), 5000);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
     }
-
-    const data = await response.json();
-    return {
-      response: data.response,
-      model: data.model,
-      totalDuration: data.total_duration,
-      evalCount: data.eval_count
-    };
-  } finally {
-    clearTimeout(timeout);
+    attempt++;
   }
+  
+  throw lastError || new Error('Ollama generation failed after retries');
 }
 
 /**

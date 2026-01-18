@@ -36,55 +36,51 @@ export async function speculativeGenerate(prompt, options = {}) {
     .then((r) => ({ ...r, source: 'quality', model: accurateModel }))
     .catch(() => null);
 
-  // Race with validation
   const startTime = Date.now();
 
-  try {
-    // Wait for first result
-    const winner = await Promise.race([fastPromise, accuratePromise]);
+  // Strategy: Always check Fast model first. 
+  // If it's good, we save time. If not, we fall back to Accurate (which is already running).
+  // We don't use Promise.race because a fast-failing Accurate model shouldn't stop us from waiting for Fast.
+  
+  const fastResult = await fastPromise;
 
-    if (
-      winner &&
-      winner.response &&
-      winner.response.length >= MIN_VALID_LENGTH
-    ) {
-      // Fast model won with valid response
-      const result = {
-        response: winner.response,
-        source: winner.source,
-        model: winner.model,
-        duration: Date.now() - startTime,
-        winner: 'first'
-      };
-
-      setCache(prompt, result.response, 'speculative', result.source);
-      return result;
-    }
-
-    // Fast response too short, wait for accurate
-    const accurate = await accuratePromise;
-    if (accurate && accurate.response) {
-      const result = {
-        response: accurate.response,
-        source: accurate.source,
-        model: accurate.model,
-        duration: Date.now() - startTime,
-        winner: 'quality-fallback'
-      };
-
-      setCache(prompt, result.response, 'speculative', result.source);
-      return result;
-    }
-
-    throw new Error('Both models failed to produce valid output');
-  } catch (error) {
-    return {
-      response: null,
-      error: error.message,
-      source: 'error',
-      duration: Date.now() - startTime
+  if (
+    fastResult &&
+    fastResult.response &&
+    fastResult.response.length >= MIN_VALID_LENGTH
+  ) {
+    const result = {
+      response: fastResult.response,
+      source: fastResult.source,
+      model: fastResult.model,
+      duration: Date.now() - startTime,
+      winner: 'first'
     };
+    setCache(prompt, result.response, 'speculative', result.source);
+    return result;
   }
+
+  // Fast failed or was poor quality; check Accurate
+  const accurateResult = await accuratePromise;
+
+  if (accurateResult && accurateResult.response) {
+    const result = {
+      response: accurateResult.response,
+      source: accurateResult.source,
+      model: accurateResult.model,
+      duration: Date.now() - startTime,
+      winner: 'quality-fallback'
+    };
+    setCache(prompt, result.response, 'speculative', result.source);
+    return result;
+  }
+
+  return {
+    response: null,
+    error: 'Both models failed to produce valid output',
+    source: 'error',
+    duration: Date.now() - startTime
+  };
 }
 
 /**

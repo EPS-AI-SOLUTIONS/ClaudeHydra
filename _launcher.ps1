@@ -7,8 +7,9 @@ param(
     [switch]$Yolo
 )
 
-# Set UTF-8 encoding for Windows console
+# Set UTF-8 encoding for Windows console (Output AND Input)
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 chcp 65001 | Out-Null
 
@@ -335,36 +336,26 @@ $colors = @{
 # === SPLASH SCREEN ===
 function Show-SplashScreen {
     Clear-Host
-    $modeLabel = if ($script:YoloEnabled) { 'YOLO MODE: ON' } else { 'Standard Mode' }
-    $splash = @"
-
-    GEMINI CLI (HYDRA)
-    Ollama + Prompt Optimizer
-    Speculative Decoding Engine
-    v2.2.0 | MCP Server
-    $modeLabel
-
-"@
-    Write-Host $splash
+    $title = "GEMINI CLI (HYDRA) v2.2.0"
+    $subtitle = "Ollama + Prompt Optimizer | Speculative Decoding"
+    
+    if ($script:YoloEnabled) {
+        Write-Host $title -ForegroundColor $colors.Error
+        Write-Host "YOLO MODE ACTIVE - SAFETY DISABLED" -ForegroundColor $colors.Error
+    } else {
+        Write-Host $title -ForegroundColor $colors.Secondary
+        Write-Host $subtitle -ForegroundColor $colors.Muted
+    }
     Write-Host ""
 }
 
 # === STATUS BAR ===
 function Show-StatusBar {
-    Write-Host "  +-------------------------------------------------------------+" -ForegroundColor $colors.Muted
-
     # Working Directory
     $dir = (Get-Location).Path
     if ($dir.Length -gt 45) { $dir = "..." + $dir.Substring($dir.Length - 42) }
-    Write-Host "  | " -NoNewline -ForegroundColor $colors.Muted
-    Write-Host "DIR " -NoNewline
-    Write-Host $dir.PadRight(56) -NoNewline -ForegroundColor $colors.Text
-    Write-Host " |" -ForegroundColor $colors.Muted
-
-    Write-Host "  +-------------------------------------------------------------+" -ForegroundColor $colors.Muted
-
+    
     # Ollama Status
-    Write-Host "  | " -NoNewline -ForegroundColor $colors.Muted
     $ollamaHost = Get-OllamaHost
     $ollamaStatus = try {
         $response = Invoke-RestMethod -Uri "$ollamaHost/api/tags" -TimeoutSec 2
@@ -372,41 +363,44 @@ function Show-StatusBar {
     } catch { 0 }
 
     if ($ollamaStatus -gt 0) {
-        Write-Host "Ollama: " -NoNewline
-        Write-Host "$ollamaStatus models ready".PadRight(44) -NoNewline -ForegroundColor $colors.Success
+        $ollamaText = "$ollamaStatus models"
+        $ollamaColor = $colors.Success
     } else {
-        Write-Host "Ollama: " -NoNewline
-        Write-Host "Not responding".PadRight(44) -NoNewline -ForegroundColor $colors.Error
+        $ollamaText = "Offline"
+        $ollamaColor = $colors.Error
     }
-    Write-Host " |" -ForegroundColor $colors.Muted
 
     # API Key Status
-    Write-Host "  | " -NoNewline -ForegroundColor $colors.Muted
     $apiKey = Get-APIKey -KeyName 'GEMINI_API_KEY'
     if ($apiKey) {
-        $masked = $apiKey.Value.Substring(0, [Math]::Min(12, $apiKey.Value.Length)) + "..."
-        Write-Host "API Key: " -NoNewline
-        Write-Host "$masked ($($apiKey.Source))".PadRight(44) -NoNewline -ForegroundColor $colors.Success
+        $apiText = "Active"
+        $apiColor = $colors.Success
     } else {
-        Write-Host "API Key: " -NoNewline
-        Write-Host "Not found".PadRight(44) -NoNewline -ForegroundColor $colors.Warning
+        $apiText = "Missing"
+        $apiColor = $colors.Warning
     }
-    Write-Host " |" -ForegroundColor $colors.Muted
 
     # Mode
-    Write-Host "  | " -NoNewline -ForegroundColor $colors.Muted
-    $modeText = if ($script:YoloEnabled) { 'YOLO' } else { 'STANDARD' }
-    Write-Host "Mode: " -NoNewline
-    Write-Host $modeText.PadRight(47) -NoNewline -ForegroundColor $colors.Accent
-    Write-Host " |" -ForegroundColor $colors.Muted
+    $modeText = if ($script:YoloEnabled) { 'YOLO' } else { 'STD' }
 
-    # MCP Status
-    Write-Host "  | " -NoNewline -ForegroundColor $colors.Muted
-    Write-Host "MCP: " -NoNewline
-    Write-Host "ollama-hydra, serena, desktop-commander, playwright".PadRight(47) -NoNewline -ForegroundColor $colors.Secondary
-    Write-Host " |" -ForegroundColor $colors.Muted
+    # Render Minimal Status Bar
+    Write-Host " [" -NoNewline -ForegroundColor $colors.Muted
+    Write-Host "DIR" -NoNewline -ForegroundColor $colors.Secondary
+    Write-Host "] $dir " -NoNewline -ForegroundColor $colors.Text
+    
+    Write-Host "[" -NoNewline -ForegroundColor $colors.Muted
+    Write-Host "OLLAMA" -NoNewline -ForegroundColor $colors.Secondary
+    Write-Host "] " -NoNewline -ForegroundColor $colors.Text
+    Write-Host $ollamaText -NoNewline -ForegroundColor $ollamaColor
+    
+    Write-Host " [" -NoNewline -ForegroundColor $colors.Muted
+    Write-Host "API" -NoNewline -ForegroundColor $colors.Secondary
+    Write-Host "] " -NoNewline -ForegroundColor $colors.Text
+    Write-Host $apiText -NoNewline -ForegroundColor $apiColor
 
-    Write-Host "  +-------------------------------------------------------------+" -ForegroundColor $colors.Muted
+    Write-Host " [" -NoNewline -ForegroundColor $colors.Muted
+    Write-Host "MODE" -NoNewline -ForegroundColor $colors.Secondary
+    Write-Host "] $modeText" -ForegroundColor $colors.Text
     Write-Host ""
 }
 
@@ -420,7 +414,8 @@ function Show-Tips {
         "TIP: Press Ctrl+C to cancel current generation"
     )
     $tip = $tips | Get-Random
-    Write-Host "  $tip" -ForegroundColor $colors.Muted
+    Write-Host " $tip" -ForegroundColor $colors.Muted
+    Write-Host " TIP: Use Right-Click or Ctrl+Shift+V to paste multiline prompts safely." -ForegroundColor $colors.Muted
     Write-Host ""
 }
 
@@ -449,11 +444,5 @@ Stop-MockOllama -MockData $script:MockOllama
 Stop-StatusMonitor -Process $statusProcess
 
 Write-Host ""
-Write-Host "  -------------------------------------------------------------" -ForegroundColor $colors.Muted
-Write-Host "  Gemini CLI session ended (code: $exitCode)." -ForegroundColor $colors.Accent
+Write-Host "  Terminated." -ForegroundColor $colors.Muted
 Write-Host ""
-Write-Host "  ================================" -ForegroundColor $colors.Muted
-Write-Host "  THE END" -ForegroundColor $colors.Accent
-Write-Host ""
-Read-Host "Press Enter to exit..."
-Write-Host "  ================================" -ForegroundColor $colors.Muted
