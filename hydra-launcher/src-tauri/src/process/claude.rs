@@ -1,26 +1,7 @@
 use std::process::Command;
 
-/// Initial HYDRA prompt with instructions
-const HYDRA_INIT_PROMPT: &str = r#"HYDRA 10.4 ACTIVATED - Four-Headed Beast Mode
-
-KONTEKST SESJI:
-- Dzialamy LOKALNIE na maszynie uzytkownika (Windows)
-- Masz PELNE UPRAWNIENIA do odczytu i zapisu WSZYSTKICH plikow
-- Mozesz uruchamiac WSZYSTKIE aplikacje i komendy systemowe
-- Masz dostep do internetu - ZAWSZE szukaj rozwiazania online
-
-ZASADA PRZY PROBLEMACH:
-Gdy napotkasz blad lub problem, ZAWSZE:
-1. Uzyj WebSearch do wyszukania rozwiazania w Google
-2. Sprawdz StackOverflow dla bledow programistycznych
-3. Przeszukaj dokumentacje oficjalna
-
-AKTYWNE NARZEDZIA MCP:
-- Serena (port 9000) - analiza kodu
-- Desktop Commander (port 8100) - operacje systemowe
-- Playwright (port 5200) - automatyzacja przegladarki
-
-Uruchom /hydra aby zobaczyc pelne instrukcje."#;
+/// Initial HYDRA prompt - kept simple to avoid cmd escaping issues
+const HYDRA_INIT_PROMPT: &str = "HYDRA 10.6 ACTIVATED. Run /hydra for full instructions.";
 
 /// Spawn Claude CLI with HYDRA configuration
 pub async fn spawn_claude_cli(yolo_mode: bool) -> Result<String, String> {
@@ -42,27 +23,27 @@ pub async fn spawn_claude_cli(yolo_mode: bool) -> Result<String, String> {
     // Use start command on Windows to open in new terminal
     #[cfg(windows)]
     {
-        // Build base args without prompt (no --cwd - it doesn't exist in Claude CLI)
-        let base_args: Vec<&str> = if yolo_mode {
-            vec!["--dangerously-skip-permissions"]
-        } else {
-            vec![]
-        };
+        // Build the command - start Claude in the HYDRA directory
+        // Using Windows Terminal (wt) if available, fallback to cmd
+        let yolo_flag = if yolo_mode { "--dangerously-skip-permissions" } else { "" };
 
-        // Escape prompt for command line - replace newlines with spaces
-        let escaped_prompt = HYDRA_INIT_PROMPT.replace('\n', " ").replace('\r', "");
+        // Try Windows Terminal first, then fallback to cmd
+        let wt_result = Command::new("wt")
+            .args([
+                "-d", &hydra_path,
+                "cmd", "/k",
+                &format!("claude {} -p \"{}\"", yolo_flag, HYDRA_INIT_PROMPT)
+            ])
+            .spawn();
 
-        let claude_cmd = format!(
-            "cd /d \"{}\" && claude {} -p \"{}\"",
-            hydra_path,
-            base_args.join(" "),
-            escaped_prompt
-        );
-
-        Command::new("cmd")
-            .args(["/c", "start", "cmd", "/k", &claude_cmd])
-            .spawn()
-            .map_err(|e| format!("Failed to launch Claude CLI: {}", e))?;
+        if wt_result.is_err() {
+            // Fallback to cmd - simpler approach without nested quotes
+            Command::new("cmd")
+                .current_dir(&hydra_path)
+                .args(["/c", "start", "claude", yolo_flag])
+                .spawn()
+                .map_err(|e| format!("Failed to launch Claude CLI: {}", e))?;
+        }
     }
 
     #[cfg(not(windows))]
