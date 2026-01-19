@@ -34,3 +34,6 @@ export { default as TabBar } from './TabBar';
 export { default as YoloToggle } from './YoloToggle';
 export { default as QueueStatus } from './QueueStatus';
 export { default as BuildFreshness } from './BuildFreshness';
+export { default as MultiInputDashboard } from './MultiInputDashboard';
+export { default as StreamPanel } from './StreamPanel';
+export type { StreamSource, StreamStatus, PanelStatus, StreamPanelProps } from './StreamPanel';

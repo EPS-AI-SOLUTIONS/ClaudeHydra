@@ -1,0 +1,49 @@
+{
+  "name": "grok-hydra",
+  "version": "1.0.0",
+  "description": "HYDRA Grok MCP Server - xAI Grok integration for Multi-CLI Dashboard",
+  "type": "module",
+  "main": "src/server.js",
+  "bin": {
+    "grok-hydra": "src/server.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.23.0",
+    "dotenv": "^16.4.5",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.2.5"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "hydra",
+    "grok",
+    "xai",
+    "ai",
+    "llm",
+    "model-context-protocol"
+  ],
+  "author": "HYDRA Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hydra/grok-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/hydra/grok-cli/issues"
+  },
+  "homepage": "https://github.com/hydra/grok-cli#readme"
+}

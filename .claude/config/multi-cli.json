@@ -17,7 +17,7 @@
       "env_key": "GOOGLE_API_KEY",
       "status": "active",
       "init_message": "Gemini ready. Full system access enabled.",
-      "init_command": "gemini -p \"You are Gemini CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files (read/write/edit), system (bash, processes), network (web fetch/search), MCP servers (Playwright browser, Desktop Commander, Chrome). Available commands: /dashboard, /witcher, /gemini, /deepseek, /codex, /grok, /jules, /ai, /swarm. Respond: GEMINI READY - Full system access enabled.\""
+      "init_command": "gemini -p \"You are Gemini CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files (read/write/edit), system (bash, processes), network (web fetch/search), MCP servers (Playwright browser, Desktop Commander, Chrome). Available commands: /dashboard, /witcher, /gemini, /codex, /grok, /jules, /ai, /swarm. Respond: GEMINI READY - Full system access enabled.\""
     },
 
     "jules": {
@@ -33,24 +33,24 @@
       "auth": "google-oauth",
       "status": "active",
       "init_message": "Jules ready. Full system access enabled.",
-      "init_command": "jules -p \"You are Jules CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files, system, network, GitHub integration, async tasks. MCP: Playwright, Desktop Commander, Chrome. Commands: /dashboard, /witcher, /gemini, /deepseek, /codex, /grok, /jules, /ai, /swarm. Respond: JULES READY - Async mode active.\""
+      "init_command": "jules -p \"You are Jules CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files, system, network, GitHub integration, async tasks. MCP: Playwright, Desktop Commander, Chrome. Commands: /dashboard, /witcher, /gemini, /codex, /grok, /jules, /ai, /swarm. Respond: JULES READY - Async mode active.\""
     },
 
     "codex": {
       "enabled": true,
       "name": "Codex CLI",
       "provider": "OpenAI",
-      "model": "gpt-5-codex",
-      "models_available": ["gpt-5-codex", "gpt-5"],
+      "model": "gpt-4o",
+      "models_available": ["gpt-4o", "gpt-4o-mini", "gpt-5-codex", "gpt-5"],
       "specialties": ["code-generation", "mcp", "image-input", "review"],
       "install": "npm install -g @openai/codex",
       "docs": "https://developers.openai.com/codex/cli/",
       "env_key": "OPENAI_API_KEY",
       "requires": ["ChatGPT Plus", "Pro", "Business", "Edu", "Enterprise"],
-      "status": "placeholder",
-      "note": "Wymaga ChatGPT Plus/Pro - placeholder do przyszłej integracji",
+      "status": "active",
+      "mcp_server": "CodexCLI/src/server.js",
       "init_message": "Codex ready. Full system access enabled.",
-      "init_command": "codex -p \"You are Codex CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files (read/write/edit), system (bash, processes), network (web fetch/search), MCP servers (Playwright, Desktop Commander, Chrome). Commands: /dashboard, /witcher, /gemini, /deepseek, /codex, /grok, /jules, /ai, /swarm. Respond: CODEX READY - Full system access enabled.\""
+      "init_command": "codex -p \"You are Codex CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files (read/write/edit), system (bash, processes), network (web fetch/search), MCP servers (Playwright, Desktop Commander, Chrome). Commands: /dashboard, /witcher, /gemini, /codex, /grok, /jules, /ai, /swarm. Respond: CODEX READY - Full system access enabled.\""
     },
 
     "grok": {
@@ -58,45 +58,28 @@
       "name": "Grok CLI",
       "provider": "xAI",
       "model": "grok-3",
-      "specialties": ["real-time", "x-integration", "unfiltered"],
+      "models_available": ["grok-3", "grok-2"],
+      "specialties": ["real-time", "x-integration", "unfiltered", "conversational"],
       "install": "npm install -g @vibe-kit/grok-cli",
       "docs": "https://grokcli.io/",
       "github": "https://github.com/superagent-ai/grok-cli",
       "env_key": "XAI_API_KEY",
-      "status": "placeholder",
-      "note": "Placeholder do przyszłej integracji z xAI API",
-      "init_message": "Grok ready. Full system access enabled.",
-      "init_command": "grok -p \"You are Grok CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files (read/write/edit), system (bash, processes), network (web fetch/search, X/Twitter), MCP servers (Playwright, Desktop Commander, Chrome). Commands: /dashboard, /witcher, /gemini, /deepseek, /codex, /grok, /jules, /ai, /swarm. Respond: GROK READY - Full system access enabled.\""
-    },
-
-    "deepseek": {
-      "enabled": true,
-      "name": "DeepSeek CLI",
-      "provider": "DeepSeek",
-      "model": "deepseek-r1",
-      "models_available": ["deepseek-r1", "deepseek-coder", "deepseek-v2"],
-      "mode": "api",
-      "modes_available": ["api", "local"],
-      "specialties": ["multi-language", "100+ languages", "repo-understanding", "local-mode"],
-      "install": "npm install -g run-deepseek-cli",
-      "docs": "https://github.com/holasoymalva/deepseek-cli",
-      "env_key": "DEEPSEEK_API_KEY",
-      "local_requires": ["ollama", "node-18+"],
       "status": "active",
-      "init_message": "DeepSeek ready. Full system access enabled.",
-      "init_command": "deepseek -p \"You are DeepSeek CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files (read/write/edit), system (bash, processes), network (web fetch/search), MCP servers (Playwright browser, Desktop Commander, Chrome). Available commands: /dashboard, /witcher, /gemini, /deepseek, /codex, /grok, /jules, /ai, /swarm. Respond: DEEPSEEK READY - Full system access enabled.\""
+      "mcp_server": "GrokCLI/src/server.js",
+      "init_message": "Grok ready. Full system access enabled.",
+      "init_command": "grok -p \"You are Grok CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files (read/write/edit), system (bash, processes), network (web fetch/search, X/Twitter), MCP servers (Playwright, Desktop Commander, Chrome). Commands: /dashboard, /witcher, /gemini, /codex, /grok, /jules, /ai, /swarm. Respond: GROK READY - Full system access enabled.\""
     },
 
-    "hydra": {
+    "claude": {
       "enabled": true,
-      "name": "HYDRA",
+      "name": "Claude",
       "provider": "Anthropic",
       "model": "claude-opus-4-5",
       "components": ["serena", "desktop-commander", "agent-swarm"],
       "specialties": ["symbolic-analysis", "system-operations", "orchestration"],
       "env_key": "ANTHROPIC_API_KEY",
       "status": "active",
-      "init_message": "HYDRA ready. Full system access: files, bash, network, MCP (Playwright, Desktop Commander, Chrome). Serena + Agent Swarm active.",
+      "init_message": "Claude ready. Full system access: files, bash, network, MCP (Playwright, Desktop Commander, Chrome). Serena + Agent Swarm active.",
       "init_command": null
     }
   },
@@ -120,13 +103,13 @@
 
     "routing": {
       "long_context": { "primary": "gemini", "fallback": "codex", "threshold_tokens": 100000 },
-      "async_tasks": { "primary": "jules", "fallback": "hydra" },
-      "code_generation": { "primary": "codex", "fallback": "deepseek" },
+      "async_tasks": { "primary": "jules", "fallback": "claude" },
+      "code_generation": { "primary": "codex", "fallback": "claude" },
       "real_time": { "primary": "grok", "fallback": "gemini" },
-      "multi_language": { "primary": "deepseek", "fallback": "codex" },
+      "multi_language": { "primary": "codex", "fallback": "claude" },
       "multimodal": { "primary": "gemini", "fallback": "codex" },
-      "symbolic_analysis": { "primary": "hydra", "fallback": "codex" },
-      "system_operations": { "primary": "hydra", "fallback": "codex" }
+      "symbolic_analysis": { "primary": "claude", "fallback": "codex" },
+      "system_operations": { "primary": "claude", "fallback": "codex" }
     },
 
     "signs": {
@@ -151,7 +134,7 @@
       "quen": {
         "name": "Quen (Shield)",
         "description": "Security audit",
-        "primary": ["grok", "hydra"],
+        "primary": ["grok", "claude"],
         "parallel": true
       },
       "axii": {
@@ -179,13 +162,13 @@
     "script": ".claude/scripts/model-loader.js",
 
     "task_preferences": {
-      "code": ["deepseek", "openai", "anthropic", "google"],
-      "analysis": ["google", "anthropic", "openai", "deepseek"],
-      "reasoning": ["anthropic", "deepseek", "openai", "google"],
+      "code": ["openai", "anthropic", "google"],
+      "analysis": ["google", "anthropic", "openai"],
+      "reasoning": ["anthropic", "openai", "google"],
       "multimodal": ["google", "openai", "anthropic"],
       "realtime": ["xai", "google", "openai"],
       "local": ["ollama"],
-      "default": ["anthropic", "google", "openai", "deepseek", "xai", "ollama"]
+      "default": ["anthropic", "google", "openai", "xai", "ollama"]
     },
 
     "api_endpoints": {
@@ -193,7 +176,6 @@
       "google": "https://generativelanguage.googleapis.com/v1beta/models",
       "openai": "https://api.openai.com/v1/models",
       "xai": "https://api.x.ai/v1/models",
-      "deepseek": "https://api.deepseek.com/models",
       "ollama": "http://localhost:11434/api/tags"
     }
   }

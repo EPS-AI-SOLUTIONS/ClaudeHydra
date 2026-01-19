@@ -14,7 +14,8 @@ import {
   existsSync,
   mkdirSync,
   readdirSync,
-  statSync
+  statSync,
+  unlinkSync
 } from 'fs';
 import { join } from 'path';
 import { CONFIG } from './config.js';
@@ -228,4 +229,143 @@ export function getCacheStats() {
       cacheDir: CACHE_DIR
     };
   }
+}
+
+/**
+ * Invalidate cache entries by pattern
+ * BLOK 9: Data Ops - Zoltan
+ * @param {string|RegExp} pattern - Pattern to match against cache keys (model:prompt)
+ * @returns {{ deleted: number, errors: number }}
+ */
+export function invalidateByPattern(pattern) {
+  let deleted = 0;
+  let errors = 0;
+
+  try {
+    const files = readdirSync(CACHE_DIR).filter((f) => f.endsWith('.json'));
+    const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, 'i');
+
+    for (const file of files) {
+      const filePath = join(CACHE_DIR, file);
+      try {
+        const data = JSON.parse(readFileSync(filePath, 'utf-8'));
+        const payload = data.encrypted ? decryptPayload(data) : JSON.stringify(data);
+        if (!payload) continue;
+
+        const parsed = data.encrypted ? JSON.parse(payload) : data;
+        const cacheKey = `${parsed.model || ''}:${parsed.prompt || ''}`;
+
+        if (regex.test(cacheKey) || regex.test(parsed.model) || regex.test(parsed.source)) {
+          unlinkSync(filePath);
+          deleted++;
+          logger.info('Cache entry invalidated by pattern', { file, pattern: pattern.toString() });
+        }
+      } catch (err) {
+        errors++;
+        logger.error('Error processing cache file', { file, error: err.message });
+      }
+    }
+  } catch (err) {
+    logger.error('Error invalidating cache by pattern', { error: err.message });
+  }
+
+  return { deleted, errors };
+}
+
+/**
+ * Invalidate all expired cache entries
+ * @returns {{ deleted: number, errors: number, freedKB: number }}
+ */
+export function invalidateExpired() {
+  let deleted = 0;
+  let errors = 0;
+  let freedBytes = 0;
+
+  try {
+    const files = readdirSync(CACHE_DIR).filter((f) => f.endsWith('.json'));
+
+    for (const file of files) {
+      const filePath = join(CACHE_DIR, file);
+      try {
+        const stat = statSync(filePath);
+        const data = JSON.parse(readFileSync(filePath, 'utf-8'));
+        const payload = data.encrypted ? decryptPayload(data) : JSON.stringify(data);
+
+        if (!payload) {
+          unlinkSync(filePath);
+          deleted++;
+          freedBytes += stat.size;
+          continue;
+        }
+
+        const parsed = data.encrypted ? JSON.parse(payload) : data;
+        if (Date.now() - parsed.timestamp > CACHE_TTL) {
+          unlinkSync(filePath);
+          deleted++;
+          freedBytes += stat.size;
+          logger.debug('Expired cache entry removed', { file });
+        }
+      } catch (err) {
+        errors++;
+      }
+    }
+
+    if (deleted > 0) {
+      logger.info('Expired cache entries cleaned', { deleted, freedKB: Math.round(freedBytes / 1024) });
+    }
+  } catch (err) {
+    logger.error('Error during cache cleanup', { error: err.message });
+  }
+
+  return { deleted, errors, freedKB: Math.round(freedBytes / 1024) };
+}
+
+/**
+ * Clear entire cache
+ * @returns {{ deleted: number, freedKB: number }}
+ */
+export function clearCache() {
+  let deleted = 0;
+  let freedBytes = 0;
+
+  try {
+    const files = readdirSync(CACHE_DIR).filter((f) => f.endsWith('.json'));
+
+    for (const file of files) {
+      const filePath = join(CACHE_DIR, file);
+      try {
+        const stat = statSync(filePath);
+        freedBytes += stat.size;
+        unlinkSync(filePath);
+        deleted++;
+      } catch {
+        // Skip files that can't be deleted
+      }
+    }
+
+    logger.warn('Cache cleared', { deleted, freedKB: Math.round(freedBytes / 1024) });
+  } catch (err) {
+    logger.error('Error clearing cache', { error: err.message });
+  }
+
+  return { deleted, freedKB: Math.round(freedBytes / 1024) };
+}
+
+/**
+ * Delete specific cache entry by prompt and model
+ */
+export function deleteCache(prompt, model = '') {
+  const hash = hashKey(prompt, model);
+  const cachePath = join(CACHE_DIR, `${hash}.json`);
+
+  if (existsSync(cachePath)) {
+    try {
+      unlinkSync(cachePath);
+      logger.info('Cache entry deleted', { hash });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }

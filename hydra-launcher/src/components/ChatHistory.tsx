@@ -63,9 +63,8 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
   // Get provider icon
   const getProviderIcon = (provider: string) => {
     const icons: Record<string, string> = {
-      hydra: '🐉',
+      claude: '🤖',
       gemini: '🔵',
-      deepseek: '🔴',
       jules: '🟣',
       codex: '🟢',
       grok: '⚫',

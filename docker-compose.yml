@@ -1,0 +1,193 @@
+# =============================================================================
+# HYDRA Multi-CLI Docker Compose
+# Services: gemini-cli, ollama, redis (cache)
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # GeminiCLI - MCP Server for Ollama
+  # ---------------------------------------------------------------------------
+  gemini-cli:
+    build:
+      context: ./GeminiCLI
+      dockerfile: Dockerfile
+      target: production
+    container_name: hydra-gemini-cli
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - OLLAMA_HOST=http://ollama:11434
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=info
+    depends_on:
+      ollama:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hydra-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "com.hydra.service=gemini-cli"
+      - "com.hydra.version=2.0.0"
+
+  # ---------------------------------------------------------------------------
+  # GeminiCLI Development Mode (optional)
+  # ---------------------------------------------------------------------------
+  gemini-cli-dev:
+    build:
+      context: ./GeminiCLI
+      dockerfile: Dockerfile
+      target: development
+    container_name: hydra-gemini-cli-dev
+    profiles:
+      - dev
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - OLLAMA_HOST=http://ollama:11434
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=debug
+    volumes:
+      - ./GeminiCLI/src:/app/src:ro
+      - ./GeminiCLI/scripts:/app/scripts:ro
+    depends_on:
+      - ollama
+      - redis
+    networks:
+      - hydra-network
+    labels:
+      - "com.hydra.service=gemini-cli-dev"
+
+  # ---------------------------------------------------------------------------
+  # Ollama - Local LLM Server
+  # ---------------------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: hydra-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_ORIGINS=*
+    networks:
+      - hydra-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    labels:
+      - "com.hydra.service=ollama"
+
+  # ---------------------------------------------------------------------------
+  # Ollama CPU-only (alternative without GPU)
+  # ---------------------------------------------------------------------------
+  ollama-cpu:
+    image: ollama/ollama:latest
+    container_name: hydra-ollama-cpu
+    profiles:
+      - cpu
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_ORIGINS=*
+    networks:
+      - hydra-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    labels:
+      - "com.hydra.service=ollama-cpu"
+
+  # ---------------------------------------------------------------------------
+  # Redis - Optional Cache Layer
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: hydra-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    networks:
+      - hydra-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    labels:
+      - "com.hydra.service=redis"
+
+  # ---------------------------------------------------------------------------
+  # Redis Commander - Web UI for Redis (optional)
+  # ---------------------------------------------------------------------------
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: hydra-redis-commander
+    profiles:
+      - tools
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - hydra-network
+    labels:
+      - "com.hydra.service=redis-commander"
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  hydra-network:
+    driver: bridge
+    name: hydra-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  ollama-data:
+    name: hydra-ollama-data
+  redis-data:
+    name: hydra-redis-data

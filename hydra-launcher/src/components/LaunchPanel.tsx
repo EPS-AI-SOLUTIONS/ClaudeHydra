@@ -131,7 +131,7 @@ const LaunchPanel: React.FC = () => {
         isLight ? 'text-amber-600/50' : 'text-amber-500/40'
       }`}>
         {canLaunch
-          ? '◇ Uruchom Claude CLI z konfiguracją HYDRA ◇'
+          ? '◇ Uruchom Claude CLI ◇'
           : '◇ Uruchom przynajmniej jeden serwer MCP ◇'}
       </p>
 

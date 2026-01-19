@@ -5,7 +5,7 @@
 
 import { safeInvoke, isTauri } from '../hooks/useTauri';
 
-export type CLIProvider = 'hydra' | 'gemini' | 'jules' | 'deepseek' | 'codex' | 'grok' | 'ollama';
+export type CLIProvider = 'claude' | 'gemini' | 'jules' | 'codex' | 'grok' | 'ollama';
 
 export interface ProviderConfig {
   id: CLIProvider;
@@ -32,12 +32,12 @@ export interface ProviderResponse {
 // ============================================================================
 
 export const PROVIDERS: Record<CLIProvider, ProviderConfig> = {
-  hydra: {
-    id: 'hydra',
-    name: 'HYDRA',
-    icon: '🐉',
+  claude: {
+    id: 'claude',
+    name: 'Claude',
+    icon: '🤖',
     color: 'amber',
-    description: 'Claude CLI with HYDRA context, Serena, Desktop Commander',
+    description: 'Claude CLI with Serena, Desktop Commander, Agent Swarm',
     isAvailable: true,
     isLocal: false,
     maxContextTokens: 200000,
@@ -64,17 +64,6 @@ export const PROVIDERS: Record<CLIProvider, ProviderConfig> = {
     isLocal: false,
     maxContextTokens: 100000,
     specialties: ['background_tasks', 'async', 'github'],
-  },
-  deepseek: {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    icon: '🔴',
-    color: 'red',
-    description: 'DeepSeek-R1 for 100+ programming languages',
-    isAvailable: true,
-    isLocal: false,
-    maxContextTokens: 128000,
-    specialties: ['multi_language', 'code_generation', 'reasoning'],
   },
   codex: {
     id: 'codex',
@@ -131,12 +120,12 @@ export abstract class AIProvider {
 }
 
 // ============================================================================
-// HYDRA PROVIDER (Claude CLI)
+// CLAUDE PROVIDER (Claude CLI)
 // ============================================================================
 
-export class HydraProvider extends AIProvider {
+export class ClaudeProvider extends AIProvider {
   constructor() {
-    super('hydra');
+    super('claude');
   }
 
   async send(prompt: string): Promise<ProviderResponse> {
@@ -147,22 +136,22 @@ export class HydraProvider extends AIProvider {
         const response = await safeInvoke<string>('send_to_claude', { message: prompt });
         return {
           content: response,
-          provider: 'hydra',
+          provider: 'claude',
           latencyMs: Date.now() - start,
         };
       } else {
         // Browser mode - mock
         await new Promise(r => setTimeout(r, 2000));
         return {
-          content: `[HYDRA Demo] Otrzymano: "${prompt.slice(0, 50)}..."`,
-          provider: 'hydra',
+          content: `[Claude Demo] Otrzymano: "${prompt.slice(0, 50)}..."`,
+          provider: 'claude',
           latencyMs: Date.now() - start,
         };
       }
     } catch (error) {
       return {
         content: '',
-        provider: 'hydra',
+        provider: 'claude',
         error: String(error),
         latencyMs: Date.now() - start,
       };
@@ -277,52 +266,6 @@ export class JulesProvider extends AIProvider {
 }
 
 // ============================================================================
-// DEEPSEEK PROVIDER
-// ============================================================================
-
-export class DeepSeekProvider extends AIProvider {
-  constructor() {
-    super('deepseek');
-  }
-
-  async send(prompt: string): Promise<ProviderResponse> {
-    const start = Date.now();
-
-    try {
-      if (isTauri()) {
-        const response = await safeInvoke<string>('execute_cli', {
-          provider: 'deepseek',
-          args: ['chat', '-m', prompt],
-        });
-        return {
-          content: response,
-          provider: 'deepseek',
-          latencyMs: Date.now() - start,
-        };
-      } else {
-        await new Promise(r => setTimeout(r, 1800));
-        return {
-          content: `[DeepSeek Demo] Processing: "${prompt.slice(0, 50)}..."`,
-          provider: 'deepseek',
-          latencyMs: Date.now() - start,
-        };
-      }
-    } catch (error) {
-      return {
-        content: '',
-        provider: 'deepseek',
-        error: String(error),
-        latencyMs: Date.now() - start,
-      };
-    }
-  }
-
-  async checkHealth(): Promise<boolean> {
-    return true;
-  }
-}
-
-// ============================================================================
 // OLLAMA PROVIDER (Local)
 // ============================================================================
 
@@ -393,8 +336,8 @@ const providerInstances: Partial<Record<CLIProvider, AIProvider>> = {};
 export function getProvider(providerId: CLIProvider): AIProvider {
   if (!providerInstances[providerId]) {
     switch (providerId) {
-      case 'hydra':
-        providerInstances[providerId] = new HydraProvider();
+      case 'claude':
+        providerInstances[providerId] = new ClaudeProvider();
         break;
       case 'gemini':
         providerInstances[providerId] = new GeminiProvider();
@@ -402,15 +345,12 @@ export function getProvider(providerId: CLIProvider): AIProvider {
       case 'jules':
         providerInstances[providerId] = new JulesProvider();
         break;
-      case 'deepseek':
-        providerInstances[providerId] = new DeepSeekProvider();
-        break;
       case 'ollama':
         providerInstances[providerId] = new OllamaProvider();
         break;
       default:
-        // Fallback to HYDRA
-        providerInstances[providerId] = new HydraProvider();
+        // Fallback to Claude
+        providerInstances[providerId] = new ClaudeProvider();
     }
   }
   return providerInstances[providerId]!;

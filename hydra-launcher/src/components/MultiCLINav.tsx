@@ -6,14 +6,13 @@ import {
   Brain,
   Code2,
   Bot,
-  Flame,
   Swords,
   Check,
   Clock,
   AlertCircle
 } from 'lucide-react';
 
-export type CLIProvider = 'hydra' | 'gemini' | 'jules' | 'codex' | 'grok' | 'deepseek' | 'witcher';
+export type CLIProvider = 'claude' | 'gemini' | 'jules' | 'codex' | 'grok' | 'witcher';
 
 interface CLIConfig {
   id: CLIProvider;
@@ -28,8 +27,8 @@ interface CLIConfig {
 
 const CLI_CONFIGS: CLIConfig[] = [
   {
-    id: 'hydra',
-    name: 'HYDRA',
+    id: 'claude',
+    name: 'Claude',
     provider: 'Anthropic',
     model: 'Claude Opus 4.5',
     icon: <Sparkles size={18} />,
@@ -76,16 +75,6 @@ const CLI_CONFIGS: CLIConfig[] = [
     color: 'gray',
     status: 'placeholder',
     specialty: 'Real-time, Unfiltered'
-  },
-  {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    provider: 'DeepSeek',
-    model: 'DeepSeek-R1',
-    icon: <Flame size={18} />,
-    color: 'red',
-    status: 'active',
-    specialty: '100+ Languages, Local'
   },
   {
     id: 'witcher',

@@ -9,6 +9,9 @@
     "launcher": "node scripts/launcher/index.mjs",
     "start": "node src/server.js",
     "test": "node --test",
+    "test:integration": "vitest run test/integration.test.js",
+    "test:vitest": "vitest",
+    "test:all": "vitest run",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
@@ -22,6 +25,8 @@
     "i18next": "^25.5.2"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
     "eslint": "^9.0.0",
     "husky": "^9.0.0",
     "prettier": "^3.2.5",

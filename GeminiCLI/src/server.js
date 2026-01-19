@@ -65,9 +65,13 @@ import {
 import { TOOLS } from './tools.js';
 import { resolveNodeEngines, resolveServerVersion } from './version.js';
 import { runSwarm, isComplexPrompt } from './swarm.js';
+import { GeminiStreamHandler, createGeminiHandler } from './gemini-handler.js';
 
 const logger = createLogger('server');
 const SERVER_VERSION = resolveServerVersion();
+
+// Gemini Stream Handler instance
+let geminiHandler = null;
 
 // Server instance
 const server = new Server(
@@ -868,6 +872,93 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
       }
 
+      // === GEMINI STREAM HANDLER TOOLS ===
+      case 'gemini_stream': {
+        if (!geminiHandler) {
+          return createErrorResponse(
+            'HYDRA_HANDLER_NOT_READY',
+            'GeminiStreamHandler not initialized. Check GEMINI_API_KEY.',
+            name
+          );
+        }
+
+        const risk = evaluatePromptRisk(safeArgs.prompt);
+        if (risk.blocked) {
+          return createErrorResponse(
+            'HYDRA_RISK_BLOCKED',
+            risk.warnings.join(' '),
+            name
+          );
+        }
+
+        const chunks = [];
+        try {
+          const streamResult = await geminiHandler.stream(
+            safeArgs.prompt,
+            {
+              onChunk: (text, meta) => {
+                chunks.push({ text, index: meta.chunkIndex, timestamp: Date.now() });
+              }
+            },
+            {
+              model: safeArgs.model,
+              temperature: safeArgs.temperature,
+              maxOutputTokens: safeArgs.maxTokens,
+              topP: safeArgs.topP,
+              topK: safeArgs.topK,
+              systemInstruction: safeArgs.systemPrompt
+            }
+          );
+
+          result = {
+            response: streamResult.text,
+            model: streamResult.model,
+            finishReason: streamResult.finishReason,
+            usageMetadata: streamResult.usageMetadata,
+            chunkCount: chunks.length,
+            correlationId: streamResult.correlationId,
+            securityWarnings: risk.warnings
+          };
+        } catch (streamError) {
+          return createErrorResponse(
+            'HYDRA_STREAM_ERROR',
+            `Streaming failed: ${streamError.message}`,
+            name
+          );
+        }
+        break;
+      }
+
+      case 'gemini_stream_abort': {
+        if (!geminiHandler) {
+          return createErrorResponse(
+            'HYDRA_HANDLER_NOT_READY',
+            'GeminiStreamHandler not initialized.',
+            name
+          );
+        }
+
+        const aborted = geminiHandler.abort();
+        result = {
+          aborted,
+          message: aborted ? 'Stream aborted successfully' : 'No active stream to abort'
+        };
+        break;
+      }
+
+      case 'gemini_stream_stats': {
+        if (!geminiHandler) {
+          return createErrorResponse(
+            'HYDRA_HANDLER_NOT_READY',
+            'GeminiStreamHandler not initialized.',
+            name
+          );
+        }
+
+        result = geminiHandler.getStats();
+        break;
+      }
+
       default:
         return createErrorResponse(
           'HYDRA_TOOL_UNKNOWN',
@@ -933,6 +1024,28 @@ async function main() {
   const modelsInit = await initializeModels();
   if (modelsInit.success) {
     logger.info('Gemini models ready', { count: modelsInit.count });
+  }
+
+  // Initialize GeminiStreamHandler
+  try {
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    if (geminiApiKey) {
+      geminiHandler = createGeminiHandler({
+        apiKey: geminiApiKey,
+        model: 'gemini-2.0-flash',
+        timeout: 60000,
+        maxRetries: 3
+      });
+      logger.info('GeminiStreamHandler initialized', {
+        model: 'gemini-2.0-flash'
+      });
+    } else {
+      logger.warn('GEMINI_API_KEY not set - GeminiStreamHandler disabled');
+    }
+  } catch (handlerError) {
+    logger.error('Failed to initialize GeminiStreamHandler', {
+      error: handlerError.message
+    });
   }
 
   // Initialize prompt queue with Ollama handler

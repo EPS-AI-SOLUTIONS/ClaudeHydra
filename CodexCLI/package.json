@@ -1,0 +1,45 @@
+{
+  "name": "codex-hydra",
+  "version": "1.0.0",
+  "description": "HYDRA CodexCLI - OpenAI MCP Server for GPT-4o and o1 models",
+  "type": "module",
+  "main": "src/server.js",
+  "bin": {
+    "codex-hydra": "src/server.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write ."
+  },
+  "keywords": [
+    "openai",
+    "gpt-4",
+    "mcp",
+    "model-context-protocol",
+    "hydra",
+    "claude",
+    "ai",
+    "code-generation"
+  ],
+  "author": "HYDRA Team",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.23.0",
+    "dotenv": "^16.4.5",
+    "openai": "^4.77.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.2.5"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ClaudeHYDRA"
+  }
+}

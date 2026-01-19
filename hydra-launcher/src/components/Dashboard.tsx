@@ -4,17 +4,22 @@ import { TabProvider, useTabContext, CLIProvider } from '../contexts/TabContext'
 import MCPStatus from './MCPStatus';
 import OllamaStatus from './OllamaStatus';
 import MultiTabChat from './MultiTabChat';
+import MultiInputDashboard from './MultiInputDashboard';
+import StreamPanel, { StreamSource } from './StreamPanel';
 import TabBar from './TabBar';
 import StatusLine from './StatusLine';
 import SettingsPanel from './SettingsPanel';
 import QueueStatus from './QueueStatus';
 import YoloToggle from './YoloToggle';
-import { Moon, Sun, ChevronLeft, ChevronRight, Settings, Bot, History } from 'lucide-react';
+import { Moon, Sun, ChevronLeft, ChevronRight, Settings, Bot, History, MessageSquare, Grid3X3, Activity } from 'lucide-react';
 import { useMCPHealth } from '../hooks/useMCPHealth';
 import { PROVIDERS } from '../providers';
 import ChatHistory from './ChatHistory';
 import BuildFreshness from './BuildFreshness';
 import { ChatSession } from '../hooks/useChatHistory';
+
+// View mode type for routing
+type ViewMode = 'chat' | 'multi-input' | 'stream-panel';
 
 // ============================================================================
 // MODEL SELECTOR - na górze sidebara
@@ -23,7 +28,7 @@ const ModelSelector: React.FC<{
   onSelect: (provider: CLIProvider) => void;
   isLight: boolean;
 }> = ({ onSelect, isLight }) => {
-  const [selectedModel, setSelectedModel] = useState<CLIProvider>('hydra');
+  const [selectedModel, setSelectedModel] = useState<CLIProvider>('claude');
 
   const availableProviders = Object.values(PROVIDERS).filter(p => p.isAvailable);
 
@@ -142,6 +147,11 @@ const DashboardContent: React.FC = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [activeView, setActiveView] = useState<ViewMode>('chat');
+
+  // Sample streams for StreamPanel demo (can be replaced with real data)
+  const [streams, setStreams] = useState<StreamSource[]>([]);
+
   const [yoloEnabled] = useState(() => {
     try {
       return localStorage.getItem('hydra_yolo') !== 'false';
@@ -174,6 +184,38 @@ const DashboardContent: React.FC = () => {
     // Auto-create tab when model selected
     handleCreateTab(provider);
   }, [handleCreateTab]);
+
+  // StreamPanel handlers
+  const handleStopStream = useCallback((id: string) => {
+    setStreams(prev => prev.map(s =>
+      s.id === id ? { ...s, status: 'completed' as const } : s
+    ));
+  }, []);
+
+  const handleStopAllStreams = useCallback(() => {
+    setStreams(prev => prev.map(s => ({ ...s, status: 'completed' as const })));
+  }, []);
+
+  const handleToggleStreamCollapse = useCallback((id: string) => {
+    setStreams(prev => prev.map(s =>
+      s.id === id ? { ...s, isCollapsed: !s.isCollapsed } : s
+    ));
+  }, []);
+
+  const handleCollapseAllStreams = useCallback(() => {
+    setStreams(prev => prev.map(s => ({ ...s, isCollapsed: true })));
+  }, []);
+
+  const handleExpandAllStreams = useCallback(() => {
+    setStreams(prev => prev.map(s => ({ ...s, isCollapsed: false })));
+  }, []);
+
+  // View mode buttons config
+  const viewModes: { id: ViewMode; icon: React.ReactNode; label: string; title: string }[] = [
+    { id: 'chat', icon: <MessageSquare size={14} />, label: 'Chat', title: 'Chat View' },
+    { id: 'multi-input', icon: <Grid3X3 size={14} />, label: 'Multi', title: 'Multi-Input Dashboard' },
+    { id: 'stream-panel', icon: <Activity size={14} />, label: 'Streams', title: 'Stream Panel' },
+  ];
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -239,17 +281,46 @@ const DashboardContent: React.FC = () => {
           <div className={`flex items-center justify-between p-2 border-b ${
             isLight ? 'border-gray-200' : 'border-gray-800'
           }`}>
-            {/* Sidebar Toggle */}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="glass-button p-1.5"
-              title={sidebarOpen ? 'Hide panel' : 'Show panel'}
-            >
-              {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-            </button>
+            {/* Left: Sidebar Toggle + View Mode Tabs */}
+            <div className="flex items-center gap-2">
+              {/* Sidebar Toggle */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="glass-button p-1.5"
+                title={sidebarOpen ? 'Hide panel' : 'Show panel'}
+              >
+                {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+              </button>
 
-            {/* Center - Tab Bar */}
-            <div className="flex-1 mx-2">
+              {/* View Mode Tabs */}
+              <div className={`flex items-center gap-0.5 p-0.5 rounded-lg ${
+                isLight ? 'bg-gray-100' : 'bg-gray-800/50'
+              }`}>
+                {viewModes.map((mode) => (
+                  <button
+                    key={mode.id}
+                    onClick={() => setActiveView(mode.id)}
+                    data-testid={`view-tab-${mode.id}`}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono transition-all duration-200 ${
+                      activeView === mode.id
+                        ? isLight
+                          ? 'bg-white text-black shadow-sm'
+                          : 'bg-gray-700 text-white shadow-sm'
+                        : isLight
+                          ? 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                    }`}
+                    title={mode.title}
+                  >
+                    {mode.icon}
+                    <span className="hidden sm:inline">{mode.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Center - Tab Bar (only show in chat view) */}
+            <div className={`flex-1 mx-2 ${activeView !== 'chat' ? 'opacity-50 pointer-events-none' : ''}`}>
               <TabBar onCreateTab={handleCreateTab} />
             </div>
 
@@ -265,7 +336,7 @@ const DashboardContent: React.FC = () => {
             </button>
           </div>
 
-          {/* Chat Area z tłem */}
+          {/* Content Area z tłem */}
           <div className="flex-1 overflow-hidden relative">
             {/* Background image */}
             <div
@@ -283,13 +354,35 @@ const DashboardContent: React.FC = () => {
                 : 'bg-black/60 backdrop-blur-sm'
             }`} />
 
-            {/* Chat frame with glassmorphism */}
+            {/* Content frame with glassmorphism */}
             <div className={`absolute inset-2 rounded-lg overflow-hidden border ${
               isLight
                 ? 'border-gray-200/50 bg-white/40 backdrop-blur-md'
                 : 'border-gray-800/50 bg-black/40 backdrop-blur-md'
             }`}>
-              <MultiTabChat onConnectionChange={handleConnectionChange} />
+              {/* Render component based on activeView */}
+              {activeView === 'chat' && (
+                <div data-testid="view-content-chat" className="h-full">
+                  <MultiTabChat onConnectionChange={handleConnectionChange} />
+                </div>
+              )}
+              {activeView === 'multi-input' && (
+                <div data-testid="view-content-multi-input" className="h-full">
+                  <MultiInputDashboard />
+                </div>
+              )}
+              {activeView === 'stream-panel' && (
+                <div data-testid="view-content-stream-panel" className="h-full">
+                  <StreamPanel
+                    streams={streams}
+                    onStopStream={handleStopStream}
+                    onStopAll={handleStopAllStreams}
+                    onToggleCollapse={handleToggleStreamCollapse}
+                    onCollapseAll={handleCollapseAllStreams}
+                    onExpandAll={handleExpandAllStreams}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

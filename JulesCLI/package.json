@@ -1,0 +1,39 @@
+{
+  "name": "jules-hydra",
+  "version": "1.0.0",
+  "description": "HYDRA Jules CLI - Google Async Coding Agent MCP Server",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.23.0",
+    "@octokit/rest": "^21.0.0",
+    "dotenv": "^16.4.5",
+    "uuid": "^11.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.2.5"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "jules",
+    "google",
+    "async",
+    "agent",
+    "mcp",
+    "hydra",
+    "github"
+  ],
+  "author": "HYDRA Team",
+  "license": "MIT"
+}

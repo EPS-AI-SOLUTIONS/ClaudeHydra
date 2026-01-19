@@ -1,0 +1,97 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-01-19T14:17:23.616Z",
+  "requests": [
+    {
+      "id": "req_1768832243617_p7sw4l873",
+      "timestamp": "2026-01-19T14:17:23.617Z",
+      "provider": "anthropic",
+      "model": "claude-opus-4",
+      "inputTokens": 1000,
+      "outputTokens": 500,
+      "totalTokens": 1500,
+      "durationMs": 2500,
+      "estimatedCostUsd": 0.0105
+    },
+    {
+      "id": "req_1768832243618_jx5opiqs6",
+      "timestamp": "2026-01-19T14:17:23.618Z",
+      "provider": "google",
+      "model": "gemini-2.0-flash",
+      "inputTokens": 500,
+      "outputTokens": 200,
+      "totalTokens": 700,
+      "durationMs": 1200,
+      "estimatedCostUsd": 0.00055
+    },
+    {
+      "id": "req_1768832243618_v5c5o2xb0",
+      "timestamp": "2026-01-19T14:17:23.618Z",
+      "provider": "ollama",
+      "model": "llama3.2:3b",
+      "inputTokens": 300,
+      "outputTokens": 150,
+      "totalTokens": 450,
+      "durationMs": 800,
+      "estimatedCostUsd": 0
+    }
+  ],
+  "summary": {
+    "totalRequests": 3,
+    "totalInputTokens": 1800,
+    "totalOutputTokens": 850,
+    "totalDurationMs": 4500,
+    "byProvider": {
+      "anthropic": {
+        "requests": 1,
+        "inputTokens": 1000,
+        "outputTokens": 500,
+        "totalDurationMs": 2500,
+        "estimatedCostUsd": 0.0105
+      },
+      "google": {
+        "requests": 1,
+        "inputTokens": 500,
+        "outputTokens": 200,
+        "totalDurationMs": 1200,
+        "estimatedCostUsd": 0.00055
+      },
+      "ollama": {
+        "requests": 1,
+        "inputTokens": 300,
+        "outputTokens": 150,
+        "totalDurationMs": 800,
+        "estimatedCostUsd": 0
+      }
+    },
+    "byModel": {
+      "claude-opus-4": {
+        "provider": "anthropic",
+        "requests": 1,
+        "inputTokens": 1000,
+        "outputTokens": 500,
+        "totalDurationMs": 2500,
+        "avgDurationMs": 2500,
+        "estimatedCostUsd": 0.0105
+      },
+      "gemini-2.0-flash": {
+        "provider": "google",
+        "requests": 1,
+        "inputTokens": 500,
+        "outputTokens": 200,
+        "totalDurationMs": 1200,
+        "avgDurationMs": 1200,
+        "estimatedCostUsd": 0.00055
+      },
+      "llama3.2:3b": {
+        "provider": "ollama",
+        "requests": 1,
+        "inputTokens": 300,
+        "outputTokens": 150,
+        "totalDurationMs": 800,
+        "avgDurationMs": 800,
+        "estimatedCostUsd": 0
+      }
+    }
+  }
+}

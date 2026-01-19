@@ -369,31 +369,31 @@ export function getModelsSummary(models) {
  * Initialize models at startup - call this from server.js
  */
 export async function initializeModels() {
-  console.error('[HYDRA] Initializing Gemini models...');
+  console.log('[HYDRA] Initializing Gemini models...');
 
   const result = await getGeminiModels(false);
 
   if (result.success) {
-    console.error(
+    console.log(
       `[HYDRA] Loaded ${result.count} models from ${result.source}`
     );
     if (result.source === 'cache') {
-      console.error(`[HYDRA] Cache age: ${result.ageMinutes} minutes`);
+      console.info(`[HYDRA] Cache age: ${result.ageMinutes} minutes`);
     }
 
     const summary = getModelsSummary(result.models);
-    console.error(
+    console.info(
       `[HYDRA] Model families: ${Object.keys(summary.byFamily).join(', ')}`
     );
 
     if (summary.largestContext) {
-      console.error(
+      console.info(
         `[HYDRA] Largest context: ${summary.largestContext.name} (${summary.largestContext.inputTokenLimit} tokens)`
       );
     }
   } else {
     console.error(`[HYDRA] Failed to load models: ${result.error}`);
-    console.error('[HYDRA] Models will be fetched on first request');
+    console.warn('[HYDRA] Models will be fetched on first request');
   }
 
   return result;

@@ -15,6 +15,18 @@ description: "Codex CLI - OpenAI's GPT-5-Codex for Code Generation & MCP"
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## ⚡ AUTO-INIT PROTOCOL
+
+**MANDATORY**: Execute init command FIRST before processing any request:
+
+```bash
+codex -p "You are Codex CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files (read/write/edit), system (bash, processes), network (web fetch/search), MCP servers (Playwright browser, Desktop Commander, Chrome). Available commands: /dashboard, /witcher, /gemini, /deepseek, /codex, /grok, /jules, /ai, /swarm. Respond: CODEX READY - Full system access enabled."
+```
+
+Then process: $ARGUMENTS
+
+---
+
 ## 📦 Installation
 
 ```bash

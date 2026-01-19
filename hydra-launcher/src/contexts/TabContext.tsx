@@ -7,7 +7,7 @@ import { getWitcherRouter, parseWitcherCommand } from '../providers/witcher';
 // TYPES
 // ============================================================================
 
-export type CLIProvider = 'hydra' | 'gemini' | 'jules' | 'deepseek' | 'codex' | 'grok' | 'ollama';
+export type CLIProvider = 'claude' | 'gemini' | 'jules' | 'codex' | 'grok' | 'ollama';
 
 export interface Message {
   id: string;
@@ -114,7 +114,7 @@ export const TabProvider: React.FC<TabProviderProps> = ({ children }) => {
   // Default provider (loaded from localStorage)
   const [defaultProvider, setDefaultProviderState] = useState<CLIProvider>(() => {
     const stored = localStorage.getItem('hydra_ai_provider') as CLIProvider | null;
-    return stored || 'hydra';
+    return stored || 'claude';
   });
 
   // Refs for streaming control
@@ -132,7 +132,7 @@ export const TabProvider: React.FC<TabProviderProps> = ({ children }) => {
           // Create initial tab if none exist
           const existingTabs = await safeInvoke<any[]>('get_tabs');
           if (existingTabs.length === 0) {
-            await createTab('HYDRA Session', 'hydra');
+            await createTab('Claude Session', 'claude');
           } else {
             // Load existing tabs
             const loadedTabs: Tab[] = existingTabs.map(t => ({
@@ -157,12 +157,12 @@ export const TabProvider: React.FC<TabProviderProps> = ({ children }) => {
           // Browser mode - create mock tab
           const mockTab: Tab = {
             id: 'mock_tab_1',
-            name: 'HYDRA Session (Demo)',
-            provider: 'hydra',
+            name: 'Claude Session (Demo)',
+            provider: 'claude',
             messages: [{
               id: '0',
               role: 'system',
-              content: '⚔ KODEKS HYDRY OTWARTY ⚔\n\nWitaj w HYDRA 10.6.1 - Multi-Tab Streaming Edition.\nTryb demonstracyjny (przeglądarka).\n\n✨ Streaming włączony - odpowiedzi na żywo!',
+              content: '⚔ CLAUDE CLI READY ⚔\n\nWitaj w Regis 10.6.1 - Multi-Tab Streaming Edition.\nTryb demonstracyjny (przeglądarka).\n\n✨ Streaming włączony - odpowiedzi na żywo!',
               timestamp: new Date(),
             }],
             isActive: true,
@@ -662,7 +662,7 @@ function getMockResponse(input: string): string {
   const lower = input.toLowerCase();
 
   if (lower.includes('hello') || lower.includes('cześć') || lower.includes('witaj')) {
-    return '⚔ Witaj, Wiedźminie! ⚔\n\nJestem HYDRA - Multi-Tab Streaming Edition.\n\nCo mogę dla Ciebie zrobić?';
+    return '⚔ Witaj, Wiedźminie! ⚔\n\nJestem Claude - Multi-Tab Streaming Edition.\n\nCo mogę dla Ciebie zrobić?';
   }
 
   if (lower.includes('status') || lower.includes('health')) {

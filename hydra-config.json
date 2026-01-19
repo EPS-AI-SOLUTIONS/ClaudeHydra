@@ -17,14 +17,14 @@
   },
 
   "autonomy": {
-    "level": "STANDARD",
-    "yolo_mode": false,
+    "level": "YOLO",
+    "yolo_mode": true,
     "safe_mode": false
   },
 
   "providers": {
     "primary": "anthropic",
-    "fallback_chain": ["anthropic", "google", "openai", "deepseek", "ollama"],
+    "fallback_chain": ["anthropic", "google", "openai", "ollama"],
     "local": {
       "enabled": true,
       "host": "http://localhost:11434",
@@ -38,8 +38,8 @@
 
   "multi_cli": {
     "config_path": ".claude/config/multi-cli.json",
-    "active_clis": ["hydra", "gemini", "jules", "deepseek"],
-    "placeholder_clis": ["codex", "grok"]
+    "active_clis": ["hydra", "gemini", "jules", "codex", "grok"],
+    "placeholder_clis": []
   },
 
   "response_contract": {
@@ -59,6 +59,39 @@
     "commands": ".claude/commands/",
     "hydra_spec": ".claude/hydra/",
     "config": ".claude/config/",
-    "logs": "hydra-logs/"
+    "logs": "hydra-logs/",
+    "backup": ".serena/backup/"
+  },
+
+  "fallback_config": {
+    "enabled": true,
+    "max_retries": 3,
+    "retry_delay_ms": 1000,
+    "circuit_breaker": {
+      "enabled": true,
+      "threshold": 5,
+      "reset_timeout_ms": 60000
+    },
+    "chain": [
+      { "provider": "anthropic", "timeout_ms": 30000 },
+      { "provider": "google", "timeout_ms": 45000 },
+      { "provider": "openai", "timeout_ms": 30000 },
+      { "provider": "ollama", "timeout_ms": 120000, "local": true }
+    ]
+  },
+
+  "debug": {
+    "enabled": false,
+    "log_level": "info",
+    "log_requests": false,
+    "log_responses": false,
+    "correlation_id": true,
+    "performance_metrics": true,
+    "trace_agents": false,
+    "output": {
+      "console": true,
+      "file": "hydra-logs/debug.log",
+      "max_file_size_mb": 10
+    }
   }
 }

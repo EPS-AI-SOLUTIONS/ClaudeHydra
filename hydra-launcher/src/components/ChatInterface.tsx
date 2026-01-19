@@ -25,7 +25,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onConnectionChange }) => 
     {
       id: '0',
       role: 'system',
-      content: '⚔ KODEKS HYDRY OTWARTY ⚔\n\nWitaj w HYDRA 10.6.1 - Czterogłowa Bestia gotowa do służby.\nMasz pełny dostęp do: Serena, Desktop Commander, Playwright, Agent Swarm.\n\nWpisz swoje polecenie...',
+      content: '⚔ CLAUDE CLI READY ⚔\n\nWitaj w Regis 10.6.1 - Claude CLI gotowy do służby.\nMasz pełny dostęp do: Serena, Desktop Commander, Playwright, Agent Swarm.\n\nWpisz swoje polecenie...',
       timestamp: new Date(),
     },
   ]);
@@ -248,7 +248,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onConnectionChange }) => 
           isLight ? 'text-amber-600/40' : 'text-amber-500/30'
         }`}>
           <span>Enter = wyślij • Shift+Enter = nowa linia</span>
-          <span>◆ HYDRA 10.6.1 ◆</span>
+          <span>◆ REGIS 10.6.1 ◆</span>
         </div>
       </div>
     </div>
@@ -312,7 +312,7 @@ const MessageBubble: React.FC<{ message: Message; isLight: boolean }> = ({ messa
                 <span className={`text-[9px] font-cinzel font-semibold tracking-wider ${
                   isLight ? 'text-amber-700' : 'text-amber-500'
                 }`}>
-                  HYDRA
+                  CLAUDE
                 </span>
               </>
             )}
@@ -363,7 +363,7 @@ function getMockResponse(input: string): string {
   const lower = input.toLowerCase();
 
   if (lower.includes('hello') || lower.includes('cześć') || lower.includes('witaj')) {
-    return '⚔ Witaj, Wiedźminie! ⚔\n\nJestem HYDRA - Czterogłowa Bestia gotowa do służby.\n\nCo mogę dla Ciebie zrobić?\n\n• Analiza kodu (Serena)\n• Operacje systemowe (Desktop Commander)\n• Automatyzacja przeglądarki (Playwright)\n• Wieloagentowe zadania (Swarm)';
+    return '⚔ Witaj, Wiedźminie! ⚔\n\nJestem Claude - gotowy do służby.\n\nCo mogę dla Ciebie zrobić?\n\n• Analiza kodu (Serena)\n• Operacje systemowe (Desktop Commander)\n• Automatyzacja przeglądarki (Playwright)\n• Wieloagentowe zadania (Swarm)';
   }
 
   if (lower.includes('status') || lower.includes('health')) {
@@ -371,14 +371,14 @@ function getMockResponse(input: string): string {
   }
 
   if (lower.includes('pomoc') || lower.includes('help')) {
-    return '📖 **KODEKS HYDRY - POMOC:**\n\n**Dostępne komendy:**\n• `/hydra` - Pełne instrukcje\n• `/ai <pytanie>` - Szybkie zapytanie AI (local)\n• `/swarm <zadanie>` - Agent Swarm (12 agentów)\n• `/yolo` - Przełącz tryb YOLO\n\n**Przykłady:**\n• "Przeanalizuj kod w src/"\n• "Otwórz stronę google.com"\n• "Znajdź wszystkie pliki .ts"';
+    return '📖 **POMOC:**\n\n**Dostępne komendy:**\n• `/claude` - Pełne instrukcje\n• `/ai <pytanie>` - Szybkie zapytanie AI (local)\n• `/swarm <zadanie>` - Agent Swarm (12 agentów)\n• `/yolo` - Przełącz tryb YOLO\n\n**Przykłady:**\n• "Przeanalizuj kod w src/"\n• "Otwórz stronę google.com"\n• "Znajdź wszystkie pliki .ts"';
   }
 
   if (lower.includes('test') || lower.includes('demo')) {
-    return '✅ **ZADANIE UKOŃCZONO!**\n\nTest demo zakończony sukcesem.\n\n**Wyniki:**\n• Czas wykonania: 3.2s\n• Agenci: 12/12 aktywnych\n• Błędy: 0\n\n⚔ HYDRA gotowa do kolejnych zadań! ⚔';
+    return '✅ **ZADANIE UKOŃCZONO!**\n\nTest demo zakończony sukcesem.\n\n**Wyniki:**\n• Czas wykonania: 3.2s\n• Agenci: 12/12 aktywnych\n• Błędy: 0\n\n⚔ Claude gotowy do kolejnych zadań! ⚔';
   }
 
-  return `🤔 Przetwarzam Twoje polecenie...\n\n**Otrzymano:** "${input}"\n\n*W trybie demonstracyjnym (przeglądarka). W pełnej wersji HYDRA połączy się z Claude CLI.*\n\n---\n\n💡 **Wskazówka:** Uruchom aplikację przez Tauri aby uzyskać pełną funkcjonalność.`;
+  return `🤔 Przetwarzam Twoje polecenie...\n\n**Otrzymano:** "${input}"\n\n*W trybie demonstracyjnym (przeglądarka). W pełnej wersji Claude połączy się z Claude CLI.*\n\n---\n\n💡 **Wskazówka:** Uruchom aplikację przez Tauri aby uzyskać pełną funkcjonalność.`;
 }
 
 export default ChatInterface;

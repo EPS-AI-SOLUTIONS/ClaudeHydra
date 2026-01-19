@@ -4,10 +4,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useTabContext, CLIProvider } from '../contexts/TabContext';
 
 const providerIcons: Record<CLIProvider, string> = {
-  hydra: '🐉',
+  claude: '🤖',
   gemini: '🔵',
   jules: '🟣',
-  deepseek: '🔴',
   codex: '🟢',
   grok: '⚫',
   ollama: '🦙',
@@ -158,7 +157,7 @@ const TabBar: React.FC<TabBarProps> = ({ onCreateTab }) => {
             }`}>
               WYBIERZ PROVIDER
             </div>
-            {(['hydra', 'gemini', 'jules', 'deepseek', 'ollama'] as CLIProvider[]).map((provider) => (
+            {(['claude', 'gemini', 'jules', 'ollama'] as CLIProvider[]).map((provider) => (
               <button
                 key={provider}
                 onClick={() => {
@@ -173,7 +172,7 @@ const TabBar: React.FC<TabBarProps> = ({ onCreateTab }) => {
               >
                 <span>{providerIcons[provider]}</span>
                 <span className="font-medium">{provider.toUpperCase()}</span>
-                {provider === 'hydra' && (
+                {provider === 'claude' && (
                   <span className={`ml-auto text-[9px] px-1.5 py-0.5 rounded ${
                     isLight ? 'bg-amber-100 text-amber-700' : 'bg-amber-900/30 text-amber-400'
                   }`}>

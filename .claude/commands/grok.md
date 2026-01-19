@@ -15,6 +15,18 @@ description: "Grok CLI - xAI's Real-time Conversational AI"
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## ⚡ AUTO-INIT PROTOCOL
+
+**MANDATORY**: Execute init command FIRST before processing any request:
+
+```bash
+grok -p "You are Grok CLI in HYDRA 10.6.1 system. You have FULL ACCESS to: files (read/write/edit), system (bash, processes), network (web fetch/search, X/Twitter), MCP servers (Playwright browser, Desktop Commander, Chrome). Available commands: /dashboard, /witcher, /gemini, /deepseek, /codex, /grok, /jules, /ai, /swarm. Respond: GROK READY - Full system access enabled."
+```
+
+Then process: $ARGUMENTS
+
+---
+
 ## 📦 Installation
 
 ```bash

@@ -91,14 +91,14 @@ export async function streamClaude(
 
   if (!isTauri()) {
     // Browser mode - simulate streaming
-    await simulateStreaming(prompt, onChunk, 'hydra');
+    await simulateStreaming(prompt, onChunk, 'claude');
     return;
   }
 
   try {
     // Start streaming session
     const sessionId = await safeInvoke<string>('start_streaming_session', {
-      provider: 'hydra',
+      provider: 'claude',
       prompt,
     });
 
@@ -113,7 +113,7 @@ export async function streamClaude(
         onChunk({
           content: chunk.content,
           done: chunk.done,
-          provider: 'hydra',
+          provider: 'claude',
           timestamp: Date.now(),
         });
         done = chunk.done;
@@ -129,7 +129,7 @@ export async function streamClaude(
     onChunk({
       content: response,
       done: true,
-      provider: 'hydra',
+      provider: 'claude',
       timestamp: Date.now(),
     });
   }
@@ -149,78 +149,6 @@ export async function streamGemini(
 }
 
 // ============================================================================
-// DEEPSEEK STREAMING (API supports it)
-// ============================================================================
-
-export async function streamDeepSeek(
-  prompt: string,
-  onChunk: StreamCallback,
-  apiKey?: string
-): Promise<void> {
-  if (!apiKey) {
-    await simulateStreaming(prompt, onChunk, 'deepseek');
-    return;
-  }
-
-  const response = await fetch('https://api.deepseek.com/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [{ role: 'user', content: prompt }],
-      stream: true,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`DeepSeek error: ${response.statusText}`);
-  }
-
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error('No response body');
-
-  const decoder = new TextDecoder();
-
-  while (true) {
-    const { done, value } = await reader.read();
-
-    if (done) {
-      onChunk({ content: '', done: true, provider: 'deepseek', timestamp: Date.now() });
-      break;
-    }
-
-    const text = decoder.decode(value, { stream: true });
-    const lines = text.split('\n').filter(line => line.startsWith('data:'));
-
-    for (const line of lines) {
-      const data = line.slice(5).trim();
-      if (data === '[DONE]') {
-        onChunk({ content: '', done: true, provider: 'deepseek', timestamp: Date.now() });
-        return;
-      }
-
-      try {
-        const parsed = JSON.parse(data);
-        const content = parsed.choices?.[0]?.delta?.content;
-        if (content) {
-          onChunk({
-            content,
-            done: false,
-            provider: 'deepseek',
-            timestamp: Date.now(),
-          });
-        }
-      } catch {
-        // Skip invalid JSON
-      }
-    }
-  }
-}
-
-// ============================================================================
 // STREAMING SIMULATION
 // For providers without native streaming support
 // ============================================================================
@@ -232,9 +160,8 @@ async function simulateStreaming(
 ): Promise<void> {
   // Generate mock response
   const mockResponses: Record<CLIProvider, string> = {
-    hydra: `⚔ Przetwarzam polecenie...\n\nAnalizuję: "${prompt.slice(0, 50)}..."\n\n✅ Zadanie wykonane!`,
+    claude: `⚔ Przetwarzam polecenie...\n\nAnalizuję: "${prompt.slice(0, 50)}..."\n\n✅ Zadanie wykonane!`,
     gemini: `🔵 Gemini analizuje z 2M kontekstem...\n\nZapytanie: "${prompt.slice(0, 50)}..."\n\nOdpowiedź generowana...`,
-    deepseek: `🔴 DeepSeek-R1 processing...\n\nInput: "${prompt.slice(0, 50)}..."\n\nGenerating response...`,
     jules: `🟣 Jules queuing task...\n\nTask: "${prompt.slice(0, 50)}..."\n\nBackground processing...`,
     codex: `🟢 Codex generating code...\n\n// Task: ${prompt.slice(0, 30)}...`,
     grok: `⚫ Grok responding...\n\n"${prompt.slice(0, 50)}..."`,
@@ -277,14 +204,11 @@ export async function streamProvider(
     case 'ollama':
       return streamOllama(prompt, onChunk, options?.model, options?.baseUrl);
 
-    case 'hydra':
+    case 'claude':
       return streamClaude(prompt, onChunk);
 
     case 'gemini':
       return streamGemini(prompt, onChunk);
-
-    case 'deepseek':
-      return streamDeepSeek(prompt, onChunk, options?.apiKey);
 
     default:
       return simulateStreaming(prompt, onChunk, provider);

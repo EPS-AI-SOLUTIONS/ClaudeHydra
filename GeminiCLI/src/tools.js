@@ -620,5 +620,68 @@ export const TOOLS = [
       properties: {},
       required: []
     }
+  },
+
+  // === GEMINI STREAM HANDLER TOOLS ===
+  {
+    name: 'gemini_stream',
+    description: 'Stream text generation from Gemini API with SSE support. Returns chunks in real-time.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: {
+          type: 'string',
+          description: 'The prompt to generate from'
+        },
+        model: {
+          type: 'string',
+          description: 'Model name (default: gemini-2.0-flash)',
+          default: 'gemini-2.0-flash'
+        },
+        temperature: {
+          type: 'number',
+          description: 'Temperature 0-2 (default: 0.7)',
+          default: 0.7
+        },
+        maxTokens: {
+          type: 'number',
+          description: 'Maximum output tokens (default: 8192)',
+          default: 8192
+        },
+        topP: {
+          type: 'number',
+          description: 'Top-p sampling (default: 0.95)',
+          default: 0.95
+        },
+        topK: {
+          type: 'number',
+          description: 'Top-k sampling (default: 40)',
+          default: 40
+        },
+        systemPrompt: {
+          type: 'string',
+          description: 'Optional system instruction'
+        }
+      },
+      required: ['prompt']
+    }
+  },
+  {
+    name: 'gemini_stream_abort',
+    description: 'Abort the current Gemini streaming request.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: 'gemini_stream_stats',
+    description: 'Get streaming handler statistics (request counts, success rate, tokens).',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
   }
 ];

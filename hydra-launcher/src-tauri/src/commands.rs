@@ -2,7 +2,10 @@ use crate::config::HydraConfig;
 use crate::logger::{log_info, log_error, log_mcp_health, log_claude_interaction, log_system_metrics};
 use crate::mcp::health::{check_all_mcp_servers, McpHealthResult, McpStatus};
 use crate::process::claude::spawn_claude_cli;
-use crate::process::ollama::{check_ollama_running, get_ollama_model_list};
+use crate::process::ollama::{
+    check_ollama_running, get_ollama_model_list, get_ollama_status,
+    start_ollama, stop_ollama, restart_ollama, OllamaStatus, OllamaState,
+};
 use crate::session::{
     SessionManager, SharedSessionManager, TabSession, TabInfo, QueueStats, FileConflict,
     CLIProvider, PromptPriority, PromptStatus,
@@ -259,6 +262,61 @@ pub async fn check_ollama() -> Result<bool, String> {
 #[tauri::command]
 pub async fn get_ollama_models() -> Result<Vec<String>, String> {
     get_ollama_model_list().await
+}
+
+/// Get detailed Ollama status including state and PID
+#[tauri::command]
+pub async fn get_ollama_status_cmd() -> Result<OllamaStatus, String> {
+    log_info("Getting Ollama status");
+    get_ollama_status().await
+}
+
+/// Start Ollama service
+#[tauri::command]
+pub async fn start_ollama_cmd() -> Result<u32, String> {
+    log_info("Starting Ollama service");
+    match start_ollama().await {
+        Ok(pid) => {
+            log_info(&format!("Ollama started with PID: {}", pid));
+            Ok(pid)
+        }
+        Err(e) => {
+            log_error(&format!("Failed to start Ollama: {}", e));
+            Err(e)
+        }
+    }
+}
+
+/// Stop Ollama service
+#[tauri::command]
+pub async fn stop_ollama_cmd() -> Result<(), String> {
+    log_info("Stopping Ollama service");
+    match stop_ollama().await {
+        Ok(()) => {
+            log_info("Ollama stopped successfully");
+            Ok(())
+        }
+        Err(e) => {
+            log_error(&format!("Failed to stop Ollama: {}", e));
+            Err(e)
+        }
+    }
+}
+
+/// Restart Ollama service
+#[tauri::command]
+pub async fn restart_ollama_cmd() -> Result<u32, String> {
+    log_info("Restarting Ollama service");
+    match restart_ollama().await {
+        Ok(pid) => {
+            log_info(&format!("Ollama restarted with PID: {}", pid));
+            Ok(pid)
+        }
+        Err(e) => {
+            log_error(&format!("Failed to restart Ollama: {}", e));
+            Err(e)
+        }
+    }
 }
 
 #[tauri::command]

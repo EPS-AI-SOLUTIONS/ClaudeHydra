@@ -62,10 +62,10 @@ interface AIProviderOption {
 
 const AI_PROVIDERS: AIProviderOption[] = [
   {
-    id: 'hydra',
-    name: 'HYDRA',
+    id: 'claude',
+    name: 'Claude',
     description: 'Claude Opus 4.5 + MCP',
-    icon: '🐉',
+    icon: '🤖',
     color: '#f59e0b',
     status: 'active',
   },
@@ -75,14 +75,6 @@ const AI_PROVIDERS: AIProviderOption[] = [
     description: '2M context, Multimodal',
     icon: '🔵',
     color: '#4285f4',
-    status: 'active',
-  },
-  {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    description: '100+ languages, R1',
-    icon: '🔴',
-    color: '#ef4444',
     status: 'active',
   },
   {
@@ -214,7 +206,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === 'light';
   const [settings, setSettings] = useState<Record<string, boolean>>({});
-  const [selectedProvider, setSelectedProvider] = useState<CLIProvider>('hydra');
+  const [selectedProvider, setSelectedProvider] = useState<CLIProvider>('claude');
   const [isProviderDropdownOpen, setIsProviderDropdownOpen] = useState(false);
   const { playToggle, playOpenPanel, playClosePanel, playClick } = useSoundEffects();
 
@@ -597,7 +589,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
           <span className={`text-[9px] font-cinzel tracking-wider ${
             isLight ? 'text-amber-600/50' : 'text-amber-500/40'
           }`}>
-            ◇ HYDRA 10.6.1 ◇ WITCHER CODEX ◇
+            ◇ REGIS 10.6.1 ◇ WITCHER CODEX ◇
           </span>
         </div>
       </div>

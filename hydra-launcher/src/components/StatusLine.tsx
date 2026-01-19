@@ -219,7 +219,7 @@ const StatusLine: React.FC<StatusLineProps> = ({
         <span className={`text-[9px] font-cinzel font-semibold tracking-wider ${
           isLight ? 'text-amber-600/70' : 'text-amber-500/60'
         }`}>
-          HYDRA 10.6.1
+          REGIS 10.6.1
         </span>
       </div>
     </div>

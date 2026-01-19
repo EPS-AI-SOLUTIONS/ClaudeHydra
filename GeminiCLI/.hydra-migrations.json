@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "appliedMigrations": [
+    "cache_v2"
+  ],
+  "lastMigrationAt": "2026-01-19T14:17:24.772Z",
+  "history": [
+    {
+      "from": 0,
+      "to": 1,
+      "migration": "cache_v2",
+      "direction": "up",
+      "timestamp": "2026-01-19T14:17:24.773Z"
+    }
+  ]
+}

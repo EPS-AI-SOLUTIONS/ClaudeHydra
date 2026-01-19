@@ -1,0 +1,64 @@
+# HYDRA Dependabot Configuration
+# BLOK 7: DevOps - Eskel
+
+version: 2
+updates:
+  # GeminiCLI npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/GeminiCLI"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "GeminiCLI"
+    groups:
+      dev-dependencies:
+        patterns:
+          - "vitest*"
+          - "eslint*"
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Hydra Launcher npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/hydra-launcher"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "launcher"
+    groups:
+      svelte:
+        patterns:
+          - "svelte*"
+          - "@sveltejs/*"
+      tauri:
+        patterns:
+          - "@tauri-apps/*"
+
+  # Hydra Launcher Cargo dependencies
+  - package-ecosystem: "cargo"
+    directory: "/hydra-launcher/src-tauri"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "rust"
+      - "launcher"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "ci"

@@ -38,32 +38,32 @@ const WITCHER_SIGNS: Record<WitcherSign, {
   aard: {
     name: 'Aard',
     description: 'Fast code generation push',
-    primaryProvider: 'deepseek',
-    fallbackProvider: 'hydra',
+    primaryProvider: 'codex',
+    fallbackProvider: 'claude',
   },
   igni: {
     name: 'Igni',
     description: 'Deep analysis fire',
     primaryProvider: 'gemini',
-    fallbackProvider: 'hydra',
+    fallbackProvider: 'claude',
   },
   yrden: {
     name: 'Yrden',
     description: 'Background task trap',
     primaryProvider: 'jules',
-    fallbackProvider: 'hydra',
+    fallbackProvider: 'claude',
   },
   quen: {
     name: 'Quen',
     description: 'Security audit shield',
-    primaryProvider: 'hydra',
+    primaryProvider: 'claude',
     fallbackProvider: 'grok',
   },
   axii: {
     name: 'Axii',
     description: 'Multi-model consensus mind control',
-    primaryProvider: 'hydra', // Orchestrator
-    fallbackProvider: 'hydra',
+    primaryProvider: 'claude', // Orchestrator
+    fallbackProvider: 'claude',
   },
 };
 
@@ -107,14 +107,14 @@ const TASK_PATTERNS: Record<TaskType, string[]> = {
 
 // Task type to provider mapping
 const TASK_TO_PROVIDER: Record<TaskType, CLIProvider> = {
-  code_generation: 'hydra',
+  code_generation: 'claude',
   long_context: 'gemini',
   background_task: 'jules',
-  multi_language: 'deepseek',
-  symbolic_analysis: 'hydra',
-  system_operation: 'hydra',
-  security_audit: 'hydra',
-  general: 'hydra',
+  multi_language: 'codex',
+  symbolic_analysis: 'claude',
+  system_operation: 'claude',
+  security_audit: 'claude',
+  general: 'claude',
 };
 
 // ============================================================================
@@ -217,7 +217,7 @@ export class WitcherRouter {
     consensus: string;
     responses: Record<CLIProvider, ProviderResponse>;
   }> {
-    const providers: CLIProvider[] = ['hydra', 'gemini', 'deepseek', 'ollama'];
+    const providers: CLIProvider[] = ['claude', 'gemini', 'ollama'];
     const responses: Record<CLIProvider, ProviderResponse> = {} as any;
 
     // Query all providers in parallel
