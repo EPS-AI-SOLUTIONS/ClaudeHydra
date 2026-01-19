@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import Launcher from "./components/Launcher";
 import Dashboard from "./components/Dashboard";
+import WitcherRain from "./components/WitcherRain";
 import { useTheme } from "./contexts/ThemeContext";
+
+// Background images from public folder
+const backgroundDark = "/background.webp";
+const backgroundLight = "/backgroundlight.webp";
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -19,22 +24,36 @@ function App() {
 
   return (
     <div className="w-full h-full relative overflow-hidden">
-      {/* Solid B&W Background */}
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
+        style={{
+          zIndex: 0,
+          backgroundImage: `url(${isLight ? backgroundLight : backgroundDark})`,
+        }}
+      />
+      
+      {/* Dark overlay for better readability */}
       <div
         className={`absolute inset-0 transition-colors duration-300 ${
-          isLight ? 'bg-[#fafafa]' : 'bg-[#0a0a0a]'
+          isLight 
+            ? 'bg-white/30' 
+            : 'bg-black/40'
         }`}
-        style={{ zIndex: 0 }}
+        style={{ zIndex: 1 }}
       />
 
-      {/* Subtle grid pattern */}
+      {/* WitcherRain effect */}
+      <WitcherRain />
+
+      {/* Vignette overlay */}
       <div
-        className="absolute inset-0 opacity-[0.02]"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          zIndex: 1,
-          backgroundImage: `linear-gradient(${isLight ? '#000' : '#fff'} 1px, transparent 1px),
-                           linear-gradient(90deg, ${isLight ? '#000' : '#fff'} 1px, transparent 1px)`,
-          backgroundSize: '50px 50px',
+          zIndex: 2,
+          background: isLight
+            ? 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.1) 100%)'
+            : 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%)',
         }}
       />
 

@@ -1,160 +1,182 @@
-# HYDRA 10.6.1 - Claude CLI Edition
+# HYDRA 10.6.1 - Multi-CLI Control Center
 
 ```
-╔══════════════════════════════════════════════════════════════════╗
-║  ██╗  ██╗██╗   ██╗██████╗ ██████╗  █████╗                        ║
-║  ██║  ██║╚██╗ ██╔╝██╔══██╗██╔══██╗██╔══██╗                       ║
-║  ███████║ ╚████╔╝ ██║  ██║██████╔╝███████║  10.6.1 CLI EDITION   ║
-║  ██╔══██║  ╚██╔╝  ██║  ██║██╔══██╗██╔══██║                       ║
-║  ██║  ██║   ██║   ██████╔╝██║  ██║██║  ██║                       ║
-║  ╚═╝  ╚═╝   ╚═╝   ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  🐺 AUTONOMOUS        ║
-╚══════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════╗
+║  ██╗  ██╗██╗   ██╗██████╗ ██████╗  █████╗                                ║
+║  ██║  ██║╚██╗ ██╔╝██╔══██╗██╔══██╗██╔══██╗                               ║
+║  ███████║ ╚████╔╝ ██║  ██║██████╔╝███████║  10.6.1 MULTI-CLI EDITION    ║
+║  ██╔══██║  ╚██╔╝  ██║  ██║██╔══██╗██╔══██║                               ║
+║  ██║  ██║   ██║   ██████╔╝██║  ██║██║  ██║                               ║
+║  ╚═╝  ╚═╝   ╚═╝   ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  🐺 WITCHER MODE ENABLED     ║
+╚══════════════════════════════════════════════════════════════════════════╝
 ```
 
 ![HYDRA Compliance](https://img.shields.io/badge/HYDRA-10.6.1-green)
+![Witcher Mode](https://img.shields.io/badge/Witcher-Active-red)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-## What is HYDRA?
+## 🎮 Multi-CLI Dashboard
 
-HYDRA is a specification for AI assistant behavior that ensures:
+HYDRA now supports orchestrating multiple AI CLI tools:
 
-- **Deterministic outputs** - Predictable, verifiable results
-- **Safety first** - Never compromises on security
-- **Visual communication** - Tables, diagrams, clear formatting
-- **Autonomous action** - Execute within defined boundaries
-- **Multi-agent orchestration** - 10 specialized agents
+| CLI | Provider | Folder | Status |
+|-----|----------|--------|--------|
+| 🐉 **Claude CLI** | Anthropic | `ClaudeCLI/` | ✅ Active |
+| 🔵 **Gemini CLI** | Google | `GeminiCLI/` | 📋 Placeholder |
+| 🟣 **Jules CLI** | Google | `JulesCLI/` | 📋 Placeholder |
+| 🟢 **Codex CLI** | OpenAI | `CodexCLI/` | 📋 Placeholder |
+| ⚫ **Grok CLI** | xAI | `GrokCLI/` | 📋 Placeholder |
+| 🔴 **DeepSeek CLI** | DeepSeek | `DeepSeekCLI/` | 📋 Placeholder |
 
-## Installation
+## 📁 Project Structure
 
-Copy the contents to your project root:
+```
+ClaudeHYDRA/
+├── ClaudeCLI/              # 🐉 Claude CLI (HYDRA Core)
+│   ├── .claude/            # Configuration & commands
+│   ├── .serena/            # Serena MCP
+│   ├── CLAUDE.md           # Main specification
+│   └── hydra-config.json   # HYDRA config
+│
+├── GeminiCLI/              # 🔵 Google Gemini (2M context)
+│   └── README.md           # Setup instructions
+│
+├── JulesCLI/               # 🟣 Google Jules (Async tasks)
+│   └── README.md           # Setup instructions
+│
+├── CodexCLI/               # 🟢 OpenAI Codex (GPT-5)
+│   └── README.md           # Setup instructions
+│
+├── GrokCLI/                # ⚫ xAI Grok (Real-time)
+│   └── README.md           # Setup instructions
+│
+├── DeepSeekCLI/            # 🔴 DeepSeek (100+ langs)
+│   └── README.md           # Setup instructions
+│
+├── hydra-launcher/         # 🚀 Tauri Desktop App
+└── README.md               # This file
+```
+
+## 🐺 Witcher Mode
+
+Witcher Mode unites ALL CLIs for complex multi-step tasks:
 
 ```bash
-# Copy files
-cp -r hydra-cli/* /path/to/your/project/
+# Activate Witcher Mode
+/witcher "Analyze codebase, generate tests, create documentation"
 
-# Verify installation
-node scripts/validate_hydra.js
+# Use Witcher Signs
+/witcher aard "Fast code generation"     # → Codex
+/witcher igni "Deep analysis"            # → Gemini
+/witcher yrden "Background task"         # → Jules
+/witcher quen "Security audit"           # → Grok + HYDRA
+/witcher axii "Multi-model consensus"    # → All
 ```
 
-## Structure
+## 🚀 Quick Start
 
-```
-project/
-├── CLAUDE.md                    # Main entry point
-├── .claude/
-│   ├── commands/
-│   │   ├── hydra.md            # /hydra command
-│   │   ├── agent.md            # /agent command
-│   │   └── swarm.md            # /swarm command
-│   ├── hydra/
-│   │   ├── HYDRA_CORE.md       # Core specification
-│   │   ├── HYDRA_SECURITY.md   # Security policy
-│   │   ├── HYDRA_AGENTS.md     # Agent contracts
-│   │   ├── HYDRA_FILES.md      # File handling
-│   │   ├── HYDRA_TESTS.md      # Test cases
-│   │   ├── rules.json          # 28 rules
-│   │   └── tests.json          # Behavioral tests
-│   └── settings.json           # Configuration
-└── scripts/
-    └── validate_hydra.js       # Validation script
-```
-
-## Quick Start
-
-### Basic Commands
+### 1. Setup Claude CLI (Required)
 
 ```bash
-# Full orchestration
-/hydra "Implement user authentication"
-
-# Specific agent
-/agent coder "Add JWT refresh logic"
-/agent tester "Write unit tests"
-
-# Full swarm protocol
-/swarm "Refactor auth module"
+cd ClaudeCLI
+# Claude CLI is already configured via CLAUDE.md
 ```
 
-### Agent Domains
-
-| Domain | Agents |
-|--------|--------|
-| 🏗️ Architecture | Architect, Planner |
-| 🔍 Analysis | Researcher, Analyst |
-| 💻 Implementation | Coder, Refactorer |
-| ✅ Quality | Tester, Reviewer |
-| 📚 Documentation | Documenter, Explainer |
-
-## Core Principles
-
-### Iron Law (HARD - Never Break)
-
-1. **Safety > Autonomy** - Always prioritize safety
-2. **Determinism > Creativity** - Predictable outputs
-3. **No Guessing** - State uncertainty explicitly
-4. **No Hallucinations** - Verify before claiming
-5. **No Destructive Ops** - Require confirmation
-
-### Response Contract
-
-Every response includes:
-
-1. 📊 Visual summary (table/diagram)
-2. ✅ Actions taken (numbered list)
-3. 📌 Next steps (exactly 5)
-4. 🎯 CONFIDENCE_SCORE (0.0-1.0)
-
-## Configuration
-
-Edit `.claude/settings.json`:
-
-```json
-{
-  "hydra": {
-    "autonomy_level": "STANDARD",  // SAFE | STANDARD | MAX
-    "security_mode": "NORMAL",     // NORMAL | AUDIT
-    "response_contract": {
-      "next_steps_count": 5,
-      "confidence_score": true
-    }
-  }
-}
-```
-
-## Validation
-
-Run validation before deploying:
+### 2. Install External CLIs (Optional)
 
 ```bash
-node scripts/validate_hydra.js
+# Gemini
+npm install -g @google/gemini-cli
+export GOOGLE_API_KEY="..."
+
+# Jules
+npm install -g @google/jules
+jules login
+
+# Codex
+npm install -g @openai/codex
+# Requires ChatGPT Plus/Pro
+
+# Grok
+npm install -g @vibe-kit/grok-cli
+export XAI_API_KEY="..."
+
+# DeepSeek
+npm install -g run-deepseek-cli
+export DEEPSEEK_API_KEY="..."
 ```
 
-Expected output:
-```
-╔════════════════════════════════════════╗
-║  HYDRA 10.6.1 Validation               ║
-╚════════════════════════════════════════╝
+### 3. Launch Dashboard
 
-✅ Found: HYDRA_CORE.md
-✅ Found: rules.json
-...
-✅ All rules valid
-✅ All tests valid
-
-🎉 HYDRA 10.6.1 validation PASSED
+```bash
+/dashboard  # Show Multi-CLI Control Center
 ```
 
-## Migration from 10.5
+## 📋 Commands
 
-Key changes in 10.6.1:
+### Core HYDRA
 
-| Feature | 10.5 | 10.6.1 |
-|---------|------|--------|
-| Agents | 12 (Witcher themed) | 10 (Domain-based) |
-| Structure | Single file | Modular files |
-| Rules | Embedded | Separate JSON |
-| Tests | Manual | Automated JSON |
-| CLI Integration | Partial | Full |
+| Command | Description |
+|---------|-------------|
+| `/hydra <task>` | Full orchestration |
+| `/ai <query>` | Quick local AI ($0) |
+| `/swarm <task>` | Agent swarm protocol |
+
+### Multi-CLI
+
+| Command | Description |
+|---------|-------------|
+| `/dashboard` | Control center |
+| `/witcher <task>` | All CLIs combined |
+| `/gemini <query>` | Google Gemini |
+| `/jules <task>` | Google Jules |
+| `/codex <task>` | OpenAI Codex |
+| `/grok <query>` | xAI Grok |
+| `/deepseek <task>` | DeepSeek |
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+```bash
+# Required for each CLI
+export ANTHROPIC_API_KEY="..."   # Claude
+export GOOGLE_API_KEY="..."      # Gemini + Jules
+export OPENAI_API_KEY="..."      # Codex
+export XAI_API_KEY="..."         # Grok
+export DEEPSEEK_API_KEY="..."    # DeepSeek
+
+# Optional
+export WITCHER_MODE="enabled"
+```
+
+### Config File
+
+See `ClaudeCLI/.claude/config/multi-cli.json` for full configuration.
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     WITCHER MODE (Orchestrator)                 │
+├─────────────────────────────────────────────────────────────────┤
+│  🐉 Claude  │  🔵 Gemini  │  🟣 Jules  │  🟢 Codex  │  ⚫ Grok  │
+│  (HYDRA)   │  (Google)  │  (Google) │  (OpenAI) │  (xAI)   │
+├─────────────────────────────────────────────────────────────────┤
+│                     🔴 DeepSeek (Local/API)                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## 📚 Documentation
+
+| CLI | Docs |
+|-----|------|
+| Claude | `ClaudeCLI/CLAUDE.md` |
+| Gemini | https://geminicli.com/docs/ |
+| Jules | https://jules.google/docs/cli/reference/ |
+| Codex | https://developers.openai.com/codex/cli/ |
+| Grok | https://grokcli.io/ |
+| DeepSeek | https://github.com/holasoymalva/deepseek-cli |
 
 ## License
 

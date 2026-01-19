@@ -50,11 +50,15 @@
     "servers": {
       "serena": {
         "enabled": true,
-        "port": 9000
+        "type": "stdio"
       },
       "desktop-commander": {
         "enabled": true,
-        "port": 8100
+        "type": "stdio"
+      },
+      "playwright": {
+        "enabled": true,
+        "type": "stdio"
       }
     }
   },

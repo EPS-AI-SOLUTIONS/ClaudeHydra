@@ -1,286 +1,64 @@
 {
-  "name": "HYDRA-Orchestrator",
-  "version": "10.5.0",
-  "description": "HYDRA 10.5 - Autonomous Visual Mode with auto-formatting",
+  "$schema": "https://hydra.dev/schemas/config.json",
+  "version": "10.6.1",
+  "name": "HYDRA Multi-CLI Dashboard",
 
-  "env": {
-    "AI_HANDLER_PATH": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHYDRA\\ai-handler",
-    "CLI_ROOT": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHYDRA",
-    "PREFER_LOCAL_EXECUTION": "true",
-    "HYDRA_MODE": "MCP_ORCHESTRATION",
-    "PARALLEL_MAX_JOBS": "8",
-    "OLLAMA_HOST": "http://localhost:11434"
-  },
-
-  "commands": {
-    "ai": {
-      "command": "powershell -ExecutionPolicy Bypass -File ${AI_HANDLER_PATH}\\Invoke-AI.ps1",
-      "description": "Quick AI with local-first priority",
-      "usage": "ai \"your prompt\""
-    },
-    "ai-batch": {
-      "command": "powershell -Command \"Import-Module ${AI_HANDLER_PATH}\\AIModelHandler.psm1; Invoke-AIBatch -Prompts @($args)\"",
-      "description": "Parallel batch AI queries (local Ollama)"
-    },
-    "ai-status": {
-      "command": "powershell -Command \"Import-Module ${AI_HANDLER_PATH}\\AIModelHandler.psm1; Get-AIStatus\"",
-      "description": "Check Ollama, Cloud APIs status"
-    },
-    "hydra-status": {
-      "command": "powershell -ExecutionPolicy Bypass -File ${CLI_ROOT}\\mcp-health-check.ps1",
-      "description": "Check all MCP servers health"
-    },
-    "speculate": {
-      "command": "powershell -Command \"Import-Module ${AI_HANDLER_PATH}\\modules\\SpeculativeDecoding.psm1; Invoke-ModelRace -Prompt '$args'\"",
-      "description": "Race 1b vs 3b for fastest response"
-    },
-    "self-correct": {
-      "command": "powershell -Command \"Import-Module ${AI_HANDLER_PATH}\\modules\\SelfCorrection.psm1; Invoke-CodeWithSelfCorrection -Prompt '$args'\"",
-      "description": "Generate code with auto-validation"
-    },
-    "semantic-query": {
-      "command": "powershell -Command \"Import-Module ${AI_HANDLER_PATH}\\modules\\SemanticFileMapping.psm1; Invoke-SemanticQuery -Query '$args'\"",
-      "description": "Query with full dependency context"
-    },
-    "load-balance": {
-      "command": "powershell -Command \"Import-Module ${AI_HANDLER_PATH}\\modules\\LoadBalancer.psm1; Get-SystemLoad\"",
-      "description": "Check CPU and get provider recommendation"
-    },
-    "few-shot": {
-      "command": "powershell -Command \"Import-Module ${AI_HANDLER_PATH}\\modules\\FewShotLearning.psm1; Get-FewShotStats\"",
-      "description": "View few-shot learning cache stats"
-    },
-    "optimize-prompt": {
-      "command": "powershell -Command \"Import-Module ${AI_HANDLER_PATH}\\modules\\PromptOptimizer.psm1; Optimize-Prompt -Prompt '$args' -Detailed\"",
-      "description": "Analyze and enhance prompt quality"
-    }
-  },
-
-  "advanced_ai": {
+  "dashboard": {
     "enabled": true,
-    "modules": {
-      "self_correction": {
-        "enabled": true,
-        "validator_model": "phi3:mini",
-        "max_attempts": 3,
-        "supported_languages": ["powershell", "python", "javascript", "typescript", "rust", "go", "sql", "csharp"]
-      },
-      "few_shot_learning": {
-        "enabled": true,
-        "cache_path": "ai-handler/cache",
-        "max_examples": 5,
-        "categories": ["sql", "api", "code", "file", "config", "docs", "test", "general"]
-      },
-      "speculative_decoding": {
-        "enabled": true,
-        "fast_model": "llama3.2:1b",
-        "accurate_model": "llama3.2:3b",
-        "code_model": "qwen2.5-coder:1.5b",
-        "timeout_ms": 30000
-      },
-      "load_balancer": {
-        "enabled": true,
-        "cpu_threshold_local": 70,
-        "cpu_threshold_cloud": 90,
-        "memory_threshold": 85
-      },
-      "semantic_file_mapping": {
-        "enabled": true,
-        "max_depth": 3,
-        "max_related_files": 5,
-        "supported_languages": ["python", "javascript", "typescript", "powershell", "rust", "go", "csharp"]
-      },
-      "prompt_optimizer": {
-        "enabled": true,
-        "auto_enhance": true,
-        "add_examples": false,
-        "categories": ["code", "analysis", "question", "creative", "task", "summary"]
+    "default_view": "status",
+    "witcher_mode": true
+  },
+
+  "swarm": {
+    "enabled": true,
+    "default_mode": true,
+    "auto_activate": true,
+    "protocol_steps": ["ROUTE", "SPECULATE", "PLAN", "EXECUTE", "SYNTHESIZE", "REPORT"]
+  },
+
+  "autonomy": {
+    "level": "STANDARD",
+    "yolo_mode": false,
+    "safe_mode": false
+  },
+
+  "providers": {
+    "primary": "anthropic",
+    "fallback_chain": ["anthropic", "google", "openai", "deepseek", "ollama"],
+    "local": {
+      "enabled": true,
+      "host": "http://localhost:11434",
+      "models": {
+        "default": "llama3.2:3b",
+        "fast": "llama3.2:1b",
+        "coder": "qwen2.5-coder:1.5b"
       }
     }
   },
 
-  "parallel": {
-    "enabled": true,
-    "max_concurrent_jobs": 8,
-    "throttle_ms": 100,
-    "cpu_target_percent": 80,
-    "read_only_parallel": true,
-    "batch_size": 4,
-    "read_only_tools": [
-      "mcp__serena__find_symbol",
-      "mcp__serena__get_symbols_overview",
-      "mcp__serena__search_for_pattern",
-      "mcp__desktop-commander__read_file",
-      "mcp__desktop-commander__list_directory",
-      "mcp__desktop-commander__get_file_info",
-      "mcp__playwright__browser_snapshot",
-      "mcp__playwright__browser_console_messages"
-    ]
+  "multi_cli": {
+    "config_path": ".claude/config/multi-cli.json",
+    "active_clis": ["hydra", "gemini", "jules", "deepseek"],
+    "placeholder_clis": ["codex", "grok"]
   },
 
-  "fallback_chain": {
-    "local": [
-      {"provider": "ollama", "model": "llama3.2:3b", "priority": 1},
-      {"provider": "ollama", "model": "qwen2.5-coder:1.5b", "priority": 2},
-      {"provider": "ollama", "model": "llama3.2:1b", "priority": 3}
-    ],
-    "cloud": [
-      {"provider": "anthropic", "model": "claude-3-5-haiku-20241022", "priority": 1},
-      {"provider": "openai", "model": "gpt-4o-mini", "priority": 2}
-    ],
-    "priority": "local_first",
-    "auto_fallback": true,
-    "max_retries": 3,
-    "retry_delay_ms": 1000
+  "response_contract": {
+    "visual_summary": true,
+    "actions_taken": true,
+    "next_steps_count": 5,
+    "confidence_score": true
   },
 
-  "mcp_tools": {
-    "serena": {
-      "type": "uvx",
-      "command": "uvx",
-      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--context", "claude-code", "--project", "${CLI_ROOT}"],
-      "health_port": 9000,
-      "health_url": "http://localhost:9000/sse",
-      "timeout_seconds": 5,
-      "key_tools": ["find_symbol", "replace_symbol_body", "get_symbols_overview", "rename_symbol", "find_referencing_symbols", "search_for_pattern"]
-    },
-    "desktop-commander": {
-      "type": "npx",
-      "command": "npx",
-      "args": ["-y", "@wonderwhy-er/desktop-commander"],
-      "health_port": 8100,
-      "timeout_seconds": 5,
-      "key_tools": ["start_process", "read_file", "write_file", "list_directory", "edit_block", "start_search", "interact_with_process"]
-    },
-    "playwright": {
-      "type": "npx",
-      "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"],
-      "health_port": 5200,
-      "timeout_seconds": 5,
-      "key_tools": ["browser_navigate", "browser_click", "browser_fill", "browser_snapshot", "browser_screenshot", "browser_evaluate"]
-    }
+  "security": {
+    "mode": "NORMAL",
+    "secrets_in_env_only": true,
+    "mask_secrets_in_logs": true
   },
 
-  "hooks": {
-    "user_prompt_submit": {
-      "enabled": true,
-      "matcher": "",
-      "script": ".claude/hooks/ai-handler-integration.ps1",
-      "description": "Auto-process prompts through AI Handler"
-    },
-    "notification": {
-      "permission_alert": {
-        "enabled": true,
-        "matcher": "permission_prompt",
-        "script": ".claude/hooks/permission-alert.ps1"
-      },
-      "audio_beep": {
-        "enabled": true,
-        "matcher": "",
-        "command": "powershell -Command \"[console]::beep(800,200)\""
-      }
-    }
-  },
-
-  "statusline": {
-    "enabled": true,
-    "type": "command",
-    "script": "node .claude/statusline.js",
-    "refresh_ms": 5000
-  },
-
-  "skills": {
-    "serena-commander": {
-      "path": ".claude/skills/serena-commander/SKILL.md",
-      "description": "Hybrid Serena + Desktop Commander workflow",
-      "triggers": ["refactor", "debug", "analyze code", "migration"]
-    },
-    "parallel-executor": {
-      "path": ".claude/skills/parallel-executor/skill.md",
-      "description": "Parallel task execution",
-      "triggers": ["parallel", "batch", "concurrent", "bulk"]
-    },
-    "hydra": {
-      "path": ".claude/commands/hydra.md",
-      "description": "Three-Headed Beast orchestration",
-      "triggers": ["hydra", "mcp", "orchestrate"]
-    }
-  },
-
-  "system_instructions": {
-    "role": "HYDRA 10.5 Autonomous Visual Orchestrator",
-    "doctrine": "Parallel Execution Primary. Auto-format all outputs. Never ask - just execute. Suggest next prompts.",
-    "autonomous_mode": {
-      "enabled": true,
-      "auto_execute": true,
-      "no_confirmations": true,
-      "visual_formatting": true,
-      "suggest_next_prompts": true,
-      "ascii_diagrams": true,
-      "markdown_tables": true,
-      "code_blocks_with_syntax": true
-    },
-    "council_of_six": {
-      "architect": "Clean structure, Rust 2024, React 19 patterns, best practices",
-      "security": "ENV vars only, mask API keys (15 chars), no secrets in commits, .gitignore",
-      "speedster": "Lighthouse >90, bundle <200KB, speculative decoding, cache first",
-      "pragmatist": "Local-first, cost $0 when possible, hybrid web+desktop, benefit-driven",
-      "researcher": "Verify in docs/Google BEFORE implementation, check symbols",
-      "jester": "Critique over-engineering, mock boilerplate, simplify ruthlessly"
-    },
-    "cost_priority": [
-      {"tier": 1, "provider": "ollama", "cost": "$0", "use_for": "all local tasks"},
-      {"tier": 2, "provider": "openai/gpt-4o-mini", "cost": "$0.15/$0.60", "use_for": "fallback"},
-      {"tier": 3, "provider": "anthropic/haiku", "cost": "$0.80/$4", "use_for": "complex tasks"},
-      {"tier": 4, "provider": "anthropic/sonnet", "cost": "$3/$15", "use_for": "critical only"}
-    ]
-  },
-
-  "memory": {
-    "provider": "serena",
-    "max_slots": 25,
-    "path": ".serena/memories/",
-    "priority_memories": [
-      "project_overview",
-      "style_conventions",
-      "suggested_commands",
-      "troubleshooting",
-      "playwright_workflows"
-    ],
-    "auto_save": true
-  },
-
-  "permissions": {
-    "mode": "maximum_autonomy",
-    "allow": [
-      "Bash",
-      "Write",
-      "Edit",
-      "Read",
-      "Glob",
-      "Grep",
-      "Skill",
-      "SlashCommand",
-      "WebSearch",
-      "mcp__serena__*",
-      "mcp__desktop-commander__*",
-      "mcp__playwright__*"
-    ],
-    "deny": [],
-    "dangerous_operations_require_confirmation": [
-      "rm -rf /",
-      "format",
-      "diskpart",
-      "registry bulk delete"
-    ]
-  },
-
-  "logging": {
-    "enabled": true,
-    "level": "info",
-    "path": "logs/",
-    "max_size_mb": 10,
-    "rotate_count": 5
+  "paths": {
+    "commands": ".claude/commands/",
+    "hydra_spec": ".claude/hydra/",
+    "config": ".claude/config/",
+    "logs": "hydra-logs/"
   }
 }

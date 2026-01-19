@@ -1298,6 +1298,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "log",
+ "once_cell",
  "reqwest",
  "serde",
  "serde_json",

@@ -1,0 +1,12 @@
+description = "Check HYDRA system status - Ollama, MCP servers, cache"
+
+prompt = """
+Check the full HYDRA system status:
+
+1. Use @ollama-hydra ollama_status to check Ollama availability and cache stats
+2. List available local models
+3. Show cache statistics
+4. Display current configuration
+
+Format the output as a clear status report.
+"""

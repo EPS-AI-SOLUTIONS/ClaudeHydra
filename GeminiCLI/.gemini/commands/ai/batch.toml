@@ -1,0 +1,10 @@
+description = "Process multiple prompts in parallel using local Ollama"
+
+prompt = """
+Use @ollama-hydra ollama_batch to process these prompts in parallel:
+
+{{args}}
+
+Split the input by newlines or semicolons and process each as a separate prompt.
+Return all results in order.
+"""

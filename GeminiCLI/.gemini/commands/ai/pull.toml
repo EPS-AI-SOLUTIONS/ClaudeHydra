@@ -1,0 +1,13 @@
+description = "Manage Ollama models (pull, list, remove)"
+
+prompt = """
+Manage Ollama models using the PowerShell command:
+
+. 'C:\\Users\\BIURODOM\\Desktop\\GeminiCLI\\ai-handler\\Initialize-AIHandler.ps1'; . 'C:\\Users\\BIURODOM\\Desktop\\GeminiCLI\\ai-handler\\Invoke-AIPull.ps1' {{args}}
+
+Supported arguments:
+- -List: List installed models
+- -Popular: Show recommended models
+- <model-name>: Download a new model
+- -Remove <model-name>: Remove a model
+"""

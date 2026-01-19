@@ -25,7 +25,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onConnectionChange }) => 
     {
       id: '0',
       role: 'system',
-      content: '⚔ KODEKS HYDRY OTWARTY ⚔\n\nWitaj w HYDRA 10.5 - Czterogłowa Bestia gotowa do służby.\nMasz pełny dostęp do: Serena, Desktop Commander, Playwright, Agent Swarm.\n\nWpisz swoje polecenie...',
+      content: '⚔ KODEKS HYDRY OTWARTY ⚔\n\nWitaj w HYDRA 10.6.1 - Czterogłowa Bestia gotowa do służby.\nMasz pełny dostęp do: Serena, Desktop Commander, Playwright, Agent Swarm.\n\nWpisz swoje polecenie...',
       timestamp: new Date(),
     },
   ]);
@@ -248,7 +248,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onConnectionChange }) => 
           isLight ? 'text-amber-600/40' : 'text-amber-500/30'
         }`}>
           <span>Enter = wyślij • Shift+Enter = nowa linia</span>
-          <span>◆ HYDRA 10.5 ◆</span>
+          <span>◆ HYDRA 10.6.1 ◆</span>
         </div>
       </div>
     </div>

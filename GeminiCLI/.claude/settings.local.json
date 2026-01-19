@@ -1,0 +1,51 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "mcp__serena__*",
+      "mcp__desktop-commander__*",
+      "mcp__playwright__*",
+      "Write",
+      "Edit",
+      "Read",
+      "Glob",
+      "Grep",
+      "Skill",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:ai.google.dev)",
+      "WebFetch(domain:cloud.google.com)"
+    ],
+    "deny": []
+  },
+  "enabledMcpjsonServers": ["serena", "desktop-commander", "playwright"],
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/ai-handler-integration.ps1"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/permission-alert.ps1"
+          }
+        ]
+      }
+    ]
+  },
+  "commands": {},
+  "statusLine": {
+    "type": "command",
+    "command": "node .claude/statusline.cjs"
+  }
+}

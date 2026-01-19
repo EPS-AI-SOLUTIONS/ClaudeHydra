@@ -2,6 +2,10 @@ import { Cpu, Database, type LucideIcon, Shield, Terminal, Wifi, Zap } from 'luc
 import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 
+// Logo images from public folder
+const logoDark = "/logodark.webp";
+const logoLight = "/logolight.webp";
+
 const Launcher: React.FC = () => {
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === 'light';
@@ -52,8 +56,17 @@ const Launcher: React.FC = () => {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-md px-6">
 
-        {/* Logo / Title */}
+        {/* Logo */}
         <div className="mb-8 text-center">
+          <img
+            src={isLight ? logoLight : logoDark}
+            alt="HYDRA Logo"
+            className="w-32 h-32 mx-auto mb-4 object-contain drop-shadow-lg"
+            onError={(e) => {
+              // Fallback to text if image fails
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
           <h1 className={`text-3xl font-mono font-bold tracking-[0.2em] mb-2 ${
             isLight ? 'text-black' : 'text-white'
           }`}>

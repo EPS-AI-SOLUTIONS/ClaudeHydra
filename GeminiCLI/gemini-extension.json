@@ -1,0 +1,6 @@
+{
+  "name": "ollama-hydra",
+  "version": "1.0.0",
+  "description": "HYDRA AI Handler - Ollama integration with speculative decoding, self-correction, and caching",
+  "contextFileName": ["GEMINI.md", "HYDRA.md"]
+}

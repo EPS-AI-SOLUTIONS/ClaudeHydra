@@ -41,3 +41,4 @@ chrono = "0.4"
 # Utilities
 thiserror = "2.0"
 anyhow = "1.0"
+once_cell = "1.19"

@@ -1,0 +1,82 @@
+{
+  "security": {
+    "auth": {
+      "selectedType": "gemini-api-key"
+    }
+  },
+  "mcpServers": {
+    "ollama-hydra": {
+      "command": "node",
+      "args": [
+        "--env-file=.env",
+        "C:/Users/BIURODOM/Desktop/ClaudeHYDRA/GeminiCLI/src/server.js"
+      ],
+      "cwd": "C:/Users/BIURODOM/Desktop/ClaudeHYDRA/GeminiCLI",
+      "env": {
+        "OLLAMA_HOST": "http://localhost:11434",
+        "CACHE_DIR": "C:/Users/BIURODOM/Desktop/ClaudeHYDRA/GeminiCLI/cache",
+        "CACHE_ENABLED": "true",
+        "CACHE_TTL": "3600",
+        "DEFAULT_MODEL": "llama3.2:3b",
+        "FAST_MODEL": "llama3.2:1b",
+        "CODER_MODEL": "qwen2.5-coder:1.5b",
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "warn"
+      },
+      "timeout": 120000
+    },
+    "serena": {
+      "command": "C:/Users/BIURODOM/.local/bin/uvx.exe",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--project",
+        "C:/Users/BIURODOM/Desktop/GeminiCLI"
+      ],
+      "timeout": 120000
+    },
+    "desktop-commander": {
+      "command": "C:/Users/BIURODOM/AppData/Roaming/npm/desktop-commander.cmd",
+      "args": [],
+      "env": {
+        "DC_SHELL": "powershell"
+      },
+      "timeout": 60000
+    },
+    "playwright": {
+      "command": "C:/Users/BIURODOM/AppData/Roaming/npm/mcp-server-playwright.cmd",
+      "args": [],
+      "timeout": 60000
+    }
+  },
+  "mcp": {
+    "allowed": ["ollama-hydra", "serena", "desktop-commander", "playwright"],
+    "parallelToolCalls": true
+  },
+  "model": {
+    "name": "gemini-3-pro-preview",
+    "autoSelect": false,
+    "preferences": {
+      "code": "gemini-2.5-pro",
+      "simple": "gemini-2.5-flash",
+      "fast": "gemini-2.0-flash-lite",
+      "default": "gemini-3-pro-preview"
+    },
+    "cachePrompts": true,
+    "cacheTtl": 3600
+  },
+  "general": {
+    "previewFeatures": true,
+    "confirmTools": false,
+    "maxRetries": 3,
+    "retryDelay": 1000,
+    "fallbacks": {
+      "google": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash-lite"]
+    }
+  },
+  "context": {
+    "fileName": ["GEMINI.md"]
+  }
+}

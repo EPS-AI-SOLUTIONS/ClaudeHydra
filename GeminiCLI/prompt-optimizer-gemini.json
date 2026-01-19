@@ -1,0 +1,593 @@
+{
+  "name": "HYDRA Prompt Optimizer",
+  "version": "2.0.0",
+  "description": "Advanced automatic prompt enhancement with smart suggestions for Gemini CLI",
+
+  "categories": {
+    "code": {
+      "keywords": [
+        "write",
+        "implement",
+        "create function",
+        "code",
+        "script",
+        "program",
+        "fix bug",
+        "debug",
+        "refactor",
+        "function",
+        "class",
+        "method",
+        "algorithm",
+        "snippet"
+      ],
+      "enhancers": [
+        "Provide clean, well-documented code.",
+        "Include error handling where appropriate.",
+        "Follow best practices for the language."
+      ],
+      "format": "```{language}\n{code}\n```",
+      "priority": 10
+    },
+    "analysis": {
+      "keywords": [
+        "analyze",
+        "compare",
+        "explain",
+        "evaluate",
+        "assess",
+        "review",
+        "examine",
+        "understand",
+        "investigate",
+        "breakdown"
+      ],
+      "enhancers": [
+        "Provide a structured analysis.",
+        "Consider multiple perspectives.",
+        "Support conclusions with reasoning."
+      ],
+      "format": "## Analysis\n{content}",
+      "priority": 8
+    },
+    "question": {
+      "keywords": [
+        "what is",
+        "how does",
+        "why",
+        "when",
+        "where",
+        "who",
+        "which",
+        "?",
+        "tell me",
+        "describe",
+        "define"
+      ],
+      "enhancers": ["Be concise but thorough.", "Provide examples if helpful."],
+      "format": "{answer}",
+      "priority": 5
+    },
+    "creative": {
+      "keywords": [
+        "write story",
+        "generate",
+        "brainstorm",
+        "imagine",
+        "creative",
+        "ideas",
+        "invent",
+        "design",
+        "draft",
+        "compose"
+      ],
+      "enhancers": ["Be creative and original.", "Explore unique angles."],
+      "format": "{content}",
+      "priority": 6
+    },
+    "task": {
+      "keywords": [
+        "do",
+        "execute",
+        "run",
+        "perform",
+        "make",
+        "build",
+        "setup",
+        "configure",
+        "install",
+        "create",
+        "deploy"
+      ],
+      "enhancers": [
+        "Provide step-by-step instructions.",
+        "Include verification steps."
+      ],
+      "format": "## Steps\n{steps}",
+      "priority": 7
+    },
+    "summary": {
+      "keywords": [
+        "summarize",
+        "summary",
+        "brief",
+        "tldr",
+        "overview",
+        "recap",
+        "short version",
+        "key points"
+      ],
+      "enhancers": [
+        "Be concise - focus on key points.",
+        "Use bullet points for clarity."
+      ],
+      "format": "## Summary\n- {points}",
+      "priority": 6
+    },
+    "debug": {
+      "keywords": [
+        "error",
+        "bug",
+        "fix",
+        "issue",
+        "problem",
+        "not working",
+        "fails",
+        "crash",
+        "exception",
+        "traceback",
+        "stack trace"
+      ],
+      "enhancers": [
+        "Identify the root cause.",
+        "Provide a clear solution with explanation.",
+        "Include prevention tips."
+      ],
+      "format": "## Issue\n{issue}\n\n## Solution\n{solution}",
+      "priority": 9
+    },
+    "optimize": {
+      "keywords": [
+        "optimize",
+        "improve",
+        "faster",
+        "better",
+        "efficient",
+        "performance",
+        "refactor",
+        "clean up",
+        "speed up"
+      ],
+      "enhancers": [
+        "Focus on measurable improvements.",
+        "Explain trade-offs.",
+        "Provide before/after comparison."
+      ],
+      "format": "## Optimization\n{content}",
+      "priority": 8
+    },
+    "security": {
+      "keywords": [
+        "secure",
+        "vulnerability",
+        "exploit",
+        "attack",
+        "protect",
+        "authentication",
+        "authorization",
+        "encrypt",
+        "hash",
+        "xss",
+        "sql injection",
+        "csrf"
+      ],
+      "enhancers": [
+        "Follow OWASP security guidelines.",
+        "Identify potential attack vectors.",
+        "Provide secure coding examples."
+      ],
+      "format": "## Security Analysis\n{content}",
+      "priority": 10
+    },
+    "testing": {
+      "keywords": [
+        "test",
+        "unit test",
+        "integration",
+        "mock",
+        "stub",
+        "coverage",
+        "jest",
+        "pytest",
+        "mocha",
+        "assert",
+        "expect",
+        "spec"
+      ],
+      "enhancers": [
+        "Include edge cases and boundary conditions.",
+        "Provide both positive and negative test cases.",
+        "Use descriptive test names."
+      ],
+      "format": "```{language}\n{tests}\n```",
+      "priority": 8
+    },
+    "documentation": {
+      "keywords": [
+        "document",
+        "readme",
+        "docs",
+        "jsdoc",
+        "docstring",
+        "comment",
+        "api docs",
+        "swagger",
+        "openapi"
+      ],
+      "enhancers": [
+        "Use clear, concise language.",
+        "Include usage examples.",
+        "Document parameters and return values."
+      ],
+      "format": "{documentation}",
+      "priority": 6
+    },
+    "api": {
+      "keywords": [
+        "api",
+        "endpoint",
+        "rest",
+        "graphql",
+        "request",
+        "response",
+        "fetch",
+        "axios",
+        "http",
+        "curl",
+        "postman"
+      ],
+      "enhancers": [
+        "Include request/response examples.",
+        "Document authentication requirements.",
+        "Handle error responses appropriately."
+      ],
+      "format": "## API\n{content}",
+      "priority": 8
+    },
+    "database": {
+      "keywords": [
+        "database",
+        "sql query",
+        "nosql",
+        "mongodb",
+        "postgres",
+        "mysql",
+        "redis",
+        "schema",
+        "migration",
+        "orm",
+        "select from",
+        "insert into",
+        "update table",
+        "delete from",
+        "join table",
+        "create table",
+        "alter table",
+        "db query"
+      ],
+      "enhancers": [
+        "Optimize query performance.",
+        "Consider indexing strategies.",
+        "Handle transactions appropriately."
+      ],
+      "format": "```sql\n{query}\n```",
+      "priority": 9
+    },
+    "devops": {
+      "keywords": [
+        "docker",
+        "kubernetes",
+        "k8s",
+        "ci/cd",
+        "pipeline",
+        "deploy",
+        "container",
+        "helm",
+        "terraform",
+        "ansible",
+        "jenkins",
+        "github actions"
+      ],
+      "enhancers": [
+        "Follow infrastructure as code best practices.",
+        "Consider scalability and reliability.",
+        "Include rollback strategies."
+      ],
+      "format": "```yaml\n{config}\n```",
+      "priority": 7
+    },
+    "architecture": {
+      "keywords": [
+        "architecture",
+        "design pattern",
+        "microservice",
+        "monolith",
+        "scalability",
+        "system design",
+        "diagram",
+        "uml",
+        "component"
+      ],
+      "enhancers": [
+        "Consider trade-offs between approaches.",
+        "Address scalability concerns.",
+        "Include component interactions."
+      ],
+      "format": "## Architecture\n{content}",
+      "priority": 9
+    },
+    "refactor": {
+      "keywords": [
+        "refactor",
+        "restructure",
+        "rewrite",
+        "modernize",
+        "legacy",
+        "technical debt",
+        "clean code",
+        "solid"
+      ],
+      "enhancers": [
+        "Maintain backward compatibility where possible.",
+        "Apply SOLID principles.",
+        "Preserve existing functionality."
+      ],
+      "format": "## Refactoring\n{content}",
+      "priority": 8
+    },
+    "convert": {
+      "keywords": [
+        "convert from",
+        "transform from",
+        "translate from",
+        "port from",
+        "migrate from",
+        "change from",
+        "convert to",
+        "rewrite in"
+      ],
+      "enhancers": [
+        "Preserve original functionality.",
+        "Handle edge cases in conversion.",
+        "Note any incompatibilities."
+      ],
+      "format": "{converted}",
+      "priority": 5
+    }
+  },
+
+  "modelOptimizations": {
+    "llama3.2:1b": {
+      "maxTokens": 512,
+      "style": "concise",
+      "prefix": "",
+      "temperature": 0.3
+    },
+    "llama3.2:3b": {
+      "maxTokens": 2048,
+      "style": "balanced",
+      "prefix": "",
+      "temperature": 0.5
+    },
+    "qwen2.5-coder": {
+      "maxTokens": 4096,
+      "style": "technical",
+      "prefix": "You are an expert programmer. ",
+      "temperature": 0.2
+    },
+    "phi3:mini": {
+      "maxTokens": 2048,
+      "style": "balanced",
+      "prefix": "",
+      "temperature": 0.4
+    },
+    "gemini-2.5-pro": {
+      "maxTokens": 8192,
+      "style": "detailed",
+      "prefix": "",
+      "temperature": 0.7
+    },
+    "gemini-2.5-flash": {
+      "maxTokens": 4096,
+      "style": "balanced",
+      "prefix": "",
+      "temperature": 0.5
+    }
+  },
+
+  "languages": {
+    "python": [
+      "python",
+      "py",
+      "pip",
+      "pandas",
+      "numpy",
+      "django",
+      "flask",
+      "pytorch",
+      "tensorflow"
+    ],
+    "javascript": [
+      "javascript",
+      "js",
+      "node",
+      "npm",
+      "react",
+      "vue",
+      "angular",
+      "express",
+      "next"
+    ],
+    "typescript": ["typescript", "ts", "tsx", "deno"],
+    "powershell": ["powershell", "ps1", "pwsh", "cmdlet"],
+    "rust": ["rust", "cargo", "rustc", "crate"],
+    "go": ["golang", "go ", "goroutine"],
+    "csharp": ["c#", "csharp", "dotnet", ".net", "unity"],
+    "java": ["java ", "jvm", "maven", "gradle", "spring"],
+    "sql": [
+      "sql",
+      "query",
+      "select",
+      "database",
+      "mysql",
+      "postgres",
+      "sqlite"
+    ],
+    "bash": ["bash", "shell", "sh ", "linux", "terminal"],
+    "html": ["html", "webpage", "website", "dom"],
+    "css": ["css", "style", "styling", "sass", "tailwind"],
+    "kotlin": ["kotlin", "android", "jetpack"],
+    "swift": ["swift", "ios", "macos", "xcode"],
+    "php": ["php", "laravel", "wordpress"]
+  },
+
+  "vagueWords": [
+    "something",
+    "stuff",
+    "thing",
+    "it",
+    "this",
+    "that",
+    "etc",
+    "whatever",
+    "somehow",
+    "some"
+  ],
+
+  "specificIndicators": [
+    "specifically",
+    "exactly",
+    "must",
+    "should",
+    "using",
+    "with",
+    "in",
+    "for",
+    "to"
+  ],
+
+  "clarityThresholds": {
+    "excellent": 90,
+    "good": 75,
+    "fair": 60,
+    "needsImprovement": 40,
+    "poor": 0
+  },
+
+  "settings": {
+    "autoOptimize": true,
+    "showEnhancements": true,
+    "addExamplesThreshold": 0.6,
+    "minPromptLength": 10,
+    "wrapLowClarity": true,
+    "lowClarityThreshold": 60,
+    "smartSuggestions": true,
+    "autoComplete": true
+  },
+
+  "smartSuggestions": {
+    "patterns": {
+      "missingLanguage": {
+        "condition": "category === 'code' && !language",
+        "suggestion": "Specify the programming language (e.g., 'in Python', 'using JavaScript')",
+        "autoFix": "Prepend [language] tag based on context clues"
+      },
+      "missingContext": {
+        "condition": "clarityScore < 60 && !hasContextWords",
+        "suggestion": "Add context: what is the purpose? what inputs/outputs?",
+        "autoFix": "Wrap with 'Task: {prompt}\\n\\nContext: Please provide...'"
+      },
+      "vagueRequest": {
+        "condition": "hasVagueWords && wordCount < 10",
+        "suggestion": "Be more specific - replace 'something' with exact requirements",
+        "autoFix": "Remove vague words and add structure"
+      },
+      "missingFormat": {
+        "condition": "!hasFormatRequest && category in ['code', 'api', 'database']",
+        "suggestion": "Specify output format (JSON, table, code block, etc.)",
+        "autoFix": "Append format instruction based on category"
+      },
+      "missingConstraints": {
+        "condition": "category === 'code' && !hasConstraints",
+        "suggestion": "Add constraints: performance requirements, memory limits, compatibility",
+        "autoFix": null
+      },
+      "missingErrorHandling": {
+        "condition": "category === 'code' && !mentionsErrors",
+        "suggestion": "Consider specifying error handling requirements",
+        "autoFix": "Append 'Include proper error handling.'"
+      }
+    },
+    "contextClues": {
+      "python": ["def ", "import ", "print(", "__", ".py", "pip"],
+      "javascript": ["const ", "let ", "function", "=>", "npm", ".js"],
+      "typescript": ["interface ", "type ", ": string", ": number", ".ts"],
+      "sql": ["SELECT", "FROM", "WHERE", "JOIN", "INSERT", "UPDATE"],
+      "rust": ["fn ", "let mut", "impl ", "pub ", "cargo"],
+      "go": ["func ", "package ", "import (", "go ", "defer"]
+    },
+    "autoCompletions": {
+      "write": [
+        "write a function that",
+        "write code to",
+        "write a script that"
+      ],
+      "create": [
+        "create a class for",
+        "create an API endpoint",
+        "create a component"
+      ],
+      "fix": ["fix the bug in", "fix the error", "fix the issue with"],
+      "explain": [
+        "explain how",
+        "explain why",
+        "explain the difference between"
+      ],
+      "convert": [
+        "convert from X to Y",
+        "convert this code to",
+        "convert the format"
+      ],
+      "optimize": [
+        "optimize for performance",
+        "optimize for memory",
+        "optimize the query"
+      ],
+      "test": [
+        "test the function",
+        "write unit tests for",
+        "create integration tests"
+      ]
+    }
+  },
+
+  "promptTemplates": {
+    "code": {
+      "basic": "Write a {language} function that {task}",
+      "withTests": "Write a {language} function that {task}, including unit tests",
+      "withDocs": "Write a well-documented {language} function that {task}"
+    },
+    "api": {
+      "rest": "Create a REST API endpoint for {resource} with {methods} methods",
+      "graphql": "Create a GraphQL schema and resolvers for {resource}"
+    },
+    "debug": {
+      "error": "Debug this error: {error}\\n\\nCode: {code}",
+      "performance": "Profile and optimize this code for performance: {code}"
+    },
+    "refactor": {
+      "basic": "Refactor this code for better readability: {code}",
+      "solid": "Refactor this code to follow SOLID principles: {code}"
+    }
+  }
+}

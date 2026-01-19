@@ -1,20 +1,24 @@
 import React, { useState, useCallback } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { TabProvider, useTabContext, CLIProvider } from '../contexts/TabContext';
 import MCPStatus from './MCPStatus';
 import SystemMetricsPanel from './SystemMetrics';
 import LaunchPanel from './LaunchPanel';
 import YoloToggle from './YoloToggle';
 import OllamaStatus from './OllamaStatus';
-import ChatInterface from './ChatInterface';
+import MultiTabChat from './MultiTabChat';
+import TabBar from './TabBar';
 import StatusLine from './StatusLine';
 import SettingsPanel from './SettingsPanel';
+import QueueStatus from './QueueStatus';
 import { Moon, Sun, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { useMCPHealth } from '../hooks/useMCPHealth';
 
-const Dashboard: React.FC = () => {
+// Inner dashboard component that uses TabContext
+const DashboardContent: React.FC = () => {
   const { resolvedTheme, toggleTheme } = useTheme();
   const isLight = resolvedTheme === 'light';
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [yoloEnabled] = useState(() => {
@@ -26,10 +30,16 @@ const Dashboard: React.FC = () => {
   });
 
   const { onlineCount, totalCount } = useMCPHealth();
+  const { createTab, tabs } = useTabContext();
 
   const handleConnectionChange = useCallback((connected: boolean) => {
     setIsConnected(connected);
   }, []);
+
+  const handleCreateTab = useCallback(async (provider: CLIProvider) => {
+    const tabNumber = tabs.length + 1;
+    await createTab(`${provider.charAt(0).toUpperCase() + provider.slice(1)} #${tabNumber}`, provider);
+  }, [createTab, tabs.length]);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -45,6 +55,9 @@ const Dashboard: React.FC = () => {
           } overflow-hidden`}
         >
           <div className="w-80 h-full p-4 overflow-auto flex flex-col gap-4">
+            {/* Queue Status */}
+            <QueueStatus />
+
             {/* MCP Servers Status */}
             <MCPStatus />
 
@@ -85,6 +98,16 @@ const Dashboard: React.FC = () => {
                 {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
               </button>
 
+              {/* Logo Image */}
+              <img
+                src={isLight ? '/logolight.webp' : '/logodark.webp'}
+                alt="HYDRA"
+                className="w-10 h-10 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+
               <div className="flex flex-col">
                 <span className={`text-xl font-mono font-bold tracking-[0.15em] ${
                   isLight ? 'text-black' : 'text-white'
@@ -94,7 +117,7 @@ const Dashboard: React.FC = () => {
                 <span className={`text-[10px] font-mono tracking-wider ${
                   isLight ? 'text-gray-500' : 'text-gray-500'
                 }`}>
-                  v10.6.1
+                  v10.6.1 Multi-Tab
                 </span>
               </div>
             </div>
@@ -124,6 +147,11 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Tab Bar */}
+          <TabBar
+            onCreateTab={handleCreateTab}
+          />
+
           {/* Chat Area */}
           <div className="flex-1 overflow-hidden relative">
             {/* Minimal frame */}
@@ -131,9 +159,9 @@ const Dashboard: React.FC = () => {
               isLight ? 'border-gray-200' : 'border-gray-800'
             } rounded-lg opacity-50`} />
 
-            {/* Chat interface */}
+            {/* Multi-tab chat interface */}
             <div className="h-full m-2">
-              <ChatInterface onConnectionChange={handleConnectionChange} />
+              <MultiTabChat onConnectionChange={handleConnectionChange} />
             </div>
           </div>
         </div>
@@ -147,6 +175,15 @@ const Dashboard: React.FC = () => {
         mcpTotal={totalCount}
       />
     </div>
+  );
+};
+
+// Wrapper component that provides TabContext
+const Dashboard: React.FC = () => {
+  return (
+    <TabProvider>
+      <DashboardContent />
+    </TabProvider>
   );
 };
 

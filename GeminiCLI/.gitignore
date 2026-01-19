@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Environment variables (secrets)
+.env
+
+# Cache
+cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Zap, Shield, Volume2, VolumeX, Bell, BellOff, Eye, EyeOff, Sparkles, X, Search, Database, Globe } from 'lucide-react';
+import { Settings, Zap, Shield, Volume2, VolumeX, Bell, BellOff, Eye, EyeOff, Sparkles, X, Search, Database, Globe, ChevronDown, Check } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSoundEffects } from '../hooks/useSoundEffects';
+import { CLIProvider } from '../contexts/TabContext';
 
 interface SettingItem {
   id: string;
@@ -45,6 +46,78 @@ const CurrentDataIcon: React.FC<{ className?: string; size?: number }> = ({ clas
     <path fill="#E0F7FA" d="M39,17h-4v3h4V17z"/>
   </svg>
 );
+
+// ============================================================================
+// AI PROVIDER DEFINITIONS
+// ============================================================================
+
+interface AIProviderOption {
+  id: CLIProvider;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  status: 'active' | 'available' | 'placeholder';
+}
+
+const AI_PROVIDERS: AIProviderOption[] = [
+  {
+    id: 'hydra',
+    name: 'HYDRA',
+    description: 'Claude Opus 4.5 + MCP',
+    icon: '🐉',
+    color: '#f59e0b',
+    status: 'active',
+  },
+  {
+    id: 'gemini',
+    name: 'Gemini',
+    description: '2M context, Multimodal',
+    icon: '🔵',
+    color: '#4285f4',
+    status: 'active',
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    description: '100+ languages, R1',
+    icon: '🔴',
+    color: '#ef4444',
+    status: 'active',
+  },
+  {
+    id: 'jules',
+    name: 'Jules',
+    description: 'Async background tasks',
+    icon: '🟣',
+    color: '#a855f7',
+    status: 'active',
+  },
+  {
+    id: 'ollama',
+    name: 'Ollama',
+    description: 'Local models ($0)',
+    icon: '🦙',
+    color: '#22c55e',
+    status: 'available',
+  },
+  {
+    id: 'codex',
+    name: 'Codex',
+    description: 'GPT-5-Codex (placeholder)',
+    icon: '🟢',
+    color: '#10b981',
+    status: 'placeholder',
+  },
+  {
+    id: 'grok',
+    name: 'Grok',
+    description: 'xAI Real-time (placeholder)',
+    icon: '⚫',
+    color: '#6b7280',
+    status: 'placeholder',
+  },
+];
 
 const SETTINGS: SettingItem[] = [
   // Core settings
@@ -141,6 +214,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
   const { resolvedTheme } = useTheme();
   const isLight = resolvedTheme === 'light';
   const [settings, setSettings] = useState<Record<string, boolean>>({});
+  const [selectedProvider, setSelectedProvider] = useState<CLIProvider>('hydra');
+  const [isProviderDropdownOpen, setIsProviderDropdownOpen] = useState(false);
   const { playToggle, playOpenPanel, playClosePanel, playClick } = useSoundEffects();
 
   // Load settings from localStorage
@@ -151,6 +226,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
       loaded[setting.id] = stored !== null ? stored === 'true' : setting.defaultValue;
     });
     setSettings(loaded);
+
+    // Load selected AI provider
+    const storedProvider = localStorage.getItem('hydra_ai_provider') as CLIProvider | null;
+    if (storedProvider && AI_PROVIDERS.some(p => p.id === storedProvider)) {
+      setSelectedProvider(storedProvider);
+    }
   }, []);
 
   // Play open sound when panel opens
@@ -181,7 +262,23 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
 
   const handleClose = () => {
     playClosePanel();
+    setIsProviderDropdownOpen(false);
     onClose();
+  };
+
+  const handleProviderChange = (provider: CLIProvider) => {
+    const providerInfo = AI_PROVIDERS.find(p => p.id === provider);
+    if (providerInfo?.status === 'placeholder') {
+      // Don't allow selecting placeholder providers
+      return;
+    }
+    setSelectedProvider(provider);
+    localStorage.setItem('hydra_ai_provider', provider);
+    setIsProviderDropdownOpen(false);
+    playToggle(true);
+
+    // Dispatch event for other components to react
+    window.dispatchEvent(new CustomEvent('hydra-provider-change', { detail: { provider } }));
   };
 
   if (!isOpen) return null;
@@ -290,6 +387,132 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
     );
   };
 
+  // AI Provider selector component
+  const renderProviderSelector = () => {
+    const currentProvider = AI_PROVIDERS.find(p => p.id === selectedProvider) || AI_PROVIDERS[0];
+
+    return (
+      <div className="mb-4">
+        <div className={`flex items-center gap-2 mb-2 px-1 ${
+          isLight ? 'text-amber-600/70' : 'text-amber-500/60'
+        }`}>
+          <span className="text-[10px] tracking-wider">⚔</span>
+          <span className="text-[10px] font-cinzel tracking-wider uppercase">Model AI</span>
+          <span className="text-[10px] tracking-wider">⚔</span>
+        </div>
+
+        {/* Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              setIsProviderDropdownOpen(!isProviderDropdownOpen);
+              playClick();
+            }}
+            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all duration-300 ${
+              isLight
+                ? 'bg-amber-100/60 border-amber-400/40 hover:border-amber-500/60'
+                : 'bg-amber-900/20 border-amber-500/30 hover:border-amber-400/50'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">{currentProvider.icon}</span>
+              <div className="text-left">
+                <div className={`text-sm font-cinzel font-semibold tracking-wider ${
+                  isLight ? 'text-amber-700' : 'text-amber-400'
+                }`}>
+                  {currentProvider.name}
+                </div>
+                <div className={`text-[9px] font-cinzel ${
+                  isLight ? 'text-amber-600/60' : 'text-amber-500/50'
+                }`}>
+                  {currentProvider.description}
+                </div>
+              </div>
+            </div>
+            <ChevronDown
+              size={18}
+              className={`transition-transform duration-200 ${
+                isProviderDropdownOpen ? 'rotate-180' : ''
+              } ${isLight ? 'text-amber-600' : 'text-amber-500'}`}
+            />
+          </button>
+
+          {/* Dropdown menu */}
+          {isProviderDropdownOpen && (
+            <div className={`absolute top-full left-0 right-0 mt-1 rounded-lg border overflow-hidden z-50 ${
+              isLight
+                ? 'bg-white border-amber-400/50 shadow-lg'
+                : 'bg-black/95 border-amber-500/40 shadow-xl'
+            }`}>
+              {AI_PROVIDERS.map((provider) => {
+                const isSelected = provider.id === selectedProvider;
+                const isDisabled = provider.status === 'placeholder';
+
+                return (
+                  <button
+                    key={provider.id}
+                    onClick={() => handleProviderChange(provider.id)}
+                    disabled={isDisabled}
+                    className={`w-full flex items-center justify-between p-3 transition-all duration-200 ${
+                      isDisabled
+                        ? 'opacity-40 cursor-not-allowed'
+                        : isSelected
+                          ? isLight
+                            ? 'bg-amber-100/80'
+                            : 'bg-amber-900/40'
+                          : isLight
+                            ? 'hover:bg-amber-50'
+                            : 'hover:bg-amber-900/20'
+                    } ${
+                      isLight ? 'border-b border-amber-200/50' : 'border-b border-amber-800/30'
+                    } last:border-b-0`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{provider.icon}</span>
+                      <div className="text-left">
+                        <div className={`text-xs font-cinzel font-semibold tracking-wider flex items-center gap-2 ${
+                          isDisabled
+                            ? isLight ? 'text-slate-400' : 'text-slate-600'
+                            : isLight ? 'text-amber-700' : 'text-amber-400'
+                        }`}>
+                          {provider.name}
+                          {provider.status === 'placeholder' && (
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded ${
+                              isLight ? 'bg-slate-200 text-slate-500' : 'bg-slate-800 text-slate-500'
+                            }`}>
+                              SOON
+                            </span>
+                          )}
+                          {provider.status === 'available' && (
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded ${
+                              isLight ? 'bg-green-100 text-green-600' : 'bg-green-900/30 text-green-500'
+                            }`}>
+                              LOCAL
+                            </span>
+                          )}
+                        </div>
+                        <div className={`text-[8px] ${
+                          isDisabled
+                            ? isLight ? 'text-slate-400/60' : 'text-slate-600/60'
+                            : isLight ? 'text-amber-600/60' : 'text-amber-500/50'
+                        }`}>
+                          {provider.description}
+                        </div>
+                      </div>
+                    </div>
+                    {isSelected && !isDisabled && (
+                      <Check size={16} className={isLight ? 'text-amber-600' : 'text-amber-500'} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderSection = (title: string, runes: string, items: SettingItem[]) => (
     <div className="mb-4">
       <div className={`flex items-center gap-2 mb-2 px-1 ${
@@ -361,6 +584,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
 
         {/* Settings list - scrollable */}
         <div className="p-4 overflow-y-auto flex-1">
+          {renderProviderSelector()}
           {renderSection('Główne', '◆', coreSettings)}
           {renderSection('Interfejs', '◇', interfaceSettings)}
           {renderSection('Wyszukiwanie', '◈', searchSettings)}
@@ -373,7 +597,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
           <span className={`text-[9px] font-cinzel tracking-wider ${
             isLight ? 'text-amber-600/50' : 'text-amber-500/40'
           }`}>
-            ◇ HYDRA 10.5 ◇ WITCHER CODEX ◇
+            ◇ HYDRA 10.6.1 ◇ WITCHER CODEX ◇
           </span>
         </div>
       </div>

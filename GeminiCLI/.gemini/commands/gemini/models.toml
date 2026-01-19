@@ -1,0 +1,24 @@
+# Gemini Models Command - List and manage Gemini API models
+# Usage: /gemini:models [action]
+
+name = "models"
+description = "List and manage Gemini API models"
+category = "gemini"
+requires_mcp = "ollama-hydra"
+
+prompt = """
+Use the @ollama-hydra MCP server to fetch and display Gemini models.
+
+Available actions:
+- list: Show all available models (gemini_models)
+- summary: Show models summary by family and capability (gemini_models_summary)
+- recommend: Get model recommendations for different use cases (gemini_models_recommend)
+- details <model>: Get details for specific model (gemini_model_details)
+- filter <capability>: Filter by capability (gemini_models_filter)
+
+Execute the appropriate tool based on the request. If no action specified, show summary.
+
+Capabilities: generateContent, countTokens, embedContent, generateAnswer, batchEmbedContents
+
+After getting results, format them nicely in a table or list.
+"""

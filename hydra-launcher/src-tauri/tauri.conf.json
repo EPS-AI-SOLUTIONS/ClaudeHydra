@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "HYDRA 10.4 Launcher",
+        "title": "HYDRA 10.6.1 Launcher",
         "label": "main",
         "width": 900,
         "height": 700,
@@ -39,7 +39,7 @@
     ],
     "category": "DeveloperTool",
     "shortDescription": "HYDRA MCP Launcher",
-    "longDescription": "HYDRA 10.4 - Four-Headed Beast Launcher for Claude CLI with Serena, Desktop Commander, and Playwright MCP servers",
+    "longDescription": "HYDRA 10.6.1 - Four-Headed Beast Launcher for Claude CLI with Serena, Desktop Commander, and Playwright MCP servers",
     "copyright": "2026 ClaudeHYDRA",
     "windows": {
       "nsis": {
