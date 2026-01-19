@@ -56,26 +56,26 @@ const Launcher: React.FC = () => {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-md px-6">
 
-        {/* Logo */}
+        {/* Logo - większe */}
         <div className="mb-8 text-center">
           <img
             src={isLight ? logoLight : logoDark}
-            alt="HYDRA Logo"
-            className="w-32 h-32 mx-auto mb-4 object-contain drop-shadow-lg"
+            alt="Regis Logo"
+            className="w-40 h-40 mx-auto mb-4 object-contain drop-shadow-lg"
             onError={(e) => {
               // Fallback to text if image fails
               (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
-          <h1 className={`text-3xl font-mono font-bold tracking-[0.2em] mb-2 ${
+          <h1 className={`text-4xl font-mono font-bold tracking-[0.25em] mb-2 ${
             isLight ? 'text-black' : 'text-white'
           }`}>
-            HYDRA
+            REGIS
           </h1>
           <p className={`text-xs font-mono tracking-[0.3em] ${
             isLight ? 'text-gray-500' : 'text-gray-500'
           }`}>
-            v10.6.1
+            v10.6.1 Swarm
           </p>
         </div>
 
@@ -127,7 +127,7 @@ const Launcher: React.FC = () => {
         <div className={`mt-8 text-[10px] font-mono tracking-wider ${
           isLight ? 'text-gray-400' : 'text-gray-600'
         }`}>
-          CLAUDE HYDRA
+          REGIS SWARM ENGINE
         </div>
       </div>
     </div>

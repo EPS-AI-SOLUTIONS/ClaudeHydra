@@ -92,69 +92,56 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onContextMenu })
       onContextMenu={onContextMenu}
     >
       <div
-        className={`max-w-[85%] rounded-lg p-4 border-2 transition-all duration-300 relative ${
+        className={`max-w-[85%] rounded p-2 border transition-all duration-300 relative backdrop-blur-sm ${
           isUser
             ? isLight
-              ? 'bg-amber-100/80 border-amber-400/50 text-amber-900'
-              : 'bg-amber-900/30 border-amber-500/40 text-amber-100'
+              ? 'bg-gray-100/70 border-gray-300/50 text-gray-800'
+              : 'bg-gray-800/50 border-gray-600/40 text-gray-100'
             : isSystem
               ? isLight
-                ? 'bg-slate-100/80 border-slate-300/50 text-slate-700'
-                : 'bg-slate-800/30 border-slate-600/30 text-slate-300'
+                ? 'bg-blue-50/70 border-blue-200/50 text-blue-800'
+                : 'bg-blue-900/30 border-blue-700/30 text-blue-200'
               : isLight
-                ? 'bg-white/80 border-amber-400/40 text-slate-800'
-                : 'bg-black/50 border-amber-500/30 text-amber-50'
+                ? 'bg-white/70 border-gray-200/50 text-gray-800'
+                : 'bg-black/40 border-gray-700/30 text-gray-100'
         }`}
-        style={{
-          boxShadow: isUser
-            ? isLight
-              ? '0 4px 15px rgba(245, 158, 11, 0.15)'
-              : '0 4px 20px rgba(0, 0, 0, 0.3)'
-            : 'none',
-        }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
+        {/* Header - kompaktowy */}
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-1.5">
             {isUser ? (
-              <>
-                <span className={`text-sm ${isLight ? 'text-amber-600' : 'text-amber-400'}`}>ᚹ</span>
-                <span className={`text-[9px] font-cinzel font-semibold tracking-wider ${
-                  isLight ? 'text-amber-700' : 'text-amber-400'
-                }`}>
-                  WIEDŹMIN
-                </span>
-              </>
+              <span className={`text-[9px] font-mono font-semibold tracking-wider ${
+                isLight ? 'text-gray-600' : 'text-gray-400'
+              }`}>
+                USER
+              </span>
             ) : isSystem ? (
-              <>
-                <span className={`text-sm ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>ᛊ</span>
-                <span className={`text-[9px] font-cinzel font-semibold tracking-wider ${
-                  isLight ? 'text-slate-600' : 'text-slate-400'
-                }`}>
-                  SYSTEM
-                </span>
-              </>
+              <span className={`text-[9px] font-mono font-semibold tracking-wider ${
+                isLight ? 'text-blue-600' : 'text-blue-400'
+              }`}>
+                SYSTEM
+              </span>
             ) : (
               <>
-                <Sparkles size={14} className={isLight ? 'text-amber-600' : 'text-amber-500'} />
-                <span className={`text-[9px] font-cinzel font-semibold tracking-wider ${
-                  isLight ? 'text-amber-700' : 'text-amber-500'
+                <Sparkles size={10} className={isLight ? 'text-gray-600' : 'text-gray-400'} />
+                <span className={`text-[9px] font-mono font-semibold tracking-wider ${
+                  isLight ? 'text-gray-700' : 'text-gray-300'
                 }`}>
-                  HYDRA
+                  REGIS
                 </span>
               </>
             )}
           </div>
 
-          <span className={`text-[8px] font-cinzel ${
-            isLight ? 'text-slate-400' : 'text-slate-600'
+          <span className={`text-[8px] font-mono ${
+            isLight ? 'text-gray-400' : 'text-gray-600'
           }`}>
             {message.timestamp.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
 
-        {/* Content */}
-        <div className={`text-sm font-cinzel leading-relaxed whitespace-pre-wrap ${
+        {/* Content - mniejszy */}
+        <div className={`text-xs font-mono leading-relaxed whitespace-pre-wrap ${
           !expanded && message.content.length > 500 ? 'line-clamp-5' : ''
         }`}>
           {message.content}
@@ -164,18 +151,18 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onContextMenu })
         {message.content.length > 500 && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className={`mt-2 flex items-center gap-1 text-[9px] font-cinzel ${
-              isLight ? 'text-amber-600 hover:text-amber-700' : 'text-amber-500 hover:text-amber-400'
+            className={`mt-1 flex items-center gap-1 text-[8px] font-mono ${
+              isLight ? 'text-gray-500 hover:text-gray-700' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
             {expanded ? (
               <>
-                <ChevronUp size={12} />
+                <ChevronUp size={10} />
                 Zwiń
               </>
             ) : (
               <>
-                <ChevronDown size={12} />
+                <ChevronDown size={10} />
                 Rozwiń
               </>
             )}
@@ -427,7 +414,7 @@ const MultiTabChat: React.FC<MultiTabChatProps> = ({ onConnectionChange }) => {
               e.stopPropagation();
               handleContextMenu(e);
             }}
-            placeholder="Wpisz polecenie dla HYDRY..."
+            placeholder="Wpisz polecenie dla REGIS..."
             disabled={isLoading}
             rows={1}
             className={`flex-1 bg-transparent resize-none outline-none font-cinzel text-sm ${

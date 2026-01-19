@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "HYDRA",
+  "productName": "Regis",
   "version": "10.6.1",
-  "identifier": "com.hydra.launcher",
+  "identifier": "com.regis.swarm",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "HYDRA 10.6.1 Launcher",
+        "title": "Regis 10.6.1 Swarm",
         "label": "main",
         "width": 900,
         "height": 700,
@@ -38,9 +38,9 @@
       "icons/icon.ico"
     ],
     "category": "DeveloperTool",
-    "shortDescription": "HYDRA MCP Launcher",
-    "longDescription": "HYDRA 10.6.1 - Four-Headed Beast Launcher for Claude CLI with Serena, Desktop Commander, and Playwright MCP servers",
-    "copyright": "2026 ClaudeHYDRA",
+    "shortDescription": "Regis Swarm Engine",
+    "longDescription": "Regis 10.6.1 - Multi-CLI Swarm Engine for Claude, Gemini, DeepSeek and more with Serena, Desktop Commander, and Playwright MCP servers",
+    "copyright": "2026 Regis Swarm",
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico"

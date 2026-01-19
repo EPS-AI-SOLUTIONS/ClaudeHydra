@@ -2,19 +2,136 @@ import React, { useState, useCallback } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { TabProvider, useTabContext, CLIProvider } from '../contexts/TabContext';
 import MCPStatus from './MCPStatus';
-import SystemMetricsPanel from './SystemMetrics';
-import LaunchPanel from './LaunchPanel';
-import YoloToggle from './YoloToggle';
 import OllamaStatus from './OllamaStatus';
 import MultiTabChat from './MultiTabChat';
 import TabBar from './TabBar';
 import StatusLine from './StatusLine';
 import SettingsPanel from './SettingsPanel';
 import QueueStatus from './QueueStatus';
-import { Moon, Sun, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import YoloToggle from './YoloToggle';
+import { Moon, Sun, ChevronLeft, ChevronRight, Settings, Bot } from 'lucide-react';
 import { useMCPHealth } from '../hooks/useMCPHealth';
+import { PROVIDERS } from '../providers';
 
-// Inner dashboard component that uses TabContext
+// ============================================================================
+// MODEL SELECTOR - na górze sidebara
+// ============================================================================
+const ModelSelector: React.FC<{
+  onSelect: (provider: CLIProvider) => void;
+  isLight: boolean;
+}> = ({ onSelect, isLight }) => {
+  const [selectedModel, setSelectedModel] = useState<CLIProvider>('hydra');
+
+  const availableProviders = Object.values(PROVIDERS).filter(p => p.isAvailable);
+
+  const handleSelect = (provider: CLIProvider) => {
+    setSelectedModel(provider);
+    onSelect(provider);
+  };
+
+  return (
+    <div className="glass-card p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Bot size={14} className={isLight ? 'text-gray-600' : 'text-gray-400'} />
+        <span className={`text-[10px] font-mono tracking-wider uppercase ${
+          isLight ? 'text-gray-600' : 'text-gray-400'
+        }`}>
+          Model AI
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-1.5">
+        {availableProviders.map((provider) => (
+          <button
+            key={provider.id}
+            onClick={() => handleSelect(provider.id)}
+            className={`py-1.5 px-2 rounded text-[10px] font-mono transition-all duration-200 border ${
+              selectedModel === provider.id
+                ? isLight
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-black border-white'
+                : isLight
+                  ? 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
+                  : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
+            }`}
+          >
+            <span className="mr-1">{provider.icon}</span>
+            {provider.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// SIDEBAR CONTROLS - Logo, YOLO, Settings, Theme
+// ============================================================================
+const SidebarControls: React.FC<{
+  isLight: boolean;
+  onSettingsOpen: () => void;
+  toggleTheme: () => void;
+}> = ({ isLight, onSettingsOpen, toggleTheme }) => {
+  return (
+    <div className="glass-card p-3">
+      {/* Logo - większe */}
+      <div className="flex items-center justify-center mb-3">
+        <img
+          src={isLight ? '/logolight.webp' : '/logodark.webp'}
+          alt="Regis"
+          className="w-16 h-16 object-contain"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      </div>
+
+      <div className="text-center mb-3">
+        <h1 className={`text-lg font-mono font-bold tracking-[0.2em] ${
+          isLight ? 'text-black' : 'text-white'
+        }`}>
+          REGIS
+        </h1>
+        <span className={`text-[9px] font-mono tracking-wider ${
+          isLight ? 'text-gray-500' : 'text-gray-500'
+        }`}>
+          v10.6.1 Swarm
+        </span>
+      </div>
+
+      <div className={`h-px my-2 ${isLight ? 'bg-gray-200' : 'bg-gray-800'}`} />
+
+      {/* YOLO Toggle */}
+      <div className="mb-2">
+        <YoloToggle />
+      </div>
+
+      {/* Settings & Theme buttons */}
+      <div className="flex gap-2">
+        <button
+          onClick={onSettingsOpen}
+          className="flex-1 glass-button py-1.5 px-2 flex items-center justify-center gap-1.5"
+          title="Settings"
+        >
+          <Settings size={12} />
+          <span className="text-[9px]">Settings</span>
+        </button>
+
+        <button
+          onClick={toggleTheme}
+          className="glass-button py-1.5 px-2.5"
+          title={isLight ? 'Dark mode' : 'Light mode'}
+        >
+          {isLight ? <Moon size={12} /> : <Sun size={12} />}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// DASHBOARD CONTENT
+// ============================================================================
 const DashboardContent: React.FC = () => {
   const { resolvedTheme, toggleTheme } = useTheme();
   const isLight = resolvedTheme === 'light';
@@ -41,6 +158,11 @@ const DashboardContent: React.FC = () => {
     await createTab(`${provider.charAt(0).toUpperCase() + provider.slice(1)} #${tabNumber}`, provider);
   }, [createTab, tabs.length]);
 
+  const handleModelSelect = useCallback((provider: CLIProvider) => {
+    // Auto-create tab when model selected
+    handleCreateTab(provider);
+  }, [handleCreateTab]);
+
   return (
     <div className="w-full h-full flex flex-col">
       {/* Settings Panel Modal */}
@@ -51,29 +173,36 @@ const DashboardContent: React.FC = () => {
         {/* Sidebar - collapsible */}
         <div
           className={`h-full transition-all duration-300 flex flex-col ${
-            sidebarOpen ? 'w-80' : 'w-0'
+            sidebarOpen ? 'w-64' : 'w-0'
           } overflow-hidden`}
         >
-          <div className="w-80 h-full p-4 overflow-auto flex flex-col gap-4">
-            {/* Queue Status */}
+          <div className="w-64 h-full p-3 overflow-auto flex flex-col gap-2">
+            {/* 1. Sidebar Controls (Logo, YOLO, Settings, Theme) - NA GÓRZE */}
+            <SidebarControls
+              isLight={isLight}
+              onSettingsOpen={() => setSettingsOpen(true)}
+              toggleTheme={toggleTheme}
+            />
+
+            {/* 2. Model Selector - zaraz pod logo */}
+            <ModelSelector
+              onSelect={handleModelSelect}
+              isLight={isLight}
+            />
+
+            {/* 3. Queue Status */}
             <QueueStatus />
 
-            {/* MCP Servers Status */}
+            {/* 4. MCP Servers Status */}
             <MCPStatus />
 
-            {/* Ollama Status */}
+            {/* 5. Ollama Status */}
             <OllamaStatus />
-
-            {/* System Metrics */}
-            <SystemMetricsPanel />
-
-            {/* Launch Panel */}
-            <LaunchPanel />
 
             {/* Footer */}
             <div className="mt-auto text-center">
-              <div className={`h-px my-4 ${isLight ? 'bg-gray-200' : 'bg-gray-800'}`} />
-              <p className={`text-[9px] font-mono tracking-wider ${
+              <div className={`h-px my-2 ${isLight ? 'bg-gray-200' : 'bg-gray-800'}`} />
+              <p className={`text-[8px] font-mono tracking-wider ${
                 isLight ? 'text-gray-400' : 'text-gray-600'
               }`}>
                 SERENA • DC • PLAYWRIGHT • SWARM
@@ -84,83 +213,49 @@ const DashboardContent: React.FC = () => {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col h-full">
-          {/* Header */}
-          <div className={`flex items-center justify-between p-4 border-b ${
+          {/* Header - uproszczony */}
+          <div className={`flex items-center justify-between p-2 border-b ${
             isLight ? 'border-gray-200' : 'border-gray-800'
           }`}>
-            {/* Sidebar Toggle + Logo */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="glass-button p-2"
-                title={sidebarOpen ? 'Hide panel' : 'Show panel'}
-              >
-                {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-              </button>
+            {/* Sidebar Toggle */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="glass-button p-1.5"
+              title={sidebarOpen ? 'Hide panel' : 'Show panel'}
+            >
+              {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+            </button>
 
-              {/* Logo Image */}
-              <img
-                src={isLight ? '/logolight.webp' : '/logodark.webp'}
-                alt="HYDRA"
-                className="w-10 h-10 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-
-              <div className="flex flex-col">
-                <span className={`text-xl font-mono font-bold tracking-[0.15em] ${
-                  isLight ? 'text-black' : 'text-white'
-                }`}>
-                  HYDRA
-                </span>
-                <span className={`text-[10px] font-mono tracking-wider ${
-                  isLight ? 'text-gray-500' : 'text-gray-500'
-                }`}>
-                  v10.6.1 Multi-Tab
-                </span>
-              </div>
-            </div>
-
-            {/* Right controls */}
-            <div className="flex items-center gap-3">
-              {/* YOLO Toggle */}
-              <YoloToggle />
-
-              {/* Settings Button */}
-              <button
-                onClick={() => setSettingsOpen(true)}
-                className="glass-button p-2.5"
-                title="Settings"
-              >
-                <Settings size={16} />
-              </button>
-
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="glass-button p-2.5"
-                title={isLight ? 'Dark mode' : 'Light mode'}
-              >
-                {isLight ? <Moon size={16} /> : <Sun size={16} />}
-              </button>
+            {/* Center - Tab Bar */}
+            <div className="flex-1 mx-2">
+              <TabBar onCreateTab={handleCreateTab} />
             </div>
           </div>
 
-          {/* Tab Bar */}
-          <TabBar
-            onCreateTab={handleCreateTab}
-          />
-
-          {/* Chat Area */}
+          {/* Chat Area z tłem */}
           <div className="flex-1 overflow-hidden relative">
-            {/* Minimal frame */}
-            <div className={`absolute inset-4 pointer-events-none z-10 border ${
-              isLight ? 'border-gray-200' : 'border-gray-800'
-            } rounded-lg opacity-50`} />
+            {/* Background image */}
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              style={{
+                backgroundImage: `url(${isLight ? '/backgroundlight.webp' : '/background.webp'})`,
+                opacity: 0.15,
+              }}
+            />
 
-            {/* Multi-tab chat interface */}
-            <div className="h-full m-2">
+            {/* Glassmorphism overlay */}
+            <div className={`absolute inset-0 ${
+              isLight
+                ? 'bg-white/60 backdrop-blur-sm'
+                : 'bg-black/60 backdrop-blur-sm'
+            }`} />
+
+            {/* Chat frame with glassmorphism */}
+            <div className={`absolute inset-2 rounded-lg overflow-hidden border ${
+              isLight
+                ? 'border-gray-200/50 bg-white/40 backdrop-blur-md'
+                : 'border-gray-800/50 bg-black/40 backdrop-blur-md'
+            }`}>
               <MultiTabChat onConnectionChange={handleConnectionChange} />
             </div>
           </div>
@@ -178,7 +273,9 @@ const DashboardContent: React.FC = () => {
   );
 };
 
-// Wrapper component that provides TabContext
+// ============================================================================
+// WRAPPER
+// ============================================================================
 const Dashboard: React.FC = () => {
   return (
     <TabProvider>
