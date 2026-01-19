@@ -856,3 +856,1185 @@ body {
   transform: scale(1.2) rotate(5deg);
   filter: drop-shadow(0 0 4px currentColor);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREMIUM CSS EFFECTS - HYDRA Enhanced Visual Layer
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ========== 1. NOISE TEXTURE OVERLAY ========== */
+.noise-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+.noise-overlay-subtle {
+  opacity: 0.015;
+}
+
+.noise-overlay-strong {
+  opacity: 0.06;
+}
+
+/* ========== 2. AURORA BACKGROUND ========== */
+@keyframes aurora-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  25% {
+    background-position: 50% 100%;
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: hue-rotate(30deg);
+  }
+  75% {
+    background-position: 50% 0%;
+  }
+}
+
+.aurora-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 30%, rgba(74, 222, 128, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 90%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+  background-size: 200% 200%;
+  animation: aurora-shift 20s ease-in-out infinite;
+}
+
+.aurora-bg-subtle {
+  opacity: 0.5;
+}
+
+:root.light .aurora-bg {
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(120, 119, 198, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 30%, rgba(74, 222, 128, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 80%, rgba(168, 85, 247, 0.07) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 90%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
+  background-size: 200% 200%;
+}
+
+/* ========== 3. SPOTLIGHT EFFECT ========== */
+.spotlight-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.spotlight-effect {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.03) 30%,
+    transparent 70%
+  );
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+.spotlight-effect-strong {
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.05) 30%,
+    transparent 70%
+  );
+}
+
+:root.light .spotlight-effect {
+  background: radial-gradient(
+    circle,
+    rgba(0, 0, 0, 0.04) 0%,
+    rgba(0, 0, 0, 0.015) 30%,
+    transparent 70%
+  );
+}
+
+/* ========== 4. GRADIENT BORDER ANIMATION ========== */
+@keyframes gradient-border-rotate {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-border {
+  position: relative;
+  background: var(--bw-card);
+  border-radius: 12px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    #f59e0b,
+    #ef4444,
+    #a855f7,
+    #3b82f6,
+    #22c55e,
+    #f59e0b
+  );
+  background-size: 300% 300%;
+  animation: gradient-border-rotate 4s linear infinite;
+  z-index: -1;
+  opacity: 0.7;
+}
+
+.gradient-border::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bw-card);
+  border-radius: 12px;
+  z-index: -1;
+}
+
+.gradient-border-subtle::before {
+  opacity: 0.3;
+}
+
+.gradient-border-glow::before {
+  filter: blur(8px);
+  opacity: 0.5;
+}
+
+/* ========== 5. TEXT GRADIENT ANIMATION ========== */
+@keyframes text-gradient-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.text-gradient-animated {
+  background: linear-gradient(
+    90deg,
+    #ffffff,
+    #a3a3a3,
+    #ffffff,
+    #737373,
+    #ffffff
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-gradient-flow 4s ease-in-out infinite;
+}
+
+.text-gradient-rainbow {
+  background: linear-gradient(
+    90deg,
+    #f59e0b,
+    #ef4444,
+    #a855f7,
+    #3b82f6,
+    #22c55e,
+    #f59e0b
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-gradient-flow 3s linear infinite;
+}
+
+:root.light .text-gradient-animated {
+  background: linear-gradient(
+    90deg,
+    #1a1a1a,
+    #525252,
+    #1a1a1a,
+    #737373,
+    #1a1a1a
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+/* ========== 6. CARD HOVER 3D ========== */
+.card-3d {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card-3d:hover {
+  transform: rotateX(5deg) rotateY(-5deg) translateZ(10px);
+}
+
+.card-3d-inner {
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card-3d:hover .card-3d-inner {
+  transform: translateZ(20px);
+}
+
+.card-3d-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.card-3d:hover .card-3d-shine {
+  opacity: 1;
+}
+
+/* ========== 7. RIPPLE EFFECT ========== */
+@keyframes ripple-expand {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0);
+  animation: ripple-expand 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+:root.light .ripple {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* ========== 8. TYPEWRITER EFFECT ========== */
+@keyframes typewriter-cursor {
+  0%, 100% {
+    border-right-color: var(--bw-text);
+  }
+  50% {
+    border-right-color: transparent;
+  }
+}
+
+@keyframes typewriter-typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid var(--bw-text);
+  animation:
+    typewriter-typing 3s steps(30, end),
+    typewriter-cursor 0.75s step-end infinite;
+}
+
+.typewriter-fast {
+  animation:
+    typewriter-typing 1.5s steps(30, end),
+    typewriter-cursor 0.5s step-end infinite;
+}
+
+.typewriter-no-cursor {
+  animation: typewriter-typing 2s steps(30, end) forwards;
+  border-right: none;
+}
+
+/* ========== 9. BLUR VIGNETTE ========== */
+.blur-vignette {
+  position: relative;
+}
+
+.blur-vignette::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(10, 10, 10, 0.3) 100%
+  );
+}
+
+.blur-vignette-corners::before {
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(10, 10, 10, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 0%, rgba(10, 10, 10, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 0% 100%, rgba(10, 10, 10, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(10, 10, 10, 0.4) 0%, transparent 50%);
+}
+
+:root.light .blur-vignette::before {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(0, 0, 0, 0.08) 100%
+  );
+}
+
+/* ========== 10. PARTICLE BACKGROUND (CSS ONLY) ========== */
+@keyframes particle-float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(20px);
+    opacity: 0;
+  }
+}
+
+.particle-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  animation: particle-float linear infinite;
+}
+
+.particle:nth-child(1) { left: 10%; animation-duration: 15s; animation-delay: 0s; }
+.particle:nth-child(2) { left: 20%; animation-duration: 18s; animation-delay: 2s; }
+.particle:nth-child(3) { left: 30%; animation-duration: 12s; animation-delay: 4s; }
+.particle:nth-child(4) { left: 40%; animation-duration: 20s; animation-delay: 1s; }
+.particle:nth-child(5) { left: 50%; animation-duration: 16s; animation-delay: 3s; }
+.particle:nth-child(6) { left: 60%; animation-duration: 14s; animation-delay: 5s; }
+.particle:nth-child(7) { left: 70%; animation-duration: 19s; animation-delay: 2s; }
+.particle:nth-child(8) { left: 80%; animation-duration: 17s; animation-delay: 4s; }
+.particle:nth-child(9) { left: 90%; animation-duration: 13s; animation-delay: 1s; }
+.particle:nth-child(10) { left: 95%; animation-duration: 21s; animation-delay: 3s; }
+
+.particle-subtle {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+:root.light .particle {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* ========== 11. MORPHING SHAPES ========== */
+@keyframes morph-blob {
+  0%, 100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+  25% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+  }
+  50% {
+    border-radius: 50% 60% 30% 60% / 30% 40% 70% 60%;
+  }
+  75% {
+    border-radius: 60% 40% 60% 30% / 70% 30% 50% 60%;
+  }
+}
+
+.morph-shape {
+  animation: morph-blob 8s ease-in-out infinite;
+}
+
+.morph-shape-fast {
+  animation: morph-blob 4s ease-in-out infinite;
+}
+
+.morph-shape-slow {
+  animation: morph-blob 15s ease-in-out infinite;
+}
+
+/* ========== 12. FROSTED GLASS PREMIUM ========== */
+.frosted-glass-premium {
+  background: rgba(26, 26, 26, 0.6);
+  backdrop-filter: blur(24px) saturate(200%) brightness(1.05);
+  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 20px rgba(255, 255, 255, 0.02);
+  position: relative;
+  overflow: hidden;
+}
+
+.frosted-glass-premium::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+:root.light .frosted-glass-premium {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+:root.light .frosted-glass-premium::before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    transparent 100%
+  );
+}
+
+/* ========== 13. NEON GLOW TEXT ========== */
+@keyframes neon-pulse {
+  0%, 100% {
+    text-shadow:
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 40px currentColor;
+  }
+  50% {
+    text-shadow:
+      0 0 2px currentColor,
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 20px currentColor;
+  }
+}
+
+.neon-text {
+  color: #ffffff;
+  text-shadow:
+    0 0 5px #ffffff,
+    0 0 10px #ffffff,
+    0 0 20px #ffffff,
+    0 0 40px #ffffff;
+}
+
+.neon-text-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.neon-text-blue {
+  color: #3b82f6;
+  text-shadow:
+    0 0 5px #3b82f6,
+    0 0 10px #3b82f6,
+    0 0 20px #3b82f6,
+    0 0 40px #3b82f6;
+}
+
+.neon-text-purple {
+  color: #a855f7;
+  text-shadow:
+    0 0 5px #a855f7,
+    0 0 10px #a855f7,
+    0 0 20px #a855f7,
+    0 0 40px #a855f7;
+}
+
+.neon-text-green {
+  color: #22c55e;
+  text-shadow:
+    0 0 5px #22c55e,
+    0 0 10px #22c55e,
+    0 0 20px #22c55e,
+    0 0 40px #22c55e;
+}
+
+.neon-text-amber {
+  color: #f59e0b;
+  text-shadow:
+    0 0 5px #f59e0b,
+    0 0 10px #f59e0b,
+    0 0 20px #f59e0b,
+    0 0 40px #f59e0b;
+}
+
+/* ========== 14. SMOOTH SCROLL SNAP ========== */
+.scroll-snap-container {
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+
+.scroll-snap-container-x {
+  scroll-snap-type: x mandatory;
+  overflow-x: scroll;
+  scroll-behavior: smooth;
+}
+
+.scroll-snap-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.scroll-snap-center {
+  scroll-snap-align: center;
+}
+
+.scroll-snap-end {
+  scroll-snap-align: end;
+}
+
+/* ========== 15. FOCUS RING PREMIUM ========== */
+.focus-ring-premium:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bw-bg),
+    0 0 0 4px rgba(255, 255, 255, 0.5),
+    0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.focus-ring-premium:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bw-bg),
+    0 0 0 4px rgba(255, 255, 255, 0.5),
+    0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.focus-ring-glow:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bw-bg),
+    0 0 0 4px rgba(168, 85, 247, 0.6),
+    0 0 30px rgba(168, 85, 247, 0.4);
+}
+
+.focus-ring-subtle:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 1px var(--bw-border-light),
+    0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+:root.light .focus-ring-premium:focus,
+:root.light .focus-ring-premium:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--bw-bg),
+    0 0 0 4px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+:root.light .focus-ring-glow:focus {
+  box-shadow:
+    0 0 0 2px var(--bw-bg),
+    0 0 0 4px rgba(168, 85, 247, 0.5),
+    0 0 30px rgba(168, 85, 247, 0.2);
+}
+
+/* ========== BONUS: INTERACTIVE UTILITIES ========== */
+
+/* Magnetic hover effect class helper */
+.magnetic-hover {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Smooth state transitions */
+.state-transition {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+/* Elastic scale on click */
+@keyframes elastic-scale {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.95); }
+  50% { transform: scale(1.02); }
+  70% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+.elastic-click:active {
+  animation: elastic-scale 0.4s ease-out;
+}
+
+/* Glow on hover for icons/elements */
+.glow-hover {
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.glow-hover:hover {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+  transform: scale(1.05);
+}
+
+:root.light .glow-hover:hover {
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.2));
+}
+
+/* Text selection styling */
+::selection {
+  background: rgba(168, 85, 247, 0.4);
+  color: #ffffff;
+}
+
+:root.light ::selection {
+  background: rgba(168, 85, 247, 0.3);
+  color: #1a1a1a;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .aurora-bg,
+  .aurora-layer,
+  .particle,
+  .morph-shape,
+  .typewriter,
+  .neon-text-pulse,
+  .text-gradient-animated,
+  .gradient-border::before {
+    animation: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AURORA BACKGROUND COMPONENT UTILITIES
+   CSS classes for AuroraBackground React component
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Aurora intensity presets */
+.aurora-intensity-subtle {
+  --aurora-intensity: 0.3;
+}
+
+.aurora-intensity-normal {
+  --aurora-intensity: 0.6;
+}
+
+.aurora-intensity-vibrant {
+  --aurora-intensity: 0.9;
+}
+
+/* Aurora speed presets */
+.aurora-speed-slow {
+  --aurora-speed: 0.5;
+}
+
+.aurora-speed-normal {
+  --aurora-speed: 1;
+}
+
+.aurora-speed-fast {
+  --aurora-speed: 2;
+}
+
+/* Aurora color themes */
+.aurora-theme-default {
+  --aurora-color-1: rgba(20, 184, 166, 0.4);
+  --aurora-color-2: rgba(139, 92, 246, 0.35);
+  --aurora-color-3: rgba(59, 130, 246, 0.3);
+  --aurora-color-4: rgba(236, 72, 153, 0.25);
+}
+
+.aurora-theme-ocean {
+  --aurora-color-1: rgba(6, 182, 212, 0.4);
+  --aurora-color-2: rgba(59, 130, 246, 0.35);
+  --aurora-color-3: rgba(99, 102, 241, 0.3);
+  --aurora-color-4: rgba(139, 92, 246, 0.25);
+}
+
+.aurora-theme-sunset {
+  --aurora-color-1: rgba(251, 146, 60, 0.4);
+  --aurora-color-2: rgba(244, 63, 94, 0.35);
+  --aurora-color-3: rgba(236, 72, 153, 0.3);
+  --aurora-color-4: rgba(168, 85, 247, 0.25);
+}
+
+.aurora-theme-forest {
+  --aurora-color-1: rgba(34, 197, 94, 0.4);
+  --aurora-color-2: rgba(20, 184, 166, 0.35);
+  --aurora-color-3: rgba(6, 182, 212, 0.3);
+  --aurora-color-4: rgba(59, 130, 246, 0.25);
+}
+
+.aurora-theme-fire {
+  --aurora-color-1: rgba(239, 68, 68, 0.4);
+  --aurora-color-2: rgba(249, 115, 22, 0.35);
+  --aurora-color-3: rgba(245, 158, 11, 0.3);
+  --aurora-color-4: rgba(234, 179, 8, 0.25);
+}
+
+.aurora-theme-monochrome {
+  --aurora-color-1: rgba(255, 255, 255, 0.15);
+  --aurora-color-2: rgba(200, 200, 200, 0.12);
+  --aurora-color-3: rgba(150, 150, 150, 0.1);
+  --aurora-color-4: rgba(100, 100, 100, 0.08);
+}
+
+.aurora-theme-witcher {
+  --aurora-color-1: rgba(251, 191, 36, 0.35);
+  --aurora-color-2: rgba(245, 158, 11, 0.3);
+  --aurora-color-3: rgba(217, 119, 6, 0.25);
+  --aurora-color-4: rgba(180, 83, 9, 0.2);
+}
+
+:root.light .aurora-theme-default {
+  --aurora-color-1: rgba(20, 184, 166, 0.25);
+  --aurora-color-2: rgba(139, 92, 246, 0.2);
+  --aurora-color-3: rgba(59, 130, 246, 0.2);
+  --aurora-color-4: rgba(236, 72, 153, 0.15);
+}
+
+:root.light .aurora-theme-ocean {
+  --aurora-color-1: rgba(6, 182, 212, 0.25);
+  --aurora-color-2: rgba(59, 130, 246, 0.2);
+  --aurora-color-3: rgba(99, 102, 241, 0.18);
+  --aurora-color-4: rgba(139, 92, 246, 0.15);
+}
+
+:root.light .aurora-theme-sunset {
+  --aurora-color-1: rgba(251, 146, 60, 0.25);
+  --aurora-color-2: rgba(244, 63, 94, 0.2);
+  --aurora-color-3: rgba(236, 72, 153, 0.18);
+  --aurora-color-4: rgba(168, 85, 247, 0.15);
+}
+
+:root.light .aurora-theme-forest {
+  --aurora-color-1: rgba(34, 197, 94, 0.25);
+  --aurora-color-2: rgba(20, 184, 166, 0.2);
+  --aurora-color-3: rgba(6, 182, 212, 0.18);
+  --aurora-color-4: rgba(59, 130, 246, 0.15);
+}
+
+:root.light .aurora-theme-fire {
+  --aurora-color-1: rgba(239, 68, 68, 0.25);
+  --aurora-color-2: rgba(249, 115, 22, 0.2);
+  --aurora-color-3: rgba(245, 158, 11, 0.18);
+  --aurora-color-4: rgba(234, 179, 8, 0.15);
+}
+
+:root.light .aurora-theme-monochrome {
+  --aurora-color-1: rgba(0, 0, 0, 0.08);
+  --aurora-color-2: rgba(50, 50, 50, 0.06);
+  --aurora-color-3: rgba(100, 100, 100, 0.05);
+  --aurora-color-4: rgba(150, 150, 150, 0.04);
+}
+
+:root.light .aurora-theme-witcher {
+  --aurora-color-1: rgba(180, 83, 9, 0.2);
+  --aurora-color-2: rgba(146, 64, 14, 0.18);
+  --aurora-color-3: rgba(120, 53, 15, 0.15);
+  --aurora-color-4: rgba(92, 45, 13, 0.12);
+}
+
+/* Aurora blur presets */
+.aurora-blur-soft {
+  --aurora-blur: 80px;
+}
+
+.aurora-blur-normal {
+  --aurora-blur: 120px;
+}
+
+.aurora-blur-heavy {
+  --aurora-blur: 180px;
+}
+
+.aurora-blur-extreme {
+  --aurora-blur: 250px;
+}
+
+/* GPU acceleration helper */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Aurora container styles */
+.aurora-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Individual aurora layer base styles */
+.aurora-layer {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BENTO GRID ANIMATIONS
+   Modern Bento Box layout animations inspired by bento.me and linear.app
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Bento item entrance */
+@keyframes bento-entrance {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-bento-entrance {
+  animation: bento-entrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Bento 3D tilt transition */
+.bento-tilt-transition {
+  transition: transform 0.15s ease-out;
+  transform-style: preserve-3d;
+}
+
+/* Bento glow effect */
+@keyframes bento-glow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-bento-glow {
+  animation: bento-glow 3s ease-in-out infinite;
+}
+
+/* Bento card shine sweep */
+@keyframes bento-shine {
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+  }
+}
+
+.bento-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.bento-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  transform: translateX(-100%) skewX(-15deg);
+}
+
+.bento-shine:hover::after {
+  animation: bento-shine 0.8s ease-out;
+}
+
+:root.light .bento-shine::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+}
+
+/* Bento stagger delays */
+.bento-delay-0 { animation-delay: 0ms; }
+.bento-delay-1 { animation-delay: 80ms; }
+.bento-delay-2 { animation-delay: 160ms; }
+.bento-delay-3 { animation-delay: 240ms; }
+.bento-delay-4 { animation-delay: 320ms; }
+.bento-delay-5 { animation-delay: 400ms; }
+.bento-delay-6 { animation-delay: 480ms; }
+.bento-delay-7 { animation-delay: 560ms; }
+.bento-delay-8 { animation-delay: 640ms; }
+
+/* Bento glassmorphism card */
+.bento-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(26, 26, 26, 0.85) 0%,
+    rgba(20, 20, 20, 0.75) 100%
+  );
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+:root.light .bento-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(250, 250, 250, 0.85) 100%
+  );
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Bento hover lift effect */
+.bento-hover-lift {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-hover-lift:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.2),
+    0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+:root.light .bento-hover-lift:hover {
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* Bento gradient border */
+.bento-gradient-border {
+  position: relative;
+}
+
+.bento-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+:root.light .bento-gradient-border::before {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.08) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.04) 100%
+  );
+}
+
+/* Bento item content depth */
+.bento-content-depth {
+  transform-style: preserve-3d;
+  transform: translateZ(20px);
+}
+
+/* Bento grid auto-rows for dynamic sizing */
+.bento-grid-auto {
+  grid-auto-rows: minmax(120px, 1fr);
+}
+
+/* Bento item size utilities */
+.bento-1x1 {
+  grid-column: span 1;
+  grid-row: span 1;
+}
+
+.bento-2x1 {
+  grid-column: span 2;
+  grid-row: span 1;
+}
+
+.bento-1x2 {
+  grid-column: span 1;
+  grid-row: span 2;
+}
+
+.bento-2x2 {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+/* Responsive bento sizes */
+@media (max-width: 640px) {
+  .bento-2x1,
+  .bento-2x2 {
+    grid-column: span 1;
+  }
+  .bento-1x2,
+  .bento-2x2 {
+    grid-row: span 1;
+  }
+}
+
+/* Bento floating animation */
+@keyframes bento-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bento-float {
+  animation: bento-float 4s ease-in-out infinite;
+}
+
+/* Bento spotlight cursor follow effect */
+.bento-spotlight {
+  --x: 50%;
+  --y: 50%;
+  background: radial-gradient(
+    400px circle at var(--x) var(--y),
+    rgba(255, 255, 255, 0.06),
+    transparent 40%
+  );
+}
+
+:root.light .bento-spotlight {
+  background: radial-gradient(
+    400px circle at var(--x) var(--y),
+    rgba(0, 0, 0, 0.03),
+    transparent 40%
+  );
+}
+
+/* Bento scale on press */
+.bento-press:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Bento border pulse */
+@keyframes bento-border-pulse {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  50% {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
+.animate-bento-border-pulse {
+  animation: bento-border-pulse 2s ease-in-out infinite;
+}
+
+:root.light .animate-bento-border-pulse {
+  animation-name: bento-border-pulse-light;
+}
+
+@keyframes bento-border-pulse-light {
+  0%, 100% {
+    border-color: rgba(0, 0, 0, 0.06);
+  }
+  50% {
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+}

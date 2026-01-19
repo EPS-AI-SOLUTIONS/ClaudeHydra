@@ -21,6 +21,12 @@ export * from './settings';
 // Core components
 export * from './core';
 
+// Effects components
+export * from './effects';
+
+// UI components
+export * from './ui';
+
 // Direct exports for backwards compatibility
 export { default as Dashboard } from './Dashboard';
 export { default as Launcher } from './Launcher';

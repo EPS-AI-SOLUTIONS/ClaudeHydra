@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { TabProvider, useTabContext, CLIProvider } from '../contexts/TabContext';
 import MCPStatus from './MCPStatus';
@@ -12,11 +12,20 @@ import SettingsPanel from './SettingsPanel';
 import QueueStatus from './QueueStatus';
 import YoloToggle from './YoloToggle';
 import ModelSelector from './ModelSelector';
-import { Moon, Sun, ChevronLeft, Settings, History, MessageSquare, Grid3X3, Activity } from 'lucide-react';
+import { Moon, Sun, ChevronLeft, Settings, History, MessageSquare, Grid3X3, Activity, Zap, Terminal, RefreshCw } from 'lucide-react';
 import { useMCPHealth } from '../hooks/useMCPHealth';
 import ChatHistory from './ChatHistory';
 import BuildFreshness from './BuildFreshness';
 import { ChatSession } from '../hooks/useChatHistory';
+
+// Visual Effect Components
+import AuroraBackground from './effects/AuroraBackground';
+import Spotlight from './effects/Spotlight';
+import ParticleField from './effects/ParticleField';
+import MorphingBlob from './effects/MorphingBlob';
+import AnimatedText from './ui/AnimatedText';
+import GlowCard from './ui/GlowCard';
+import FloatingDock, { DockItem } from './ui/FloatingDock';
 
 // View mode type for routing
 type ViewMode = 'chat' | 'multi-input' | 'stream-panel';
@@ -32,76 +41,89 @@ const SidebarControls: React.FC<{
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div
-      className={`glass-card p-3 transition-all duration-300 ${
-        isHovered ? 'shadow-lg' : ''
-      } ${isLight ? 'hover:shadow-gray-300/50' : 'hover:shadow-white/5'}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+    <GlowCard
+      className="p-3"
+      disableTilt={true}
+      disableAnimation={true}
+      intensity={0.3}
+      glowColor={isLight ? '#6b7280' : '#9ca3af'}
     >
-      {/* Logo - wieksze z animacja */}
-      <div className="flex items-center justify-center mb-3">
-        <img
-          src={isLight ? '/logolight.webp' : '/logodark.webp'}
-          alt="Regis"
-          className={`w-16 h-16 object-contain transition-transform duration-300 ${
-            isHovered ? 'scale-105' : ''
-          }`}
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = 'none';
-          }}
-        />
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Logo - wieksze z animacja */}
+        <div className="flex items-center justify-center mb-3">
+          <img
+            src={isLight ? '/logolight.webp' : '/logodark.webp'}
+            alt="Regis"
+            className={`w-16 h-16 object-contain transition-transform duration-300 ${
+              isHovered ? 'scale-105' : ''
+            }`}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        </div>
+
+        <div className="text-center mb-3">
+          <AnimatedText
+            text="REGIS"
+            effect="gradient"
+            speed={80}
+            colors={isLight
+              ? ['#374151', '#6b7280', '#374151']
+              : ['#e5e7eb', '#9ca3af', '#e5e7eb']
+            }
+            className={`text-lg font-mono font-bold tracking-[0.2em] ${
+              isHovered ? 'tracking-[0.25em]' : ''
+            }`}
+            as="h1"
+          />
+          <span className={`text-[9px] font-mono tracking-wider transition-opacity duration-300 ${
+            isLight ? 'text-gray-500' : 'text-gray-500'
+          } ${isHovered ? 'opacity-100' : 'opacity-70'}`}>
+            v10.6.1 Swarm
+          </span>
+        </div>
+
+        <div className={`h-px my-2 transition-all duration-300 ${
+          isLight ? 'bg-gray-200' : 'bg-gray-800'
+        } ${isHovered ? 'opacity-100' : 'opacity-50'}`} />
+
+        {/* YOLO Toggle */}
+        <div className="mb-2">
+          <YoloToggle />
+        </div>
+
+        {/* Settings & Theme buttons z ulepszonymi hover states */}
+        <div className="flex gap-2">
+          <button
+            onClick={onSettingsOpen}
+            className={`flex-1 glass-button py-1.5 px-2 flex items-center justify-center gap-1.5
+              transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]
+              ${isLight ? 'hover:bg-gray-200 hover:shadow-sm' : 'hover:bg-gray-700 hover:shadow-sm hover:shadow-white/5'}`}
+            title="Settings"
+          >
+            <Settings size={12} className="transition-transform duration-200 hover:rotate-45" />
+            <span className="text-[9px]">Settings</span>
+          </button>
+
+          <button
+            onClick={toggleTheme}
+            className={`glass-button py-1.5 px-2.5 transition-all duration-200 hover:scale-[1.05] active:scale-[0.95]
+              ${isLight ? 'hover:bg-gray-200 hover:shadow-sm' : 'hover:bg-gray-700 hover:shadow-sm hover:shadow-white/5'}`}
+            title={isLight ? 'Dark mode' : 'Light mode'}
+          >
+            {isLight ? (
+              <Moon size={12} className="transition-transform duration-300 hover:rotate-12" />
+            ) : (
+              <Sun size={12} className="transition-transform duration-300 hover:rotate-45" />
+            )}
+          </button>
+        </div>
       </div>
-
-      <div className="text-center mb-3">
-        <h1 className={`text-lg font-mono font-bold tracking-[0.2em] transition-all duration-300 ${
-          isLight ? 'text-black' : 'text-white'
-        } ${isHovered ? 'tracking-[0.25em]' : ''}`}>
-          REGIS
-        </h1>
-        <span className={`text-[9px] font-mono tracking-wider transition-opacity duration-300 ${
-          isLight ? 'text-gray-500' : 'text-gray-500'
-        } ${isHovered ? 'opacity-100' : 'opacity-70'}`}>
-          v10.6.1 Swarm
-        </span>
-      </div>
-
-      <div className={`h-px my-2 transition-all duration-300 ${
-        isLight ? 'bg-gray-200' : 'bg-gray-800'
-      } ${isHovered ? 'opacity-100' : 'opacity-50'}`} />
-
-      {/* YOLO Toggle */}
-      <div className="mb-2">
-        <YoloToggle />
-      </div>
-
-      {/* Settings & Theme buttons z ulepszonymi hover states */}
-      <div className="flex gap-2">
-        <button
-          onClick={onSettingsOpen}
-          className={`flex-1 glass-button py-1.5 px-2 flex items-center justify-center gap-1.5
-            transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]
-            ${isLight ? 'hover:bg-gray-200 hover:shadow-sm' : 'hover:bg-gray-700 hover:shadow-sm hover:shadow-white/5'}`}
-          title="Settings"
-        >
-          <Settings size={12} className="transition-transform duration-200 hover:rotate-45" />
-          <span className="text-[9px]">Settings</span>
-        </button>
-
-        <button
-          onClick={toggleTheme}
-          className={`glass-button py-1.5 px-2.5 transition-all duration-200 hover:scale-[1.05] active:scale-[0.95]
-            ${isLight ? 'hover:bg-gray-200 hover:shadow-sm' : 'hover:bg-gray-700 hover:shadow-sm hover:shadow-white/5'}`}
-          title={isLight ? 'Dark mode' : 'Light mode'}
-        >
-          {isLight ? (
-            <Moon size={12} className="transition-transform duration-300 hover:rotate-12" />
-          ) : (
-            <Sun size={12} className="transition-transform duration-300 hover:rotate-45" />
-          )}
-        </button>
-      </div>
-    </div>
+    </GlowCard>
   );
 };
 
@@ -198,8 +220,107 @@ const DashboardContent: React.FC = () => {
     }
   };
 
+  // Floating Dock Items for quick actions
+  const dockItems: DockItem[] = useMemo(() => [
+    {
+      id: 'new-chat',
+      icon: <MessageSquare size={20} />,
+      label: 'New Chat',
+      onClick: () => handleCreateTab('claude'),
+    },
+    {
+      id: 'terminal',
+      icon: <Terminal size={20} />,
+      label: 'Terminal',
+      onClick: () => handleCreateTab('claude'),
+    },
+    {
+      id: 'quick-action',
+      icon: <Zap size={20} />,
+      label: 'Quick Action',
+      onClick: () => setActiveView('multi-input'),
+      isActive: activeView === 'multi-input',
+    },
+    {
+      id: 'refresh',
+      icon: <RefreshCw size={20} />,
+      label: 'Refresh',
+      onClick: () => window.location.reload(),
+    },
+    {
+      id: 'settings',
+      icon: <Settings size={20} />,
+      label: 'Settings',
+      onClick: () => setSettingsOpen(true),
+    },
+  ], [activeView, handleCreateTab]);
+
+  // Magnetic elements for spotlight
+  const magneticElements = useMemo(() => [
+    { selector: '.glass-button', strength: 0.2, threshold: 80 },
+    { selector: 'button', strength: 0.15, threshold: 60 },
+  ], []);
+
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col relative">
+      {/* Aurora Background - Base layer */}
+      <AuroraBackground
+        intensity={isLight ? 0.3 : 0.5}
+        speed={0.6}
+        blur={150}
+      />
+
+      {/* Particle Field - Subtle background particles */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 1 }}>
+        <ParticleField
+          count={20}
+          speed={0.5}
+          connections={true}
+          mouseInteraction={false}
+          connectionDistance={120}
+          className="opacity-30"
+        />
+      </div>
+
+      {/* Spotlight Effect - Follows cursor */}
+      <Spotlight
+        size={300}
+        blur={100}
+        intensity={isLight ? 0.08 : 0.12}
+        magnetic={true}
+        magneticElements={magneticElements}
+        easing={0.1}
+        zIndex={2}
+      />
+
+      {/* Morphing Blob Decorations - Corner accents */}
+      <div className="fixed top-0 left-0 pointer-events-none opacity-20" style={{ zIndex: 1 }}>
+        <MorphingBlob
+          size={200}
+          speed={0.4}
+          blur={60}
+          glow={0.3}
+          opacity={0.3}
+          colors={isLight
+            ? ['#6b7280', '#9ca3af', '#d1d5db']
+            : ['#374151', '#4b5563', '#6b7280']
+          }
+        />
+      </div>
+      <div className="fixed bottom-0 right-0 pointer-events-none opacity-20" style={{ zIndex: 1 }}>
+        <MorphingBlob
+          size={250}
+          speed={0.5}
+          blur={70}
+          glow={0.4}
+          opacity={0.25}
+          colors={isLight
+            ? ['#9ca3af', '#6b7280', '#4b5563']
+            : ['#4b5563', '#374151', '#1f2937']
+          }
+        />
+      </div>
+
       {/* Settings Panel Modal */}
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
@@ -211,7 +332,7 @@ const DashboardContent: React.FC = () => {
       />
 
       {/* Main content area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative" style={{ zIndex: 10 }}>
         {/* Sidebar - collapsible z gradient i glow */}
         <div
           className={`h-full flex flex-col overflow-hidden
@@ -220,9 +341,10 @@ const DashboardContent: React.FC = () => {
         >
           <div className={`w-64 h-full p-3 overflow-auto flex flex-col gap-2 relative
             ${isLight
-              ? 'bg-gradient-to-b from-gray-50 via-white to-gray-100'
-              : 'bg-gradient-to-b from-gray-900 via-black to-gray-900'
+              ? 'bg-gradient-to-b from-gray-50/80 via-white/70 to-gray-100/80'
+              : 'bg-gradient-to-b from-gray-900/80 via-black/70 to-gray-900/80'
             }
+            backdrop-blur-xl
             ${sidebarOpen
               ? isLight
                 ? 'border-r border-gray-200/80 shadow-[2px_0_15px_rgba(0,0,0,0.05)]'
@@ -250,23 +372,33 @@ const DashboardContent: React.FC = () => {
               toggleTheme={toggleTheme}
             />
 
-            {/* 2. Model Selector - new modernized component */}
-            <ModelSelector
-              onSelect={handleModelSelect}
-              compact={true}
-            />
+            {/* 2. Model Selector - wrapped in GlowCard */}
+            <GlowCard className="p-0" disableTilt={true} disableAnimation={true} intensity={0.2}>
+              <ModelSelector
+                onSelect={handleModelSelect}
+                compact={true}
+              />
+            </GlowCard>
 
             {/* 3. Queue Status */}
-            <QueueStatus />
+            <GlowCard className="p-0" disableTilt={true} disableAnimation={true} intensity={0.2}>
+              <QueueStatus />
+            </GlowCard>
 
             {/* 4. MCP Servers Status */}
-            <MCPStatus />
+            <GlowCard className="p-0" disableTilt={true} disableAnimation={true} intensity={0.2}>
+              <MCPStatus />
+            </GlowCard>
 
             {/* 5. Ollama Status */}
-            <OllamaStatus />
+            <GlowCard className="p-0" disableTilt={true} disableAnimation={true} intensity={0.2}>
+              <OllamaStatus />
+            </GlowCard>
 
             {/* 6. Build Freshness Check */}
-            <BuildFreshness />
+            <GlowCard className="p-0" disableTilt={true} disableAnimation={true} intensity={0.2}>
+              <BuildFreshness />
+            </GlowCard>
 
             {/* Footer z gradient divider */}
             <div className="mt-auto text-center relative">
@@ -287,10 +419,10 @@ const DashboardContent: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col h-full">
           {/* Header - z backdrop-blur i subtle shadow */}
-          <div className={`flex items-center justify-between p-2 border-b backdrop-blur-md
+          <div className={`flex items-center justify-between p-2 border-b backdrop-blur-xl
             ${isLight
-              ? 'border-gray-200/80 bg-white/70 shadow-[0_2px_10px_rgba(0,0,0,0.03)]'
-              : 'border-gray-800/80 bg-black/70 shadow-[0_2px_10px_rgba(255,255,255,0.01)]'
+              ? 'border-gray-200/80 bg-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.03)]'
+              : 'border-gray-800/80 bg-black/60 shadow-[0_2px_10px_rgba(255,255,255,0.01)]'
             }`}
           >
             {/* Left: Sidebar Toggle + View Mode Tabs */}
@@ -371,15 +503,15 @@ const DashboardContent: React.FC = () => {
               className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
               style={{
                 backgroundImage: `url(${isLight ? '/backgroundlight.webp' : '/background.webp'})`,
-                opacity: 0.12,
+                opacity: 0.08,
               }}
             />
 
             {/* Subtle gradient overlay */}
             <div className={`absolute inset-0 ${
               isLight
-                ? 'bg-gradient-to-br from-white/70 via-gray-50/60 to-gray-100/70 backdrop-blur-sm'
-                : 'bg-gradient-to-br from-black/70 via-gray-900/60 to-black/70 backdrop-blur-sm'
+                ? 'bg-gradient-to-br from-white/50 via-gray-50/40 to-gray-100/50 backdrop-blur-sm'
+                : 'bg-gradient-to-br from-black/50 via-gray-900/40 to-black/50 backdrop-blur-sm'
             }`} />
 
             {/* Extra subtle radial glow in center */}
@@ -392,8 +524,8 @@ const DashboardContent: React.FC = () => {
             {/* Content frame with enhanced glassmorphism */}
             <div className={`absolute inset-3 rounded-xl overflow-hidden border transition-all duration-300
               ${isLight
-                ? 'border-gray-200/60 bg-white/50 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.08)]'
-                : 'border-gray-800/60 bg-black/50 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.3)]'
+                ? 'border-gray-200/60 bg-white/40 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.08)]'
+                : 'border-gray-800/60 bg-black/40 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.3)]'
               }
               ${isViewTransitioning ? 'scale-[0.99] opacity-80' : 'scale-100 opacity-100'}
             `}>
@@ -436,13 +568,25 @@ const DashboardContent: React.FC = () => {
         </div>
       </div>
 
-      {/* StatusLine at bottom */}
-      <StatusLine
-        isConnected={isConnected}
-        yoloEnabled={yoloEnabled}
-        mcpOnline={onlineCount}
-        mcpTotal={totalCount}
+      {/* Floating Dock - Quick actions */}
+      <FloatingDock
+        items={dockItems}
+        position="bottom"
+        magnification={1.4}
+        baseIconSize={44}
+        distance={20}
+        visible={true}
       />
+
+      {/* StatusLine at bottom - Above the dock */}
+      <div style={{ zIndex: 100 }}>
+        <StatusLine
+          isConnected={isConnected}
+          yoloEnabled={yoloEnabled}
+          mcpOnline={onlineCount}
+          mcpTotal={totalCount}
+        />
+      </div>
     </div>
   );
 };
