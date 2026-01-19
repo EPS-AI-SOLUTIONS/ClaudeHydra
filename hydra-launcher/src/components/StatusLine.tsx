@@ -81,38 +81,56 @@ const StatusLine: React.FC<StatusLineProps> = ({
   };
 
   return (
-    <div className={`w-full px-4 py-2 flex items-center justify-between border-t backdrop-blur-sm ${
+    <div className={`w-full px-4 py-2 flex items-center justify-between border-t backdrop-blur-md relative overflow-hidden ${
       isLight
-        ? 'bg-amber-50/80 border-amber-300/40 text-amber-800'
-        : 'bg-black/60 border-amber-500/30 text-amber-200'
+        ? 'border-gray-200/60 text-gray-800'
+        : 'border-gray-800/60 text-gray-200'
     }`}>
+      {/* Gradient background */}
+      <div className={`absolute inset-0 ${
+        isLight
+          ? 'bg-gradient-to-r from-gray-50/90 via-white/90 to-gray-50/90'
+          : 'bg-gradient-to-r from-gray-900/90 via-black/90 to-gray-900/90'
+      }`} />
+
+      {/* Subtle top highlight */}
+      <div className={`absolute top-0 left-0 right-0 h-px ${
+        isLight
+          ? 'bg-gradient-to-r from-transparent via-gray-300/50 to-transparent'
+          : 'bg-gradient-to-r from-transparent via-gray-700/50 to-transparent'
+      }`} />
+
       {/* Left section - Connection & Mode */}
-      <div className="flex items-center gap-4">
-        {/* Connection status */}
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-4 relative z-10">
+        {/* Connection status z animacja */}
+        <div className="flex items-center gap-1.5 group">
           {isConnected ? (
-            <Wifi size={12} className="text-emerald-500" />
+            <Wifi size={12} className="text-emerald-500 transition-transform duration-200 group-hover:scale-110" />
           ) : (
-            <WifiOff size={12} className="text-red-500" />
+            <WifiOff size={12} className="text-red-500 animate-pulse" />
           )}
-          <span className={`text-[9px] font-cinzel tracking-wider ${
+          <span className={`text-[9px] font-mono tracking-wider transition-all duration-200 ${
             isConnected ? 'text-emerald-500' : 'text-red-500'
           }`}>
             {isConnected ? 'ONLINE' : 'OFFLINE'}
           </span>
+          {/* Status indicator dot */}
+          <span className={`w-1.5 h-1.5 rounded-full ${
+            isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
+          }`} />
         </div>
 
         {/* Separator */}
-        <span className={`text-[10px] ${isLight ? 'text-amber-400/40' : 'text-amber-600/40'}`}>│</span>
+        <span className={`text-[10px] ${isLight ? 'text-gray-300' : 'text-gray-700'}`}>|</span>
 
-        {/* YOLO status */}
-        <div className="flex items-center gap-1.5">
+        {/* YOLO status z animacja */}
+        <div className="flex items-center gap-1.5 group">
           {yoloEnabled ? (
-            <Zap size={12} className="text-amber-500" />
+            <Zap size={12} className="text-amber-500 transition-all duration-200 group-hover:scale-110 group-hover:rotate-12" />
           ) : (
-            <Shield size={12} className="text-slate-500" />
+            <Shield size={12} className="text-slate-500 transition-transform duration-200 group-hover:scale-110" />
           )}
-          <span className={`text-[9px] font-cinzel tracking-wider ${
+          <span className={`text-[9px] font-mono tracking-wider transition-all duration-200 ${
             yoloEnabled ? 'text-amber-500' : 'text-slate-500'
           }`}>
             {yoloEnabled ? 'YOLO' : 'SAFE'}
@@ -120,37 +138,51 @@ const StatusLine: React.FC<StatusLineProps> = ({
         </div>
 
         {/* Separator */}
-        <span className={`text-[10px] ${isLight ? 'text-amber-400/40' : 'text-amber-600/40'}`}>│</span>
+        <span className={`text-[10px] ${isLight ? 'text-gray-300' : 'text-gray-700'}`}>|</span>
 
-        {/* MCP status */}
-        <div className="flex items-center gap-1.5">
-          <Server size={12} className={mcpOnline > 0 ? 'text-emerald-500' : 'text-red-500'} />
-          <span className={`text-[9px] font-cinzel tracking-wider ${
+        {/* MCP status z animacja */}
+        <div className="flex items-center gap-1.5 group">
+          <Server size={12} className={`transition-all duration-200 group-hover:scale-110 ${
+            mcpOnline > 0 ? 'text-emerald-500' : 'text-red-500'
+          }`} />
+          <span className={`text-[9px] font-mono tracking-wider transition-all duration-200 ${
             mcpOnline === mcpTotal ? 'text-emerald-500' :
             mcpOnline > 0 ? 'text-amber-500' : 'text-red-500'
           }`}>
             MCP {mcpOnline}/{mcpTotal}
           </span>
+          {/* Mini progress indicator */}
+          <div className={`flex gap-0.5`}>
+            {Array.from({ length: mcpTotal }).map((_, i) => (
+              <span
+                key={i}
+                className={`w-1 h-1 rounded-full transition-all duration-300 ${
+                  i < mcpOnline ? 'bg-emerald-500' : isLight ? 'bg-gray-300' : 'bg-gray-700'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Center section - System metrics */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 relative z-10">
         {metrics && (
           <>
-            {/* CPU */}
-            <div className="flex items-center gap-1.5">
-              <Cpu size={12} className={getCpuColor(metrics.cpu_percent)} />
-              <span className={`text-[9px] font-cinzel tracking-wider ${getCpuColor(metrics.cpu_percent)}`}>
+            {/* CPU z ulepszona animacja */}
+            <div className="flex items-center gap-1.5 group">
+              <Cpu size={12} className={`transition-all duration-200 group-hover:scale-110 ${getCpuColor(metrics.cpu_percent)}`} />
+              <span className={`text-[9px] font-mono tracking-wider transition-all duration-200 ${getCpuColor(metrics.cpu_percent)}`}>
                 CPU {metrics.cpu_percent.toFixed(0)}%
               </span>
               <div className={`w-16 h-1.5 rounded-full overflow-hidden ${
-                isLight ? 'bg-amber-200/50' : 'bg-amber-900/30'
+                isLight ? 'bg-gray-200' : 'bg-gray-800'
               }`}>
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    metrics.cpu_percent > 80 ? 'bg-red-500' :
-                    metrics.cpu_percent > 60 ? 'bg-amber-500' : 'bg-emerald-500'
+                  className={`h-full rounded-full transition-all duration-700 ease-out ${
+                    metrics.cpu_percent > 80 ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]' :
+                    metrics.cpu_percent > 60 ? 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]' :
+                    'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.3)]'
                   }`}
                   style={{ width: `${Math.min(metrics.cpu_percent, 100)}%` }}
                 />
@@ -158,27 +190,28 @@ const StatusLine: React.FC<StatusLineProps> = ({
             </div>
 
             {/* Separator */}
-            <span className={`text-[10px] ${isLight ? 'text-amber-400/40' : 'text-amber-600/40'}`}>│</span>
+            <span className={`text-[10px] ${isLight ? 'text-gray-300' : 'text-gray-700'}`}>|</span>
 
-            {/* Memory */}
-            <div className="flex items-center gap-1.5">
-              <HardDrive size={12} className={getMemColor(metrics.memory_percent)} />
-              <span className={`text-[9px] font-cinzel tracking-wider ${getMemColor(metrics.memory_percent)}`}>
+            {/* Memory z ulepszona animacja */}
+            <div className="flex items-center gap-1.5 group">
+              <HardDrive size={12} className={`transition-all duration-200 group-hover:scale-110 ${getMemColor(metrics.memory_percent)}`} />
+              <span className={`text-[9px] font-mono tracking-wider transition-all duration-200 ${getMemColor(metrics.memory_percent)}`}>
                 RAM {metrics.memory_percent.toFixed(0)}%
               </span>
               <div className={`w-16 h-1.5 rounded-full overflow-hidden ${
-                isLight ? 'bg-amber-200/50' : 'bg-amber-900/30'
+                isLight ? 'bg-gray-200' : 'bg-gray-800'
               }`}>
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    metrics.memory_percent > 85 ? 'bg-red-500' :
-                    metrics.memory_percent > 70 ? 'bg-amber-500' : 'bg-emerald-500'
+                  className={`h-full rounded-full transition-all duration-700 ease-out ${
+                    metrics.memory_percent > 85 ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]' :
+                    metrics.memory_percent > 70 ? 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.5)]' :
+                    'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.3)]'
                   }`}
                   style={{ width: `${Math.min(metrics.memory_percent, 100)}%` }}
                 />
               </div>
-              <span className={`text-[8px] font-cinzel ${
-                isLight ? 'text-amber-600/60' : 'text-amber-500/50'
+              <span className={`text-[8px] font-mono transition-opacity duration-200 group-hover:opacity-100 ${
+                isLight ? 'text-gray-500 opacity-70' : 'text-gray-500 opacity-70'
               }`}>
                 {metrics.memory_used_gb.toFixed(1)}GB
               </span>
@@ -188,36 +221,40 @@ const StatusLine: React.FC<StatusLineProps> = ({
       </div>
 
       {/* Right section - Time & Version */}
-      <div className="flex items-center gap-4">
-        {/* Activity indicator */}
-        <div className="flex items-center gap-1">
-          <Activity size={10} className={`${isLight ? 'text-amber-600/40' : 'text-amber-500/30'}`} />
-          <span className={`text-[8px] font-cinzel tracking-wider ${
-            isLight ? 'text-amber-600/50' : 'text-amber-500/40'
+      <div className="flex items-center gap-4 relative z-10">
+        {/* Activity indicator z animacja */}
+        <div className="flex items-center gap-1 group">
+          <Activity size={10} className={`transition-all duration-200 group-hover:scale-110 ${
+            isLight ? 'text-gray-400' : 'text-gray-600'
+          }`} />
+          <span className={`text-[8px] font-mono tracking-wider transition-opacity duration-200 group-hover:opacity-100 ${
+            isLight ? 'text-gray-500 opacity-60' : 'text-gray-500 opacity-60'
           }`}>
-            ᚠ ᚢ ᚦ
+            SYS
           </span>
         </div>
 
         {/* Separator */}
-        <span className={`text-[10px] ${isLight ? 'text-amber-400/40' : 'text-amber-600/40'}`}>│</span>
+        <span className={`text-[10px] ${isLight ? 'text-gray-300' : 'text-gray-700'}`}>|</span>
 
-        {/* Time */}
-        <div className="flex items-center gap-1.5">
-          <Clock size={12} className={isLight ? 'text-amber-600/60' : 'text-amber-500/50'} />
-          <span className={`text-[10px] font-cinzel tracking-wider ${
-            isLight ? 'text-amber-700' : 'text-amber-400'
+        {/* Time z pulsujaxa sekunda */}
+        <div className="flex items-center gap-1.5 group">
+          <Clock size={12} className={`transition-all duration-200 group-hover:scale-110 ${
+            isLight ? 'text-gray-500' : 'text-gray-500'
+          }`} />
+          <span className={`text-[10px] font-mono tracking-wider transition-all duration-200 ${
+            isLight ? 'text-gray-700' : 'text-gray-300'
           }`}>
             {formatTime(currentTime)}
           </span>
         </div>
 
         {/* Separator */}
-        <span className={`text-[10px] ${isLight ? 'text-amber-400/40' : 'text-amber-600/40'}`}>│</span>
+        <span className={`text-[10px] ${isLight ? 'text-gray-300' : 'text-gray-700'}`}>|</span>
 
-        {/* Version */}
-        <span className={`text-[9px] font-cinzel font-semibold tracking-wider ${
-          isLight ? 'text-amber-600/70' : 'text-amber-500/60'
+        {/* Version z hover effect */}
+        <span className={`text-[9px] font-mono font-semibold tracking-wider transition-all duration-200 hover:tracking-widest cursor-default ${
+          isLight ? 'text-gray-600 hover:text-black' : 'text-gray-400 hover:text-white'
         }`}>
           REGIS 10.6.1
         </span>

@@ -8,6 +8,109 @@ import { useSoundEffects } from '../hooks/useSoundEffects';
 import { useChatHistory } from '../hooks/useChatHistory';
 
 // ============================================================================
+// CUSTOM STYLES
+// ============================================================================
+
+const customScrollStyles = `
+  .chat-scroll-area::-webkit-scrollbar {
+    width: 6px;
+  }
+  .chat-scroll-area::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .chat-scroll-area::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.1) 100%);
+    border-radius: 3px;
+  }
+  .chat-scroll-area::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.5) 0%, rgba(245, 158, 11, 0.2) 100%);
+  }
+
+  @keyframes messageSlideIn {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes messageSlideInLeft {
+    0% {
+      opacity: 0;
+      transform: translateX(-10px) scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  @keyframes messageSlideInRight {
+    0% {
+      opacity: 0;
+      transform: translateX(10px) scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  .message-bubble-user {
+    animation: messageSlideInRight 0.3s ease-out forwards;
+  }
+
+  .message-bubble-assistant {
+    animation: messageSlideInLeft 0.3s ease-out forwards;
+  }
+
+  @keyframes inputGlow {
+    0%, 100% {
+      box-shadow: 0 0 5px rgba(245, 158, 11, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+    }
+  }
+
+  .input-focused {
+    animation: inputGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes sendButtonPulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .send-button-ready:hover {
+    animation: sendButtonPulse 0.3s ease-in-out;
+  }
+
+  @keyframes spinnerRotate {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .custom-spinner {
+    animation: spinnerRotate 1s linear infinite;
+  }
+`;
+
+// ============================================================================
 // CONTEXT MENU
 // ============================================================================
 
@@ -87,46 +190,87 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onContextMenu })
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
 
+  // Dynamic gradient backgrounds
+  const getBackgroundStyle = () => {
+    if (isUser) {
+      return isLight
+        ? 'linear-gradient(135deg, rgba(245, 245, 245, 0.9) 0%, rgba(229, 231, 235, 0.8) 100%)'
+        : 'linear-gradient(135deg, rgba(55, 65, 81, 0.7) 0%, rgba(31, 41, 55, 0.8) 100%)';
+    }
+    if (isSystem) {
+      return isLight
+        ? 'linear-gradient(135deg, rgba(239, 246, 255, 0.9) 0%, rgba(219, 234, 254, 0.8) 100%)'
+        : 'linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(23, 37, 84, 0.5) 100%)';
+    }
+    // Assistant - more elaborate gradient
+    return isLight
+      ? 'linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(254, 243, 199, 0.3) 50%, rgba(255, 255, 255, 0.9) 100%)'
+      : 'linear-gradient(145deg, rgba(0, 0, 0, 0.6) 0%, rgba(120, 53, 15, 0.15) 50%, rgba(0, 0, 0, 0.5) 100%)';
+  };
+
+  const getShadowStyle = () => {
+    if (isUser) {
+      return isLight
+        ? '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08)'
+        : '0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2)';
+    }
+    if (isSystem) {
+      return isLight
+        ? '0 2px 10px rgba(59, 130, 246, 0.1), 0 1px 3px rgba(59, 130, 246, 0.08)'
+        : '0 2px 10px rgba(59, 130, 246, 0.15), 0 1px 3px rgba(0, 0, 0, 0.3)';
+    }
+    // Assistant - subtle glow
+    return isLight
+      ? '0 4px 15px rgba(245, 158, 11, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)'
+      : '0 4px 15px rgba(245, 158, 11, 0.1), 0 2px 6px rgba(0, 0, 0, 0.4)';
+  };
+
   return (
     <div
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} ${
+        isUser ? 'message-bubble-user' : 'message-bubble-assistant'
+      }`}
       onContextMenu={onContextMenu}
     >
       <div
-        className={`max-w-[85%] rounded p-2 border transition-all duration-300 relative backdrop-blur-sm ${
+        className={`max-w-[85%] rounded-xl p-3 border transition-all duration-300 relative backdrop-blur-sm ${
           isUser
             ? isLight
-              ? 'bg-gray-100/70 border-gray-300/50 text-gray-800'
-              : 'bg-gray-800/50 border-gray-600/40 text-gray-100'
+              ? 'border-gray-200/60 text-gray-800'
+              : 'border-gray-600/40 text-gray-100'
             : isSystem
               ? isLight
-                ? 'bg-blue-50/70 border-blue-200/50 text-blue-800'
-                : 'bg-blue-900/30 border-blue-700/30 text-blue-200'
+                ? 'border-blue-200/60 text-blue-800'
+                : 'border-blue-700/40 text-blue-200'
               : isLight
-                ? 'bg-white/70 border-gray-200/50 text-gray-800'
-                : 'bg-black/40 border-gray-700/30 text-gray-100'
+                ? 'border-amber-200/50 text-gray-800'
+                : 'border-amber-500/20 text-gray-100'
         }`}
+        style={{
+          background: getBackgroundStyle(),
+          boxShadow: getShadowStyle(),
+        }}
       >
         {/* Header - kompaktowy */}
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
             {isUser ? (
-              <span className={`text-[9px] font-mono font-semibold tracking-wider ${
+              <span className={`text-[9px] font-mono font-semibold tracking-wider uppercase ${
                 isLight ? 'text-gray-600' : 'text-gray-400'
               }`}>
                 USER
               </span>
             ) : isSystem ? (
-              <span className={`text-[9px] font-mono font-semibold tracking-wider ${
+              <span className={`text-[9px] font-mono font-semibold tracking-wider uppercase ${
                 isLight ? 'text-blue-600' : 'text-blue-400'
               }`}>
                 SYSTEM
               </span>
             ) : (
               <>
-                <Sparkles size={10} className={isLight ? 'text-gray-600' : 'text-gray-400'} />
+                <Sparkles size={10} className={isLight ? 'text-amber-600' : 'text-amber-400'} />
                 <span className={`text-[9px] font-mono font-semibold tracking-wider ${
-                  isLight ? 'text-gray-700' : 'text-gray-300'
+                  isLight ? 'text-amber-700' : 'text-amber-300'
                 }`}>
                   REGIS
                 </span>
@@ -135,14 +279,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onContextMenu })
           </div>
 
           <span className={`text-[8px] font-mono ${
-            isLight ? 'text-gray-400' : 'text-gray-600'
+            isLight ? 'text-gray-400' : 'text-gray-500'
           }`}>
             {message.timestamp.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
 
-        {/* Content - mniejszy */}
-        <div className={`text-xs font-mono leading-relaxed whitespace-pre-wrap ${
+        {/* Content - improved typography */}
+        <div className={`text-[13px] font-mono leading-[1.6] whitespace-pre-wrap tracking-wide ${
           !expanded && message.content.length > 500 ? 'line-clamp-5' : ''
         }`}>
           {message.content}
@@ -152,19 +296,21 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onContextMenu })
         {message.content.length > 500 && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className={`mt-1 flex items-center gap-1 text-[8px] font-mono ${
-              isLight ? 'text-gray-500 hover:text-gray-700' : 'text-gray-500 hover:text-gray-300'
+            className={`mt-2 flex items-center gap-1 text-[9px] font-mono transition-colors ${
+              isLight
+                ? 'text-gray-500 hover:text-amber-600'
+                : 'text-gray-500 hover:text-amber-400'
             }`}
           >
             {expanded ? (
               <>
-                <ChevronUp size={10} />
+                <ChevronUp size={12} />
                 Zwiń
               </>
             ) : (
               <>
-                <ChevronDown size={10} />
-                Rozwiń
+                <ChevronDown size={12} />
+                Rozwiń ({Math.round(message.content.length / 100) * 100}+ znaków)
               </>
             )}
           </button>
@@ -193,8 +339,12 @@ const MultiTabChat: React.FC<MultiTabChatProps> = ({ onConnectionChange }) => {
   const [showTheEnd, setShowTheEnd] = useState(false);
   const [lastTaskSummary, setLastTaskSummary] = useState('');
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [showScrollFadeTop, setShowScrollFadeTop] = useState(false);
+  const [showScrollFadeBottom, setShowScrollFadeBottom] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Get active tab
@@ -230,6 +380,25 @@ const MultiTabChat: React.FC<MultiTabChatProps> = ({ onConnectionChange }) => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Handle scroll fade effects
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      setShowScrollFadeTop(scrollTop > 20);
+      setShowScrollFadeBottom(scrollTop < scrollHeight - clientHeight - 20);
+    }
+  }, []);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      handleScroll(); // Initial check
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, [handleScroll, messages]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -319,6 +488,9 @@ const MultiTabChat: React.FC<MultiTabChatProps> = ({ onConnectionChange }) => {
 
   return (
     <div className="flex flex-col h-full" onContextMenu={handleContextMenu}>
+      {/* Inject custom styles */}
+      <style>{customScrollStyles}</style>
+
       {/* Context Menu */}
       {contextMenu && (
         <ContextMenu
@@ -355,24 +527,54 @@ const MultiTabChat: React.FC<MultiTabChatProps> = ({ onConnectionChange }) => {
         </div>
       )}
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            onContextMenu={handleContextMenu}
-          />
-        ))}
+      {/* Messages Area with fade effects */}
+      <div className="relative flex-1">
+        {/* Top fade */}
+        <div
+          className={`absolute top-0 left-0 right-0 h-8 z-10 pointer-events-none transition-opacity duration-300 ${
+            showScrollFadeTop ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            background: isLight
+              ? 'linear-gradient(to bottom, rgba(255, 251, 235, 0.95) 0%, transparent 100%)'
+              : 'linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, transparent 100%)',
+          }}
+        />
 
-        {/* Progress Bar */}
-        {isLoading && (
-          <div className="px-2">
-            <ProgressBar isActive={isLoading} estimatedDurationMs={8000} />
-          </div>
-        )}
+        {/* Scrollable container */}
+        <div
+          ref={messagesContainerRef}
+          className="chat-scroll-area h-full overflow-auto p-4 space-y-4"
+        >
+          {messages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              onContextMenu={handleContextMenu}
+            />
+          ))}
 
-        <div ref={messagesEndRef} />
+          {/* Progress Bar */}
+          {isLoading && (
+            <div className="px-2 message-bubble-assistant">
+              <ProgressBar isActive={isLoading} estimatedDurationMs={8000} />
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Bottom fade */}
+        <div
+          className={`absolute bottom-0 left-0 right-0 h-8 z-10 pointer-events-none transition-opacity duration-300 ${
+            showScrollFadeBottom ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            background: isLight
+              ? 'linear-gradient(to top, rgba(255, 251, 235, 0.95) 0%, transparent 100%)'
+              : 'linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%)',
+          }}
+        />
       </div>
 
       {/* Input Area */}
@@ -381,13 +583,15 @@ const MultiTabChat: React.FC<MultiTabChatProps> = ({ onConnectionChange }) => {
       }`}>
         {/* Status indicators */}
         <div className="flex items-center gap-2 mb-3">
-          <div className={`w-2 h-2 rounded-full ${
-            isConnected ? 'bg-emerald-500' : 'bg-red-500'
+          <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+            isConnected
+              ? 'bg-emerald-500 shadow-lg shadow-emerald-500/50'
+              : 'bg-red-500 shadow-lg shadow-red-500/50'
           }`} />
           <span className={`text-[9px] font-cinzel tracking-wider ${
             isLight ? 'text-amber-600/60' : 'text-amber-500/50'
           }`}>
-            {isConnected ? 'KODEKS AKTYWNY' : 'ROZŁĄCZONY'}
+            {isConnected ? 'KODEKS AKTYWNY' : 'ROZLACZONY'}
           </span>
 
           {/* Queue stats */}
@@ -400,77 +604,157 @@ const MultiTabChat: React.FC<MultiTabChatProps> = ({ onConnectionChange }) => {
           )}
 
           <span className={`text-[9px] ml-auto ${isLight ? 'text-amber-600/40' : 'text-amber-500/30'}`}>
-            ᛊ ᛏ ᛒ
+            * * *
           </span>
         </div>
 
-        {/* Input container */}
-        <div className={`flex items-end gap-3 p-3 rounded-lg border-2 transition-all duration-300 relative ${
-          isLight
-            ? 'bg-white/60 border-amber-400/40 focus-within:border-amber-500'
-            : 'bg-black/30 border-amber-500/30 focus-within:border-amber-400'
-        }`}
-        style={{
-          boxShadow: isLight
-            ? 'inset 0 0 20px rgba(245, 158, 11, 0.05)'
-            : 'inset 0 0 30px rgba(0, 0, 0, 0.3)',
-        }}
+        {/* Input container with gradient border */}
+        <div
+          className={`relative rounded-xl p-[2px] transition-all duration-500 ${
+            isInputFocused ? 'input-focused' : ''
+          }`}
+          style={{
+            background: isInputFocused
+              ? isLight
+                ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.6) 0%, rgba(217, 119, 6, 0.4) 50%, rgba(245, 158, 11, 0.6) 100%)'
+                : 'linear-gradient(135deg, rgba(245, 158, 11, 0.5) 0%, rgba(120, 53, 15, 0.3) 50%, rgba(245, 158, 11, 0.5) 100%)'
+              : isLight
+                ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(217, 119, 6, 0.2) 100%)'
+                : 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(120, 53, 15, 0.15) 100%)',
+          }}
         >
-          {/* Corner ornaments */}
-          <span className={`absolute -top-2 left-4 text-[10px] px-1 ${
-            isLight ? 'text-amber-500 bg-amber-50' : 'text-amber-500/60 bg-black'
-          }`}>◆</span>
-          <span className={`absolute -bottom-2 right-4 text-[10px] px-1 ${
-            isLight ? 'text-amber-500 bg-amber-50' : 'text-amber-500/60 bg-black'
-          }`}>◆</span>
-
-          <Scroll className={`shrink-0 mb-2 ${isLight ? 'text-amber-600/50' : 'text-amber-500/40'}`} size={18} />
-
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onContextMenu={(e) => {
-              e.stopPropagation();
-              handleContextMenu(e);
-            }}
-            placeholder="Wpisz polecenie dla REGIS..."
-            disabled={isLoading}
-            rows={1}
-            className={`flex-1 bg-transparent resize-none outline-none font-cinzel text-sm ${
-              isLight ? 'text-amber-900 placeholder:text-amber-400/50' : 'text-amber-100 placeholder:text-amber-500/40'
+          <div
+            className={`flex items-end gap-3 p-3 rounded-[10px] transition-all duration-300 relative ${
+              isLight ? 'bg-white/90' : 'bg-black/80'
             }`}
-            style={{ maxHeight: '150px' }}
-          />
-
-          <button
-            onClick={() => { playClick(); handleSend(); }}
-            disabled={!input.trim() || isLoading}
-            className={`shrink-0 p-2.5 rounded-lg transition-all duration-300 border ${
-              input.trim() && !isLoading
+            style={{
+              boxShadow: isInputFocused
                 ? isLight
-                  ? 'bg-gradient-to-b from-amber-400 to-amber-500 text-white border-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-lg shadow-amber-500/20'
-                  : 'bg-gradient-to-b from-amber-600 to-amber-700 text-amber-100 border-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-lg shadow-amber-500/10'
+                  ? 'inset 0 0 25px rgba(245, 158, 11, 0.1), 0 4px 20px rgba(245, 158, 11, 0.15)'
+                  : 'inset 0 0 30px rgba(0, 0, 0, 0.4), 0 4px 20px rgba(245, 158, 11, 0.1)'
                 : isLight
-                  ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
-                  : 'bg-slate-800 text-slate-600 border-slate-700 cursor-not-allowed'
-            }`}
+                  ? 'inset 0 0 15px rgba(245, 158, 11, 0.03)'
+                  : 'inset 0 0 20px rgba(0, 0, 0, 0.3)',
+            }}
           >
-            {isLoading ? (
-              <Loader2 className="animate-spin" size={18} />
-            ) : (
-              <Send size={18} />
-            )}
-          </button>
+            {/* Corner ornaments with animation */}
+            <span className={`absolute -top-2 left-4 text-[10px] px-1 transition-all duration-300 ${
+              isLight ? 'text-amber-500 bg-amber-50' : 'text-amber-500/60 bg-black'
+            } ${isInputFocused ? 'scale-110' : ''}`}>*</span>
+            <span className={`absolute -bottom-2 right-4 text-[10px] px-1 transition-all duration-300 ${
+              isLight ? 'text-amber-500 bg-amber-50' : 'text-amber-500/60 bg-black'
+            } ${isInputFocused ? 'scale-110' : ''}`}>*</span>
+
+            {/* Scroll icon */}
+            <Scroll className={`shrink-0 mb-2 transition-all duration-300 ${
+              isInputFocused
+                ? isLight ? 'text-amber-600' : 'text-amber-400'
+                : isLight ? 'text-amber-600/50' : 'text-amber-500/40'
+            }`} size={18} />
+
+            {/* Floating label container */}
+            <div className="flex-1 relative">
+              {/* Floating label */}
+              <span
+                className={`absolute left-0 transition-all duration-300 pointer-events-none font-cinzel ${
+                  isInputFocused || input
+                    ? '-top-5 text-[9px] opacity-100'
+                    : 'top-1.5 text-sm opacity-0'
+                } ${
+                  isLight ? 'text-amber-600' : 'text-amber-400'
+                }`}
+              >
+                Polecenie
+              </span>
+
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                onContextMenu={(e) => {
+                  e.stopPropagation();
+                  handleContextMenu(e);
+                }}
+                placeholder={isInputFocused ? '' : 'Wpisz polecenie dla REGIS...'}
+                disabled={isLoading}
+                rows={1}
+                className={`w-full bg-transparent resize-none outline-none font-cinzel text-sm transition-all duration-300 ${
+                  isLight
+                    ? 'text-amber-900 placeholder:text-amber-400/40'
+                    : 'text-amber-100 placeholder:text-amber-500/30'
+                }`}
+                style={{ maxHeight: '150px' }}
+              />
+            </div>
+
+            {/* Enhanced Send button */}
+            <button
+              onClick={() => { playClick(); handleSend(); }}
+              disabled={!input.trim() || isLoading}
+              className={`shrink-0 p-3 rounded-xl transition-all duration-300 relative overflow-hidden ${
+                input.trim() && !isLoading
+                  ? `send-button-ready ${
+                      isLight
+                        ? 'text-white shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40 hover:scale-105'
+                        : 'text-amber-100 shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-105'
+                    }`
+                  : isLight
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'bg-slate-800 text-slate-600 cursor-not-allowed'
+              }`}
+              style={input.trim() && !isLoading ? {
+                background: isLight
+                  ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)'
+                  : 'linear-gradient(135deg, #d97706 0%, #b45309 50%, #78350f 100%)',
+              } : {}}
+            >
+              {/* Button glow effect */}
+              {input.trim() && !isLoading && (
+                <span
+                  className="absolute inset-0 opacity-0 hover:opacity-30 transition-opacity duration-300"
+                  style={{
+                    background: 'radial-gradient(circle at center, white 0%, transparent 70%)',
+                  }}
+                />
+              )}
+
+              {isLoading ? (
+                <div className="relative">
+                  <Loader2 className="custom-spinner" size={18} />
+                  {/* Loading ring */}
+                  <span
+                    className="absolute inset-0 rounded-full border-2 border-amber-400/30"
+                    style={{
+                      animation: 'spinnerRotate 2s linear infinite reverse',
+                    }}
+                  />
+                </div>
+              ) : (
+                <Send size={18} className="relative z-10" />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Hint */}
-        <div className={`flex items-center justify-between mt-2 text-[8px] font-cinzel ${
-          isLight ? 'text-amber-600/40' : 'text-amber-500/30'
+        {/* Hint with improved styling */}
+        <div className={`flex items-center justify-between mt-3 text-[8px] font-cinzel tracking-wide ${
+          isLight ? 'text-amber-600/50' : 'text-amber-500/40'
         }`}>
-          <span>Enter = wyślij • Shift+Enter = nowa linia • PPM = kopiuj/wklej</span>
-          <span>◆ {activeTab.provider.toUpperCase()} ◆</span>
+          <span className="flex items-center gap-2">
+            <span className={`px-1.5 py-0.5 rounded ${isLight ? 'bg-amber-100/50' : 'bg-amber-900/20'}`}>Enter</span>
+            <span>wyslij</span>
+            <span className="opacity-50">|</span>
+            <span className={`px-1.5 py-0.5 rounded ${isLight ? 'bg-amber-100/50' : 'bg-amber-900/20'}`}>Shift+Enter</span>
+            <span>nowa linia</span>
+          </span>
+          <span className={`px-2 py-1 rounded-full ${
+            isLight ? 'bg-amber-100/50 text-amber-700' : 'bg-amber-900/30 text-amber-400'
+          }`}>
+            {activeTab.provider.toUpperCase()}
+          </span>
         </div>
       </div>
     </div>

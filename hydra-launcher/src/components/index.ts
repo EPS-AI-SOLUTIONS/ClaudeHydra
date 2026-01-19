@@ -37,3 +37,21 @@ export { default as BuildFreshness } from './BuildFreshness';
 export { default as MultiInputDashboard } from './MultiInputDashboard';
 export { default as StreamPanel } from './StreamPanel';
 export type { StreamSource, StreamStatus, PanelStatus, StreamPanelProps } from './StreamPanel';
+
+// Skeleton components
+export {
+  Skeleton,
+  Shimmer,
+  Pulse,
+  MessageSkeleton,
+  ProviderCardSkeleton,
+  StreamItemSkeleton,
+  SettingsSkeleton,
+  DashboardSkeleton,
+  TextSkeleton,
+  AvatarSkeleton,
+  ButtonSkeleton,
+  TableSkeleton,
+  ChatInterfaceSkeleton,
+  ProviderListSkeleton,
+} from './Skeletons';
