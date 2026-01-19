@@ -474,7 +474,7 @@ describe('env-validator.js', () => {
     });
 
     it('should not warn for correctly formatted Google API key', async () => {
-      process.env.GOOGLE_API_KEY = 'AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ123456_';
+      process.env.GOOGLE_API_KEY = 'TEST_VALID_FORMAT_KEY_39_CHARS_EXACTLY';
 
       const { validateEnv } = await import('../src/env-validator.js');
       const result = validateEnv();
