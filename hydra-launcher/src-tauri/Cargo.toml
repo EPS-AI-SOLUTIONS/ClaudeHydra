@@ -30,7 +30,7 @@ tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["json"] }
 
 # System info
-sysinfo = "0.32"
+sysinfo = "0.37"
 
 # Logging
 log = "0.4"
