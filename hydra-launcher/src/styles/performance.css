@@ -1,0 +1,509 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   HYDRA PERFORMANCE CSS
+   GPU-accelerated animations, reduced motion support, and optimized keyframes
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ============================================================================
+   1. GPU ACCELERATION UTILITY CLASSES
+   ============================================================================ */
+
+/* Force GPU layer creation for smooth animations */
+.gpu-accelerate {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Lightweight GPU acceleration (less memory) */
+.gpu-accelerate-light {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+/* GPU acceleration for specific properties */
+.gpu-transform {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.gpu-opacity {
+  will-change: opacity;
+}
+
+.gpu-filter {
+  will-change: filter;
+}
+
+.gpu-scroll {
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Combined GPU optimization for common animation patterns */
+.gpu-animate {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* GPU optimization for box-shadow animations */
+.gpu-shadow {
+  will-change: box-shadow;
+}
+
+/* ============================================================================
+   2. PERFORMANCE-OPTIMIZED TRANSITIONS
+   ============================================================================ */
+
+/* Fast transitions using only GPU-friendly properties */
+.transition-gpu-fast {
+  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+}
+
+.transition-gpu-normal {
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+.transition-gpu-slow {
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* Transition with cubic-bezier for smoother feel */
+.transition-gpu-smooth {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Elastic transition for interactive elements */
+.transition-gpu-elastic {
+  transition: transform 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6),
+              opacity 0.3s ease-out;
+}
+
+/* Spring transition for bouncy effects */
+.transition-gpu-spring {
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              opacity 0.4s ease-out;
+}
+
+/* ============================================================================
+   3. OPTIMIZED KEYFRAME ANIMATIONS (GPU-only properties)
+   ============================================================================ */
+
+/* Fade In - using opacity only */
+@keyframes perf-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Fade Out */
+@keyframes perf-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Slide Up - using translate3d */
+@keyframes perf-slide-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Slide Down */
+@keyframes perf-slide-down {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Slide Left */
+@keyframes perf-slide-left {
+  from {
+    opacity: 0;
+    transform: translate3d(20px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Slide Right */
+@keyframes perf-slide-right {
+  from {
+    opacity: 0;
+    transform: translate3d(-20px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Scale In - using scale3d */
+@keyframes perf-scale-in {
+  from {
+    opacity: 0;
+    transform: scale3d(0.9, 0.9, 1);
+  }
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+/* Scale Out */
+@keyframes perf-scale-out {
+  from {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+  to {
+    opacity: 0;
+    transform: scale3d(0.9, 0.9, 1);
+  }
+}
+
+/* Bounce - using translate3d */
+@keyframes perf-bounce {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+/* Subtle Pulse - using scale3d */
+@keyframes perf-pulse {
+  0%, 100% {
+    transform: scale3d(1, 1, 1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale3d(1.02, 1.02, 1);
+    opacity: 0.9;
+  }
+}
+
+/* Spin - using rotate3d */
+@keyframes perf-spin {
+  from {
+    transform: rotate3d(0, 0, 1, 0deg);
+  }
+  to {
+    transform: rotate3d(0, 0, 1, 360deg);
+  }
+}
+
+/* Float - subtle hover effect */
+@keyframes perf-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0);
+  }
+}
+
+/* Shake - using translate3d */
+@keyframes perf-shake {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translate3d(-2px, 0, 0);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translate3d(2px, 0, 0);
+  }
+}
+
+/* ============================================================================
+   4. ANIMATION UTILITY CLASSES
+   ============================================================================ */
+
+.animate-perf-fade-in {
+  animation: perf-fade-in 0.3s ease-out forwards;
+  will-change: opacity;
+}
+
+.animate-perf-fade-out {
+  animation: perf-fade-out 0.2s ease-in forwards;
+  will-change: opacity;
+}
+
+.animate-perf-slide-up {
+  animation: perf-slide-up 0.4s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.animate-perf-slide-down {
+  animation: perf-slide-down 0.4s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.animate-perf-slide-left {
+  animation: perf-slide-left 0.4s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.animate-perf-slide-right {
+  animation: perf-slide-right 0.4s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.animate-perf-scale-in {
+  animation: perf-scale-in 0.3s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.animate-perf-scale-out {
+  animation: perf-scale-out 0.2s ease-in forwards;
+  will-change: transform, opacity;
+}
+
+.animate-perf-bounce {
+  animation: perf-bounce 1s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-perf-pulse {
+  animation: perf-pulse 2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-perf-spin {
+  animation: perf-spin 1s linear infinite;
+  will-change: transform;
+}
+
+.animate-perf-float {
+  animation: perf-float 3s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-perf-shake {
+  animation: perf-shake 0.5s ease-in-out;
+  will-change: transform;
+}
+
+/* ============================================================================
+   5. STAGGER ANIMATION DELAYS (for list items)
+   ============================================================================ */
+
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+.stagger-6 { animation-delay: 300ms; }
+.stagger-7 { animation-delay: 350ms; }
+.stagger-8 { animation-delay: 400ms; }
+.stagger-9 { animation-delay: 450ms; }
+.stagger-10 { animation-delay: 500ms; }
+
+/* ============================================================================
+   6. LOW POWER MODE / WEAK DEVICE CLASSES
+   ============================================================================ */
+
+/* Apply to body or root when device is low-powered */
+.low-power-mode *,
+.low-power-mode *::before,
+.low-power-mode *::after {
+  animation-duration: 0ms !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0ms !important;
+  transition-delay: 0ms !important;
+}
+
+.low-power-mode .aurora-bg,
+.low-power-mode .particle,
+.low-power-mode .morph-shape {
+  display: none !important;
+}
+
+/* Simplified animations for weaker devices */
+.simplified-animations * {
+  animation-duration: 0.1s !important;
+  transition-duration: 0.1s !important;
+}
+
+.simplified-animations .animate-perf-pulse,
+.simplified-animations .animate-perf-bounce,
+.simplified-animations .animate-perf-float,
+.simplified-animations .animate-perf-spin {
+  animation: none !important;
+}
+
+/* ============================================================================
+   7. DISABLE ANIMATIONS UTILITY
+   ============================================================================ */
+
+.disable-animations,
+.disable-animations *,
+.disable-animations *::before,
+.disable-animations *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Disable specific animation types */
+.disable-hover-animations:hover {
+  animation: none !important;
+}
+
+.disable-scroll-animations {
+  scroll-behavior: auto !important;
+}
+
+/* ============================================================================
+   8. PERFORMANCE HINTS FOR COMPOSITE LAYERS
+   ============================================================================ */
+
+/* Promote to own layer (use sparingly - causes memory overhead) */
+.layer-promote {
+  transform: translateZ(0);
+  will-change: transform;
+  isolation: isolate;
+}
+
+/* Contain layout/paint for better performance */
+.contain-strict {
+  contain: strict;
+}
+
+.contain-layout {
+  contain: layout;
+}
+
+.contain-paint {
+  contain: paint;
+}
+
+.contain-content {
+  contain: content;
+}
+
+/* ============================================================================
+   9. SCROLL PERFORMANCE
+   ============================================================================ */
+
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+.scroll-snap-y {
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-snap-x {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-snap-item {
+  scroll-snap-align: start;
+}
+
+.scroll-snap-center {
+  scroll-snap-align: center;
+}
+
+/* ============================================================================
+   10. PREFERS-REDUCED-MOTION SAFE ANIMATIONS
+   These animations are subtle enough to be used even in reduced motion mode
+   ============================================================================ */
+
+@keyframes safe-fade {
+  from { opacity: 0.8; }
+  to { opacity: 1; }
+}
+
+@keyframes safe-subtle-scale {
+  from { transform: scale(0.98); }
+  to { transform: scale(1); }
+}
+
+.animate-safe-fade {
+  animation: safe-fade 0.2s ease-out;
+}
+
+.animate-safe-scale {
+  animation: safe-subtle-scale 0.15s ease-out;
+}
+
+/* These remain active even with prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-safe-fade,
+  .animate-safe-scale {
+    animation-duration: 0.1s !important;
+  }
+}
+
+/* ============================================================================
+   11. CONTENT VISIBILITY FOR VIRTUAL SCROLLING
+   ============================================================================ */
+
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+.content-hidden {
+  content-visibility: hidden;
+}
+
+.content-visible {
+  content-visibility: visible;
+}
+
+/* ============================================================================
+   12. IMAGE AND MEDIA PERFORMANCE
+   ============================================================================ */
+
+.img-optimize {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.img-smooth {
+  image-rendering: auto;
+}
+
+/* Lazy load placeholder */
+.lazy-placeholder {
+  background: linear-gradient(
+    90deg,
+    var(--bw-surface, #141414) 0%,
+    var(--bw-border, #2a2a2a) 50%,
+    var(--bw-surface, #141414) 100%
+  );
+  background-size: 200% 100%;
+  animation: perf-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes perf-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Disable shimmer in reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .lazy-placeholder {
+    animation: none;
+    background: var(--bw-surface, #141414);
+  }
+}

@@ -768,7 +768,94 @@ export default {
         '97': '0.97',
         '98': '0.98',
       },
+      // ============================================
+      // PERFORMANCE UTILITIES
+      // ============================================
+      willChange: {
+        'transform': 'transform',
+        'opacity': 'opacity',
+        'transform-opacity': 'transform, opacity',
+        'scroll': 'scroll-position',
+        'contents': 'contents',
+        'filter': 'filter',
+        'box-shadow': 'box-shadow',
+      },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    // Custom performance utilities plugin
+    function({ addUtilities }) {
+      const performanceUtilities = {
+        // GPU Acceleration
+        '.gpu-accelerate': {
+          transform: 'translateZ(0)',
+          willChange: 'transform',
+          backfaceVisibility: 'hidden',
+        },
+        '.gpu-accelerate-opacity': {
+          willChange: 'opacity',
+        },
+        '.gpu-accelerate-transform': {
+          transform: 'translateZ(0)',
+          willChange: 'transform',
+        },
+        '.gpu-accelerate-all': {
+          transform: 'translateZ(0)',
+          willChange: 'transform, opacity',
+          backfaceVisibility: 'hidden',
+          perspective: '1000px',
+        },
+        // Backface visibility
+        '.backface-visible': {
+          backfaceVisibility: 'visible',
+        },
+        '.backface-hidden': {
+          backfaceVisibility: 'hidden',
+        },
+        // Contain for performance
+        '.contain-none': {
+          contain: 'none',
+        },
+        '.contain-strict': {
+          contain: 'strict',
+        },
+        '.contain-content': {
+          contain: 'content',
+        },
+        '.contain-layout': {
+          contain: 'layout',
+        },
+        '.contain-paint': {
+          contain: 'paint',
+        },
+        '.contain-size': {
+          contain: 'size',
+        },
+        // Content visibility for virtual scrolling
+        '.content-auto': {
+          contentVisibility: 'auto',
+          containIntrinsicSize: '0 500px',
+        },
+        '.content-hidden': {
+          contentVisibility: 'hidden',
+        },
+        '.content-visible': {
+          contentVisibility: 'visible',
+        },
+        // Transform optimizations
+        '.transform-gpu': {
+          transform: 'translate3d(0, 0, 0)',
+        },
+        // Disable animations
+        '.animate-none-important': {
+          animation: 'none !important',
+        },
+        '.transition-none-important': {
+          transition: 'none !important',
+        },
+      };
+      addUtilities(performanceUtilities);
+    },
+  ],
 }

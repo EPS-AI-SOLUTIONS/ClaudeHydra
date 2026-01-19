@@ -1,0 +1,23 @@
+# Cargo audit configuration for HYDRA Launcher
+# This file configures which advisories to ignore
+
+[advisories]
+# RUSTSEC-2024-0429: glib unsound VariantStrIter
+# This is an upstream dependency issue in Tauri's gtk-rs bindings.
+# The glib crate v0.18.5 is required by webkit2gtk for Linux WebView support.
+# The fix requires glib >= 0.20.0, but gtk 0.18.x (required by Tauri 2.x)
+# is not compatible with newer glib versions.
+#
+# Risk Assessment:
+# - Severity: Medium (CVSS 6.9)
+# - Impact: The VariantStrIter iterator may crash on NULL pointer dereference
+# - Mitigation: Our application does not directly use VariantStrIter
+# - Status: Waiting for Tauri to update gtk-rs dependencies
+#
+# Tracking: https://github.com/tauri-apps/tauri/issues (monitor for gtk-rs updates)
+# Advisory: https://rustsec.org/advisories/RUSTSEC-2024-0429.html
+ignore = ["RUSTSEC-2024-0429"]
+
+# GTK3 bindings unmaintained warnings - these are informational
+# Tauri uses GTK3 for Linux support, migration to GTK4 is planned
+informational_warnings = ["unmaintained"]

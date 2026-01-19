@@ -75,6 +75,9 @@ body {
     0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
   position: relative;
+  /* GPU acceleration for smooth animations */
+  transform: translateZ(0);
+  will-change: transform, opacity;
 }
 
 /* Remove ornaments */
@@ -103,7 +106,10 @@ body {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--bw-text);
-  transition: all 0.2s ease;
+  /* GPU-accelerated transitions using transform and opacity */
+  transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .glass-button:hover {
@@ -113,7 +119,7 @@ body {
 }
 
 .glass-button:active {
-  transform: scale(0.98);
+  transform: scale(0.98) translateZ(0);
 }
 
 /* ========== TEXT EFFECTS ========== */
@@ -163,11 +169,14 @@ body {
 /* ========== LOGO ========== */
 .hydra-logo {
   filter: grayscale(100%) brightness(1.2);
-  transition: filter 0.3s ease;
+  transition: filter 0.3s ease, transform 0.3s ease;
+  transform: translateZ(0);
+  will-change: filter, transform;
 }
 
 .hydra-logo:hover {
   filter: grayscale(100%) brightness(1.4);
+  transform: scale(1.02) translateZ(0);
 }
 
 /* ========== LIGHT MODE ========== */
@@ -272,9 +281,10 @@ body {
 }
 
 /* ========== PROGRESS ANIMATIONS ========== */
+/* GPU-optimized keyframes using transform and opacity only */
 @keyframes slide {
-  0% { transform: translateX(-20px); }
-  100% { transform: translateX(0); }
+  0% { transform: translate3d(-20px, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
 }
 
 @keyframes pulse-soft {
@@ -335,12 +345,14 @@ body {
   height: 6px;
   border-radius: 50%;
   background: var(--bw-border-light);
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+  transform: translateZ(0);
 }
 
 .progress-dot.active {
   background: var(--bw-text);
   animation: pulse-soft 1.5s ease-in-out infinite;
+  will-change: opacity;
 }
 
 .progress-dot.completed {
@@ -353,8 +365,9 @@ body {
   height: 22px;
   border-radius: 11px;
   position: relative;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
   background: var(--bw-border);
+  transform: translateZ(0);
 }
 
 .settings-toggle.on {
@@ -368,15 +381,17 @@ body {
   height: 16px;
   border-radius: 8px;
   background: var(--bw-text);
-  transition: all 0.2s ease;
+  /* GPU-accelerated animation using transform */
+  transition: transform 0.2s ease;
+  will-change: transform;
 }
 
 .settings-toggle.on .settings-toggle-knob {
-  left: 25px;
+  transform: translateX(22px);
 }
 
 .settings-toggle.off .settings-toggle-knob {
-  left: 3px;
+  transform: translateX(0);
 }
 
 /* ========== FONT CLASSES ========== */
@@ -389,36 +404,37 @@ body {
 }
 
 /* ========== ENTRY ANIMATIONS ========== */
+/* GPU-optimized using translate3d for hardware acceleration */
 @keyframes fadeInUp {
   0% {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translate3d(0, 20px, 0);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes slideInRight {
   0% {
     opacity: 0;
-    transform: translateX(30px);
+    transform: translate3d(30px, 0, 0);
   }
   100% {
     opacity: 1;
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes scaleIn {
   0% {
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale3d(0.8, 0.8, 1);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale3d(1, 1, 1);
   }
 }
 
@@ -465,18 +481,25 @@ body {
 /* ========== ANIMATION UTILITY CLASSES ========== */
 .animate-fade-in-up {
   animation: fadeInUp 0.5s ease-out forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .animate-slide-in-right {
   animation: slideInRight 0.4s ease-out forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .animate-scale-in {
   animation: scaleIn 0.3s ease-out forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+  will-change: box-shadow;
 }
 
 .animate-shimmer {
@@ -488,6 +511,7 @@ body {
   );
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
+  will-change: background-position;
 }
 
 .animate-skeleton {
@@ -499,10 +523,13 @@ body {
   );
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
+  will-change: background-position;
 }
 
 .animate-spin-slow {
   animation: spin-slow 3s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* Animation delays for staggered effects */
@@ -515,10 +542,13 @@ body {
 /* ========== HOVER UTILITY CLASSES ========== */
 .hover-lift {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform: translateZ(0);
+  will-change: transform, box-shadow;
+  backface-visibility: hidden;
 }
 
 .hover-lift:hover {
-  transform: translateY(-4px);
+  transform: translate3d(0, -4px, 0);
   box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.3),
     0 6px 6px rgba(0, 0, 0, 0.2);
@@ -526,6 +556,7 @@ body {
 
 .hover-glow {
   transition: box-shadow 0.3s ease;
+  will-change: box-shadow;
 }
 
 .hover-glow:hover {
@@ -599,7 +630,11 @@ body {
   color: var(--bw-text);
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
+  /* GPU-accelerated transitions */
+  transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  transform: translateZ(0);
+  will-change: transform, box-shadow;
+  backface-visibility: hidden;
 }
 
 .glass-button-modern::before {
@@ -628,7 +663,7 @@ body {
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.3),
     0 0 20px rgba(255, 255, 255, 0.05);
-  transform: translateY(-1px);
+  transform: translate3d(0, -1px, 0);
 }
 
 .glass-button-modern:hover::before {
@@ -636,7 +671,7 @@ body {
 }
 
 .glass-button-modern:active {
-  transform: translateY(0) scale(0.98);
+  transform: scale3d(0.98, 0.98, 1);
 }
 
 /* Light mode variants */
@@ -915,6 +950,10 @@ body {
     radial-gradient(ellipse at 90% 90%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
   background-size: 200% 200%;
   animation: aurora-shift 20s ease-in-out infinite;
+  /* GPU acceleration for smooth animation */
+  transform: translateZ(0);
+  will-change: background-position, filter;
+  backface-visibility: hidden;
 }
 
 .aurora-bg-subtle {
@@ -1553,16 +1592,20 @@ body {
   color: #1a1a1a;
 }
 
-/* Reduce motion for accessibility */
+/* ========== ACCESSIBILITY: REDUCED MOTION ========== */
+/* Comprehensive reduced motion support for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
+  /* Remove all animations and transitions globally */
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 
+  /* Disable specific animated elements */
   .aurora-bg,
   .aurora-layer,
   .particle,
@@ -1570,9 +1613,60 @@ body {
   .typewriter,
   .neon-text-pulse,
   .text-gradient-animated,
-  .gradient-border::before {
+  .gradient-border::before,
+  .animate-fade-in-up,
+  .animate-slide-in-right,
+  .animate-scale-in,
+  .animate-pulse-glow,
+  .animate-shimmer,
+  .animate-skeleton,
+  .animate-spin-slow,
+  .animate-gradient-shift,
+  .animate-bento-entrance,
+  .animate-bento-glow,
+  .animate-bento-float,
+  .animate-bento-border-pulse,
+  .badge-bounce,
+  .new-tab-pulse,
+  .progress-dot.active {
     animation: none !important;
   }
+
+  /* Remove will-change to prevent GPU layer creation */
+  .glass-card,
+  .glass-button,
+  .glass-button-modern,
+  .hover-lift,
+  .hover-glow,
+  .hydra-logo,
+  .aurora-bg,
+  .aurora-layer,
+  .progress-dot,
+  .settings-toggle-knob {
+    will-change: auto !important;
+  }
+
+  /* Ensure transforms stay static */
+  .hover-lift:hover,
+  .glass-button:active,
+  .glass-button-modern:hover,
+  .glass-button-modern:active,
+  .hydra-logo:hover {
+    transform: none !important;
+  }
+
+  /* Replace animations with instant state changes */
+  .bento-shine::after,
+  .glass-button-modern::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Utility class to force disable animations on specific elements */
+.no-animation {
+  animation: none !important;
+  transition: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
