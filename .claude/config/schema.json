@@ -1,0 +1,376 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HYDRA Multi-CLI Configuration",
+  "description": "JSON Schema for validating HYDRA Multi-CLI Dashboard configuration (multi-cli.json)",
+  "type": "object",
+  "required": ["version", "providers", "swarm", "witcher", "dashboard"],
+  "additionalProperties": true,
+
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema URI reference"
+    },
+
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the configuration"
+    },
+
+    "description": {
+      "type": "string",
+      "description": "Configuration description"
+    },
+
+    "providers": {
+      "type": "object",
+      "description": "Available CLI providers (Gemini, Jules, Codex, Grok, DeepSeek, HYDRA)",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["enabled", "name", "provider"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether provider is enabled"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the CLI"
+          },
+          "provider": {
+            "type": "string",
+            "enum": ["Google", "OpenAI", "xAI", "DeepSeek", "Anthropic"],
+            "description": "Provider organization"
+          },
+          "model": {
+            "type": "string",
+            "description": "Primary model identifier"
+          },
+          "models_available": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of available models for this provider"
+          },
+          "context_window": {
+            "type": "integer",
+            "minimum": 1000,
+            "description": "Maximum context window size in tokens"
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["sync", "async"],
+            "description": "Execution mode"
+          },
+          "specialties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Areas of specialization"
+          },
+          "install": {
+            "type": "string",
+            "description": "Installation command"
+          },
+          "docs": {
+            "type": "string",
+            "format": "uri",
+            "description": "Documentation URL"
+          },
+          "github": {
+            "type": "string",
+            "format": "uri",
+            "description": "GitHub repository URL"
+          },
+          "env_key": {
+            "type": "string",
+            "description": "Environment variable name for API key"
+          },
+          "auth": {
+            "type": "string",
+            "enum": ["api-key", "google-oauth", "oauth2"],
+            "description": "Authentication method"
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Required subscription/access levels"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "disabled", "placeholder", "maintenance"],
+            "description": "Current operational status"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason if disabled (e.g., payment required)"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Components (for HYDRA)"
+          },
+          "mcp_server": {
+            "type": "string",
+            "description": "Path to MCP server implementation"
+          },
+          "init_message": {
+            "type": "string",
+            "description": "Initialization message"
+          },
+          "init_command": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "null" }
+            ],
+            "description": "Initialization command or null"
+          }
+        }
+      }
+    },
+
+    "swarm": {
+      "type": "object",
+      "description": "SWARM Protocol configuration",
+      "required": ["enabled", "protocol_steps", "agents"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable SWARM Protocol"
+        },
+        "default_mode": {
+          "type": "boolean",
+          "description": "SWARM as default execution mode"
+        },
+        "auto_activate": {
+          "type": "boolean",
+          "description": "Auto-activate on every query"
+        },
+        "protocol_steps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["ROUTE", "SPECULATE", "PLAN", "EXECUTE", "SYNTHESIZE", "REPORT"]
+          },
+          "minItems": 1,
+          "description": "6-step orchestration protocol"
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["researcher", "architect", "coder", "tester", "reviewer", "security"]
+          },
+          "description": "Available agent types"
+        },
+        "parallel_read_ops": {
+          "type": "boolean",
+          "description": "Enable parallel read operations"
+        },
+        "sequential_write_ops": {
+          "type": "boolean",
+          "description": "Force sequential write operations"
+        }
+      }
+    },
+
+    "witcher": {
+      "type": "object",
+      "description": "Witcher Mode - Multi-CLI orchestration",
+      "required": ["enabled", "routing"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable Witcher Mode"
+        },
+        "auto_route": {
+          "type": "boolean",
+          "description": "Auto-routing based on task type"
+        },
+        "parallel_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum parallel CLI executions"
+        },
+        "fallback_enabled": {
+          "type": "boolean",
+          "description": "Enable fallback routing"
+        },
+        "timeout_default_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "description": "Default timeout in milliseconds"
+        },
+
+        "routing": {
+          "type": "object",
+          "description": "Task type to CLI routing rules",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["primary"],
+            "properties": {
+              "primary": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } }
+                ],
+                "description": "Primary CLI(s) for this task type"
+              },
+              "fallback": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } }
+                ],
+                "description": "Fallback CLI(s)"
+              },
+              "threshold_tokens": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Token threshold for routing decision"
+              }
+            }
+          }
+        },
+
+        "signs": {
+          "type": "object",
+          "description": "Witcher Signs (special commands)",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["name", "description"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Sign name and symbol"
+              },
+              "description": {
+                "type": "string",
+                "description": "Sign effect description"
+              },
+              "primary": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } }
+                ],
+                "description": "Primary CLI(s)"
+              },
+              "fallback": {
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "array", "items": { "type": "string" } }
+                ],
+                "description": "Fallback CLI"
+              },
+              "timeout_ms": {
+                "type": "integer",
+                "minimum": 1000,
+                "description": "Timeout in milliseconds"
+              },
+              "async": {
+                "type": "boolean",
+                "description": "Asynchronous execution"
+              },
+              "parallel": {
+                "type": "boolean",
+                "description": "Enable parallel execution"
+              },
+              "consensus": {
+                "type": "boolean",
+                "description": "Require consensus from multiple CLIs"
+              },
+              "min_agreement": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Minimum agreement ratio (0.0-1.0)"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "dashboard": {
+      "type": "object",
+      "description": "Dashboard configuration",
+      "properties": {
+        "default_view": {
+          "type": "string",
+          "enum": ["status", "logs", "agents", "routing"],
+          "description": "Default dashboard view"
+        },
+        "refresh_interval_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "description": "Status refresh interval in milliseconds"
+        },
+        "show_costs": {
+          "type": "boolean",
+          "description": "Display cost estimates"
+        },
+        "theme": {
+          "type": "string",
+          "enum": ["dark", "light", "auto"],
+          "description": "UI theme"
+        }
+      }
+    },
+
+    "model_loader": {
+      "type": "object",
+      "description": "Dynamic model loader configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable dynamic model loading"
+        },
+        "lazy_load": {
+          "type": "boolean",
+          "description": "Lazy load models on demand"
+        },
+        "cache_ttl_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Cache TTL in milliseconds"
+        },
+        "auto_select_best": {
+          "type": "boolean",
+          "description": "Auto-select best model for task"
+        },
+        "script": {
+          "type": "string",
+          "description": "Path to model loader script"
+        },
+
+        "task_preferences": {
+          "type": "object",
+          "description": "Preferred models by task type",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ordered list of preferred providers"
+          }
+        },
+
+        "api_endpoints": {
+          "type": "object",
+          "description": "API endpoints for model discovery",
+          "additionalProperties": {
+            "type": "string",
+            "format": "uri",
+            "description": "API endpoint URL"
+          }
+        }
+      }
+    }
+  }
+}

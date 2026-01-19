@@ -1,15 +1,14 @@
 {
-  "name": "ollama-hydra",
+  "name": "gemini-cli",
   "version": "2.0.0",
-  "description": "HYDRA AI Handler for Gemini CLI - Ollama MCP Server",
+  "description": "Gemini CLI - MCP Server",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "doctor": "node scripts/hydra-launcher.js --doctor",
-    "hydra": "node scripts/hydra-launcher.js",
-    "watchdog": "node scripts/hydra-launcher.js --watchdog",
     "start": "node src/server.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "cli": "node src/cli/index.js",
+    "hydra": "node src/cli/index.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit",
     "test:e2e": "playwright test",
     "verify": "node scripts/verify-integrity.js && npm run test && npm run test:e2e",
     "audit": "npm audit",
@@ -18,13 +17,21 @@
     "format:write": "prettier --write .",
     "prepare": "husky install"
   },
+  "bin": {
+    "hydra-cli": "src/cli/index.js"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.23.0",
     "ajv": "^8.17.1",
+    "chalk": "^5.6.2",
+    "cli-highlight": "^2.1.11",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
     "i18next": "^25.5.2",
+    "marked": "^15.0.12",
+    "marked-terminal": "^7.3.0",
     "node-notifier": "^10.0.1",
+    "ora": "^8.2.0",
     "toml": "^3.0.0",
     "zod": "^4.3.5"
   },

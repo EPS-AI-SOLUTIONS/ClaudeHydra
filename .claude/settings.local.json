@@ -1,51 +1,22 @@
 {
   "permissions": {
     "allow": [
-      "Bash",
-      "mcp__serena__*",
-      "mcp__desktop-commander__*",
-      "mcp__playwright__*",
-      "Write",
-      "Edit",
-      "Read",
-      "Glob",
-      "Grep",
-      "Skill",
-      "WebSearch",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:ai.google.dev)",
-      "WebFetch(domain:cloud.google.com)"
-    ],
-    "deny": []
-  },
-  "enabledMcpjsonServers": ["serena", "desktop-commander", "playwright"],
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/ai-handler-integration.ps1"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "permission_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/permission-alert.ps1"
-          }
-        ]
-      }
+      "mcp__serena__activate_project",
+      "Bash(npm install:*)",
+      "Bash(node --version:*)",
+      "Bash(node -c:*)",
+      "Bash(node -e:*)",
+      "Bash(timeout 5 node:*)",
+      "Bash(node --check:*)",
+      "Bash(npm test:*)",
+      "Bash(findstr /C:\"PASS\" /C:\"FAIL\" /C:\"Tests:\" /C:\"Error\" /C:\"error\")",
+      "Bash(if exist .env type .env)",
+      "Bash(findstr:*)",
+      "Bash(powershell:*)",
+      "Bash(ls:*)",
+      "Bash(node src/index.js:*)",
+      "Bash(node src/cli/index.js:*)",
+      "Bash(git add:*)"
     ]
-  },
-  "commands": {},
-  "statusLine": {
-    "type": "command",
-    "command": "node .claude/statusline.cjs"
   }
 }

@@ -1,8 +1,0 @@
-# Trivy Configuration
-exclude:
-  - 'node_modules/*'
-  - 'test/*'
-  - '.git/*'
-severity:
-  - HIGH
-  - CRITICAL
