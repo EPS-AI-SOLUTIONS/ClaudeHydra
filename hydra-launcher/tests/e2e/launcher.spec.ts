@@ -70,18 +70,23 @@ test.describe('Theme Switching', () => {
   });
 
   test('should toggle to light theme', async ({ page }) => {
-    // Find and click theme toggle button (sun/moon icon)
-    const themeButton = page.locator('button').filter({ has: page.locator('svg') }).last();
+    // Wait for dashboard to load
+    await page.waitForTimeout(3500);
 
-    if (await themeButton.isVisible()) {
-      await themeButton.click();
+    // Find theme toggle button in sidebar (Moon/Sun icon button)
+    const themeButton = page.locator('button[title*="mode"]').or(
+      page.locator('.glass-button').filter({ has: page.locator('svg') }).last()
+    );
+
+    if (await themeButton.first().isVisible({ timeout: 2000 }).catch(() => false)) {
+      await themeButton.first().click();
+      await page.waitForTimeout(300);
 
       // Check if light class is added
       const html = page.locator('html');
-      await page.waitForTimeout(300);
       const hasLightClass = await html.evaluate(el => el.classList.contains('light'));
-      // Theme should have changed
-      expect(typeof hasLightClass).toBe('boolean');
+      // Theme should have changed - expect it to be true now
+      expect(hasLightClass).toBe(true);
     }
   });
 });
