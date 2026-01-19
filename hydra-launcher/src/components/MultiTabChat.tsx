@@ -5,6 +5,7 @@ import { useTabContext, Message } from '../contexts/TabContext';
 import ProgressBar from './ProgressBar';
 import TheEndAnimation from './TheEndAnimation';
 import { useSoundEffects } from '../hooks/useSoundEffects';
+import { useChatHistory } from '../hooks/useChatHistory';
 
 // ============================================================================
 // CONTEXT MENU
@@ -186,6 +187,7 @@ const MultiTabChat: React.FC<MultiTabChatProps> = ({ onConnectionChange }) => {
   const isLight = resolvedTheme === 'light';
   const { playMessageSent, playMessageReceived, playError, playClick } = useSoundEffects();
   const { tabs, activeTabId, sendMessage, isConnected, conflicts, queueStats } = useTabContext();
+  const { saveSession } = useChatHistory();
 
   const [input, setInput] = useState('');
   const [showTheEnd, setShowTheEnd] = useState(false);
@@ -199,6 +201,25 @@ const MultiTabChat: React.FC<MultiTabChatProps> = ({ onConnectionChange }) => {
   const activeTab = tabs.find(t => t.id === activeTabId);
   const messages = activeTab?.messages || [];
   const isLoading = activeTab?.isLoading || false;
+
+  // Save session to history when messages change
+  useEffect(() => {
+    if (activeTab && messages.length > 0) {
+      saveSession({
+        id: activeTab.id,
+        name: activeTab.name,
+        provider: activeTab.provider,
+        messages: messages.map(m => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          timestamp: m.timestamp,
+        })),
+        createdAt: new Date(activeTab.createdAt),
+        updatedAt: new Date(),
+      });
+    }
+  }, [activeTab, messages, saveSession]);
 
   // Notify parent about connection status
   useEffect(() => {

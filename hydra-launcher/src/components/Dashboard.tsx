@@ -9,9 +9,12 @@ import StatusLine from './StatusLine';
 import SettingsPanel from './SettingsPanel';
 import QueueStatus from './QueueStatus';
 import YoloToggle from './YoloToggle';
-import { Moon, Sun, ChevronLeft, ChevronRight, Settings, Bot } from 'lucide-react';
+import { Moon, Sun, ChevronLeft, ChevronRight, Settings, Bot, History } from 'lucide-react';
 import { useMCPHealth } from '../hooks/useMCPHealth';
 import { PROVIDERS } from '../providers';
+import ChatHistory from './ChatHistory';
+import BuildFreshness from './BuildFreshness';
+import { ChatSession } from '../hooks/useChatHistory';
 
 // ============================================================================
 // MODEL SELECTOR - na górze sidebara
@@ -137,6 +140,7 @@ const DashboardContent: React.FC = () => {
   const isLight = resolvedTheme === 'light';
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [yoloEnabled] = useState(() => {
     try {
@@ -148,6 +152,14 @@ const DashboardContent: React.FC = () => {
 
   const { onlineCount, totalCount } = useMCPHealth();
   const { createTab, tabs } = useTabContext();
+
+  // Handle restoring a session from history
+  const handleRestoreSession = useCallback((session: ChatSession) => {
+    // Create a new tab with the session data
+    createTab(session.name, session.provider as CLIProvider);
+    setHistoryOpen(false);
+    // Note: Message restoration would need TabContext enhancement
+  }, [createTab]);
 
   const handleConnectionChange = useCallback((connected: boolean) => {
     setIsConnected(connected);
@@ -167,6 +179,13 @@ const DashboardContent: React.FC = () => {
     <div className="w-full h-full flex flex-col">
       {/* Settings Panel Modal */}
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+
+      {/* Chat History Sidebar */}
+      <ChatHistory
+        isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        onRestoreSession={handleRestoreSession}
+      />
 
       {/* Main content area */}
       <div className="flex-1 flex overflow-hidden">
@@ -199,6 +218,9 @@ const DashboardContent: React.FC = () => {
             {/* 5. Ollama Status */}
             <OllamaStatus />
 
+            {/* 6. Build Freshness Check */}
+            <BuildFreshness />
+
             {/* Footer */}
             <div className="mt-auto text-center">
               <div className={`h-px my-2 ${isLight ? 'bg-gray-200' : 'bg-gray-800'}`} />
@@ -230,6 +252,17 @@ const DashboardContent: React.FC = () => {
             <div className="flex-1 mx-2">
               <TabBar onCreateTab={handleCreateTab} />
             </div>
+
+            {/* History Button */}
+            <button
+              onClick={() => setHistoryOpen(!historyOpen)}
+              className={`glass-button p-1.5 ${historyOpen ? 'ring-1 ring-offset-1' : ''} ${
+                isLight ? 'ring-gray-400' : 'ring-gray-500'
+              }`}
+              title="Historia czatów"
+            >
+              <History size={16} />
+            </button>
           </div>
 
           {/* Chat Area z tłem */}

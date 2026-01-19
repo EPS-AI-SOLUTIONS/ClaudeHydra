@@ -38,6 +38,8 @@ pub fn run() {
             // SWARM logger commands
             commands::append_to_log,
             commands::read_swarm_logs,
+            // Build freshness check
+            commands::check_build_freshness,
         ])
         .manage(commands::AppState::default())
         .setup(|_app| {

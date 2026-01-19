@@ -404,6 +404,96 @@ pub async fn append_to_log(filename: String, content: String) -> Result<(), Stri
     Ok(())
 }
 
+// ============================================================================
+// BUILD FRESHNESS CHECK COMMANDS
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BuildFreshness {
+    pub is_fresh: bool,
+    pub dist_modified: Option<u64>,
+    pub src_modified: Option<u64>,
+    pub stale_files: Vec<String>,
+    pub message: String,
+}
+
+/// Check if dist files are up to date with src files
+#[tauri::command]
+pub async fn check_build_freshness() -> Result<BuildFreshness, String> {
+    use std::fs;
+    use std::time::SystemTime;
+
+    let hydra_path = get_hydra_path()?;
+    let launcher_path = format!("{}\\hydra-launcher", hydra_path);
+    let dist_path = format!("{}\\dist", launcher_path);
+    let src_path = format!("{}\\src", launcher_path);
+
+    // Get dist folder modification time
+    let dist_modified = fs::metadata(&dist_path)
+        .and_then(|m| m.modified())
+        .ok()
+        .and_then(|t| t.duration_since(SystemTime::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs());
+
+    // Find most recent src file modification
+    let mut src_modified: Option<u64> = None;
+    let mut stale_files: Vec<String> = Vec::new();
+
+    fn scan_dir(path: &str, dist_time: Option<u64>, src_mod: &mut Option<u64>, stale: &mut Vec<String>) {
+        if let Ok(entries) = fs::read_dir(path) {
+            for entry in entries.flatten() {
+                let file_path = entry.path();
+                if file_path.is_dir() {
+                    if let Some(name) = file_path.file_name() {
+                        if name != "node_modules" && name != "dist" && name != "target" {
+                            scan_dir(&file_path.to_string_lossy(), dist_time, src_mod, stale);
+                        }
+                    }
+                } else if let Some(ext) = file_path.extension() {
+                    let ext_str = ext.to_string_lossy();
+                    if ext_str == "ts" || ext_str == "tsx" || ext_str == "css" || ext_str == "html" {
+                        if let Ok(meta) = fs::metadata(&file_path) {
+                            if let Ok(mod_time) = meta.modified() {
+                                if let Ok(duration) = mod_time.duration_since(SystemTime::UNIX_EPOCH) {
+                                    let secs = duration.as_secs();
+                                    if src_mod.is_none() || secs > src_mod.unwrap() {
+                                        *src_mod = Some(secs);
+                                    }
+                                    // Check if file is newer than dist
+                                    if let Some(dist_t) = dist_time {
+                                        if secs > dist_t {
+                                            stale.push(file_path.to_string_lossy().to_string());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    scan_dir(&src_path, dist_modified, &mut src_modified, &mut stale_files);
+
+    let is_fresh = stale_files.is_empty();
+    let message = if is_fresh {
+        "Build is up to date".to_string()
+    } else {
+        format!("{} file(s) modified since last build", stale_files.len())
+    };
+
+    log_info(&format!("Build freshness check: {} - {}", if is_fresh { "FRESH" } else { "STALE" }, message));
+
+    Ok(BuildFreshness {
+        is_fresh,
+        dist_modified,
+        src_modified,
+        stale_files,
+        message,
+    })
+}
+
 /// Read SWARM logs
 #[tauri::command]
 pub async fn read_swarm_logs(limit: Option<usize>) -> Result<Vec<String>, String> {
