@@ -20,7 +20,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.23.0",
     "ajv": "^8.17.1",
-    "dotenv": "^16.4.5",
+    "dotenv": "^17.2.3",
     "envalid": "^8.0.0",
     "i18next": "^25.5.2"
   },
