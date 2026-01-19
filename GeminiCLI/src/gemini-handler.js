@@ -11,7 +11,7 @@
  */
 
 import { createLogger, generateCorrelationId, withCorrelationId } from './logger.js';
-import { ApiError, TimeoutError, isRetryable, getRetryDelay } from './errors.js';
+import { ApiError, isRetryable, getRetryDelay } from './errors.js';
 
 const logger = createLogger('gemini-handler');
 
@@ -236,7 +236,7 @@ export class GeminiStreamHandler {
     const correlationId = options.correlationId || generateCorrelationId();
 
     return withCorrelationId(correlationId, async () => {
-      const { onChunk, onComplete, onError, onRetry } = callbacks;
+      const { onChunk, onComplete, onError } = callbacks;
 
       // Validate API key
       if (!this.config.apiKey) {

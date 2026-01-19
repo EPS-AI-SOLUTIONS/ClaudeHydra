@@ -242,7 +242,7 @@ function memoize(fn, options = {}) {
         let expired = 0;
         const now = Date.now();
 
-        for (const [key, entry] of cache.entries()) {
+        for (const entry of cache.values()) {
             if (now - entry.timestamp >= ttl) {
                 expired++;
             } else {

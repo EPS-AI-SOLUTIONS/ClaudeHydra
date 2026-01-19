@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { existsSync, mkdirSync, rmSync, readdirSync } from 'fs';
+import { existsSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
@@ -136,7 +136,7 @@ describe('cache.js', () => {
 
   describe('invalidateByPattern', () => {
     it('should delete cache entries matching string pattern', async () => {
-      const { setCache, getCache, invalidateByPattern } = await import('../src/cache.js');
+      const { setCache, invalidateByPattern } = await import('../src/cache.js');
 
       // Create multiple cache entries
       setCache('pattern-test-1', 'Response 1 is long enough to be cached', 'model-a', 'source1');
@@ -236,7 +236,7 @@ describe('cache.js', () => {
 
   describe('clearCache', () => {
     it('should clear all cache entries', async () => {
-      const { setCache, clearCache, getCacheStats } = await import('../src/cache.js');
+      const { setCache, clearCache } = await import('../src/cache.js');
 
       setCache('clear-test-1', 'Response 1 is long enough to be cached.', 'model');
       setCache('clear-test-2', 'Response 2 is long enough to be cached.', 'model');

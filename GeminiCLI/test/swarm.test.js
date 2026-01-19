@@ -3,7 +3,7 @@
  * BLOK 3: Testing - Triss
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Mock the swarm module
 const mockSwarm = {

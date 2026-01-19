@@ -3,7 +3,7 @@
  * BLOK 3: Testing - Triss
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Mock fetch for Ollama API calls
 const mockOllamaResponse = {

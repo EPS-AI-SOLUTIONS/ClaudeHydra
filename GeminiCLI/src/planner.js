@@ -311,7 +311,6 @@ export const selectAgents = (task, options = {}) => {
   const { maxAgents = 5, includeReviewer = true, includeResearcher = true } = options;
 
   const analysis = analyzeTask(task);
-  const selectedAgents = [];
   const agentScores = [];
 
   // Score each agent based on task requirements
@@ -745,7 +744,7 @@ export const optimizePlan = (plan, options = {}) => {
       phasesByDependency[depKey].push(phase);
     }
 
-    for (const [depKey, phases] of Object.entries(phasesByDependency)) {
+    for (const phases of Object.values(phasesByDependency)) {
       const parallelSafePhases = phases.filter((p) => p.parallel);
       if (parallelSafePhases.length > 1) {
         optimizations.push({

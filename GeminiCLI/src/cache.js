@@ -305,7 +305,7 @@ export function invalidateExpired() {
           freedBytes += stat.size;
           logger.debug('Expired cache entry removed', { file });
         }
-      } catch (err) {
+      } catch (_err) {
         errors++;
       }
     }

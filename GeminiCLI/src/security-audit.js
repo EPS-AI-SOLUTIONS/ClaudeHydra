@@ -12,7 +12,7 @@
 
 import { createLogger } from './logger.js';
 import { readFile, stat, access, constants } from 'fs/promises';
-import { join, resolve } from 'path';
+import { resolve } from 'path';
 import { createHash } from 'crypto';
 
 const logger = createLogger('security-audit');

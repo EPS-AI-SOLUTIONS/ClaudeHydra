@@ -65,7 +65,7 @@ import {
 import { TOOLS } from './tools.js';
 import { resolveNodeEngines, resolveServerVersion } from './version.js';
 import { runSwarm, isComplexPrompt } from './swarm.js';
-import { GeminiStreamHandler, createGeminiHandler } from './gemini-handler.js';
+import { createGeminiHandler } from './gemini-handler.js';
 
 const logger = createLogger('server');
 const SERVER_VERSION = resolveServerVersion();
