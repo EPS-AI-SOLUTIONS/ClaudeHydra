@@ -5,10 +5,14 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "doctor": "node scripts/doctor.mjs",
-    "launcher": "node scripts/launcher/index.mjs",
+    "doctor": "node scripts/hydra-launcher.js --doctor",
+    "hydra": "node scripts/hydra-launcher.js",
+    "watchdog": "node scripts/hydra-launcher.js --watchdog",
     "start": "node src/server.js",
-    "test": "node --test",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:e2e": "playwright test",
+    "verify": "node scripts/verify-integrity.js && npm run test && npm run test:e2e",
+    "audit": "npm audit",
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
@@ -19,11 +23,16 @@
     "ajv": "^8.17.1",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
-    "i18next": "^25.5.2"
+    "i18next": "^25.5.2",
+    "node-notifier": "^10.0.1",
+    "toml": "^3.0.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "eslint": "^9.0.0",
     "husky": "^9.0.0",
+    "jest": "^29.7.0",
     "prettier": "^3.2.5",
     "vitest": "^4.0.17"
   },

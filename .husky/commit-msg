@@ -1,0 +1,9 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+if ! grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+" "$1"; then
+  echo "❌ Invalid commit message format."
+  echo "   Use Conventional Commits: type(scope): subject"
+  echo "   Example: feat(auth): add login support"
+  exit 1
+fi

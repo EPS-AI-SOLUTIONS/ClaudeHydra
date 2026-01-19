@@ -1,51 +1,56 @@
-const LEVELS = ['debug', 'info', 'warn', 'error'];
+import fs from 'fs';
+import path from 'path';
+import { PATHS } from './constants.js';
 
-const getLevelIndex = (level) => {
-  const index = LEVELS.indexOf(level);
-  return index === -1 ? LEVELS.indexOf('info') : index;
-};
+class Logger {
+  constructor() {
+    this.logDir = path.join(process.cwd(), '.hydra-data', 'logs');
+    this.ensureLogDir();
+    this.currentLogFile = this.getLogFileName();
+  }
 
-const resolveLogLevel = () => process.env.LOG_LEVEL || 'info';
-
-const formatJson = (level, message, meta, module) => {
-  return JSON.stringify({
-    timestamp: new Date().toISOString(),
-    level,
-    module,
-    message,
-    ...meta
-  });
-};
-
-export const createLogger = (module) => {
-  const logLevel = resolveLogLevel();
-  const minLevel = getLevelIndex(logLevel);
-  const useJson = process.env.NODE_ENV === 'production';
-
-  const log = (level, message, meta = {}) => {
-    if (getLevelIndex(level) < minLevel) return;
-    const payload = useJson
-      ? formatJson(level, message, meta, module)
-      : `[${module}] ${message}`;
-    const output = useJson
-      ? payload
-      : `${payload}${Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : ''}`;
-    switch (level) {
-      case 'error':
-        console.error(output);
-        break;
-      case 'warn':
-        console.warn(output);
-        break;
-      default:
-        console.log(output);
+  ensureLogDir() {
+    if (!fs.existsSync(this.logDir)) {
+      fs.mkdirSync(this.logDir, { recursive: true });
     }
-  };
+  }
 
-  return {
-    debug: (message, meta) => log('debug', message, meta),
-    info: (message, meta) => log('info', message, meta),
-    warn: (message, meta) => log('warn', message, meta),
-    error: (message, meta) => log('error', message, meta)
-  };
-};
+  getLogFileName() {
+    const date = new Date().toISOString().split('T')[0];
+    return path.join(this.logDir, `hydra-${date}.log`);
+  }
+
+  formatMessage(level, message, meta = {}) {
+    return JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: level.toUpperCase(),
+      message,
+      ...meta
+    });
+  }
+
+  write(level, message, meta) {
+    const logLine = this.formatMessage(level, message, meta) + '\n';
+    
+    if (level === 'error') {
+      console.error(`[${level.toUpperCase()}] ${message}`);
+    } else if (process.env.DEBUG || level === 'warn') {
+      console.log(`[${level.toUpperCase()}] ${message}`);
+    }
+
+    try {
+      fs.appendFileSync(this.currentLogFile, logLine, { encoding: 'utf8' });
+    } catch (err) {
+      console.error('CRITICAL: Failed to write to log file', err);
+    }
+  }
+
+  info(message, meta) { this.write('info', message, meta); }
+  warn(message, meta) { this.write('warn', message, meta); }
+  error(message, meta) { this.write('error', message, meta); }
+  debug(message, meta) { 
+    if (process.env.DEBUG) this.write('debug', message, meta); 
+  }
+}
+
+export default new Logger();

@@ -1,0 +1,7 @@
+{
+  "welcome": "Welcome to GeminiCLI (HYDRA)",
+  "error": {
+    "generic": "An error occurred",
+    "network": "Network connection failed"
+  }
+}

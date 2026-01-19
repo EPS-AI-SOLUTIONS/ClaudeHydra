@@ -139,10 +139,22 @@ function Start-OllamaIfNeeded {
             Start-Sleep -Milliseconds 500
         }
         if (-not (Test-OllamaReady -HostUrl $ollamaHost)) {
-            Write-Host "  âš  Ollama not ready after ${timeoutSec}s (but process started). Local models may be slow." -ForegroundColor $colors.Warning
+            Write-Host "  ⚠️ Ollama not ready after ${timeoutSec}s (but process started). Local models may be slow." -ForegroundColor $colors.Warning
         } else {
-            Write-Host "  âś“ Ollama ready!" -ForegroundColor $colors.Success
+            Write-Host "  ✔️ Ollama ready!" -ForegroundColor $colors.Success
         }
+    }
+}
+
+function Warmup-Models {
+    Write-Host "  🔥 Warming up core models..." -ForegroundColor Cyan -NoNewline
+    $coreModel = "llama3.2:3b" # Default core model
+    try {
+        # Run an empty prompt to load the model into VRAM
+        $null = Invoke-Expression "ollama run $coreModel ' '" 2>$null
+        Write-Host " Done." -ForegroundColor Green
+    } catch {
+        Write-Host " Skipped (Model not found)." -ForegroundColor DarkGray
     }
 }
 
@@ -423,6 +435,7 @@ function Show-Tips {
 Initialize-Environment
 if ($Yolo) { Enable-YoloMode }
 Start-OllamaIfNeeded
+Warmup-Models
 
 Set-Location $PSScriptRoot
 $Host.UI.RawUI.WindowTitle = 'Gemini CLI (HYDRA)'
