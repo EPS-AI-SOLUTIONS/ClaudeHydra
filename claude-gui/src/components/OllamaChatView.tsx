@@ -4,6 +4,79 @@ import { listen } from '@tauri-apps/api/event';
 
 // Check if running in Tauri (v2 uses __TAURI_INTERNALS__)
 const isTauri = () => typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+
+// Browser fallback API (uses Vite proxy to bypass CORS)
+const OLLAMA_PROXY = '/api/ollama';
+
+const browserOllamaApi = {
+  async healthCheck(): Promise<boolean> {
+    try {
+      const res = await fetch(`${OLLAMA_PROXY}/api/tags`);
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
+  async listModels(): Promise<OllamaModel[]> {
+    const res = await fetch(`${OLLAMA_PROXY}/api/tags`);
+    if (!res.ok) throw new Error('Failed to fetch models');
+    const data = await res.json();
+    return data.models || [];
+  },
+
+  async* streamChat(model: string, messages: Array<{role: string; content: string}>): AsyncGenerator<StreamChunk> {
+    let res: Response;
+    try {
+      res = await fetch(`${OLLAMA_PROXY}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, messages, stream: true }),
+      });
+    } catch (e) {
+      console.error('[OllamaChat] Fetch error:', e);
+      throw new Error(`Connection failed: ${e}`);
+    }
+
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => 'Unknown error');
+      console.error('[OllamaChat] Response not OK:', res.status, errorText);
+      throw new Error(`Chat request failed: ${res.status} ${errorText}`);
+    }
+
+    if (!res.body) {
+      console.error('[OllamaChat] Response body is null');
+      throw new Error('Response body is null - streaming not supported');
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const chunk = JSON.parse(line);
+          yield {
+            id: crypto.randomUUID(),
+            token: chunk.message?.content || '',
+            done: chunk.done || false,
+            model: chunk.model,
+            total_tokens: chunk.eval_count,
+          };
+        } catch { /* ignore parse errors */ }
+      }
+    }
+  }
+};
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -73,18 +146,37 @@ export function OllamaChatView() {
   const { processPrompt } = usePromptPipeline();
 
   // Load models on mount - prefer Alzur-trained models
+  // Works in both Tauri and browser mode (via proxy)
   useEffect(() => {
-    if (!isTauri()) return; // Skip in browser mode
-
     const loadModels = async () => {
       try {
-        const isHealthy = await invoke<boolean>('ollama_health_check');
+        let isHealthy: boolean;
+        let result: OllamaModel[];
+
+        if (isTauri()) {
+          // Tauri mode: use IPC
+          isHealthy = await invoke<boolean>('ollama_health_check');
+          if (isHealthy) {
+            result = await invoke<OllamaModel[]>('ollama_list_models');
+          } else {
+            result = [];
+          }
+        } else {
+          // Browser mode: use fetch via Vite proxy
+          console.log('[OllamaChat] Browser mode - using proxy');
+          isHealthy = await browserOllamaApi.healthCheck();
+          if (isHealthy) {
+            result = await browserOllamaApi.listModels();
+          } else {
+            result = [];
+          }
+        }
+
         setOllamaConnected(isHealthy);
-        if (isHealthy) {
-          const result = await invoke<OllamaModel[]>('ollama_list_models');
+        if (isHealthy && result.length > 0) {
           setModels(result);
 
-          if (result.length > 0 && !selectedModel) {
+          if (!selectedModel) {
             // AUTO-SELECT: Prefer latest Alzur-trained model if available
             const alzurModels = result
               .filter(m => m.name.startsWith('alzur-v'))
@@ -333,20 +425,44 @@ export function OllamaChatView() {
       // ZAWSZE aktywny - dane zbierane do treningu AI
       // ═══════════════════════════════════════════════════════════════
 
-      // ALWAYS run full pipeline with Avallac'h research + Vilgefortz learning
-      await processPrompt(finalContent, async (enrichedPrompt) => {
-        // Add enriched prompt to chat messages (with research context)
-        chatMessages.push({ role: 'user', content: enrichedPrompt });
-
-        // Call Ollama with enriched context
-        await invoke('ollama_chat', {
-          model: selectedModel,
-          messages: chatMessages,
+      if (isTauri()) {
+        // Tauri mode: use IPC with full pipeline
+        await processPrompt(finalContent, async (enrichedPrompt) => {
+          chatMessages.push({ role: 'user', content: enrichedPrompt });
+          await invoke('ollama_chat', {
+            model: selectedModel,
+            messages: chatMessages,
+          });
+          return '';
         });
+      } else {
+        // Browser mode: use fetch streaming via proxy
+        chatMessages.push({ role: 'user', content: finalContent });
 
-        // Return response for Vilgefortz (will be captured from stream)
-        return ''; // Stream handles response capture
-      });
+        for await (const chunk of browserOllamaApi.streamChat(selectedModel, chatMessages)) {
+          responseBufferRef.current += chunk.token;
+
+          setMessages((prev) => {
+            const lastMsg = prev[prev.length - 1];
+            if (lastMsg && lastMsg.streaming) {
+              return [
+                ...prev.slice(0, -1),
+                {
+                  ...lastMsg,
+                  content: lastMsg.content + chunk.token,
+                  streaming: !chunk.done,
+                },
+              ];
+            }
+            return prev;
+          });
+
+          if (chunk.done) {
+            setIsLoading(false);
+            responseBufferRef.current = '';
+          }
+        }
+      }
 
     } catch (e) {
       console.error('Chat error:', e);

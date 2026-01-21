@@ -373,8 +373,44 @@ export function DebugPanel() {
     }
   }, []);
 
+  // Check if running in Tauri
+  const isTauri = typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+
   // Start streaming
   const startStreaming = useCallback(async () => {
+    // Browser mode: simulate streaming with random data updates
+    if (!isTauri) {
+      console.log('[DebugPanel] Browser mode - simulating debug streaming');
+      const simulationInterval = setInterval(() => {
+        setStats(prev => ({
+          memory_used_mb: Math.random() * 500,
+          memory_total_mb: 8192,
+          memory_percent: Math.random() * 30,
+          active_tasks: Math.floor(Math.random() * 5),
+          queued_tasks: Math.floor(Math.random() * 10),
+          completed_tasks: (prev?.completed_tasks || 0) + Math.floor(Math.random() * 2),
+          ipc_calls_total: (prev?.ipc_calls_total || 0) + Math.floor(Math.random() * 5),
+          ipc_calls_failed: prev?.ipc_calls_failed || 0,
+          ipc_avg_latency_ms: 10 + Math.random() * 50,
+          ipc_calls_per_sec: 1 + Math.random() * 10,
+          events_emitted: (prev?.events_emitted || 0) + 1,
+          events_per_sec: 0.5 + Math.random() * 5,
+          uptime_secs: (prev?.uptime_secs || 0) + 1,
+          cpu_cores: navigator.hardwareConcurrency || 4,
+          timestamp: Date.now(),
+        }));
+      }, 1000);
+
+      // Store cleanup function in ref
+      unlistenRef.current = () => {
+        console.log('[DebugPanel] Stopping browser simulation');
+        clearInterval(simulationInterval);
+      };
+      setIsStreaming(true);
+      return;
+    }
+
+    // Tauri mode: real streaming via IPC
     try {
       // Listen for stats updates
       unlistenRef.current = await listen<DebugStats>('debug-stats', (event) => {
@@ -384,9 +420,9 @@ export function DebugPanel() {
       await debugIpc.startStreaming();
       setIsStreaming(true);
     } catch (error) {
-      console.warn('Failed to start streaming:', error);
+      console.warn('[DebugPanel] Failed to start streaming:', error);
     }
-  }, []);
+  }, [isTauri]);
 
   // Stop streaming
   const stopStreaming = useCallback(async () => {
