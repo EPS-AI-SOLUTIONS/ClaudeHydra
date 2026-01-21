@@ -220,22 +220,37 @@ export class BaseTool {
 }
 
 /**
- * Convert Zod schema to JSON Schema (simplified implementation)
+ * Convert Zod schema to JSON Schema (supports Zod v3 and v4)
  * @param {z.ZodSchema} zodSchema - Zod schema
  * @returns {Object} JSON Schema
  */
 function zodToJsonSchema(zodSchema) {
+  if (!zodSchema || !zodSchema._def) {
+    return { type: 'string' };
+  }
+
   const def = zodSchema._def;
 
-  if (def.typeName === 'ZodObject') {
+  // Get type name (Zod v3 uses typeName, Zod v4 uses type)
+  const typeName = def.typeName || def.type;
+
+  // Handle object type
+  if (typeName === 'ZodObject' || typeName === 'object') {
     const properties = {};
     const required = [];
 
-    for (const [key, value] of Object.entries(def.shape())) {
+    // Zod v3 uses shape(), Zod v4 uses shape directly
+    const shape = typeof def.shape === 'function' ? def.shape() : def.shape;
+
+    for (const [key, value] of Object.entries(shape)) {
       properties[key] = zodToJsonSchema(value);
 
       // Check if field is required (not optional/nullable)
-      if (!value.isOptional?.() && !value._def.typeName?.includes('Optional')) {
+      const isOptional = value.isOptional?.() ||
+        value._def?.type === 'optional' ||
+        value._def?.typeName?.includes('Optional');
+
+      if (!isOptional) {
         required.push(key);
       }
     }
@@ -247,7 +262,8 @@ function zodToJsonSchema(zodSchema) {
     };
   }
 
-  if (def.typeName === 'ZodString') {
+  // Handle string type
+  if (typeName === 'ZodString' || typeName === 'string') {
     const schema = { type: 'string' };
     if (def.checks) {
       for (const check of def.checks) {
@@ -259,8 +275,9 @@ function zodToJsonSchema(zodSchema) {
     return schema;
   }
 
-  if (def.typeName === 'ZodNumber') {
-    const schema = { type: 'number' };
+  // Handle number/integer type
+  if (typeName === 'ZodNumber' || typeName === 'number' || typeName === 'int') {
+    const schema = { type: typeName === 'int' ? 'integer' : 'number' };
     if (def.checks) {
       for (const check of def.checks) {
         if (check.kind === 'min') schema.minimum = check.value;
@@ -271,33 +288,56 @@ function zodToJsonSchema(zodSchema) {
     return schema;
   }
 
-  if (def.typeName === 'ZodBoolean') {
+  // Handle boolean type
+  if (typeName === 'ZodBoolean' || typeName === 'boolean') {
     return { type: 'boolean', ...(def.description && { description: def.description }) };
   }
 
-  if (def.typeName === 'ZodArray') {
+  // Handle array type
+  if (typeName === 'ZodArray' || typeName === 'array') {
+    const itemSchema = def.type || def.element;
     return {
       type: 'array',
-      items: zodToJsonSchema(def.type),
+      items: itemSchema ? zodToJsonSchema(itemSchema) : {},
       ...(def.description && { description: def.description })
     };
   }
 
-  if (def.typeName === 'ZodEnum') {
+  // Handle enum type
+  if (typeName === 'ZodEnum' || typeName === 'enum') {
     return {
       type: 'string',
-      enum: def.values,
+      enum: def.values || def.entries,
       ...(def.description && { description: def.description })
     };
   }
 
-  if (def.typeName === 'ZodOptional' || def.typeName === 'ZodNullable') {
-    return zodToJsonSchema(def.innerType);
+  // Handle optional/nullable wrappers
+  if (typeName === 'ZodOptional' || typeName === 'optional' ||
+      typeName === 'ZodNullable' || typeName === 'nullable') {
+    const inner = def.innerType || def.inner;
+    // innerType can be a string (Zod v4 primitive) or object (schema)
+    if (typeof inner === 'string') {
+      return { type: inner };
+    }
+    return inner ? zodToJsonSchema(inner) : { type: 'string' };
   }
 
-  if (def.typeName === 'ZodDefault') {
-    const schema = zodToJsonSchema(def.innerType);
-    schema.default = def.defaultValue();
+  // Handle default values
+  if (typeName === 'ZodDefault' || typeName === 'default') {
+    const inner = def.innerType || def.inner;
+    // innerType can be a string (Zod v4 primitive) or object (schema)
+    let schema;
+    if (typeof inner === 'string') {
+      schema = { type: inner };
+    } else {
+      schema = inner ? zodToJsonSchema(inner) : { type: 'string' };
+    }
+    if (typeof def.defaultValue === 'function') {
+      schema.default = def.defaultValue();
+    } else if (def.defaultValue !== undefined) {
+      schema.default = def.defaultValue;
+    }
     return schema;
   }
 

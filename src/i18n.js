@@ -691,16 +691,7 @@ export default i18next;
 
 export {
   i18next,
-  initializeI18n,
   SUPPORTED_LANGUAGES,
   DEFAULT_LANGUAGE,
-  formatRelativeTime,
-  // Lazy loading exports
-  loadNamespace,
-  preloadNamespaces,
-  tLazy,
-  createNamespaceTranslator,
-  getLoadedNamespaces,
-  isNamespaceLoaded,
-  unloadNamespace
+  formatRelativeTime
 };
