@@ -2,19 +2,24 @@
  * @fileoverview HYDRA Executor - Orchestrates Gemini + Ollama pipeline
  * Implements the SWARM pipeline with proper error recovery
  *
+ * NEW: Gemini 2.0 Flash Thinking for ROUTE and SYNTHESIZE stages
+ * NEW: Feedback loop - if synthesis quality is insufficient,
+ *      returns to ROUTE with accumulated knowledge
+ *
  * @description
  * This module provides:
  * - Pipeline execution context management
  * - Stage-based execution with timeout and fallback support
  * - Error handling with recovery options
  * - Configurable pipeline building
+ * - Quality evaluation and feedback loop
  *
  * @module hydra/pipeline/executor
  */
 
 import { getOllamaProvider } from '../providers/ollama-provider.js';
 import { getGeminiProvider } from '../providers/gemini-provider.js';
-import { route, routeWithCost } from './router.js';
+import { route, routeWithCost, routeWithThinking } from './router.js';
 import { PipelineError, AggregateError, normalizeError, isRecoverable } from '../core/errors.js';
 import { getConfigManager } from '../core/config.js';
 import { getStatsCollector } from '../core/stats.js';
@@ -40,8 +45,16 @@ import * as geminiClient from '../providers/gemini-client.js';
  */
 
 /**
+ * @typedef {Object} FeedbackContext
+ * @property {number} iteration - Current iteration number
+ * @property {Array<Object>} previousResults - Results from previous iterations
+ * @property {Array<string>} learnings - Accumulated learnings
+ * @property {number} lastQualityScore - Last quality score
+ */
+
+/**
  * Pipeline execution context
- * Tracks execution state, stages, and errors
+ * Tracks execution state, stages, errors, and feedback loop
  * @class
  */
 class ExecutionContext {
@@ -68,6 +81,14 @@ class ExecutionContext {
 
     /** @type {Object} */
     this.metadata = {};
+
+    /** @type {FeedbackContext} */
+    this.feedback = {
+      iteration: 1,
+      previousResults: [],
+      learnings: [],
+      lastQualityScore: 0
+    };
   }
 
   /**
@@ -79,7 +100,8 @@ class ExecutionContext {
     this.stages[stage] = {
       ...data,
       duration_ms: Date.now() - (data.startTime || this.startTime),
-      completedAt: Date.now()
+      completedAt: Date.now(),
+      iteration: this.feedback.iteration
     };
   }
 
@@ -92,7 +114,8 @@ class ExecutionContext {
     this.errors.push({
       stage,
       error: normalizeError(error),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      iteration: this.feedback.iteration
     });
   }
 
@@ -118,6 +141,59 @@ class ExecutionContext {
    */
   getRecoverableErrors() {
     return this.errors.filter(e => isRecoverable(e.error));
+  }
+
+  /**
+   * Add learning from current iteration
+   * @param {string} learning - Learning to add
+   */
+  addLearning(learning) {
+    this.feedback.learnings.push(learning);
+  }
+
+  /**
+   * Increment iteration and save result
+   * @param {Object} result - Current result
+   * @param {number} qualityScore - Quality score
+   */
+  nextIteration(result, qualityScore) {
+    this.feedback.previousResults.push({
+      iteration: this.feedback.iteration,
+      result,
+      qualityScore,
+      timestamp: Date.now()
+    });
+    this.feedback.lastQualityScore = qualityScore;
+    this.feedback.iteration++;
+  }
+
+  /**
+   * Get accumulated knowledge for routing
+   * @returns {string} Accumulated knowledge summary
+   */
+  getAccumulatedKnowledge() {
+    if (this.feedback.previousResults.length === 0) {
+      return '';
+    }
+
+    const learnings = this.feedback.learnings.join('\n- ');
+    const previousAttempts = this.feedback.previousResults
+      .map(r => `Iteration ${r.iteration} (score: ${r.qualityScore}/10): ${r.result?.content?.slice(0, 200)}...`)
+      .join('\n');
+
+    return `
+## Accumulated Knowledge from ${this.feedback.iteration - 1} previous iteration(s):
+
+### Learnings:
+- ${learnings || 'None yet'}
+
+### Previous Attempts:
+${previousAttempts}
+
+### What to improve:
+- Quality was ${this.feedback.lastQualityScore}/10, need at least 7/10
+- Focus on completeness and accuracy
+`;
   }
 }
 
@@ -258,7 +334,7 @@ export class PipelineBuilder {
 
 /**
  * Pipeline Executor
- * Executes a series of stages
+ * Executes a series of stages with feedback loop support
  * @class
  */
 class Pipeline {
@@ -279,49 +355,103 @@ class Pipeline {
   }
 
   /**
-   * Executes the pipeline
+   * Executes the pipeline with feedback loop
    * @param {string} prompt - User prompt
    * @param {Object} [options={}] - Execution options
    * @returns {Promise<ExecutionResult>} Execution result
    */
   async execute(prompt, options = {}) {
     const context = new ExecutionContext(prompt, options);
-    let currentInput = { prompt };
+    const maxIterations = this.config.maxFeedbackIterations || 3;
+    const qualityThreshold = this.config.qualityThreshold || 7;
 
-    for (const stage of this.stages) {
+    let finalResult = null;
+
+    // Feedback loop
+    while (context.feedback.iteration <= maxIterations) {
       if (options.verbose) {
-        console.log(`[HYDRA] Executing stage: ${stage.name}`);
+        console.log(`[HYDRA] Starting iteration ${context.feedback.iteration}/${maxIterations}`);
       }
 
-      const result = await stage.execute(context, currentInput);
-      currentInput = { ...currentInput, [stage.name]: result };
+      let currentInput = {
+        prompt,
+        accumulatedKnowledge: context.getAccumulatedKnowledge(),
+        iteration: context.feedback.iteration
+      };
+
+      // Execute all stages
+      for (const stage of this.stages) {
+        if (options.verbose) {
+          console.log(`[HYDRA] Executing stage: ${stage.name} (iteration ${context.feedback.iteration})`);
+        }
+
+        const result = await stage.execute(context, currentInput);
+        currentInput = { ...currentInput, [stage.name]: result };
+      }
+
+      // Get quality evaluation from evaluate stage
+      const evaluateResult = currentInput.evaluate;
+      const qualityScore = evaluateResult?.qualityScore || 0;
+      const content = currentInput.synthesize?.content || currentInput.execute?.results?.[0]?.content;
+
+      if (options.verbose) {
+        console.log(`[HYDRA] Iteration ${context.feedback.iteration} quality: ${qualityScore}/10`);
+      }
+
+      // Check if quality meets threshold or if feedback loop is disabled
+      if (qualityScore >= qualityThreshold || !this.config.enableFeedbackLoop) {
+        finalResult = this._buildResult(context, currentInput, true);
+        break;
+      }
+
+      // Add learnings and continue to next iteration
+      if (evaluateResult?.improvements) {
+        for (const improvement of evaluateResult.improvements) {
+          context.addLearning(improvement);
+        }
+      }
+
+      context.nextIteration({ content }, qualityScore);
+
+      // If this is the last iteration, accept the result anyway
+      if (context.feedback.iteration > maxIterations) {
+        finalResult = this._buildResult(context, currentInput, false);
+        break;
+      }
     }
 
-    return this._buildResult(context, currentInput);
+    return finalResult || this._buildResult(context, { prompt }, false);
   }
 
   /**
    * Builds the final result from context and stage outputs
    * @param {ExecutionContext} context - Execution context
    * @param {Object} stageResults - Results from all stages
+   * @param {boolean} metQuality - Whether quality threshold was met
    * @returns {ExecutionResult} Final execution result
    * @private
    */
-  _buildResult(context, stageResults) {
+  _buildResult(context, stageResults, metQuality) {
     return {
       success: !context.hasErrors() || context.getRecoverableErrors().length === context.errors.length,
       content: stageResults.synthesize?.content || stageResults.execute?.results?.[0]?.content,
       metadata: {
         duration_ms: context.getDuration(),
         stages: context.stages,
-        errors: context.errors.map(e => ({ stage: e.stage, message: e.error.message }))
+        errors: context.errors.map(e => ({ stage: e.stage, message: e.error.message })),
+        feedbackLoop: {
+          iterations: context.feedback.iteration,
+          metQualityThreshold: metQuality,
+          finalQualityScore: context.feedback.lastQualityScore,
+          learnings: context.feedback.learnings
+        }
       }
     };
   }
 }
 
 /**
- * Creates the default HYDRA pipeline
+ * Creates the default HYDRA pipeline with Gemini Thinking for ROUTE and SYNTHESIZE
  * @returns {Pipeline} Configured default pipeline
  */
 export function createDefaultPipeline() {
@@ -337,18 +467,35 @@ export function createDefaultPipeline() {
       selectModel: ollamaClient.selectModel || (() => 'llama3.2:3b')
     };
     gemini = {
-      generate: geminiClient.generate
+      generate: geminiClient.generate,
+      generateWithThinking: geminiClient.generateWithThinking || geminiClient.generate
     };
   }
 
   const config = getConfigManager().getValue('pipeline', {});
+  const geminiConfig = getConfigManager().getValue('providers.gemini', {});
+  const thinkingModel = geminiConfig.thinkingModel || 'gemini-2.0-flash-thinking-exp';
 
   return new PipelineBuilder()
-    // STAGE 1: ROUTE
-    .addStage('route', async (ctx) => {
-      return routeWithCost(ctx.prompt);
+    // STAGE 1: ROUTE (using Gemini Thinking for deep analysis)
+    .addStage('route', async (ctx, input) => {
+      const knowledge = input.accumulatedKnowledge || '';
+
+      // Use Gemini Thinking for routing with accumulated knowledge
+      const result = await routeWithThinking(ctx.prompt, {
+        gemini,
+        thinkingModel,
+        accumulatedKnowledge: knowledge,
+        iteration: input.iteration || 1
+      });
+
+      return result;
     }, {
-      timeout: 10000
+      timeout: 30000,
+      fallback: async (ctx) => {
+        // Fallback to heuristic routing
+        return routeWithCost(ctx.prompt);
+      }
     })
 
     // STAGE 2: SPECULATE (optional, for context gathering)
@@ -383,6 +530,7 @@ Be concise.`;
     .addStage('plan', async (ctx, input) => {
       const routing = input.route;
       const speculation = input.speculate;
+      const knowledge = input.accumulatedKnowledge || '';
 
       if (routing.complexity <= 2) {
         return {
@@ -394,6 +542,7 @@ Be concise.`;
       const planPrompt = `Create a brief execution plan for this task (max 5 steps):
 Task: "${ctx.prompt.slice(0, 300)}"
 ${speculation?.context ? `Context: ${speculation.context}` : ''}
+${knowledge ? `\nPrevious learnings:\n${knowledge}` : ''}
 Format: numbered list, one line per step.`;
 
       // Use appropriate provider based on complexity
@@ -459,12 +608,13 @@ Format: numbered list, one line per step.`;
       timeout: 120000
     })
 
-    // STAGE 5: SYNTHESIZE (combine multi-step results)
+    // STAGE 5: SYNTHESIZE (using Gemini Thinking for deep synthesis)
     .addStage('synthesize', async (ctx, input) => {
       const execution = input.execute;
+      const knowledge = input.accumulatedKnowledge || '';
 
       // Single result doesn't need synthesis
-      if (execution.results.length === 1) {
+      if (execution.results.length === 1 && !knowledge) {
         return {
           content: execution.results[0].content,
           skipped: true
@@ -475,29 +625,116 @@ Format: numbered list, one line per step.`;
         .map(r => `[Step ${r.step}]: ${r.content || r.error}`)
         .join('\n\n');
 
-      const synthPrompt = `Combine these results into a coherent response:
+      const synthPrompt = `You are synthesizing results into a comprehensive, high-quality response.
+
+## Original Task:
+${ctx.prompt}
+
+## Execution Results:
 ${combinedResults}
 
-Provide a unified, well-structured answer.`;
+${knowledge ? `## Previous Iterations & Learnings:\n${knowledge}` : ''}
 
-      const result = await ollama.generate(synthPrompt, {
-        model: ollama.selectModel ? ollama.selectModel('research') : 'llama3.2:3b',
-        maxTokens: 2048
+## Instructions:
+1. Combine these results into a coherent, well-structured response
+2. Ensure completeness - address ALL aspects of the original task
+3. Be accurate and precise
+4. If previous iterations exist, improve upon their weaknesses
+5. Format the response appropriately (use markdown if helpful)
+
+Provide the unified response:`;
+
+      // Use Gemini Thinking for synthesis
+      const result = await gemini.generate(synthPrompt, {
+        model: thinkingModel,
+        maxTokens: 4096
       });
 
       return {
         content: result.content,
         duration_ms: result.duration_ms,
-        skipped: false
+        skipped: false,
+        usedThinkingModel: true
       };
     }, {
       optional: true,
       skipCondition: () => !config.enableSynthesis,
-      timeout: 60000,
+      timeout: 90000,
       fallback: async (ctx, input) => ({
         content: input.execute.results.map(r => r.content).filter(Boolean).join('\n\n'),
         fallback: true
       })
+    })
+
+    // STAGE 6: EVALUATE (quality assessment for feedback loop)
+    .addStage('evaluate', async (ctx, input) => {
+      const synthesis = input.synthesize;
+      const content = synthesis?.content || input.execute?.results?.[0]?.content || '';
+
+      if (!config.enableFeedbackLoop) {
+        return { qualityScore: 10, skipped: true };
+      }
+
+      const evalPrompt = `You are evaluating the quality of an AI response.
+
+## Original Task:
+${ctx.prompt}
+
+## Response to Evaluate:
+${content.slice(0, 3000)}
+
+## Evaluation Criteria:
+1. Completeness (0-10): Does it address all parts of the task?
+2. Accuracy (0-10): Is the information correct and precise?
+3. Clarity (0-10): Is it well-organized and easy to understand?
+4. Usefulness (0-10): Would this response help the user?
+
+## Output Format (JSON only):
+{
+  "completeness": <score>,
+  "accuracy": <score>,
+  "clarity": <score>,
+  "usefulness": <score>,
+  "overall": <average score>,
+  "improvements": ["suggestion 1", "suggestion 2"]
+}
+
+Respond with ONLY the JSON, no other text:`;
+
+      try {
+        // Use Gemini Thinking for evaluation
+        const result = await gemini.generate(evalPrompt, {
+          model: thinkingModel,
+          maxTokens: 512,
+          temperature: 0.1
+        });
+
+        // Parse JSON response
+        const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const evaluation = JSON.parse(jsonMatch[0]);
+          return {
+            qualityScore: evaluation.overall || 5,
+            completeness: evaluation.completeness,
+            accuracy: evaluation.accuracy,
+            clarity: evaluation.clarity,
+            usefulness: evaluation.usefulness,
+            improvements: evaluation.improvements || [],
+            duration_ms: result.duration_ms
+          };
+        }
+
+        return { qualityScore: 7, improvements: [], duration_ms: result.duration_ms };
+
+      } catch (error) {
+        // If evaluation fails, assume quality is acceptable
+        return { qualityScore: 7, improvements: [], error: error.message };
+      }
+    }, {
+      optional: true,
+      skipCondition: () => !config.enableFeedbackLoop,
+      timeout: 30000,
+      fallback: async () => ({ qualityScore: 7, improvements: [], fallback: true })
     })
 
     .build();

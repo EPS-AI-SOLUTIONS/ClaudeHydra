@@ -87,9 +87,13 @@ const OllamaConfigSchema = ProviderConfigSchema.extend({
  */
 const GeminiConfigSchema = ProviderConfigSchema.extend({
   cliPath: z.string().optional(),
+  apiKey: z.string().optional(),
   defaultModel: z.string().default('gemini-2.0-flash-exp'),
+  thinkingModel: z.string().default('gemini-2.0-flash-thinking-exp'),
   costPerToken: z.number().default(0.000001),
-  fixedCost: z.number().default(0.001)
+  fixedCost: z.number().default(0.001),
+  autoSelectBestModel: z.boolean().default(true),
+  modelRefreshInterval: z.number().min(60000).default(300000) // 5 minutes
 });
 
 /**
@@ -114,7 +118,10 @@ const PipelineConfigSchema = z.object({
   enableSpeculation: z.boolean().default(true),
   enablePlanning: z.boolean().default(true),
   enableSynthesis: z.boolean().default(true),
+  enableFeedbackLoop: z.boolean().default(true),
   maxPlanSteps: z.number().min(1).max(20).default(5),
+  maxFeedbackIterations: z.number().min(1).max(5).default(3),
+  qualityThreshold: z.number().min(0).max(10).default(7),
   fallbackProvider: z.enum(['ollama', 'gemini']).default('gemini'),
   parallelExecution: z.boolean().default(false)
 });
@@ -203,6 +210,9 @@ export const DEFAULT_CONFIG = {
       costPerToken: 0.000001,
       fixedCost: 0.001,
       defaultModel: 'gemini-2.0-flash-exp',
+      thinkingModel: 'gemini-2.0-flash-thinking-exp',
+      autoSelectBestModel: true,
+      modelRefreshInterval: 300000, // 5 minutes
       pool: {
         maxConcurrent: 3,
         maxQueueSize: 50,
@@ -229,7 +239,10 @@ export const DEFAULT_CONFIG = {
     enableSpeculation: true,
     enablePlanning: true,
     enableSynthesis: true,
+    enableFeedbackLoop: true,
     maxPlanSteps: 5,
+    maxFeedbackIterations: 3,
+    qualityThreshold: 7,
     fallbackProvider: 'gemini',
     parallelExecution: false
   },

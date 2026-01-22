@@ -106,6 +106,86 @@ export class Hydra {
       totalCostSaved: 0,
       averageLatency: 0
     };
+
+    // Track initialization state
+    this._initialized = false;
+  }
+
+  /**
+   * Initialize HYDRA - loads models and performs health checks
+   * Call this at application startup to ensure all providers are ready
+   * @param {Object} [options={}] - Initialization options
+   * @param {boolean} [options.refreshModels=true] - Whether to refresh Gemini models
+   * @param {boolean} [options.healthCheck=true] - Whether to perform initial health check
+   * @returns {Promise<Object>} Initialization result with provider status
+   */
+  async initialize(options = {}) {
+    const { refreshModels = true, healthCheck = true } = options;
+    const startTime = Date.now();
+
+    console.log('[Hydra] Initializing...');
+
+    const result = {
+      success: true,
+      gemini: { modelsReady: false, modelCount: 0, bestModel: null },
+      ollama: { available: false },
+      duration_ms: 0
+    };
+
+    // Wait for Gemini models to be ready
+    if (refreshModels) {
+      try {
+        await this.geminiProvider.waitForModelsReady();
+        result.gemini = {
+          modelsReady: this.geminiProvider.isModelsReady(),
+          modelCount: this.geminiProvider.getAvailableModels().length,
+          bestModel: this.geminiProvider.getBestModel(),
+          thinkingModel: this.geminiProvider.getThinkingModel(),
+          modelSelection: this.geminiProvider.getModelSelection()
+        };
+        console.log(`[Hydra] Gemini models ready: ${result.gemini.modelCount} models, best: ${result.gemini.bestModel}`);
+      } catch (error) {
+        console.error('[Hydra] Failed to initialize Gemini models:', error.message);
+        result.gemini.error = error.message;
+      }
+    }
+
+    // Perform health check if requested
+    if (healthCheck) {
+      try {
+        const health = await this.healthCheck(true);
+        result.ollama.available = health.ollama?.available || false;
+        result.gemini.cliAvailable = health.gemini?.available || false;
+        console.log(`[Hydra] Health check: Ollama=${result.ollama.available}, Gemini CLI=${result.gemini.cliAvailable}`);
+      } catch (error) {
+        console.warn('[Hydra] Health check failed:', error.message);
+      }
+    }
+
+    result.duration_ms = Date.now() - startTime;
+    this._initialized = true;
+
+    console.log(`[Hydra] Initialization complete in ${result.duration_ms}ms`);
+    return result;
+  }
+
+  /**
+   * Check if Hydra has been initialized
+   * @returns {boolean}
+   */
+  isInitialized() {
+    return this._initialized;
+  }
+
+  /**
+   * Refresh Gemini models (can be called periodically)
+   * @returns {Promise<Object>} Updated model selection
+   */
+  async refreshGeminiModels() {
+    console.log('[Hydra] Refreshing Gemini models...');
+    const result = await this.geminiProvider.refreshModels();
+    console.log(`[Hydra] Models refreshed. Best: ${result?.model}`);
+    return result;
   }
 
   /**
@@ -372,6 +452,28 @@ export function getHydra(options = {}) {
 }
 
 /**
+ * Initialize HYDRA and wait for all providers to be ready
+ * This is the recommended way to start HYDRA in applications
+ * @param {HydraOptions} [options={}] - Configuration options
+ * @param {Object} [initOptions={}] - Initialization options
+ * @param {boolean} [initOptions.refreshModels=true] - Whether to refresh Gemini models
+ * @param {boolean} [initOptions.healthCheck=true] - Whether to perform initial health check
+ * @returns {Promise<{hydra: Hydra, initResult: Object}>} Hydra instance and initialization result
+ * @example
+ * // At application startup:
+ * const { hydra, initResult } = await initializeHydra();
+ * console.log('Best model:', initResult.gemini.bestModel);
+ *
+ * // Then use hydra normally:
+ * const result = await hydra.process('Hello!');
+ */
+export async function initializeHydra(options = {}, initOptions = {}) {
+  const hydra = getHydra(options);
+  const initResult = await hydra.initialize(initOptions);
+  return { hydra, initResult };
+}
+
+/**
  * Reset HYDRA instance (primarily for testing)
  */
 export function resetHydra() {
@@ -397,6 +499,9 @@ export { ollamaClient as ollama, geminiClient as gemini };
 
 // Export configuration
 export { DEFAULT_CONFIG, getConfigManager };
+
+// Export initialization utilities
+// initializeHydra is exported via its function declaration above
 
 // Default export
 export default Hydra;

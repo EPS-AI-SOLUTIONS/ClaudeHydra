@@ -1,6 +1,9 @@
 /**
  * Gemini Provider - Refactored implementation using BaseProvider
  * CLI-based provider with connection pooling, retry logic, and health caching
+ *
+ * NEW: Dynamic model discovery via API with auto-fallback
+ * Fetches available models and selects the best one with automatic fallback
  */
 
 import { spawn } from 'child_process';
@@ -14,6 +17,13 @@ import { HealthCheckCache } from '../core/cache.js';
 import { GeminiError, TimeoutError, normalizeError } from '../core/errors.js';
 import { getConfigManager } from '../core/config.js';
 import { getStatsCollector } from '../core/stats.js';
+import {
+  fetchAvailableModels,
+  selectBestModel,
+  createModelExecutor,
+  getModelScore,
+  getDefaultFallbackChain
+} from './gemini-models.js';
 
 const IS_WINDOWS = platform() === 'win32';
 
@@ -62,8 +72,19 @@ export class GeminiProvider extends BaseProvider {
 
     this.cliPath = mergedConfig.cliPath || findGeminiPath();
     this.defaultModel = mergedConfig.defaultModel || 'gemini-2.0-flash-exp';
+    this.thinkingModel = mergedConfig.thinkingModel || 'gemini-2.0-flash-thinking-exp';
     this.costPerToken = mergedConfig.costPerToken || 0.000001;
     this.fixedCost = mergedConfig.fixedCost || 0.001;
+
+    // API key for model discovery
+    this.apiKey = mergedConfig.apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+
+    // Available models (fetched dynamically)
+    this.availableModels = [];
+    this.modelSelection = null;
+    this.failedModels = [];
+    this._modelsReady = false;
+    this._modelsInitPromise = null;
 
     // Initialize connection pool (limit concurrent CLI processes)
     this.pool = new ManagedPool(
@@ -96,71 +117,198 @@ export class GeminiProvider extends BaseProvider {
 
     // Stats collector
     this.stats = getStatsCollector();
+
+    // Initialize model discovery asynchronously (but track the promise)
+    this._modelsInitPromise = this._initModels();
   }
 
   /**
-   * Generate completion with all enhancements
+   * Initialize available models from API
+   * @private
+   * @returns {Promise<void>}
+   */
+  async _initModels() {
+    try {
+      if (this.apiKey) {
+        this.availableModels = await fetchAvailableModels(this.apiKey);
+        this.modelSelection = await selectBestModel({
+          apiKey: this.apiKey,
+          preferredCapability: 'reasoning'
+        });
+        console.log(`[Gemini] Initialized with ${this.availableModels.length} models. Best: ${this.modelSelection.model}`);
+      } else {
+        console.warn('[Gemini] No API key found, using default fallback chain');
+        this.modelSelection = {
+          model: this.defaultModel,
+          fallbackChain: getDefaultFallbackChain(),
+          score: getModelScore(this.defaultModel)
+        };
+      }
+      this._modelsReady = true;
+    } catch (error) {
+      console.error('[Gemini] Failed to initialize models:', error.message);
+      this.modelSelection = {
+        model: this.defaultModel,
+        fallbackChain: getDefaultFallbackChain(),
+        score: getModelScore(this.defaultModel)
+      };
+      this._modelsReady = true; // Still ready with fallback
+    }
+  }
+
+  /**
+   * Wait for models to be initialized
+   * Call this at application startup to ensure models are ready
+   * @returns {Promise<void>}
+   */
+  async waitForModelsReady() {
+    if (this._modelsReady) {
+      return;
+    }
+    if (this._modelsInitPromise) {
+      await this._modelsInitPromise;
+    }
+  }
+
+  /**
+   * Check if models are ready
+   * @returns {boolean}
+   */
+  isModelsReady() {
+    return this._modelsReady;
+  }
+
+  /**
+   * Generate completion with all enhancements and auto-fallback
    * @param {string} prompt
    * @param {Object} options
    * @returns {Promise<Object>}
    */
   async generate(prompt, options = {}) {
     const {
-      model = this.defaultModel,
-      timeout = this.config.timeout || 120000
+      model,
+      timeout = this.config.timeout || 120000,
+      useBestModel = true,
+      preferredCapability
     } = options;
 
     const startTime = Date.now();
 
-    try {
-      // Execute through circuit breaker, pool, and retry
-      const result = await this.circuitBreaker.execute(async () => {
-        return this.pool.execute(async () => {
-          return withRetry(
-            () => this._doGenerate(prompt, { model, timeout }),
-            {
-              ...this.retryConfig,
-              onRetry: ({ attempt, error, delay }) => {
-                console.warn(`[Gemini] Retry ${attempt}/${this.retryConfig.maxRetries}: ${error.message}. Waiting ${delay}ms`);
-              }
-            }
-          );
-        });
-      });
-
-      // Estimate tokens and cost
-      const estimatedTokens = Math.ceil(prompt.length / 4) + Math.ceil((result.content?.length || 0) / 4);
-      const cost = this.fixedCost + (estimatedTokens * this.costPerToken);
-
-      // Update stats
-      this._updateStats({ ...result, tokens: estimatedTokens }, true);
-      this.stats.recordRequest({
-        provider: 'gemini',
-        category: 'generate',
-        latency: result.duration_ms,
-        tokens: estimatedTokens,
-        cost,
-        success: true
-      });
-
-      return {
-        ...result,
-        tokens: estimatedTokens,
-        cost
-      };
-
-    } catch (error) {
-      const hydraError = this._handleError(error);
-      this._updateStats({ error: hydraError.message }, false);
-      this.stats.recordRequest({
-        provider: 'gemini',
-        category: 'generate',
-        latency: Date.now() - startTime,
-        success: false,
-        error: { type: hydraError.code }
-      });
-      throw hydraError;
+    // Determine which model to use
+    let targetModel = model;
+    if (!targetModel && useBestModel && this.modelSelection) {
+      targetModel = this.modelSelection.model;
     }
+    targetModel = targetModel || this.defaultModel;
+
+    // Get fallback chain
+    const fallbackChain = this.modelSelection?.fallbackChain || getDefaultFallbackChain();
+    const modelsToTry = [targetModel, ...fallbackChain.filter(m => m !== targetModel)];
+
+    let lastError = null;
+
+    // Try each model in order until one succeeds
+    for (const currentModel of modelsToTry) {
+      if (this.failedModels.includes(currentModel)) {
+        continue; // Skip models that have failed recently
+      }
+
+      try {
+        // Execute through circuit breaker, pool, and retry
+        const result = await this.circuitBreaker.execute(async () => {
+          return this.pool.execute(async () => {
+            return withRetry(
+              () => this._doGenerate(prompt, { model: currentModel, timeout }),
+              {
+                ...this.retryConfig,
+                onRetry: ({ attempt, error, delay }) => {
+                  console.warn(`[Gemini] Retry ${attempt}/${this.retryConfig.maxRetries} for ${currentModel}: ${error.message}. Waiting ${delay}ms`);
+                }
+              }
+            );
+          });
+        });
+
+        // Success! Remove from failed models if it was there
+        this.failedModels = this.failedModels.filter(m => m !== currentModel);
+
+        // Estimate tokens and cost
+        const estimatedTokens = Math.ceil(prompt.length / 4) + Math.ceil((result.content?.length || 0) / 4);
+        const cost = this.fixedCost + (estimatedTokens * this.costPerToken);
+
+        // Update stats
+        this._updateStats({ ...result, tokens: estimatedTokens }, true);
+        this.stats.recordRequest({
+          provider: 'gemini',
+          category: 'generate',
+          latency: result.duration_ms,
+          tokens: estimatedTokens,
+          cost,
+          success: true,
+          model: currentModel
+        });
+
+        return {
+          ...result,
+          model: currentModel,
+          modelScore: getModelScore(currentModel),
+          fallbackUsed: currentModel !== targetModel,
+          tokens: estimatedTokens,
+          cost
+        };
+
+      } catch (error) {
+        console.warn(`[Gemini] Model ${currentModel} failed: ${error.message}`);
+        lastError = error;
+
+        // Check if this is a model-specific error
+        if (this._isModelSpecificError(error)) {
+          this.failedModels.push(currentModel);
+          console.log(`[Gemini] Marked ${currentModel} as failed, trying next model...`);
+        } else {
+          // For transient errors, don't mark as failed but still try next
+          break;
+        }
+      }
+    }
+
+    // All models failed
+    const hydraError = this._handleError(lastError || new Error('All models failed'));
+    this._updateStats({ error: hydraError.message }, false);
+    this.stats.recordRequest({
+      provider: 'gemini',
+      category: 'generate',
+      latency: Date.now() - startTime,
+      success: false,
+      error: { type: hydraError.code }
+    });
+    throw hydraError;
+  }
+
+  /**
+   * Check if error is model-specific (should trigger fallback)
+   * @param {Error} error
+   * @returns {boolean}
+   * @private
+   */
+  _isModelSpecificError(error) {
+    const message = error.message?.toLowerCase() || '';
+
+    // Model not found or unavailable
+    if (message.includes('not found') ||
+        message.includes('not available') ||
+        message.includes('model not supported') ||
+        message.includes('invalid model')) {
+      return true;
+    }
+
+    // Quota/billing issues for specific model
+    if (message.includes('quota exceeded') ||
+        message.includes('billing')) {
+      return true;
+    }
+
+    return false;
   }
 
   /**
@@ -372,6 +520,89 @@ export class GeminiProvider extends BaseProvider {
   }
 
   /**
+   * Get best available model
+   * @returns {string}
+   */
+  getBestModel() {
+    return this.modelSelection?.model || this.defaultModel;
+  }
+
+  /**
+   * Get thinking model (for deep reasoning)
+   * @returns {string}
+   */
+  getThinkingModel() {
+    // Prefer thinking-capable models
+    if (this.modelSelection) {
+      const thinkingModel = this.modelSelection.fallbackChain.find(m =>
+        m.includes('thinking') || m.includes('2.5-pro')
+      );
+      if (thinkingModel && !this.failedModels.includes(thinkingModel)) {
+        return thinkingModel;
+      }
+    }
+    return this.thinkingModel;
+  }
+
+  /**
+   * Get available models
+   * @returns {Array}
+   */
+  getAvailableModels() {
+    return this.availableModels;
+  }
+
+  /**
+   * Get current model selection with fallback chain
+   * @returns {Object}
+   */
+  getModelSelection() {
+    return this.modelSelection;
+  }
+
+  /**
+   * Get list of currently failed models
+   * @returns {string[]}
+   */
+  getFailedModels() {
+    return [...this.failedModels];
+  }
+
+  /**
+   * Reset failed models list (allow retry)
+   */
+  resetFailedModels() {
+    this.failedModels = [];
+    console.log('[Gemini] Reset failed models list');
+  }
+
+  /**
+   * Refresh available models from API
+   * @returns {Promise<Object>} Updated model selection
+   */
+  async refreshModels() {
+    this.failedModels = [];
+    this._modelsReady = false;
+    this._modelsInitPromise = this._initModels();
+    await this._modelsInitPromise;
+    return this.modelSelection;
+  }
+
+  /**
+   * Select best model for a specific capability
+   * @param {string} capability - Required capability (e.g., 'thinking', 'fast', 'cheap')
+   * @returns {Promise<string>} Best model name
+   */
+  async selectModelForCapability(capability) {
+    const selection = await selectBestModel({
+      apiKey: this.apiKey,
+      preferredCapability: capability,
+      excludeModels: this.failedModels
+    });
+    return selection.model;
+  }
+
+  /**
    * Get cost per token
    * @returns {number}
    */
@@ -445,6 +676,11 @@ export class GeminiProvider extends BaseProvider {
       name: this.name,
       cliPath: this.cliPath,
       defaultModel: this.defaultModel,
+      bestModel: this.getBestModel(),
+      thinkingModel: this.getThinkingModel(),
+      availableModelsCount: this.availableModels.length,
+      modelSelection: this.modelSelection,
+      failedModels: this.failedModels,
       pool: this.getPoolStatus(),
       circuit: this.getCircuitStatus(),
       stats: this.getStats()

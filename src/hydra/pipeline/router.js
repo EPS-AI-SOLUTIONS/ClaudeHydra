@@ -234,4 +234,124 @@ export async function routeWithCost(prompt) {
   return decision;
 }
 
+/**
+ * Route task using Gemini Thinking model for deep analysis
+ * Uses accumulated knowledge from previous iterations
+ * @param {string} prompt - User prompt
+ * @param {Object} options - Routing options
+ * @param {Object} options.gemini - Gemini provider instance
+ * @param {string} options.thinkingModel - Thinking model name
+ * @param {string} [options.accumulatedKnowledge] - Knowledge from previous iterations
+ * @param {number} [options.iteration=1] - Current iteration number
+ * @returns {Promise<Object>} Routing decision with deep analysis
+ */
+export async function routeWithThinking(prompt, options = {}) {
+  const startTime = Date.now();
+  const { gemini, thinkingModel, accumulatedKnowledge = '', iteration = 1 } = options;
+
+  // For first iteration without knowledge, use fast heuristic for simple prompts
+  if (iteration === 1 && !accumulatedKnowledge && prompt.split(/\s+/).length < 10) {
+    const complexity = analyzeComplexity(prompt);
+    if (complexity <= 1) {
+      return {
+        category: 'simple',
+        provider: 'ollama',
+        model: 'llama3.2:1b',
+        complexity,
+        reasoning: 'Fast path: simple short prompt',
+        duration_ms: Date.now() - startTime,
+        usedThinkingModel: false
+      };
+    }
+  }
+
+  // Use Gemini Thinking for deep analysis
+  const routingPrompt = `You are an intelligent task router for a multi-model AI system.
+Analyze this task and determine the optimal execution strategy.
+
+## Task to Analyze:
+"${prompt.slice(0, 500)}"
+
+${accumulatedKnowledge ? `## Previous Iterations Knowledge:\n${accumulatedKnowledge}` : ''}
+
+## Available Models:
+1. **ollama/llama3.2:1b** - Fast, simple tasks, greetings, definitions
+2. **ollama/llama3.2:3b** - Research, analysis, explanations
+3. **ollama/qwen2.5-coder:1.5b** - Code generation, programming tasks
+4. **ollama/phi3:mini** - Complex reasoning, logic
+5. **gemini** - Creative writing, architecture, complex multi-step tasks
+
+## Analysis Required:
+1. Task category: simple | code | research | complex | creative
+2. Complexity score (1-5)
+3. Best provider: ollama | gemini
+4. Best model (if ollama): llama3.2:1b | llama3.2:3b | qwen2.5-coder:1.5b | phi3:mini
+5. Reasoning for your choice
+${iteration > 1 ? '6. How to improve based on previous iterations' : ''}
+
+## Output Format (JSON only):
+{
+  "category": "<category>",
+  "complexity": <1-5>,
+  "provider": "<ollama|gemini>",
+  "model": "<model or null for gemini>",
+  "reasoning": "<brief explanation>",
+  "improvements": ["<improvement 1>", "<improvement 2>"]
+}
+
+Respond with ONLY the JSON:`;
+
+  try {
+    const result = await gemini.generate(routingPrompt, {
+      model: thinkingModel,
+      maxTokens: 512,
+      temperature: 0.1
+    });
+
+    // Parse JSON response
+    const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const routing = JSON.parse(jsonMatch[0]);
+
+      // Validate and normalize response
+      const validCategories = ['simple', 'code', 'research', 'complex', 'creative'];
+      const category = validCategories.includes(routing.category) ? routing.category : 'research';
+      const complexity = Math.min(5, Math.max(1, routing.complexity || analyzeComplexity(prompt)));
+
+      // Cost estimation
+      const costs = {
+        ollama: { perToken: 0, fixedCost: 0 },
+        gemini: { perToken: 0.000001, fixedCost: 0.001 }
+      };
+      const estimatedTokens = Math.ceil(prompt.length / 4) * 2;
+      const provider = routing.provider === 'gemini' ? 'gemini' : 'ollama';
+
+      return {
+        category,
+        provider,
+        model: provider === 'ollama' ? (routing.model || 'llama3.2:3b') : null,
+        complexity,
+        reasoning: routing.reasoning || 'Gemini Thinking analysis',
+        improvements: routing.improvements || [],
+        estimatedCost: provider === 'gemini'
+          ? costs.gemini.fixedCost + estimatedTokens * costs.gemini.perToken
+          : 0,
+        costSavings: provider === 'ollama'
+          ? costs.gemini.fixedCost + estimatedTokens * costs.gemini.perToken
+          : 0,
+        duration_ms: Date.now() - startTime,
+        usedThinkingModel: true,
+        iteration
+      };
+    }
+
+    // Fallback to heuristic if JSON parsing fails
+    return await routeWithCost(prompt);
+
+  } catch (error) {
+    console.warn('[Router] Gemini Thinking failed, falling back to heuristic:', error.message);
+    return await routeWithCost(prompt);
+  }
+}
+
 export { TASK_CATEGORIES, analyzeComplexity, detectCategory };
