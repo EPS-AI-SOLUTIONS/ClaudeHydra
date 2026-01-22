@@ -1,6 +1,6 @@
 @echo off
 title Claude HYDRA - Starting...
-cd /d C:\Users\BIURODOM\Desktop\ClaudeCli\claude-gui
+cd /d C:\Users\BIURODOM\Desktop\ClaudeHydra\claude-gui
 
 echo.
 echo  ╔═══════════════════════════════════════════╗

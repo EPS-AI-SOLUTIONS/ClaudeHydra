@@ -2,6 +2,8 @@
 //!
 //! Zapewnia thread pool i narzędzia do równoległego przetwarzania.
 
+#![allow(dead_code)]
+
 use rayon::prelude::*;
 use std::sync::Arc;
 use parking_lot::RwLock;

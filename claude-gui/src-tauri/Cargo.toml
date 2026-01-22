@@ -17,6 +17,8 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
+# DevTools - only in debug builds (see lib.rs for conditional init)
+tauri-plugin-devtools = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full", "process", "sync", "io-util"] }
@@ -40,20 +42,24 @@ lazy_static = "1.5"   # Global state for debug
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
+# Enable devtools in release builds (WARNING: not for App Store!)
+devtools = ["tauri/devtools"]
 
+# Fast release profile (default) - balanced speed/optimization
 [profile.release]
 strip = true
-lto = true
-codegen-units = 1
+lto = "thin"        # Faster than full LTO, still good optimization
+codegen-units = 4   # Parallel compilation (faster builds)
 panic = "abort"
+opt-level = 3       # Max optimization
 
-# Dev profile - faster builds with parallelism
+# Dev profile - fastest builds for development
 [profile.dev]
 opt-level = 0
 debug = true
 
-# Custom profile for parallel release builds
-[profile.release-parallel]
+# Maximum optimization profile (for final distribution)
+[profile.release-max]
 inherits = "release"
-codegen-units = 4  # More parallelism during compile
-lto = "thin"       # Faster LTO with multiple threads
+lto = true          # Full LTO for smallest binary
+codegen-units = 1   # Best optimization, slowest build

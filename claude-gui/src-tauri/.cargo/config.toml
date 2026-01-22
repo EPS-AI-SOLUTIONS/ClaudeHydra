@@ -1,0 +1,13 @@
+# Cargo configuration for faster builds
+# sccache caches compilation artifacts for faster incremental builds
+
+[build]
+# Use sccache as the Rust compiler wrapper
+rustc-wrapper = "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\bin\\sccache\\sccache.exe"
+
+# Enable parallel compilation
+jobs = 8
+
+[env]
+# Enable colored output
+CARGO_TERM_COLOR = "always"

@@ -93,5 +93,5 @@ excluded_tools: []
 # (contrary to the memories, which are loaded on demand).
 initial_prompt: ""
 
-project_name: "ClaudeCli"
+project_name: "ClaudeHydra"
 included_optional_tools: []

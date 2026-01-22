@@ -47,15 +47,15 @@ impl Default for BridgeData {
 }
 
 fn get_bridge_path() -> PathBuf {
-    // Look for bridge.json in parent directory (ClaudeCli root)
+    // Look for bridge.json in parent directory (ClaudeHydra root)
     let mut path = std::env::current_dir().unwrap_or_default();
 
-    // If we're in src-tauri, go up to claude-gui, then to ClaudeCli
+    // If we're in src-tauri, go up to claude-gui, then to ClaudeHydra
     if path.ends_with("src-tauri") {
         path.pop(); // claude-gui
-        path.pop(); // ClaudeCli
+        path.pop(); // ClaudeHydra
     } else if path.ends_with("claude-gui") {
-        path.pop(); // ClaudeCli
+        path.pop(); // ClaudeHydra
     }
 
     path.push("bridge.json");

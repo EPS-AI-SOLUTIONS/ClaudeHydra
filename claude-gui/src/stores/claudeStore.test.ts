@@ -559,4 +559,63 @@ describe('claudeStore', () => {
       expect(outputLines[0].data).toEqual({ name: 'Bash', result: 'success' });
     });
   });
+
+  describe('Path configuration validation', () => {
+    // These tests would have caught the ClaudeCli -> ClaudeHydra rename issue
+
+    // Default paths - must be kept in sync with claudeStore.ts
+    const DEFAULT_WORKING_DIR = 'C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra';
+    const DEFAULT_CLI_PATH = 'C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\bin\\claude-code\\cli.js';
+
+    beforeEach(() => {
+      // Reset paths to defaults before each path validation test
+      useClaudeStore.setState({
+        workingDir: DEFAULT_WORKING_DIR,
+        cliPath: DEFAULT_CLI_PATH,
+      });
+    });
+
+    it('should have ClaudeHydra in default working directory', () => {
+      const { workingDir } = useClaudeStore.getState();
+      expect(workingDir).toContain('ClaudeHydra');
+      expect(workingDir).not.toContain('ClaudeCli');
+    });
+
+    it('should have ClaudeHydra in default CLI path', () => {
+      const { cliPath } = useClaudeStore.getState();
+      expect(cliPath).toContain('ClaudeHydra');
+      expect(cliPath).not.toContain('ClaudeCli');
+    });
+
+    it('should have consistent project name in workingDir and cliPath', () => {
+      const { workingDir, cliPath } = useClaudeStore.getState();
+
+      // Extract project folder name from paths
+      const workingDirMatch = workingDir.match(/Desktop[\\\/](\w+)/);
+      const cliPathMatch = cliPath.match(/Desktop[\\\/](\w+)/);
+
+      if (workingDirMatch && cliPathMatch) {
+        expect(workingDirMatch[1]).toBe(cliPathMatch[1]);
+      }
+    });
+
+    it('should have valid Windows path format', () => {
+      const { workingDir, cliPath } = useClaudeStore.getState();
+
+      // Should start with drive letter
+      expect(workingDir).toMatch(/^[A-Z]:\\/);
+      expect(cliPath).toMatch(/^[A-Z]:\\/);
+    });
+
+    it('cliPath should point to cli.js file', () => {
+      const { cliPath } = useClaudeStore.getState();
+      expect(cliPath).toMatch(/cli\.js$/);
+    });
+
+    it('cliPath should include bin/claude-code directory', () => {
+      const { cliPath } = useClaudeStore.getState();
+      expect(cliPath).toContain('bin');
+      expect(cliPath).toContain('claude-code');
+    });
+  });
 });

@@ -21,7 +21,19 @@ pub fn run() {
         .with(tracing_subscriber::EnvFilter::from_default_env())
         .try_init();
 
-    tauri::Builder::default()
+    // DevTools - only in debug builds for performance/security
+    #[cfg(debug_assertions)]
+    let devtools = tauri_plugin_devtools::init();
+
+    let mut builder = tauri::Builder::default();
+
+    #[cfg(debug_assertions)]
+    {
+        builder = builder.plugin(devtools);
+        tracing::info!("DevTools enabled (debug build)");
+    }
+
+    builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
@@ -36,6 +48,15 @@ pub fn run() {
 
             // Initialize Debug LiveView
             debug::init();
+
+            // Open DevTools automatically in debug builds
+            #[cfg(debug_assertions)]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    window.open_devtools();
+                    tracing::info!("DevTools window opened");
+                }
+            }
 
             tracing::info!("Claude HYDRA initialized");
             Ok(())

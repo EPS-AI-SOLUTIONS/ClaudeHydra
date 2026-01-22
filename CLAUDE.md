@@ -4,6 +4,54 @@
 
 Ta instalacja Claude Code działa w trybie **bez potwierdzeń** z pełnym dostępem do wszystkich narzędzi MCP.
 
+---
+
+## 🔮 SERENA - Workflow domyślny (OBOWIĄZKOWY)
+
+**Przy KAŻDYM prompcie** wykonaj poniższe kroki używając narzędzi Sereny:
+
+### Krok 0: Inicjalizacja (na początku każdej konwersacji)
+
+1. **`mcp__serena__list_memories`** - wylistuj dostępne pamięci
+2. **Przeczytaj pamięci bazowe:**
+   - `policy-serena-longterm-memory` - zasady pamięci
+   - `policy-project-identity` - tożsamość projektu
+   - `index-memory-catalog` - katalog pamięci (routing)
+3. **Przeczytaj dodatkowe pamięci** jeśli są istotne dla zapytania
+
+### Krok 1: Analiza kodu (przed edycją)
+
+1. **`mcp__serena__get_symbols_overview`** - przegląd symboli w pliku
+2. **`mcp__serena__find_symbol`** - znajdź konkretny symbol
+3. **`mcp__serena__find_referencing_symbols`** - znajdź referencje
+
+### Krok 2: Edycja kodu (symboliczna)
+
+1. **`mcp__serena__replace_symbol_body`** - zamień ciało symbolu
+2. **`mcp__serena__insert_after_symbol`** / **`insert_before_symbol`** - dodaj kod
+3. **`mcp__serena__replace_content`** - regex dla małych zmian
+
+### Krok 3: Pamięć (po zadaniu)
+
+Jeśli zadanie jest trwałe (decyzja, workflow, integracja, preferencja):
+1. **`mcp__serena__write_memory`** - zapisz/zaktualizuj pamięć
+2. **Zaktualizuj `index-memory-catalog`** z datą (yyyy-MM-dd HH:mm)
+
+### Wyjątki
+
+- Pomiń tylko gdy Serena jest niedostępna lub użytkownik jawnie prosi o pominięcie
+
+### Priorytet narzędzi
+
+| Zadanie | Użyj Sereny | Zamiast |
+|---------|-------------|---------|
+| Nawigacja po kodzie | `find_symbol`, `get_symbols_overview` | `Grep`, `Glob` |
+| Edycja kodu | `replace_symbol_body`, `insert_*` | `Edit` |
+| Szukanie referencji | `find_referencing_symbols` | `Grep` |
+| Pamięć projektu | `read_memory`, `write_memory` | pliki `.md` |
+
+---
+
 ## Strategia wykonywania zadań (OBOWIĄZKOWA)
 
 ### Krok 1: Planowanie z AI (ZAWSZE NAJPIERW)

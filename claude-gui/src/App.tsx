@@ -1,5 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { Sidebar } from './components/Sidebar';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Header } from './components/Header';
 import { TerminalView } from './components/TerminalView';
 import { StatusLine } from './components/StatusLine';
@@ -7,36 +6,22 @@ import { MatrixRain } from './components/MatrixRain';
 import { CpuDashboard } from './components/CpuDashboard';
 import { useClaudeStore } from './stores/claudeStore';
 import { claudeIpc } from './lib/ipc';
+import {
+  OllamaChatViewLazy,
+  ChatHistoryViewLazy,
+  SettingsViewLazy,
+  HistoryViewLazy,
+  RulesViewLazy,
+  LearningPanelLazy,
+  DebugPanelLazy,
+  SidebarLazy,
+  LazyComponentWrapper,
+} from './components/LazyComponents';
+import { SuspenseFallback } from './components/SuspenseFallback';
 import './index.css';
 
 // Check if running in Tauri (v2 uses __TAURI_INTERNALS__)
 const isTauri = () => typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
-
-// Lazy load heavy components (react-markdown, syntax highlighting)
-const OllamaChatView = lazy(() => import('./components/OllamaChatView').then(m => ({ default: m.OllamaChatView })));
-const ChatHistoryView = lazy(() => import('./components/ChatHistoryView').then(m => ({ default: m.ChatHistoryView })));
-const SettingsView = lazy(() => import('./components/SettingsView').then(m => ({ default: m.SettingsView })));
-const HistoryView = lazy(() => import('./components/HistoryView').then(m => ({ default: m.HistoryView })));
-const RulesView = lazy(() => import('./components/RulesView').then(m => ({ default: m.RulesView })));
-const LearningPanel = lazy(() => import('./components/LearningPanel').then(m => ({ default: m.LearningPanel })));
-const DebugPanel = lazy(() => import('./components/DebugPanel').then(m => ({ default: m.DebugPanel })));
-
-// Matrix-themed loading fallback
-function LoadingFallback() {
-  return (
-    <div className="flex-1 glass-panel flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="relative">
-          <div className="w-12 h-12 border-2 border-matrix-accent/30 rounded-full" />
-          <div className="absolute inset-0 w-12 h-12 border-2 border-matrix-accent border-t-transparent rounded-full animate-spin" />
-        </div>
-        <span className="text-matrix-accent text-sm font-mono animate-pulse">
-          Loading module...
-        </span>
-      </div>
-    </div>
-  );
-}
 
 function App() {
   const { currentView, workingDir, cliPath, initPrompt, setStatus, setConnecting, addOutputLine } = useClaudeStore();
@@ -162,19 +147,47 @@ function App() {
       case 'terminal':
         return <TerminalView />;
       case 'ollama':
-        return <OllamaChatView />;
+        return (
+          <LazyComponentWrapper>
+            <OllamaChatViewLazy />
+          </LazyComponentWrapper>
+        );
       case 'learning':
-        return <LearningPanel />;
+        return (
+          <LazyComponentWrapper>
+            <LearningPanelLazy />
+          </LazyComponentWrapper>
+        );
       case 'debug':
-        return <DebugPanel />;
+        return (
+          <LazyComponentWrapper>
+            <DebugPanelLazy />
+          </LazyComponentWrapper>
+        );
       case 'chats':
-        return <ChatHistoryView />;
+        return (
+          <LazyComponentWrapper>
+            <ChatHistoryViewLazy />
+          </LazyComponentWrapper>
+        );
       case 'history':
-        return <HistoryView />;
+        return (
+          <LazyComponentWrapper>
+            <HistoryViewLazy />
+          </LazyComponentWrapper>
+        );
       case 'settings':
-        return <SettingsView />;
+        return (
+          <LazyComponentWrapper>
+            <SettingsViewLazy />
+          </LazyComponentWrapper>
+        );
       case 'rules':
-        return <RulesView />;
+        return (
+          <LazyComponentWrapper>
+            <RulesViewLazy />
+          </LazyComponentWrapper>
+        );
       default:
         return <TerminalView />;
     }
@@ -214,8 +227,10 @@ function App() {
 
       {/* Main content */}
       <div className="relative flex w-full h-full p-3 gap-3">
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Sidebar - Critical, load immediately */}
+        <Suspense fallback={<SuspenseFallback size="sm" message="Loading sidebar..." />}>
+          <SidebarLazy />
+        </Suspense>
 
         {/* Main area */}
         <main className="flex-1 flex flex-col gap-3 min-w-0">
@@ -224,7 +239,7 @@ function App() {
 
           {/* Content */}
           <div className="flex-1 overflow-hidden">
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<SuspenseFallback />}>
               {renderView()}
             </Suspense>
           </div>

@@ -39,9 +39,9 @@ impl Default for KnowledgeGraph {
         Self {
             nodes: vec![
                 KnowledgeNode {
-                    id: "ClaudeCli".to_string(),
+                    id: "ClaudeHydra".to_string(),
                     node_type: "project".to_string(),
-                    label: Some("ClaudeCli".to_string()),
+                    label: Some("ClaudeHydra".to_string()),
                 },
                 KnowledgeNode {
                     id: "React".to_string(),
@@ -66,17 +66,17 @@ impl Default for KnowledgeGraph {
             ],
             edges: vec![
                 KnowledgeEdge {
-                    source: "ClaudeCli".to_string(),
+                    source: "ClaudeHydra".to_string(),
                     target: "React".to_string(),
                     label: "frontend".to_string(),
                 },
                 KnowledgeEdge {
-                    source: "ClaudeCli".to_string(),
+                    source: "ClaudeHydra".to_string(),
                     target: "Tauri".to_string(),
                     label: "desktop".to_string(),
                 },
                 KnowledgeEdge {
-                    source: "ClaudeCli".to_string(),
+                    source: "ClaudeHydra".to_string(),
                     target: "TypeScript".to_string(),
                     label: "written_in".to_string(),
                 },

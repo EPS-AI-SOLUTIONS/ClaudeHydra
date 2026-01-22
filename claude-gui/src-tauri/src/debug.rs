@@ -13,8 +13,7 @@ use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use tauri::{command, AppHandle, Emitter, Manager};
-use tokio::sync::oneshot;
+use tauri::{command, AppHandle, Emitter};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Constants
@@ -120,6 +119,7 @@ pub struct DebugState {
 
     // IPC tracking
     ipc_history: RwLock<VecDeque<IpcCall>>,
+    #[allow(dead_code)]
     ipc_counter: AtomicU64,
     ipc_total: AtomicU64,
     ipc_failed: AtomicU64,
@@ -233,9 +233,10 @@ macro_rules! debug_error {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Public API - IPC Tracking
+// Public API - IPC Tracking (reserved for future use)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+#[allow(dead_code)]
 pub fn track_ipc_start(command: &str) -> IpcTracker {
     DEBUG_STATE.active_tasks.fetch_add(1, Ordering::SeqCst);
     IpcTracker {
@@ -244,11 +245,13 @@ pub fn track_ipc_start(command: &str) -> IpcTracker {
     }
 }
 
+#[allow(dead_code)]
 pub struct IpcTracker {
     command: String,
     start: Instant,
 }
 
+#[allow(dead_code)]
 impl IpcTracker {
     pub fn finish(self, success: bool, error: Option<String>) {
         let duration = self.start.elapsed();
@@ -285,18 +288,21 @@ impl IpcTracker {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Public API - Task Tracking
+// Public API - Task Tracking (reserved for future use)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+#[allow(dead_code)]
 pub fn task_queued() {
     DEBUG_STATE.queued_tasks.fetch_add(1, Ordering::SeqCst);
 }
 
+#[allow(dead_code)]
 pub fn task_started() {
     DEBUG_STATE.queued_tasks.fetch_sub(1, Ordering::SeqCst);
     DEBUG_STATE.active_tasks.fetch_add(1, Ordering::SeqCst);
 }
 
+#[allow(dead_code)]
 pub fn task_completed() {
     DEBUG_STATE.active_tasks.fetch_sub(1, Ordering::SeqCst);
     DEBUG_STATE.completed_tasks.fetch_add(1, Ordering::SeqCst);

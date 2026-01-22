@@ -163,7 +163,7 @@ export function MemoryPanel() {
           timestamp: new Date(Date.now() - 60000).toISOString(),
           agent: selectedAgent,
           type: 'context',
-          content: 'Working directory: C:\\Users\\BIURODOM\\Desktop\\ClaudeCli',
+          content: 'Working directory: C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra',
           tags: 'context,path',
         },
       ]);
@@ -183,15 +183,15 @@ export function MemoryPanel() {
       // Mock data for demo
       setKnowledgeGraph({
         nodes: [
-          { id: 'ClaudeCli', type: 'project' },
+          { id: 'ClaudeHydra', type: 'project' },
           { id: 'React', type: 'framework' },
           { id: 'Tauri', type: 'framework' },
           { id: 'TypeScript', type: 'language' },
         ],
         edges: [
-          { source: 'ClaudeCli', target: 'React', label: 'uses' },
-          { source: 'ClaudeCli', target: 'Tauri', label: 'uses' },
-          { source: 'ClaudeCli', target: 'TypeScript', label: 'written_in' },
+          { source: 'ClaudeHydra', target: 'React', label: 'uses' },
+          { source: 'ClaudeHydra', target: 'Tauri', label: 'uses' },
+          { source: 'ClaudeHydra', target: 'TypeScript', label: 'written_in' },
         ],
       });
     }

@@ -146,8 +146,8 @@ export const useClaudeStore = create<ClaudeState>()(
       pendingApproval: null,
       history: [],
       rules: [],
-      workingDir: 'C:\\Users\\BIURODOM\\Desktop\\ClaudeCli',
-      cliPath: 'C:\\Users\\BIURODOM\\Desktop\\ClaudeCli\\bin\\claude-code\\cli.js',
+      workingDir: 'C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra',
+      cliPath: 'C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\bin\\claude-code\\cli.js',
       sidebarCollapsed: false,
       currentView: 'terminal',
 
@@ -381,6 +381,23 @@ export const useClaudeStore = create<ClaudeState>()(
     }),
     {
       name: 'claude-gui-storage',
+      version: 1, // Increment when migration is needed
+      migrate: (persistedState, version) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const state = persistedState as any;
+
+        // Migration from version 0 to 1: Fix ClaudeCli -> ClaudeHydra paths
+        if (version === 0) {
+          if (state.workingDir?.includes('ClaudeCli')) {
+            state.workingDir = state.workingDir.replace('ClaudeCli', 'ClaudeHydra');
+          }
+          if (state.cliPath?.includes('ClaudeCli')) {
+            state.cliPath = state.cliPath.replace('ClaudeCli', 'ClaudeHydra');
+          }
+        }
+
+        return state;
+      },
       partialize: (state) => ({
         workingDir: state.workingDir,
         cliPath: state.cliPath,

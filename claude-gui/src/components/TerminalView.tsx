@@ -44,8 +44,8 @@ export function TerminalView() {
       } else {
         console.log('[DIRECT TEST] Session not active, starting...');
         await claudeIpc.startSession(
-          'C:\\Users\\BIURODOM\\Desktop\\ClaudeCli',
-          'C:\\Users\\BIURODOM\\Desktop\\ClaudeCli\\bin\\claude-code\\cli.js',
+          'C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra',
+          'C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\bin\\claude-code\\cli.js',
           'test'
         );
         console.log('[DIRECT TEST] Session started!');
