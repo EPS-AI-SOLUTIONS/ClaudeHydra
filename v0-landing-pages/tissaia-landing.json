@@ -1,0 +1,106 @@
+{
+  "project": {
+    "name": "Tissaia",
+    "tagline": "AI-Powered Photo Restoration",
+    "version": "3.0.0",
+    "description": "Professional photo restoration dashboard using Gemini Vision AI. Analyze damage, restore memories, and bring old photos back to life with intelligent enhancement.",
+    "logo": {
+      "icon": "image",
+      "style": "matrix-glass"
+    }
+  },
+  "hero": {
+    "headline": "Restore Memories with AI",
+    "subheadline": "Gemini Vision analysis. Intelligent restoration. Preserve your history.",
+    "cta_primary": {
+      "text": "Start Restoring",
+      "link": "#upload"
+    },
+    "cta_secondary": {
+      "text": "See Examples",
+      "link": "#gallery"
+    },
+    "background": {
+      "type": "gradient",
+      "colors": ["#0a1f0a", "#1a2f1a", "#0d1f0d"]
+    }
+  },
+  "workflow": {
+    "title": "4-Step Restoration Process",
+    "steps": [
+      { "number": 1, "name": "Upload", "description": "Drag & drop your damaged photo", "icon": "upload" },
+      { "number": 2, "name": "Analyze", "description": "AI detects scratches, fading, tears", "icon": "scan" },
+      { "number": 3, "name": "Restore", "description": "Configure enhancement options", "icon": "wand-2" },
+      { "number": 4, "name": "Download", "description": "Get your restored photo", "icon": "download" }
+    ]
+  },
+  "features": [
+    {
+      "icon": "eye",
+      "title": "Gemini Vision AI",
+      "description": "State-of-the-art multimodal analysis for accurate damage detection."
+    },
+    {
+      "icon": "scan",
+      "title": "Damage Detection",
+      "description": "Identifies scratches, tears, fading, water damage, mold, and discoloration."
+    },
+    {
+      "icon": "user",
+      "title": "Face Enhancement",
+      "description": "AI-powered face detection and intelligent facial feature restoration."
+    },
+    {
+      "icon": "palette",
+      "title": "Color Correction",
+      "description": "Automatic brightness, contrast, and saturation adjustment."
+    },
+    {
+      "icon": "paintbrush",
+      "title": "Colorization",
+      "description": "Transform black & white photos to vivid color with AI."
+    },
+    {
+      "icon": "history",
+      "title": "Restoration History",
+      "description": "Track all your restorations with before/after comparisons."
+    }
+  ],
+  "damageTypes": {
+    "title": "What We Can Fix",
+    "types": [
+      { "name": "Scratches", "severity": "high", "icon": "slash" },
+      { "name": "Fading", "severity": "medium", "icon": "sun-dim" },
+      { "name": "Tears", "severity": "high", "icon": "scissors" },
+      { "name": "Water Damage", "severity": "critical", "icon": "droplets" },
+      { "name": "Mold", "severity": "critical", "icon": "bug" },
+      { "name": "Creases", "severity": "medium", "icon": "fold-vertical" }
+    ]
+  },
+  "techStack": {
+    "title": "Modern Desktop Architecture",
+    "categories": [
+      {
+        "name": "Frontend",
+        "items": ["React 19", "TypeScript 5.7", "Vite 7", "Tailwind 4", "Zustand 5"]
+      },
+      {
+        "name": "Desktop",
+        "items": ["Rust", "Tauri 2.x", "Tokio", "Reqwest"]
+      },
+      {
+        "name": "AI Providers",
+        "items": ["Google Gemini", "Anthropic Claude", "OpenAI GPT-4o"]
+      }
+    ]
+  },
+  "theme": {
+    "primary": "#00ff41",
+    "accent": "#10b981",
+    "background": "#0a1f0a",
+    "surface": "rgba(10, 31, 10, 0.9)",
+    "text": "#c0ffc0",
+    "style": "matrix-glass"
+  },
+  "v0Prompt": "Create a beautiful Matrix Glass themed landing page for Tissaia - an AI photo restoration app. Use dark green theme (#0a1f0a) with emerald accents (#10b981, #00ff41). Include: 1) Hero section with headline 'Restore Memories with AI', showing a before/after photo comparison slider. 2) 4-step workflow visualization (Upload > Analyze > Restore > Download) as animated cards. 3) Features grid with 6 cards using lucide icons. 4) Damage types showcase with severity badges (scratches, fading, tears, water damage, mold, creases). 5) Before/After gallery section with 3 example restorations. 6) Tech stack section with React, Rust, Gemini logos. Use glassmorphism cards, subtle glow effects, smooth hover animations. Font: Inter for body, JetBrains Mono for technical text. Responsive design with mobile-first approach."
+}

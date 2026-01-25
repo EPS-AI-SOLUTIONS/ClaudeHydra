@@ -1,0 +1,110 @@
+{
+  "project": {
+    "name": "GeminiHydra",
+    "tagline": "Autonomous AI Agent Swarm",
+    "version": "0.3.0",
+    "edition": "Self-Healing Edition",
+    "description": "Advanced 12-agent AI swarm system with PowerShell orchestration, React GUI, and Rust backend. Features self-healing protocols and intelligent task distribution.",
+    "logo": {
+      "icon": "bot",
+      "style": "matrix"
+    }
+  },
+  "hero": {
+    "headline": "The Witcher Swarm Awakens",
+    "subheadline": "12 specialized AI agents. Self-healing protocols. Autonomous execution.",
+    "cta_primary": {
+      "text": "Deploy Swarm",
+      "link": "#download"
+    },
+    "cta_secondary": {
+      "text": "Meet the Agents",
+      "link": "#agents"
+    },
+    "background": {
+      "type": "animated",
+      "effect": "matrix-rain",
+      "colors": ["#0a0f0d", "#0d1a0d", "#001a00"]
+    }
+  },
+  "agents": {
+    "title": "The Witcher Swarm",
+    "subtitle": "12 Specialized Agents for Every Task",
+    "list": [
+      { "name": "Dijkstra", "role": "Master Strategist", "model": "gemini-3-pro", "color": "#ffd700" },
+      { "name": "Yennefer", "role": "Architect", "model": "qwen2.5-coder", "color": "#9b59b6" },
+      { "name": "Geralt", "role": "Security", "model": "llama3.2:3b", "color": "#c0c0c0" },
+      { "name": "Triss", "role": "QA/Testing", "model": "qwen2.5-coder", "color": "#e74c3c" },
+      { "name": "Jaskier", "role": "Documentation", "model": "llama3.2:3b", "color": "#f39c12" },
+      { "name": "Ciri", "role": "Speed/IO", "model": "llama3.2:1b", "color": "#3498db" },
+      { "name": "Zoltan", "role": "Data Engineering", "model": "llama3.2:3b", "color": "#e67e22" },
+      { "name": "Vesemir", "role": "Code Review", "model": "phi3:mini", "color": "#7f8c8d" },
+      { "name": "Eskel", "role": "DevOps", "model": "llama3.2:3b", "color": "#27ae60" },
+      { "name": "Lambert", "role": "Debugging", "model": "qwen2.5-coder", "color": "#e74c3c" },
+      { "name": "Regis", "role": "Research", "model": "phi3:mini", "color": "#8e44ad" },
+      { "name": "Philippa", "role": "API Development", "model": "llama3.2:3b", "color": "#1abc9c" }
+    ]
+  },
+  "features": [
+    {
+      "icon": "refresh-cw",
+      "title": "Self-Healing Protocol",
+      "description": "Phase C automatic recovery. Agents heal themselves and redistribute failed tasks."
+    },
+    {
+      "icon": "git-branch",
+      "title": "Runspace Pool",
+      "description": "PowerShell parallel execution with intelligent load balancing across agents."
+    },
+    {
+      "icon": "database",
+      "title": "Vector Memory",
+      "description": "Persistent agent memory with .serena/ knowledge graph and RAG retrieval."
+    },
+    {
+      "icon": "layout",
+      "title": "Matrix Glass UI",
+      "description": "React 19 + Tauri 2 desktop app with lazy loading and code splitting."
+    },
+    {
+      "icon": "shield",
+      "title": "Rust Security",
+      "description": "Tauri backend with memory-safe Rust for secure IPC and process isolation."
+    },
+    {
+      "icon": "activity",
+      "title": "Live Monitoring",
+      "description": "Real-time agent status, task queue visualization, and performance metrics."
+    }
+  ],
+  "techStack": {
+    "title": "Hybrid Architecture",
+    "categories": [
+      {
+        "name": "Orchestration",
+        "items": ["PowerShell 7+", "Runspace Pool", "AgentSwarm.psm1"]
+      },
+      {
+        "name": "Frontend",
+        "items": ["React 19", "Vite 7", "Tailwind 4", "Zustand 5", "Framer Motion"]
+      },
+      {
+        "name": "Backend",
+        "items": ["Rust", "Tauri 2.0", "Tokio", "Serde"]
+      },
+      {
+        "name": "AI",
+        "items": ["Google Gemini", "Ollama", "LLaMA", "Qwen", "Phi-3"]
+      }
+    ]
+  },
+  "theme": {
+    "primary": "#00ff41",
+    "accent": "#39ff14",
+    "background": "#0a0f0d",
+    "surface": "rgba(10, 31, 10, 0.9)",
+    "text": "#c0ffc0",
+    "style": "matrix-glass"
+  },
+  "v0Prompt": "Create a Matrix-themed landing page for GeminiHydra - an AI agent swarm system. Use dark green/black theme (#0a0f0d) with neon green accents (#00ff41). Include: 1) Hero with animated matrix rain background, headline 'The Witcher Swarm Awakens'. 2) Agent roster grid showing 12 Witcher-named agents (Dijkstra, Yennefer, Geralt, etc.) with their roles and model assignments in glowing cards. 3) Features section with 6 cards using lucide icons (refresh-cw, git-branch, database, layout, shield, activity). 4) Architecture diagram showing PowerShell > React > Rust layers. 5) Terminal-style code snippet showing swarm initialization. Use JetBrains Mono font, glowing borders, and subtle scan-line effects. Responsive with mobile hamburger menu."
+}

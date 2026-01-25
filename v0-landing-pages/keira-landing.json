@@ -1,0 +1,111 @@
+{
+  "project": {
+    "name": "Keira",
+    "tagline": "AI-Powered Video Watermark Removal",
+    "version": "2.0.0",
+    "description": "High-performance local AI tool for removing watermarks from videos using LaMa ONNX model. All processing happens locally - your videos never leave your computer.",
+    "logo": {
+      "icon": "video",
+      "style": "glassmorphism"
+    }
+  },
+  "hero": {
+    "headline": "Remove Watermarks with AI Precision",
+    "subheadline": "Local processing. No cloud uploads. Professional results.",
+    "cta_primary": {
+      "text": "Download Now",
+      "link": "#download"
+    },
+    "cta_secondary": {
+      "text": "View Demo",
+      "link": "#demo"
+    },
+    "background": {
+      "type": "gradient",
+      "colors": ["#0a0a0a", "#1a1a2e", "#16213e"]
+    }
+  },
+  "features": [
+    {
+      "icon": "shield-check",
+      "title": "100% Local Processing",
+      "description": "Your videos never leave your computer. Complete privacy with on-device AI inference."
+    },
+    {
+      "icon": "wand-2",
+      "title": "LaMa AI Model",
+      "description": "State-of-the-art Large Mask Inpainting model for seamless watermark removal."
+    },
+    {
+      "icon": "layers",
+      "title": "ROI Selection",
+      "description": "Precisely select watermark regions for targeted removal with mask editing tools."
+    },
+    {
+      "icon": "zap",
+      "title": "GPU Accelerated",
+      "description": "ONNX Runtime with CUDA support for blazing fast processing on NVIDIA GPUs."
+    },
+    {
+      "icon": "film",
+      "title": "Multiple Formats",
+      "description": "Support for MP4, WebM, MOV, AVI with quality presets from draft to lossless."
+    },
+    {
+      "icon": "history",
+      "title": "Job History",
+      "description": "Track all your processing jobs with persistent history and quick re-processing."
+    }
+  ],
+  "techStack": {
+    "title": "Built with Modern Technologies",
+    "categories": [
+      {
+        "name": "Frontend",
+        "items": ["React 19", "TypeScript 5.9", "Vite 7", "Tailwind CSS 4", "Zustand 5", "Framer Motion"]
+      },
+      {
+        "name": "Backend",
+        "items": ["Python 3.10+", "FastAPI", "OpenCV", "ONNX Runtime GPU"]
+      },
+      {
+        "name": "AI/ML",
+        "items": ["LaMa Model", "ONNX", "CUDA", "NumPy"]
+      }
+    ]
+  },
+  "workflow": {
+    "title": "Simple 4-Step Process",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Upload Video",
+        "description": "Drag & drop or select your video file"
+      },
+      {
+        "number": 2,
+        "title": "Select Region",
+        "description": "Draw a box around the watermark area"
+      },
+      {
+        "number": 3,
+        "title": "Refine Mask",
+        "description": "Paint precise mask over the watermark"
+      },
+      {
+        "number": 4,
+        "title": "Process & Download",
+        "description": "AI removes watermark, download clean video"
+      }
+    ]
+  },
+  "theme": {
+    "primary": "#808080",
+    "accent": "#22c55e",
+    "background": "#0a0a0a",
+    "surface": "rgba(17, 17, 17, 0.8)",
+    "text": "#e5e5e5",
+    "style": "glassmorphism-dark"
+  },
+  "v0Prompt": "Create a modern, dark-themed landing page for Keira - an AI video watermark removal tool. Use glassmorphism design with dark grays (#0a0a0a, #1a1a1a) and green accents (#22c55e). Include: 1) Hero section with headline 'Remove Watermarks with AI Precision', gradient background, and two CTA buttons. 2) Features grid with 6 cards using lucide icons (shield-check, wand-2, layers, zap, film, history). 3) 4-step workflow timeline showing Upload > Select > Refine > Download. 4) Tech stack section with React, Python, ONNX logos. 5) Download section with platform buttons. Use Tailwind CSS, smooth animations, and responsive design. Font: Inter for body, JetBrains Mono for code."
+}

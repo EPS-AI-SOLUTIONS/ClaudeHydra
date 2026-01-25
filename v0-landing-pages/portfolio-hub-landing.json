@@ -1,0 +1,138 @@
+{
+  "project": {
+    "name": "Regis AI Suite",
+    "tagline": "Enterprise AI Solutions Portfolio",
+    "description": "A collection of 5 production-ready AI applications built with modern technologies. From video processing to AI orchestration, powered by the Regis Architecture.",
+    "logo": {
+      "icon": "sparkles",
+      "style": "elegant"
+    },
+    "author": {
+      "name": "Paweł Serkowski",
+      "role": "AI Solutions Architect",
+      "github": "pawelserkowski-lang"
+    }
+  },
+  "hero": {
+    "headline": "The Regis AI Suite",
+    "subheadline": "5 Production-Ready AI Applications. One Unified Architecture.",
+    "cta_primary": {
+      "text": "Explore Projects",
+      "link": "#projects"
+    },
+    "cta_secondary": {
+      "text": "GitHub",
+      "link": "https://github.com/pawelserkowski-lang"
+    },
+    "background": {
+      "type": "animated",
+      "effect": "particles",
+      "colors": ["#0a0f0d", "#1a1a2e", "#0f0f23"]
+    }
+  },
+  "projects": [
+    {
+      "id": "claude-hydra",
+      "name": "ClaudeHydra",
+      "version": "2.0.0",
+      "tagline": "Hybrid AI Orchestration Platform",
+      "description": "Advanced MCP server with 12-agent Witcher Swarm, 6-stage pipeline, and hybrid Node.js + Rust architecture.",
+      "icon": "cpu",
+      "color": "#00ff41",
+      "features": ["12 AI Agents", "MCP Protocol", "Wolf Pack Learning"],
+      "tech": ["Node.js", "React 19", "Rust/Tauri"],
+      "link": "/claude-hydra",
+      "github": "https://github.com/EPS-AI-SOLUTIONS/GeminiHydra"
+    },
+    {
+      "id": "gemini-hydra",
+      "name": "GeminiHydra",
+      "version": "0.3.0",
+      "tagline": "Autonomous AI Agent Swarm",
+      "description": "PowerShell-orchestrated swarm with self-healing protocols, Matrix Glass UI, and intelligent task distribution.",
+      "icon": "bot",
+      "color": "#39ff14",
+      "features": ["Self-Healing", "Runspace Pool", "Vector Memory"],
+      "tech": ["PowerShell", "React 19", "Rust/Tauri"],
+      "link": "/gemini-hydra",
+      "github": "https://github.com/pawelserkowski-lang/GeminiCLI"
+    },
+    {
+      "id": "regis-claude-master",
+      "name": "Regis Claude Master",
+      "version": "1.0.0",
+      "tagline": "Sophisticated AI Research Assistant",
+      "description": "Multi-provider AI with automatic fallback chain, AES-256 encryption, and real-time web grounding.",
+      "icon": "brain",
+      "color": "#8b5cf6",
+      "features": ["6-Provider Fallback", "AES-256 Encryption", "Edge Functions"],
+      "tech": ["React 19", "Vercel Edge", "JWT Auth"],
+      "link": "/regis-claude-master",
+      "github": "https://github.com/pawelserkowski-lang/RegisClaudeMaster"
+    },
+    {
+      "id": "tissaia",
+      "name": "Tissaia",
+      "version": "3.0.0",
+      "tagline": "AI-Powered Photo Restoration",
+      "description": "Professional photo restoration dashboard using Gemini Vision AI for damage detection and intelligent enhancement.",
+      "icon": "image",
+      "color": "#10b981",
+      "features": ["Gemini Vision", "Face Enhancement", "Colorization"],
+      "tech": ["React 19", "Rust/Tauri", "Gemini API"],
+      "link": "/tissaia",
+      "github": "https://github.com/pawelserkowski-lang/Tissaia"
+    },
+    {
+      "id": "keira",
+      "name": "Keira",
+      "version": "2.0.0",
+      "tagline": "AI Video Watermark Removal",
+      "description": "Local AI tool for removing watermarks from videos using LaMa ONNX model. 100% private, on-device processing.",
+      "icon": "video",
+      "color": "#22c55e",
+      "features": ["LaMa AI Model", "GPU Accelerated", "100% Local"],
+      "tech": ["React 19", "FastAPI", "ONNX Runtime"],
+      "link": "/keira",
+      "github": "https://github.com/pawelserkowski-lang/Keira"
+    }
+  ],
+  "stats": {
+    "title": "Portfolio Statistics",
+    "items": [
+      { "value": "5", "label": "Production Apps" },
+      { "value": "12", "label": "AI Agents" },
+      { "value": "6+", "label": "AI Providers" },
+      { "value": "50K+", "label": "Lines of Code" }
+    ]
+  },
+  "techStack": {
+    "title": "Unified Technology Stack",
+    "shared": [
+      { "name": "React 19", "icon": "react", "description": "Modern UI framework" },
+      { "name": "TypeScript 5.9", "icon": "typescript", "description": "Type-safe development" },
+      { "name": "Tailwind CSS 4", "icon": "tailwind", "description": "Utility-first styling" },
+      { "name": "Vite 7", "icon": "vite", "description": "Next-gen build tool" },
+      { "name": "Zustand 5", "icon": "zustand", "description": "State management" },
+      { "name": "Rust/Tauri", "icon": "rust", "description": "Desktop runtime" }
+    ]
+  },
+  "architecture": {
+    "title": "The Regis Architecture",
+    "principles": [
+      { "name": "Precision", "description": "Every line of code serves a purpose" },
+      { "name": "Elegance", "description": "Clean, readable, maintainable solutions" },
+      { "name": "Security", "description": "Security-first design at every layer" },
+      { "name": "Performance", "description": "Optimized for speed and efficiency" }
+    ]
+  },
+  "theme": {
+    "primary": "#8b5cf6",
+    "accent": "#00ff41",
+    "background": "#0a0f0d",
+    "surface": "rgba(15, 15, 35, 0.8)",
+    "text": "#e5e5e5",
+    "style": "elegant-dark"
+  },
+  "v0Prompt": "Create an elegant portfolio landing page for 'Regis AI Suite' - a collection of 5 AI applications. Use a sophisticated dark theme (#0a0f0d) with purple (#8b5cf6) and green (#00ff41) accents. Include: 1) Hero section with headline 'The Regis AI Suite' and animated particles background. 2) Project cards grid showing all 5 apps (ClaudeHydra, GeminiHydra, Regis Claude Master, Tissaia, Keira) with icons, descriptions, feature tags, and 'View Project' buttons. Each card should have its own accent color. 3) Statistics section with 4 counters (5 Apps, 12 Agents, 6+ Providers, 50K+ LoC) using animated number counters. 4) Shared tech stack section with technology logos in a horizontal scrolling marquee. 5) 'Regis Architecture' principles section with 4 cards (Precision, Elegance, Security, Performance). 6) Footer with GitHub link and author credit. Use Inter font, glassmorphism cards, smooth hover animations, and responsive grid layout."
+}

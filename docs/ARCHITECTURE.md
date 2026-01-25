@@ -1,111 +1,164 @@
-# Architektura HYDRA
+# Architektura ClaudeHydra
 
-## Przegląd Architektury
+**Wersja:** 2.0.0 (Regis)
 
-HYDRA wykorzystuje wielowarstwową architekturę z separacją odpowiedzialności:
+System ClaudeHydra opiera się na architekturze hybrydowej, łączącej elastyczność Node.js (logika agentów) z wydajnością Rust (operacje systemowe) i nowoczesnym frontendem React.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              WARSTWA PREZENTACJI                            │
-│                         CLI / Dashboard / API                               │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           WARSTWA ORKIESTRACJI                              │
-│                                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
-│  │   Planner   │  │   Router    │  │  Scheduler  │  │  Validator  │       │
-│  │  (Dijkstra) │  │             │  │             │  │  (Vesemir)  │       │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘       │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           WARSTWA AGENTÓW (12)                              │
-│                                                                             │
-│  ┌───────┐ ┌─────────┐ ┌───────┐ ┌─────────┐ ┌────────┐ ┌──────┐          │
-│  │Geralt │ │Yennefer │ │ Triss │ │ Jaskier │ │Vesemir │ │ Ciri │          │
-│  └───────┘ └─────────┘ └───────┘ └─────────┘ └────────┘ └──────┘          │
-│  ┌───────┐ ┌─────────┐ ┌────────┐ ┌───────┐ ┌──────────┐ ┌─────────┐      │
-│  │ Eskel │ │ Lambert │ │ Zoltan │ │ Regis │ │ Dijkstra │ │Philippa │      │
-│  └───────┘ └─────────┘ └────────┘ └───────┘ └──────────┘ └─────────┘      │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              WARSTWA MCP                                    │
-│                                                                             │
-│  ┌──────────────┐    ┌───────────────────┐    ┌────────────┐              │
-│  │    Serena    │    │ Desktop Commander │    │ Playwright │              │
-│  │  (symbolic)  │    │    (system ops)   │    │ (browser)  │              │
-│  └──────────────┘    └───────────────────┘    └────────────┘              │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           WARSTWA BACKENDÓW AI                              │
-│                                                                             │
-│  ┌────────────────────────────┐    ┌────────────────────────────┐         │
-│  │         OLLAMA             │    │         GEMINI             │         │
-│  │  ┌────────┐ ┌────────┐    │    │  ┌─────────────────────┐   │         │
-│  │  │llama3.2│ │qwen2.5 │    │    │  │ generativelanguage  │   │         │
-│  │  │  :3b   │ │-coder  │    │    │  │    .googleapis.com  │   │         │
-│  │  └────────┘ └────────┘    │    │  └─────────────────────┘   │         │
-│  └────────────────────────────┘    └────────────────────────────┘         │
-└─────────────────────────────────────────────────────────────────────────────┘
+## Diagram Wysokopoziomowy
+
+```mermaid
+graph TD
+    User[Użytkownik] <--> GUI[Claude GUI (Tauri/React)]
+    
+    subgraph "Desktop App (Tauri)"
+        GUI <-->|IPC Commands| Rust[Rust Backend]
+        Rust <-->|FS/Sys| OS[System Operacyjny]
+        Rust <-->|Bridge| MCPServer[Node.js MCP Server]
+    end
+
+    subgraph "Brain (Node.js)"
+        MCPServer --> Queue[Prompt Queue Manager]
+        Queue --> Agents[12 Agent Swarm]
+        Agents --> Tools[MCP Tools]
+    end
+
+    subgraph "AI Providers"
+        Agents <-->|HTTP| Ollama[Local Ollama]
+        Agents <-->|HTTP| Cloud[Anthropic/Google API]
+    end
 ```
 
-## Komponenty Główne
+## Komponenty
 
-### 1. System Kolejkowania (prompt-queue.js)
+### 1. Node.js MCP Server (`src/`)
+To "mózg" operacyjny.
+- **Odpowiedzialność:** Logika biznesowa, zarządzanie agentami, kolejkowanie zadań, integracja z narzędziami MCP.
+- **Kluczowe moduły:**
+  - `prompt-queue.js`: Implementacja priorytetowej kolejki i rate-limitera.
+  - `hydra/`: Logika specyficzna dla agentów Wiedźmina.
+  - `tools/`: Implementacja narzędzi (filesystem, git, search).
 
-- **PromptQueue** - Podstawowa kolejka z priorytetami
-- **AgentQueueManager** - Zarządzanie 12 równoległymi kolejkami agentów
-- **AgentChannel** - Dedykowany kanał dla każdego agenta
-- **RateLimiter** - Algorytm token bucket dla rate limiting
+### 2. Rust Backend (`claude-gui/src-tauri/`)
+To "mięśnie" i warstwa integracji z systemem.
+- **Odpowiedzialność:** Zarządzanie oknami, bezpieczne operacje na plikach, uruchamianie procesu Node.js, obsługa menu kontekstowego.
+- **Kluczowe moduły:**
+  - `commands.rs`: API dostępne dla frontendu.
+  - `bridge.rs`: Komunikacja z procesem Node.js.
+  - `ollama.rs`: Bezpośrednia, szybka komunikacja z Ollama dla streamingu chatu.
 
-### 2. System Promptów (system-prompt.js)
+### 3. Frontend (`claude-gui/src/`)
+Warstwa prezentacji.
+- **Technologia:** React 19, Vite, Tailwind 4.
+- **Stan:** Zustand (global state).
+- **Design:** Matrix Glass (inspirowany terminalami sci-fi).
 
-- **BOOT_PROMPT** - Inicjalizacyjny prompt systemowy
-- **OLLAMA_INSTRUCTIONS** - Instrukcje dla modeli Ollama
-- **GEMINI_INSTRUCTIONS** - Instrukcje dla Gemini API
-- **MCP_ENFORCEMENT** - Wymuszanie protokołu MCP
-- **WitcherAgents** - Definicje 12 agentów
+## Przepływ Danych (Data Flow)
 
-### 3. Konfiguracja (config.js)
-
-- Walidacja Zod dla wszystkich ustawień
-- Zmienne środowiskowe
-- Tryby pracy (standard/YOLO)
-
-### 4. Narzędzia MCP (src/tools/)
-
-- **filesystem.js** - Operacje na plikach
-- **shell.js** - Komendy powłoki
-- **knowledge.js** - System pamięci
-
-## Przepływ Danych
-
-```
-Input → Planner → Agent Selection → Queue → Execution → Validation → Output
-         │              │              │         │           │
-         ▼              ▼              ▼         ▼           ▼
-     Dijkstra      Load Balancing   Priority  Parallel   Vesemir
-                                     Queue     Exec
-```
-
-## Strategie Load Balancing
-
-1. **ROUND_ROBIN** - Cykliczne rozdzielanie między agentów
-2. **LEAST_LOADED** - Wybór najmniej obciążonego agenta
-3. **WEIGHTED** - Ważony random proporcjonalny do obciążenia
-4. **RANDOM** - Losowy wybór agenta
-5. **ROLE_BASED** - Routing oparty na roli agenta
+1. **Użytkownik** wpisuje prompt w GUI.
+2. **React** wysyła komendę IPC do **Rust**.
+3. **Rust** przekazuje zadanie do **Node.js MCP Server** (jeśli wymaga logiki agentów) LUB bezpośrednio do **Ollama** (prosty chat).
+4. **Node.js** analizuje prompt, wybiera agenta (np. Triss do testów) i kolejkuje zadanie.
+5. **Agent** wykonuje narzędzia (np. `read_file`, `exec_command`) i zwraca wynik.
+6. Wynik wraca przez **Rust** do **React**.
 
 ## Bezpieczeństwo
 
-- Wszystkie operacje przez MCP
-- Walidacja ścieżek plików
-- Blokowanie niebezpiecznych komend
-- Audit logging wszystkich akcji
+- **Izolacja:** Proces Node.js działa jako proces potomny, ale komunikacja jest ściśle kontrolowana.
+- **Walidacja:** Wszystkie ścieżki plików są walidowane w Rust przed dostępem.
+- **API Keys:** Przechowywane w pamięci procesu backendu, nie eksponowane do frontendu (poza niezbędnymi wyjątkami).
+
+---
+
+## GUI: Architektura Lazy Loading
+
+Frontend wykorzystuje React 19 z wzorcem lazy loading dla optymalnej wydajnosci. Wszystkie ciezkie komponenty sa ladowane dynamicznie.
+
+### Lazy Components (`claude-gui/src/components/LazyComponents.tsx`)
+
+```
+                      ┌─────────────────────┐
+                      │     App.tsx         │
+                      │  (QueryClient +     │
+                      │   Sonner Toaster)   │
+                      └──────────┬──────────┘
+                                 │
+              ┌──────────────────┼──────────────────┐
+              ▼                  ▼                  ▼
+     ┌────────────────┐ ┌────────────────┐ ┌────────────────┐
+     │ <Suspense>     │ │ <Suspense>     │ │ <Suspense>     │
+     │  SidebarLazy   │ │ OllamaChatView │ │ SettingsView   │
+     └────────────────┘ │    Lazy        │ │    Lazy        │
+                        └────────────────┘ └────────────────┘
+```
+
+**Ladowane leniwie:**
+- `SettingsViewLazy` - Zarzadzanie kluczami API
+- `SidebarLazy` - Nawigacja i sesje
+- `OllamaChatViewLazy` - Czat z renderowaniem Markdown
+- `ChatHistoryViewLazy` - Historia rozmow
+- `HistoryViewLazy` - Historia zatwierdzen
+- `RulesViewLazy` - Edytor regul auto-approve
+- `LearningPanelLazy` - Panel uczenia AI
+- `DebugPanelLazy` - Narzedzia debugowania
+
+### Warstwa Hooks (`claude-gui/src/hooks/`)
+
+Hooki zapewniaja reuzywalna logike biznesowa:
+
+| Hook | Funkcja | Zrodlo |
+|------|---------|--------|
+| `useHotkey` | Pojedynczy skrot klawiszowy | GeminiHydra |
+| `useKeyboardShortcuts` | Manager wielu skrotow | GeminiHydra |
+| `useClaude` | Integracja z Claude API | Native |
+| `useChatHistory` | Persystencja czatow (IndexedDB) | Native |
+| `useSessionAI` | Stan sesji AI | Native |
+| `useWorker` | Web Worker communication | Native |
+| `useResearchAgent` | Agent badawczy | Native |
+| `useTrainingAgent` | Agent treningu modeli | Native |
+| `usePromptPipeline` | 6-etapowy pipeline promptow | Native |
+
+### Cross-Pollination Components (z GeminiHydra)
+
+Komponenty przeniesione z siostrzanego projektu GeminiHydra:
+
+**`DragDropZone`** (`claude-gui/src/components/chat/DragDropZone.tsx`)
+- Obsluga drag & drop plikow do czatu
+- Walidacja rozmiaru (domyslnie max 5MB)
+- Rozpoznawanie typow: obrazy (base64) vs tekst
+
+**`ChatMessageContextMenu`** (`claude-gui/src/components/chat/ChatMessageContextMenu.tsx`)
+- Menu kontekstowe dla wiadomosci czatu
+- Akcje: Kopiuj, Regeneruj (tylko AI), Usun
+- Automatyczne zamykanie przy kliknieciu poza menu
+
+### TanStack Query Integration
+
+Konfiguracja w `claude-gui/src/main.tsx`:
+
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minut
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+```
+
+### Sonner Toast Notifications
+
+Globalny system powiadomien w stylu Matrix Glass:
+
+```typescript
+<Toaster
+  position="bottom-right"
+  toastOptions={{
+    style: {
+      background: '#0a1f0a',
+      border: '1px solid rgba(0, 255, 65, 0.3)',
+      color: '#c0ffc0',
+    },
+  }}
+/>
+```

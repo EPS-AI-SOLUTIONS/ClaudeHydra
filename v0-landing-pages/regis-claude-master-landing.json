@@ -1,0 +1,98 @@
+{
+  "project": {
+    "name": "Regis Claude Master",
+    "tagline": "Sophisticated AI Research Assistant",
+    "version": "1.0.0",
+    "description": "Multi-provider AI assistant with automatic fallback chain, encrypted storage, and real-time web grounding. Powered by the wisdom of Emiel Regis.",
+    "logo": {
+      "icon": "brain",
+      "style": "elegant"
+    },
+    "persona": "Emiel Regis Rohellec Terzieff-Godefroy"
+  },
+  "hero": {
+    "headline": "Research with Precision & Elegance",
+    "subheadline": "Multi-provider AI with automatic fallback. AES-256 encrypted. Web-grounded facts.",
+    "cta_primary": {
+      "text": "Try Regis",
+      "link": "#demo"
+    },
+    "cta_secondary": {
+      "text": "Learn More",
+      "link": "#features"
+    },
+    "background": {
+      "type": "gradient",
+      "colors": ["#0f0f23", "#1a1a3e", "#2d1b4e"]
+    }
+  },
+  "features": [
+    {
+      "icon": "layers",
+      "title": "6-Provider Fallback Chain",
+      "description": "Anthropic → OpenAI → Google → Mistral → Groq → Ollama. Never lose a query."
+    },
+    {
+      "icon": "lock",
+      "title": "AES-256-GCM Encryption",
+      "description": "Your conversations encrypted with non-extractable keys. XSS-proof security."
+    },
+    {
+      "icon": "globe",
+      "title": "Web Grounding",
+      "description": "Real-time Google Custom Search integration for factual accuracy verification."
+    },
+    {
+      "icon": "gauge",
+      "title": "Metrics Dashboard",
+      "description": "Monitor provider health, costs, latency percentiles (p50/p95/p99) in real-time."
+    },
+    {
+      "icon": "cloud-off",
+      "title": "Offline Support",
+      "description": "Service Worker caching and IndexedDB backups. Work without internet."
+    },
+    {
+      "icon": "zap",
+      "title": "Edge Functions",
+      "description": "Vercel Edge deployment for global low-latency responses under 100ms."
+    }
+  ],
+  "providers": {
+    "title": "Intelligent Provider Selection",
+    "chain": [
+      { "name": "Anthropic Claude", "role": "Primary", "color": "#d4a574" },
+      { "name": "OpenAI GPT-4", "role": "Fallback 1", "color": "#74aa9c" },
+      { "name": "Google Gemini", "role": "Fallback 2", "color": "#4285f4" },
+      { "name": "Mistral", "role": "Fallback 3", "color": "#ff7000" },
+      { "name": "Groq", "role": "Fallback 4", "color": "#f55036" },
+      { "name": "Ollama", "role": "Local", "color": "#ffffff" }
+    ]
+  },
+  "techStack": {
+    "title": "Enterprise-Grade Stack",
+    "categories": [
+      {
+        "name": "Frontend",
+        "items": ["React 19", "TypeScript 5.9", "Vite 7", "Tailwind CSS 4", "Zustand 5", "i18next"]
+      },
+      {
+        "name": "Backend",
+        "items": ["Vercel Edge Functions", "Node.js 25", "JWT Auth", "jose"]
+      },
+      {
+        "name": "Security",
+        "items": ["AES-256-GCM", "httpOnly Cookies", "CSP Headers", "Zod Validation"]
+      }
+    ]
+  },
+  "theme": {
+    "primary": "#8b5cf6",
+    "accent": "#d4a574",
+    "background": "#0f0f23",
+    "surface": "rgba(26, 26, 62, 0.8)",
+    "text": "#e5e5e5",
+    "style": "elegant-dark"
+  },
+  "v0Prompt": "Create an elegant, sophisticated landing page for Regis Claude Master - a multi-provider AI research assistant. Use a refined dark purple theme (#0f0f23, #1a1a3e) with gold/amber accents (#d4a574). Include: 1) Hero section with headline 'Research with Precision & Elegance' and subtle animated gradient. 2) Provider chain visualization showing 6 AI providers in a flowchart (Anthropic > OpenAI > Google > Mistral > Groq > Ollama). 3) Features grid with 6 cards using lucide icons. 4) Security section highlighting AES-256 encryption with a lock animation. 5) Metrics dashboard preview showing latency charts. 6) Footer with Witcher-inspired quote from Regis. Use elegant typography, subtle animations, glassmorphism cards. Font: Crimson Text for headings, Inter for body."
+}

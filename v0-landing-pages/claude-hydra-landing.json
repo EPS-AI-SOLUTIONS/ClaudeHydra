@@ -1,0 +1,111 @@
+{
+  "project": {
+    "name": "ClaudeHydra",
+    "tagline": "Hybrid AI Orchestration Platform",
+    "version": "2.0.0",
+    "edition": "Regis Edition",
+    "description": "Advanced MCP server with 12-agent Witcher Swarm, 6-stage pipeline, and hybrid Node.js + Rust architecture. Combines local Ollama models with cloud APIs.",
+    "logo": {
+      "icon": "cpu",
+      "style": "matrix-glass"
+    }
+  },
+  "hero": {
+    "headline": "Orchestrate AI with Precision",
+    "subheadline": "12 agents. 6-stage pipeline. Hybrid local + cloud AI.",
+    "cta_primary": {
+      "text": "Get Started",
+      "link": "#download"
+    },
+    "cta_secondary": {
+      "text": "Documentation",
+      "link": "#docs"
+    },
+    "background": {
+      "type": "gradient",
+      "colors": ["#0a1f0a", "#0d2818", "#0a0f0d"]
+    }
+  },
+  "pipeline": {
+    "title": "6-Stage Execution Pipeline",
+    "stages": [
+      { "number": 1, "name": "Speculate", "description": "Analyze task requirements", "icon": "lightbulb" },
+      { "number": 2, "name": "Plan", "description": "Strategic planning with Dijkstra", "icon": "map" },
+      { "number": 3, "name": "Execute", "description": "Parallel agent execution", "icon": "play" },
+      { "number": 4, "name": "Validate", "description": "Code review by Vesemir", "icon": "check-circle" },
+      { "number": 5, "name": "Synthesize", "description": "Merge agent outputs", "icon": "git-merge" },
+      { "number": 6, "name": "Output", "description": "Format and deliver results", "icon": "send" }
+    ]
+  },
+  "features": [
+    {
+      "icon": "users",
+      "title": "12-Agent Witcher Swarm",
+      "description": "Specialized agents for security, architecture, QA, docs, DevOps, and more."
+    },
+    {
+      "icon": "server",
+      "title": "MCP Protocol",
+      "description": "Model Context Protocol server with 20+ tools for file, shell, and knowledge ops."
+    },
+    {
+      "icon": "shuffle",
+      "title": "Hybrid AI Backend",
+      "description": "Seamlessly switch between local Ollama and cloud APIs (Claude, Gemini)."
+    },
+    {
+      "icon": "brain",
+      "title": "Wolf Pack Learning",
+      "description": "Continuous learning with RAG engine, fine-tuning export, and dynamic prompts."
+    },
+    {
+      "icon": "layout-dashboard",
+      "title": "Matrix Glass GUI",
+      "description": "React 19 + Tauri 2 desktop app with lazy loading and debug LiveView."
+    },
+    {
+      "icon": "shield-check",
+      "title": "Security First",
+      "description": "Audit logging, path validation, API key encryption, and least privilege."
+    }
+  ],
+  "techStack": {
+    "title": "Production-Ready Stack",
+    "categories": [
+      {
+        "name": "Backend",
+        "items": ["Node.js 20+", "MCP SDK", "Zod 4", "ES Modules"]
+      },
+      {
+        "name": "Frontend",
+        "items": ["React 19", "Vite 7", "Tailwind 4", "Zustand 5", "TanStack Query"]
+      },
+      {
+        "name": "Desktop",
+        "items": ["Rust", "Tauri 2.0", "Tokio", "Serde"]
+      },
+      {
+        "name": "AI",
+        "items": ["Ollama", "Anthropic Claude", "Google Gemini", "OpenAI"]
+      }
+    ]
+  },
+  "agents": {
+    "title": "Meet the Witcher Swarm",
+    "highlight": [
+      { "name": "Geralt", "role": "Security & Coordination", "color": "#c0c0c0" },
+      { "name": "Yennefer", "role": "Architecture", "color": "#9b59b6" },
+      { "name": "Dijkstra", "role": "Strategic Planning", "color": "#ffd700" },
+      { "name": "Vesemir", "role": "Code Review", "color": "#7f8c8d" }
+    ]
+  },
+  "theme": {
+    "primary": "#00ff41",
+    "accent": "#39ff14",
+    "background": "#0a1f0a",
+    "surface": "rgba(10, 31, 10, 0.9)",
+    "text": "#c0ffc0",
+    "style": "matrix-glass"
+  },
+  "v0Prompt": "Create a professional Matrix-themed landing page for ClaudeHydra - an AI orchestration platform. Use dark green theme (#0a1f0a) with neon green accents (#00ff41). Include: 1) Hero section with headline 'Orchestrate AI with Precision', animated gradient background. 2) 6-stage pipeline visualization as a horizontal flowchart (Speculate > Plan > Execute > Validate > Synthesize > Output) with icons. 3) Features grid with 6 cards. 4) Agent showcase section with 4 highlighted agents (Geralt, Yennefer, Dijkstra, Vesemir) in glowing avatar cards. 5) Tech stack badges section. 6) Code snippet showing MCP server initialization. Use JetBrains Mono for code, Inter for body. Glassmorphism cards with subtle glow effects. Responsive design."
+}
