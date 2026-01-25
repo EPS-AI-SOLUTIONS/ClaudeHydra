@@ -1,4 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
+import { Toaster } from 'sonner';
 import { Header } from './components/Header';
 import { TerminalView } from './components/TerminalView';
 import { StatusLine } from './components/StatusLine';
@@ -251,6 +252,18 @@ function App() {
         {/* CPU Performance Dashboard - floating */}
         <CpuDashboard />
       </div>
+
+      {/* Toast Notifications */}
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#0a1f0a',
+            border: '1px solid rgba(0, 255, 65, 0.3)',
+            color: '#c0ffc0',
+          },
+        }}
+      />
     </div>
   );
 }
