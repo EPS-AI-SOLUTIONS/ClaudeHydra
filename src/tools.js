@@ -575,7 +575,7 @@ export const TOOLS = [
   {
     name: 'hydra_swarm',
     description:
-      'Run the 6-step AgentSwarm protocol with parallel agents and optional memory logging.',
+      'Run the 6-step ClaudeHydra Swarm protocol with parallel agents and optional memory logging.',
     inputSchema: {
       type: 'object',
       properties: {

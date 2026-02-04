@@ -369,10 +369,13 @@ export class EnhancedMode extends EventEmitter {
   async processQuery(input, options = {}) {
     this.cli.output.startSpinner('Processing...');
 
+    // Filter out cli reference to avoid circular JSON serialization in cache
+    const { cli, ...safeOptions } = options;
+
     try {
       const result = await this.cli.queryProcessor.process(input, {
         autoAgent: true,
-        ...options,
+        ...safeOptions,
         onToken: this.cli.streaming ? (token) => {
           this.cli.output.streamWrite(token);
         } : null

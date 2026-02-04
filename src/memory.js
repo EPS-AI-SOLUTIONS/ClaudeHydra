@@ -408,7 +408,7 @@ export async function writeSwarmMemory(input, options = {}) {
     '',
     `**Time**: ${now.toISOString()}`,
     '**Status**: Completed',
-    '**Agent**: AgentSwarm',
+    '**Agent**: ClaudeHydra Swarm',
     '',
     '### Outcome',
     '',

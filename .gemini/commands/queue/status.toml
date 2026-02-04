@@ -4,10 +4,10 @@
 name = "status"
 description = "View and manage the prompt queue"
 category = "queue"
-requires_mcp = "ollama-hydra"
+requires_mcp = "ollama"
 
 prompt = """
-Use @ollama-hydra MCP server to manage the prompt queue.
+Use @ollama MCP server to manage the prompt queue.
 
 Available actions:
 - status: Show queue status (queue_status)

@@ -77,9 +77,13 @@ fn get_learning_dir() -> PathBuf {
     let mut path = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     // Navigate up if we're in src-tauri
     if path.ends_with("src-tauri") {
-        path = path.parent().unwrap().parent().unwrap().to_path_buf();
+        if let Some(parent) = path.parent().and_then(|p| p.parent()) {
+            path = parent.to_path_buf();
+        }
     } else if path.ends_with("claude-gui") {
-        path = path.parent().unwrap().to_path_buf();
+        if let Some(parent) = path.parent() {
+            path = parent.to_path_buf();
+        }
     }
     path
 }
@@ -197,16 +201,18 @@ pub async fn learning_get_stats() -> Result<LearningStats, String> {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.extension().map(|e| e == "jsonl").unwrap_or(false) {
-                let filename = path.file_name().unwrap().to_string_lossy();
-                let content = fs::read_to_string(&path).unwrap_or_default();
-                let count = content.lines().filter(|l| !l.is_empty()).count() as u32;
+                if let Some(filename) = path.file_name() {
+                    let filename = filename.to_string_lossy();
+                    let content = fs::read_to_string(&path).unwrap_or_default();
+                    let count = content.lines().filter(|l| !l.is_empty()).count() as u32;
 
-                if filename.starts_with("instruction") {
-                    instruction_examples += count;
-                } else if filename.starts_with("conversation") {
-                    conversation_examples += count;
-                } else if filename.starts_with("preference") {
-                    preference_examples += count;
+                    if filename.starts_with("instruction") {
+                        instruction_examples += count;
+                    } else if filename.starts_with("conversation") {
+                        conversation_examples += count;
+                    } else if filename.starts_with("preference") {
+                        preference_examples += count;
+                    }
                 }
             }
         }
@@ -263,7 +269,9 @@ pub fn learning_get_preferences() -> Result<UserPreferences, String> {
 #[tauri::command]
 pub fn learning_save_preferences(preferences: UserPreferences) -> Result<(), String> {
     let path = get_preferences_path();
-    let _ = fs::create_dir_all(path.parent().unwrap());
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
 
     let content = serde_json::to_string_pretty(&preferences).map_err(|e| e.to_string())?;
     fs::write(&path, content).map_err(|e| e.to_string())?;
@@ -408,7 +416,8 @@ pub fn learning_collect_training(
         .open(&file_path)
         .map_err(|e| e.to_string())?;
 
-    writeln!(file, "{}", serde_json::to_string(&example).unwrap()).map_err(|e| e.to_string())?;
+    let json = serde_json::to_string(&example).map_err(|e| e.to_string())?;
+    writeln!(file, "{}", json).map_err(|e| e.to_string())?;
 
     Ok(true)
 }
@@ -422,9 +431,12 @@ pub fn learning_get_training_examples(limit: Option<u32>) -> Result<Vec<Training
     if let Ok(entries) = fs::read_dir(&training_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.extension().map(|e| e == "jsonl").unwrap_or(false)
-                && path.file_name().unwrap().to_string_lossy().starts_with("instruction")
-            {
+            let is_jsonl = path.extension().map(|e| e == "jsonl").unwrap_or(false);
+            let is_instruction = path.file_name()
+                .map(|f| f.to_string_lossy().starts_with("instruction"))
+                .unwrap_or(false);
+
+            if is_jsonl && is_instruction {
                 if let Ok(content) = fs::read_to_string(&path) {
                     for line in content.lines() {
                         if line.is_empty() {

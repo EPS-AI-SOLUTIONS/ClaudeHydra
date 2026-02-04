@@ -262,27 +262,31 @@ export class SwarmMode extends EventEmitter {
   async executeParallel(agentNames, prompt) {
     this.cli.output.startSpinner('Executing in parallel...');
 
-    const queries = agentNames.map(name => ({
-      prompt,
-      options: { agent: name }
-    }));
+    try {
+      const queries = agentNames.map(name => ({
+        prompt,
+        options: { agent: name }
+      }));
 
-    const { results, errors } = await this.cli.queryProcessor.processParallel(queries);
+      const { results, errors } = await this.cli.queryProcessor.processParallel(queries);
 
-    this.cli.output.stopSpinner();
-
-    const output = [];
-    for (let i = 0; i < agentNames.length; i++) {
-      const name = agentNames[i];
-      const result = results[i];
-      if (result.error) {
-        output.push(`\n--- ${name} [ERROR] ---\n${result.error}`);
-      } else {
-        output.push(`\n--- ${name} ---\n${result.response}`);
+      const output = [];
+      for (let i = 0; i < agentNames.length; i++) {
+        const name = agentNames[i];
+        const result = results[i];
+        if (result?.error) {
+          output.push(`\n--- ${name} [ERROR] ---\n${result.error}`);
+        } else if (result?.response) {
+          output.push(`\n--- ${name} ---\n${result.response}`);
+        } else {
+          output.push(`\n--- ${name} [NO RESPONSE] ---`);
+        }
       }
-    }
 
-    return output.join('\n');
+      return output.join('\n');
+    } finally {
+      this.cli.output.stopSpinner();
+    }
   }
 
   /**

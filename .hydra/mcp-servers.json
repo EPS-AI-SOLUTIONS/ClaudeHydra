@@ -1,0 +1,167 @@
+{
+  "$schema": "./schemas/mcp-servers.schema.json",
+  "version": "1.0.0",
+  "servers": {
+    "ollama": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "ollama-mcp"],
+      "env": {
+        "OLLAMA_HOST": "http://localhost:11434"
+      },
+      "timeout": 120000,
+      "healthCheck": {
+        "enabled": true,
+        "interval": 60000,
+        "timeout": 5000,
+        "cacheTTL": 30000
+      },
+      "retry": {
+        "maxRetries": 3,
+        "baseDelay": 1000,
+        "maxDelay": 10000,
+        "backoffMultiplier": 2
+      },
+      "tags": ["ai", "local", "ollama"],
+      "enabled": true
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "C:/Users/BIURODOM/.local/bin/uvx.exe",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--project-from-cwd"],
+      "timeout": 120000,
+      "healthCheck": {
+        "enabled": true,
+        "interval": 120000
+      },
+      "tags": ["code", "analysis", "symbolic"],
+      "enabled": true
+    },
+    "desktop-commander": {
+      "type": "stdio",
+      "command": "C:/Users/BIURODOM/AppData/Roaming/npm/desktop-commander.cmd",
+      "env": {
+        "DC_SHELL": "powershell"
+      },
+      "timeout": 60000,
+      "healthCheck": {
+        "enabled": true,
+        "interval": 60000
+      },
+      "tags": ["filesystem", "system", "process"],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "C:/Users/BIURODOM/AppData/Roaming/npm/mcp-server-playwright.cmd",
+      "timeout": 60000,
+      "healthCheck": {
+        "enabled": true,
+        "interval": 120000
+      },
+      "tags": ["browser", "automation", "testing"],
+      "enabled": true
+    },
+    "memory": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
+      "timeout": 30000,
+      "healthCheck": {
+        "enabled": true,
+        "interval": 300000
+      },
+      "tags": ["memory", "knowledge", "graph"],
+      "enabled": true
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@anthropics/mcp-server-filesystem", "C:/Users/BIURODOM/Desktop/ClaudeHydra"],
+      "timeout": 30000,
+      "healthCheck": {
+        "enabled": true,
+        "interval": 60000
+      },
+      "tags": ["filesystem", "files"],
+      "enabled": true
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@anthropics/mcp-server-context7"],
+      "timeout": 60000,
+      "healthCheck": {
+        "enabled": true,
+        "interval": 120000
+      },
+      "tags": ["docs", "library", "documentation"],
+      "enabled": true
+    },
+    "github": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "timeout": 60000,
+      "healthCheck": {
+        "enabled": true,
+        "interval": 120000
+      },
+      "tags": ["git", "github", "vcs"],
+      "enabled": true
+    },
+    "brave-search": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@anthropics/mcp-server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "timeout": 30000,
+      "healthCheck": {
+        "enabled": true,
+        "interval": 300000
+      },
+      "tags": ["search", "web"],
+      "enabled": false
+    },
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "timeout": 120000,
+      "healthCheck": {
+        "enabled": true,
+        "interval": 300000
+      },
+      "tags": ["reasoning", "thinking"],
+      "enabled": true
+    }
+  },
+  "defaults": {
+    "timeout": 30000,
+    "healthCheck": {
+      "enabled": true,
+      "interval": 60000,
+      "timeout": 5000,
+      "cacheTTL": 30000
+    },
+    "retry": {
+      "maxRetries": 3,
+      "baseDelay": 1000,
+      "maxDelay": 30000,
+      "backoffMultiplier": 2
+    }
+  },
+  "groups": {
+    "ai": ["ollama", "context7", "sequential-thinking"],
+    "code": ["serena", "github"],
+    "filesystem": ["desktop-commander", "filesystem"],
+    "browser": ["playwright"],
+    "search": ["brave-search"],
+    "memory": ["memory"]
+  }
+}

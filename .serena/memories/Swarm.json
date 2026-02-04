@@ -1,0 +1,122 @@
+[
+  {
+    "timestamp": "2026-01-27T07:56:10.537Z",
+    "agent": "Swarm",
+    "data": {
+      "sessionId": "fa5fb0d8",
+      "query": "hello",
+      "duration": 41.405,
+      "taskCount": 1,
+      "successRate": "1/1",
+      "archiveFile": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\.serena\\memories\\sessions\\session_fa5fb0d8_2026-01-27T07-56-10.md"
+    }
+  },
+  {
+    "timestamp": "2026-01-27T08:21:48.056Z",
+    "agent": "Swarm",
+    "data": {
+      "sessionId": "0dfc6aa5",
+      "query": "test",
+      "duration": 62.703,
+      "taskCount": 1,
+      "successRate": "1/1",
+      "archiveFile": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\.serena\\memories\\sessions\\session_0dfc6aa5_2026-01-27T08-21-48.md"
+    }
+  },
+  {
+    "timestamp": "2026-01-27T08:24:54.748Z",
+    "agent": "Swarm",
+    "data": {
+      "sessionId": "427ea98e",
+      "query": "dodaj kolejkowanie query w ClaudeHydra",
+      "duration": 138.483,
+      "taskCount": 4,
+      "successRate": "2/4",
+      "archiveFile": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\.serena\\memories\\sessions\\session_427ea98e_2026-01-27T08-24-54.md"
+    }
+  },
+  {
+    "timestamp": "2026-01-27T08:27:01.858Z",
+    "agent": "Swarm",
+    "data": {
+      "sessionId": "514da5be",
+      "query": "══════╗╔═════════════════════════════════════════════════════",
+      "duration": 201.286,
+      "taskCount": 3,
+      "successRate": "1/3",
+      "archiveFile": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\.serena\\memories\\sessions\\session_514da5be_2026-01-27T08-27-01.md"
+    }
+  },
+  {
+    "timestamp": "2026-01-27T08:27:40.133Z",
+    "agent": "Swarm",
+    "data": {
+      "sessionId": "f35e075d",
+      "query": "Implement a middleware layer in the ClaudeHydra CLI to automatically wrap string-based observations into the required array format before calling MCP tools, reducing the likelihood of \"undefined\" field errors in future tasks.",
+      "duration": 168.849,
+      "taskCount": 1,
+      "successRate": "1/1",
+      "archiveFile": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\.serena\\memories\\sessions\\session_f35e075d_2026-01-27T08-27-40.md"
+    }
+  },
+  {
+    "timestamp": "2026-01-27T08:30:13.066Z",
+    "agent": "Swarm",
+    "data": {
+      "sessionId": "44a3a557",
+      "query": "masz wysztkie uprawnienia, działaj i zapisz w pamięci że możesz użyać dostepu do plików lokalnyych, narzędzi mcp oraz internetu",
+      "duration": 53.474,
+      "taskCount": 1,
+      "successRate": "1/1",
+      "archiveFile": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\.serena\\memories\\sessions\\session_44a3a557_2026-01-27T08-30-13.md"
+    }
+  },
+  {
+    "timestamp": "2026-01-27T08:30:24.987Z",
+    "agent": "Swarm",
+    "data": {
+      "sessionId": "c194c409",
+      "query": "zapisz na stałe",
+      "duration": 47.433,
+      "taskCount": 1,
+      "successRate": "1/1",
+      "archiveFile": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\.serena\\memories\\sessions\\session_c194c409_2026-01-27T08-30-24.md"
+    }
+  },
+  {
+    "timestamp": "2026-01-27T08:32:02.833Z",
+    "agent": "Swarm",
+    "data": {
+      "sessionId": "799abcd3",
+      "query": "zapisz na stałe",
+      "duration": 134.096,
+      "taskCount": 3,
+      "successRate": "2/3",
+      "archiveFile": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\.serena\\memories\\sessions\\session_799abcd3_2026-01-27T08-32-02.md"
+    }
+  },
+  {
+    "timestamp": "2026-01-27T08:33:30.923Z",
+    "agent": "Swarm",
+    "data": {
+      "sessionId": "1d0f41f1",
+      "query": "niech regis oraz dijkstra używa modeli AI Claude a nie Ollama",
+      "duration": 163.56,
+      "taskCount": 5,
+      "successRate": "1/5",
+      "archiveFile": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\.serena\\memories\\sessions\\session_1d0f41f1_2026-01-27T08-33-30.md"
+    }
+  },
+  {
+    "timestamp": "2026-01-27T08:37:29.306Z",
+    "agent": "Swarm",
+    "data": {
+      "sessionId": "c0f90cc4",
+      "query": "dodaj automatycznie sprawdzanie i uruchamianie ollama przed rozpoczęciem zadania",
+      "duration": 116.704,
+      "taskCount": 2,
+      "successRate": "2/2",
+      "archiveFile": "C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\.serena\\memories\\sessions\\session_c0f90cc4_2026-01-27T08-37-29.md"
+    }
+  }
+]

@@ -1,0 +1,148 @@
+{
+  "$schema": "./schemas/hooks.schema.json",
+  "version": "1.0.0",
+  "hooks": {
+    "SessionStart": [
+      {
+        "name": "load-project-context",
+        "type": "builtin",
+        "handler": "loadProjectContext",
+        "enabled": true,
+        "config": {
+          "files": ["CLAUDE.md", "README.md", "package.json"]
+        }
+      },
+      {
+        "name": "check-mcp-health",
+        "type": "builtin",
+        "handler": "checkMCPHealth",
+        "timeout": 10000,
+        "enabled": true,
+        "config": {
+          "failOnUnhealthy": false,
+          "logResults": true
+        }
+      },
+      {
+        "name": "load-memories",
+        "type": "builtin",
+        "handler": "loadMemories",
+        "enabled": true,
+        "config": {
+          "memoryDir": ".serena/memories"
+        }
+      }
+    ],
+    "PreToolUse": [
+      {
+        "name": "security-audit",
+        "type": "builtin",
+        "handler": "securityAudit",
+        "enabled": true,
+        "tools": ["shell", "filesystem", "execute_command", "write_file"],
+        "config": {
+          "blockedPaths": ["/etc", "/Windows", ".env", ".ssh", "secrets"],
+          "blockedCommands": ["rm -rf /", "format", "mkfs", "dd if="],
+          "warnOnSensitive": true
+        }
+      },
+      {
+        "name": "rate-limiter",
+        "type": "builtin",
+        "handler": "rateLimit",
+        "enabled": true,
+        "config": {
+          "maxPerMinute": 120,
+          "maxPerHour": 3600,
+          "burstLimit": 20
+        }
+      }
+    ],
+    "PostToolUse": [
+      {
+        "name": "audit-logger",
+        "type": "builtin",
+        "handler": "logToolExecution",
+        "enabled": true,
+        "config": {
+          "logDir": ".hydra/logs",
+          "includeArgs": true,
+          "includeResult": false,
+          "maxResultLength": 500
+        }
+      },
+      {
+        "name": "stats-collector",
+        "type": "builtin",
+        "handler": "collectStats",
+        "enabled": true
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "name": "error-recovery",
+        "type": "builtin",
+        "handler": "attemptRecovery",
+        "enabled": true,
+        "config": {
+          "maxRetries": 2,
+          "retryDelay": 1000,
+          "retryableErrors": ["ECONNREFUSED", "ETIMEDOUT", "ENOTFOUND"]
+        }
+      },
+      {
+        "name": "error-logger",
+        "type": "builtin",
+        "handler": "logError",
+        "enabled": true,
+        "config": {
+          "logDir": ".hydra/logs/errors",
+          "includeStackTrace": true
+        }
+      }
+    ],
+    "PrePlanPhase": [
+      {
+        "name": "phase-logger",
+        "type": "builtin",
+        "handler": "logPhaseStart",
+        "enabled": true
+      }
+    ],
+    "PostPlanPhase": [
+      {
+        "name": "phase-complete-logger",
+        "type": "builtin",
+        "handler": "logPhaseComplete",
+        "enabled": true
+      },
+      {
+        "name": "checkpoint-saver",
+        "type": "builtin",
+        "handler": "saveCheckpoint",
+        "enabled": true,
+        "config": {
+          "checkpointDir": ".hydra/checkpoints"
+        }
+      }
+    ],
+    "SessionEnd": [
+      {
+        "name": "session-summary",
+        "type": "builtin",
+        "handler": "generateSessionSummary",
+        "enabled": true
+      },
+      {
+        "name": "cleanup",
+        "type": "builtin",
+        "handler": "cleanupSession",
+        "enabled": true,
+        "config": {
+          "keepLogs": true,
+          "archivePlans": true
+        }
+      }
+    ]
+  }
+}

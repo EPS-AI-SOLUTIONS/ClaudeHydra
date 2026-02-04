@@ -33,6 +33,28 @@ import { ProviderRegistry } from './core/interfaces.js';
 import * as ollamaClient from './providers/ollama-client.js';
 import * as geminiClient from './providers/gemini-client.js';
 
+// ============================================================================
+// NEW: Claude Code Feature Imports
+// ============================================================================
+
+// MCP Client System
+import { getMCPClientManager, initMCP, getMCPStatus, shutdownMCP } from '../mcp/index.js';
+
+// Planning System (Plan Mode)
+import { getPlanModeController, startPlan, getPlanStatus, cancelPlan, PlanModeState } from '../planning/index.js';
+
+// Task Management (TodoWrite)
+import { getTodoManager, writeTodos, getTodos, getTodoStats, TodoStatus } from '../tasks/index.js';
+
+// Hooks System
+import { getHookManager, initializeHookManager, HookEvent } from '../hooks/index.js';
+
+// Task Agents (Witcher Swarm Integration)
+import { getAgent, getAgentByWitcherName, WITCHER_AGENT_MAP, explore, plan, bash } from '../agents/index.js';
+
+// Git Integration
+import { getCommitWorkflow, getPRWorkflow, commitFiles, createPR } from '../git/index.js';
+
 /**
  * @typedef {Object} HydraOptions
  * @property {Object} [config] - Configuration overrides
@@ -109,6 +131,12 @@ export class Hydra {
 
     // Track initialization state
     this._initialized = false;
+
+    // NEW: Claude Code feature instances (lazy loaded)
+    this._mcpManager = null;
+    this._hookManager = null;
+    this._planController = null;
+    this._todoManager = null;
   }
 
   /**
@@ -432,7 +460,181 @@ export class Hydra {
    */
   async shutdown() {
     this.healthCache.stopAutoRefresh();
-    // Additional cleanup can be added here
+
+    // Shutdown Claude Code features
+    if (this._mcpManager) {
+      await shutdownMCP();
+    }
+
+    if (this._hookManager) {
+      await this._hookManager.onSessionEnd({});
+    }
+  }
+
+  // ============================================================================
+  // NEW: Claude Code Feature Methods
+  // ============================================================================
+
+  /**
+   * Initialize MCP Client System
+   * @returns {Promise<Object>}
+   */
+  async initMCP() {
+    this._mcpManager = getMCPClientManager();
+    await this._mcpManager.initialize();
+    return this._mcpManager;
+  }
+
+  /**
+   * Get MCP status
+   * @returns {Object}
+   */
+  getMCPStatus() {
+    if (!this._mcpManager) {
+      return { initialized: false };
+    }
+    return getMCPStatus();
+  }
+
+  /**
+   * Initialize Hooks System
+   * @returns {Promise<Object>}
+   */
+  async initHooks() {
+    this._hookManager = await initializeHookManager();
+    await this._hookManager.onSessionStart({
+      hydra: this,
+      timestamp: new Date().toISOString()
+    });
+    return this._hookManager;
+  }
+
+  /**
+   * Get Hook Manager
+   * @returns {Object}
+   */
+  getHookManager() {
+    if (!this._hookManager) {
+      this._hookManager = getHookManager();
+    }
+    return this._hookManager;
+  }
+
+  /**
+   * Initialize Plan Mode
+   * @param {Object} [options] - Options
+   * @returns {Object}
+   */
+  initPlanMode(options = {}) {
+    this._planController = getPlanModeController({
+      agentExecutor: options.agentExecutor || this._defaultAgentExecutor.bind(this),
+      ...options
+    });
+    return this._planController;
+  }
+
+  /**
+   * Start a new plan
+   * @param {string} query - User query
+   * @param {Object} [options] - Options
+   * @returns {Promise<Object>}
+   */
+  async startPlan(query, options = {}) {
+    if (!this._planController) {
+      this.initPlanMode(options);
+    }
+    return this._planController.startPlan(query, options);
+  }
+
+  /**
+   * Get Plan Mode status
+   * @returns {Object}
+   */
+  getPlanStatus() {
+    if (!this._planController) {
+      return { state: PlanModeState.IDLE };
+    }
+    return this._planController.getStatus();
+  }
+
+  /**
+   * Get Todo Manager
+   * @returns {Object}
+   */
+  getTodoManager() {
+    if (!this._todoManager) {
+      this._todoManager = getTodoManager();
+    }
+    return this._todoManager;
+  }
+
+  /**
+   * Write todos (TodoWrite API)
+   * @param {Object[]} todos - Todos to write
+   * @returns {Promise<Object>}
+   */
+  async writeTodos(todos) {
+    return writeTodos(todos);
+  }
+
+  /**
+   * Get current todos
+   * @returns {Promise<Object[]>}
+   */
+  async getTodos() {
+    return getTodos();
+  }
+
+  /**
+   * Get an agent by type
+   * @param {string} type - Agent type (explore, plan, bash)
+   * @returns {Promise<Object>}
+   */
+  async getAgent(type) {
+    return getAgent(type);
+  }
+
+  /**
+   * Get agent by Witcher name
+   * @param {string} name - Witcher name (Regis, Dijkstra, Eskel, etc.)
+   * @returns {Promise<Object>}
+   */
+  async getAgentByWitcher(name) {
+    return getAgentByWitcherName(name);
+  }
+
+  /**
+   * Get Commit Workflow
+   * @returns {Object}
+   */
+  getCommitWorkflow() {
+    return getCommitWorkflow({ cwd: process.cwd() });
+  }
+
+  /**
+   * Get PR Workflow
+   * @returns {Object}
+   */
+  getPRWorkflow() {
+    return getPRWorkflow({ cwd: process.cwd() });
+  }
+
+  /**
+   * Default agent executor for Plan Mode
+   * @private
+   */
+  async _defaultAgentExecutor(params) {
+    const { agent, phase, query, context } = params;
+
+    // Get the appropriate agent
+    const agentInstance = await getAgentByWitcherName(agent);
+
+    if (!agentInstance) {
+      // Fallback to Ollama for unknown agents
+      return this.ollama(query);
+    }
+
+    return agentInstance.run({ query, context, phase });
   }
 }
 
@@ -502,6 +704,28 @@ export { DEFAULT_CONFIG, getConfigManager };
 
 // Export initialization utilities
 // initializeHydra is exported via its function declaration above
+
+// ============================================================================
+// NEW: Claude Code Feature Exports
+// ============================================================================
+
+// MCP
+export { getMCPClientManager, initMCP, getMCPStatus, shutdownMCP };
+
+// Planning
+export { getPlanModeController, startPlan, getPlanStatus, cancelPlan, PlanModeState };
+
+// Tasks
+export { getTodoManager, writeTodos, getTodos, getTodoStats, TodoStatus };
+
+// Hooks
+export { getHookManager, initializeHookManager, HookEvent };
+
+// Agents
+export { getAgent, getAgentByWitcherName, WITCHER_AGENT_MAP, explore, plan, bash };
+
+// Git
+export { getCommitWorkflow, getPRWorkflow, commitFiles, createPR };
 
 // Default export
 export default Hydra;

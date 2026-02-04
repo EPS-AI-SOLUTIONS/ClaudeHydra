@@ -1,7 +1,7 @@
 description = "Optimize a prompt for better AI responses"
 
 prompt = """
-Use @ollama-hydra prompt_optimize to analyze and enhance the user's prompt.
+Use @ollama prompt_optimize to analyze and enhance the user's prompt.
 
 Steps:
 1. Call prompt_analyze first to understand the prompt

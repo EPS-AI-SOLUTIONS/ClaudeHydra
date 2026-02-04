@@ -29,7 +29,7 @@ export const CONFIG_SCHEMA = {
     ollama: {
       enabled: { type: 'boolean', default: true },
       host: { type: 'string', default: 'http://localhost:11434' },
-      defaultModel: { type: 'string', default: 'llama3.2' }
+      defaultModel: { type: 'string', default: 'llama3.2:1b' }
     },
     gemini: {
       enabled: { type: 'boolean', default: false },

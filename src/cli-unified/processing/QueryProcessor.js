@@ -13,12 +13,20 @@ export class QueryProcessor extends EventEmitter {
   constructor(options = {}) {
     super();
 
+    // Prevent unhandled error crashes - add default error handler
+    this.on('error', (err) => {
+      // Default error handler - prevents crash, errors are still thrown to caller
+      if (process.env.DEBUG) {
+        console.error('[QueryProcessor] Error event:', err);
+      }
+    });
+
     this.agentRouter = options.agentRouter;
     this.cacheManager = options.cacheManager;
     this.contextManager = options.contextManager;
 
     this.ollamaHost = options.ollamaHost || 'http://localhost:11434';
-    this.defaultModel = options.defaultModel || 'llama3.2';
+    this.defaultModel = options.defaultModel || 'llama3.2:1b';
     this.streaming = options.streaming !== false;
     this.timeout = options.timeout || 60000;
 
@@ -134,6 +142,9 @@ export class QueryProcessor extends EventEmitter {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(`Model '${options.model || this.defaultModel}' not found. Run: ollama pull ${options.model || this.defaultModel}`);
+        }
         throw new Error(`Ollama API error: ${response.status}`);
       }
 
@@ -152,50 +163,87 @@ export class QueryProcessor extends EventEmitter {
    * Stream query to Ollama
    */
   async streamQuery(prompt, options = {}) {
-    const response = await fetch(`${this.ollamaHost}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: options.model || this.defaultModel,
-        prompt,
-        stream: true,
-        options: {
-          temperature: options.temperature ?? 0.7
-        }
-      })
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    let reader = null;
 
-    if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.status}`);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullResponse = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n').filter(l => l.trim());
-
-      for (const line of lines) {
-        try {
-          const data = JSON.parse(line);
-          if (data.response) {
-            fullResponse += data.response;
-            if (options.onToken) {
-              options.onToken(data.response);
-            }
+    try {
+      const response = await fetch(`${this.ollamaHost}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: options.model || this.defaultModel,
+          prompt,
+          stream: true,
+          options: {
+            temperature: options.temperature ?? 0.7
           }
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.status}`);
+      }
+
+      reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+
+      // Set a read timeout for each chunk
+      const readTimeout = this.timeout;
+
+      while (true) {
+        const readPromise = reader.read();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Stream read timeout')), readTimeout)
+        );
+
+        const { done, value } = await Promise.race([readPromise, timeoutPromise]);
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(l => l.trim());
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+            if (data.response) {
+              fullResponse += data.response;
+              if (options.onToken) {
+                try {
+                  options.onToken(data.response);
+                } catch (callbackError) {
+                  // Log but don't break stream on callback error
+                  console.error('Token callback error:', callbackError.message);
+                }
+              }
+            }
+          } catch {
+            // Skip malformed JSON
+          }
+        }
+      }
+
+      return fullResponse;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Stream query timeout');
+      }
+      throw error;
+    } finally {
+      // Always release the reader
+      if (reader) {
+        try {
+          reader.releaseLock();
         } catch {
-          // Skip malformed JSON
+          // Reader may already be released
         }
       }
     }
-
-    return fullResponse;
   }
 
   /**
@@ -218,24 +266,28 @@ export class QueryProcessor extends EventEmitter {
 
     this.processing = true;
 
-    while (this.queue.length > 0 && this.activeRequests < this.concurrency) {
-      const item = this.queue.shift();
-      this.activeRequests++;
+    try {
+      while (this.queue.length > 0 && this.activeRequests < this.concurrency) {
+        const item = this.queue.shift();
+        this.activeRequests++;
 
-      this.process(item.prompt, item.options)
-        .then(result => {
-          item.resolve(result);
-          this.activeRequests--;
-          this.processQueue();
-        })
-        .catch(error => {
-          item.reject(error);
-          this.activeRequests--;
-          this.processQueue();
-        });
+        // Process asynchronously but track completion
+        (async () => {
+          try {
+            const result = await this.process(item.prompt, item.options);
+            item.resolve(result);
+          } catch (error) {
+            item.reject(error);
+          } finally {
+            this.activeRequests--;
+            // Schedule next processing after current completes
+            setImmediate(() => this.processQueue());
+          }
+        })();
+      }
+    } finally {
+      this.processing = false;
     }
-
-    this.processing = false;
   }
 
   /**

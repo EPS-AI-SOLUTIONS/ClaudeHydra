@@ -15,7 +15,7 @@ export const AGENT_SPECS = {
   Geralt: {
     name: 'Geralt',
     role: 'Security & Validation',
-    model: 'llama3.2',
+    model: 'llama3.2:1b',
     temperature: 0.3,
     patterns: ['security', 'auth', 'permission', 'validate', 'sanitize', 'xss', 'sql injection'],
     avatar: AGENT_AVATARS.Geralt,
@@ -33,7 +33,7 @@ export const AGENT_SPECS = {
   Triss: {
     name: 'Triss',
     role: 'Data & Integration',
-    model: 'llama3.2',
+    model: 'llama3.2:1b',
     temperature: 0.5,
     patterns: ['data', 'database', 'api', 'integration', 'transform', 'migrate'],
     avatar: AGENT_AVATARS.Triss,
@@ -42,7 +42,7 @@ export const AGENT_SPECS = {
   Jaskier: {
     name: 'Jaskier',
     role: 'Documentation & Logging',
-    model: 'llama3.2',
+    model: 'llama3.2:1b',
     temperature: 0.8,
     patterns: ['document', 'explain', 'readme', 'comment', 'log', 'describe'],
     avatar: AGENT_AVATARS.Jaskier,
@@ -60,7 +60,7 @@ export const AGENT_SPECS = {
   Ciri: {
     name: 'Ciri',
     role: 'Fast Execution & Portals',
-    model: 'llama3.2',
+    model: 'llama3.2:1b',
     temperature: 0.5,
     patterns: ['quick', 'fast', 'convert', 'transform', 'port', 'migrate'],
     avatar: AGENT_AVATARS.Ciri,
@@ -78,7 +78,7 @@ export const AGENT_SPECS = {
   Lambert: {
     name: 'Lambert',
     role: 'Refactoring & Cleanup',
-    model: 'llama3.2',
+    model: 'llama3.2:1b',
     temperature: 0.4,
     patterns: ['refactor', 'clean', 'optimize', 'simplify', 'remove', 'delete'],
     avatar: AGENT_AVATARS.Lambert,
@@ -87,7 +87,7 @@ export const AGENT_SPECS = {
   Zoltan: {
     name: 'Zoltan',
     role: 'Infrastructure & DevOps',
-    model: 'llama3.2',
+    model: 'llama3.2:1b',
     temperature: 0.5,
     patterns: ['deploy', 'docker', 'ci', 'cd', 'infrastructure', 'kubernetes', 'server'],
     avatar: AGENT_AVATARS.Zoltan,
@@ -96,7 +96,7 @@ export const AGENT_SPECS = {
   Regis: {
     name: 'Regis',
     role: 'Research & Speculation',
-    model: 'llama3.2',
+    model: 'llama3.2:1b',
     temperature: 0.9,
     patterns: ['research', 'analyze', 'speculate', 'explore', 'investigate'],
     avatar: AGENT_AVATARS.Regis,
@@ -114,7 +114,7 @@ export const AGENT_SPECS = {
   Philippa: {
     name: 'Philippa',
     role: 'UI/UX & Frontend',
-    model: 'llama3.2',
+    model: 'llama3.2:1b',
     temperature: 0.6,
     patterns: ['ui', 'ux', 'frontend', 'css', 'html', 'react', 'component', 'design'],
     avatar: AGENT_AVATARS.Philippa,

@@ -1,26 +1,15 @@
 {
   "security": {
     "auth": {
-      "selectedType": "gemini-api-key"
+      "selectedType": "oauth-personal"
     }
   },
   "mcpServers": {
-    "ollama-hydra": {
-      "command": "node",
-      "args": [
-        "--env-file=.env",
-        "C:/Users/BIURODOM/Desktop/GeminiCLI/src/server.js"
-      ],
-      "cwd": "C:/Users/BIURODOM/Desktop/GeminiCLI",
+    "ollama": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "ollama-mcp"],
       "env": {
-        "OLLAMA_HOST": "http://localhost:11434",
-        "CACHE_DIR": "C:/Users/BIURODOM/Desktop/GeminiCLI/cache",
-        "CACHE_ENABLED": "true",
-        "CACHE_TTL": "3600",
-        "DEFAULT_MODEL": "llama3.2:3b",
-        "FAST_MODEL": "llama3.2:1b",
-        "CODER_MODEL": "qwen2.5-coder:1.5b",
-        "NODE_ENV": "production"
+        "OLLAMA_HOST": "http://localhost:11434"
       },
       "timeout": 120000
     },
@@ -31,8 +20,7 @@
         "git+https://github.com/oraios/serena",
         "serena",
         "start-mcp-server",
-        "--project",
-        "C:/Users/BIURODOM/Desktop/GeminiCLI"
+        "--project-from-cwd"
       ],
       "timeout": 120000
     },
@@ -51,7 +39,7 @@
     }
   },
   "mcp": {
-    "allowed": ["ollama-hydra", "serena", "desktop-commander", "playwright"],
+    "allowed": ["ollama", "serena", "desktop-commander", "playwright"],
     "parallelToolCalls": true
   },
   "model": {

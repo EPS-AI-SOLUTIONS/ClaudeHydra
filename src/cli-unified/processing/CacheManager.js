@@ -134,9 +134,23 @@ export class CacheManager extends EventEmitter {
 
   /**
    * Generate cache key from prompt
+   * Filters out non-serializable properties (functions, cli references, etc.)
    */
   generateKey(prompt, options = {}) {
-    const data = JSON.stringify({ prompt, ...options });
+    // Filter out properties that cannot be serialized or cause circular references
+    const safeOptions = {};
+    const unsafeKeys = ['cli', 'onToken', 'onProgress', 'onComplete', 'onError', 'callback'];
+
+    for (const [key, value] of Object.entries(options)) {
+      // Skip functions and known circular references
+      if (typeof value === 'function') continue;
+      if (unsafeKeys.includes(key)) continue;
+      // Skip objects that might have circular references
+      if (value && typeof value === 'object' && (value.cli || value.mode)) continue;
+      safeOptions[key] = value;
+    }
+
+    const data = JSON.stringify({ prompt, ...safeOptions });
     return createHash('md5').update(data).digest('hex');
   }
 

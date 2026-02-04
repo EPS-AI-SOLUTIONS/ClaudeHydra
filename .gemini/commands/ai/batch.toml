@@ -1,7 +1,7 @@
 description = "Process multiple prompts in parallel using local Ollama"
 
 prompt = """
-Use @ollama-hydra ollama_batch to process these prompts in parallel:
+Use @ollama ollama_batch to process these prompts in parallel:
 
 {{args}}
 

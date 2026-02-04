@@ -23,7 +23,17 @@ REM Konfiguracja agentow i rownoleglosci
 set "CLAUDE_MAX_CONCURRENT_AGENTS=10"
 set "CLAUDE_PARALLEL_TASKS=true"
 
-REM Uruchom Claude CLI z trybem bez potwierdzen
+REM Uruchom Claude CLI
 node "%CLAUDE_PORTABLE_DIR%\bin\claude-code\cli.js" --dangerously-skip-permissions %*
+
+REM Jesli blad lub uruchomiono bez argumentow (dwuklik), zatrzymaj okno
+if %ERRORLEVEL% neq 0 (
+    echo.
+    echo [BLAD] Claude zakonczyl sie z kodem: %ERRORLEVEL%
+    pause
+)
+
+REM Jesli uruchomiono przez dwuklik, zatrzymaj na koniec
+if "%~1"=="" pause
 
 endlocal

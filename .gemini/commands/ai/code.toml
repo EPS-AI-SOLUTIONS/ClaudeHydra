@@ -1,7 +1,7 @@
 description = "Generate code with automatic self-correction and validation"
 
 prompt = """
-Use @ollama-hydra ollama_code to generate validated code for:
+Use @ollama ollama_code to generate validated code for:
 
 {{args}}
 

@@ -3,7 +3,7 @@ description = "Health check for all MCP servers"
 prompt = """
 Perform a health check on all configured MCP servers:
 
-1. @ollama-hydra ollama_status - Check Ollama HYDRA server
+1. @ollama ollama_status - Check Ollama HYDRA server
 2. @serena - Check if Serena responds
 3. @desktop-commander list_directory "." - Check Desktop Commander
 4. @playwright - Check if Playwright is available
