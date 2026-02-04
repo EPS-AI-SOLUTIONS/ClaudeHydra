@@ -1,0 +1,15 @@
+# Cargo Audit Configuration
+# https://rustsec.org/
+
+[advisories]
+# Vulnerabilities to ignore (with justification)
+ignore = [
+    # glib VariantStrIter unsoundness - upstream Tauri/GTK dependency
+    # Only affects Linux/macOS webkit, not Windows. Waiting for Tauri update.
+    # https://rustsec.org/advisories/RUSTSEC-2024-0417
+    "RUSTSEC-2024-0417",
+]
+
+[yanked]
+# Allow yanked crates (not recommended, but sometimes necessary)
+ignore = false
