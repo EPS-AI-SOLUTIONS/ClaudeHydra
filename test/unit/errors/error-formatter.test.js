@@ -2,7 +2,7 @@
  * @fileoverview Tests for error-formatter module
  */
 
-import { jest } from '@jest/globals';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   ErrorFormatter,
   getErrorFormatter,
@@ -26,7 +26,7 @@ describe('ErrorFormatter', () => {
       showStack: false,
       showDetails: true
     });
-    consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
