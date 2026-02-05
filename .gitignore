@@ -1,33 +1,82 @@
-# System and cache folders
-config/
-bin/
-.claude/
+# ===============================================
+# ClaudeHydra - Comprehensive .gitignore
+# AI Agent + Node.js + Tauri Project
+# ===============================================
+
+# ----- COMMON (All Projects) -----
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary
+*.tmp
+*.temp
+
+# ----- NODE.JS -----
+
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.cache/
+.vite/
+vite.config.js
+vite.config.d.ts
+.env
+.env.local
+.env.*.local
+
+# ----- AI AGENT -----
+
+# AI/Data artifacts
+data/
 logs/
 transcripts/
-data/
+.serena/
+.claude/
+.hydra/
+.hydra-data/
 
-# Windows special files
-nul
-NUL
+# Binaries
+*.exe
+*.zip
+models/*.gguf
+bin/ollama.exe
+bin/llama/
 
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+# Generated
+repomix-output.xml
 
-# Rust/Cargo
+# ----- PROJECT-SPECIFIC -----
+
+# Config and secrets
+config/
+bin/
+.mcp.json
+bridge.json
+.claude/settings.local.json
+
+# Rust/Cargo (Tauri backend)
 target/
 Cargo.lock
 **/*.rs.bk
 
 # Build output
-dist/
 build/
-*.exe
 
-# Python
+# Python (tools)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -36,42 +85,24 @@ __pycache__/
 .eggs/
 *.egg-info/
 *.egg
-
-# Virtual environments
 venv/
 .venv/
 ENV/
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Environment files with secrets
-.env
-.env.local
-.env.*.local
-.mcp.json
-
-# Tauri
+# Tauri specific
 claude-gui/src-tauri/target/
-
-# Test coverage
 claude-gui/coverage/
 
 # Playwright MCP cache
 .playwright-mcp/
 
-# Local config files
-bridge.json
-.claude/settings.local.json
-
-# Cache and test results
-*.sccache.zip
+# Test results
 test-results/
-UsersBIURODOMDesktopClaudeHydrasccache.zip
+
+# Additional logs
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Cache
+*.sccache.zip

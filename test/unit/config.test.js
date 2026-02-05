@@ -4,7 +4,7 @@
  * Tests Zod validation, defaults, error messages, and frozen config behavior.
  */
 
-import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Store original env to restore after tests
 const originalEnv = { ...process.env };
@@ -32,7 +32,7 @@ describe('Config Module', () => {
     delete process.env.HYDRA_RISK_BLOCKING;
 
     // Clear module cache to get fresh config
-    jest.resetModules();
+    vi.resetModules();
   });
 
   afterEach(() => {
@@ -41,7 +41,7 @@ describe('Config Module', () => {
   });
 
   describe('Default Values', () => {
-    test('should use default values when env vars are not set', async () => {
+    it('should use default values when env vars are not set', async () => {
       const { CONFIG } = await import('../../src/config.js');
 
       expect(CONFIG.API_VERSION).toBe('v1');
@@ -70,7 +70,7 @@ describe('Config Module', () => {
   });
 
   describe('Environment Variable Parsing', () => {
-    test('should parse string env vars correctly', async () => {
+    it('should parse string env vars correctly', async () => {
       process.env.API_VERSION = 'v2';
       process.env.DEFAULT_MODEL = 'custom-model:7b';
 
@@ -80,7 +80,7 @@ describe('Config Module', () => {
       expect(CONFIG.DEFAULT_MODEL).toBe('custom-model:7b');
     });
 
-    test('should parse numeric env vars correctly', async () => {
+    it('should parse numeric env vars correctly', async () => {
       process.env.CACHE_TTL = '7200';
       process.env.QUEUE_MAX_CONCURRENT = '25';
 
@@ -90,7 +90,7 @@ describe('Config Module', () => {
       expect(CONFIG.QUEUE_MAX_CONCURRENT).toBe(25);
     });
 
-    test('should parse boolean env vars correctly', async () => {
+    it('should parse boolean env vars correctly', async () => {
       process.env.CACHE_ENABLED = 'false';
       process.env.HYDRA_YOLO = 'true';
 
@@ -100,7 +100,7 @@ describe('Config Module', () => {
       expect(CONFIG.YOLO_MODE).toBe(true);
     });
 
-    test('should handle empty string env vars as defaults', async () => {
+    it('should handle empty string env vars as defaults', async () => {
       process.env.DEFAULT_MODEL = '';
       process.env.CACHE_TTL = '';
       process.env.CACHE_ENABLED = '';
@@ -114,7 +114,7 @@ describe('Config Module', () => {
   });
 
   describe('YOLO Mode', () => {
-    test('should apply YOLO mode overrides when enabled', async () => {
+    it('should apply YOLO mode overrides when enabled', async () => {
       process.env.HYDRA_YOLO = 'true';
 
       const { CONFIG } = await import('../../src/config.js');
@@ -126,7 +126,7 @@ describe('Config Module', () => {
       expect(CONFIG.RISK_BLOCKING).toBe(false); // Defaults to opposite of YOLO
     });
 
-    test('should allow explicit RISK_BLOCKING override in YOLO mode', async () => {
+    it('should allow explicit RISK_BLOCKING override in YOLO mode', async () => {
       process.env.HYDRA_YOLO = 'true';
       process.env.HYDRA_RISK_BLOCKING = 'true';
 
@@ -138,7 +138,7 @@ describe('Config Module', () => {
   });
 
   describe('Config Immutability', () => {
-    test('CONFIG should be frozen and not allow mutations', async () => {
+    it('CONFIG should be frozen and not allow mutations', async () => {
       const { CONFIG } = await import('../../src/config.js');
 
       expect(Object.isFrozen(CONFIG)).toBe(true);
@@ -149,7 +149,7 @@ describe('Config Module', () => {
       }).toThrow();
     });
 
-    test('getConfigSnapshot should return a mutable copy', async () => {
+    it('getConfigSnapshot should return a mutable copy', async () => {
       const { CONFIG, getConfigSnapshot } = await import('../../src/config.js');
 
       const snapshot = getConfigSnapshot();
@@ -167,7 +167,7 @@ describe('Config Module', () => {
   });
 
   describe('Schema Validation', () => {
-    test('validateConfig should validate partial configs', async () => {
+    it('validateConfig should validate partial configs', async () => {
       const { validateConfig } = await import('../../src/config.js');
 
       const result = validateConfig({
@@ -178,7 +178,7 @@ describe('Config Module', () => {
       expect(result.success).toBe(true);
     });
 
-    test('validateConfig should reject invalid numeric ranges', async () => {
+    it('validateConfig should reject invalid numeric ranges', async () => {
       const { validateConfig } = await import('../../src/config.js');
 
       // QUEUE_MAX_CONCURRENT must be 1-100
@@ -189,7 +189,7 @@ describe('Config Module', () => {
       expect(result.success).toBe(false);
     });
 
-    test('should validate CACHE_ENCRYPTION_KEY format', async () => {
+    it('should validate CACHE_ENCRYPTION_KEY format', async () => {
       const { validateConfig } = await import('../../src/config.js');
 
       // Valid hex key (64 chars)
@@ -208,7 +208,7 @@ describe('Config Module', () => {
   });
 
   describe('Error Messages', () => {
-    test('should provide descriptive error for invalid config', async () => {
+    it('should provide descriptive error for invalid config', async () => {
       process.env.QUEUE_MAX_CONCURRENT = '-5'; // Invalid: must be >= 1
       process.env.QUEUE_TIMEOUT_MS = '500'; // Invalid: must be >= 1000
 
@@ -219,7 +219,7 @@ describe('Config Module', () => {
   });
 
   describe('Schema Export', () => {
-    test('configSchema should be exported for external use', async () => {
+    it('configSchema should be exported for external use', async () => {
       const { configSchema } = await import('../../src/config.js');
 
       expect(configSchema).toBeDefined();

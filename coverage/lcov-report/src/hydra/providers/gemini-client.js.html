@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10.63% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>10/94</span>
+                <span class='fraction'>0/94</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10.2% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>5/49</span>
+                <span class='fraction'>0/49</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">4% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/25</span>
+                <span class='fraction'>0/25</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">10.86% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>10/92</span>
+                <span class='fraction'>0/92</span>
             </div>
         
             
@@ -419,7 +419,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -455,21 +455,21 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -485,7 +485,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -749,7 +749,7 @@ import { join } from 'path';
  * @type {boolean}
  * @constant
  */
-const IS_WINDOWS = platform() === 'win32';
+const IS_WINDOWS =<span class="cstat-no" title="statement not covered" > platform() === 'win32';</span>
 &nbsp;
 /**
  * @typedef {Object} GenerateOptions
@@ -784,22 +784,22 @@ const IS_WINDOWS = platform() === 'win32';
  * @returns {string} Path to Gemini CLI executable
  * @private
  */
-function getGeminiPath() {
-  <span class="missing-if-branch" title="else path not taken" >E</span>if (IS_WINDOWS) {
-    const userProfile = process.env.USERPROFILE || <span class="branch-1 cbranch-no" title="branch not covered" >'';</span>
-    const appData = process.env.APPDATA || <span class="branch-1 cbranch-no" title="branch not covered" >'';</span>
+function <span class="fstat-no" title="function not covered" >getGeminiPath(</span>) {
+<span class="cstat-no" title="statement not covered" >  if (IS_WINDOWS) {</span>
+    const userProfile = <span class="cstat-no" title="statement not covered" >process.env.USERPROFILE || '';</span>
+    const appData = <span class="cstat-no" title="statement not covered" >process.env.APPDATA || '';</span>
 &nbsp;
-    const candidates = [
+    const candidates = <span class="cstat-no" title="statement not covered" >[</span>
       `${userProfile}\\AppData\\Roaming\\npm\\gemini.cmd`,
       `${appData}\\npm\\gemini.cmd`,
       'gemini.cmd',
       'gemini'
     ];
 &nbsp;
-    for (const path of candidates) {
-      try {
-        if (existsSync(path)) {
-          return path;
+<span class="cstat-no" title="statement not covered" >    for (const path of candidates) {</span>
+<span class="cstat-no" title="statement not covered" >      try {</span>
+<span class="cstat-no" title="statement not covered" >        if (existsSync(path)) {</span>
+<span class="cstat-no" title="statement not covered" >          return path;</span>
         }
       } catch {
         // Continue to next candidate
@@ -815,7 +815,7 @@ function getGeminiPath() {
  * @type {string}
  * @constant
  */
-const GEMINI_PATH = getGeminiPath();
+const GEMINI_PATH = <span class="cstat-no" title="statement not covered" >getGeminiPath();</span>
 &nbsp;
 /**
  * Generate completion from Gemini CLI
@@ -856,7 +856,7 @@ export async function <span class="fstat-no" title="function not covered" >gener
     // On Windows, avoid deprecation warning by using command string with shell=true
     let proc;
 <span class="cstat-no" title="statement not covered" >    if (IS_WINDOWS) {</span>
-      const escapedArgs = <span class="cstat-no" title="statement not covered" >args.map(<span class="fstat-no" title="function not covered" >ar</span>g =&gt;</span>
+      const escapedArgs = <span class="cstat-no" title="statement not covered" >args.map(<span class="fstat-no" title="function not covered" >arg </span>=&gt;</span>
 <span class="cstat-no" title="statement not covered" >        arg.includes(' ') || arg.includes('"') ? `"${arg.replace(/"/g, '\\"')}"` : arg</span>
       );
       const command = <span class="cstat-no" title="statement not covered" >`"${GEMINI_PATH}" ${escapedArgs.join(' ')}`;</span>
@@ -895,7 +895,7 @@ export async function <span class="fstat-no" title="function not covered" >gener
           // If JSON parsing fails, use raw output but filter warnings
 <span class="cstat-no" title="statement not covered" >          content = stdout</span>
             .split('\n')
-            .filter(<span class="fstat-no" title="function not covered" >li</span>ne =&gt; <span class="cstat-no" title="statement not covered" >!line.includes('GOOGLE_API_KEY') &amp;&amp; !line.includes('GEMINI_API_KEY'))</span>
+            .filter(<span class="fstat-no" title="function not covered" >line </span>=&gt; <span class="cstat-no" title="statement not covered" >!line.includes('GOOGLE_API_KEY') &amp;&amp; !line.includes('GEMINI_API_KEY'))</span>
             .join('\n')
             .trim();
         }
@@ -947,7 +947,7 @@ export async function <span class="fstat-no" title="function not covered" >strea
 <span class="cstat-no" title="statement not covered" >  return new Promise(<span class="fstat-no" title="function not covered" >(r</span>esolve, reject) =&gt; {</span>
     let proc;
 <span class="cstat-no" title="statement not covered" >    if (IS_WINDOWS) {</span>
-      const escapedArgs = <span class="cstat-no" title="statement not covered" >args.map(<span class="fstat-no" title="function not covered" >ar</span>g =&gt;</span>
+      const escapedArgs = <span class="cstat-no" title="statement not covered" >args.map(<span class="fstat-no" title="function not covered" >arg </span>=&gt;</span>
 <span class="cstat-no" title="statement not covered" >        arg.includes(' ') || arg.includes('"') ? `"${arg.replace(/"/g, '\\"')}"` : arg</span>
       );
       const command = <span class="cstat-no" title="statement not covered" >`"${GEMINI_PATH}" ${escapedArgs.join(' ')}`;</span>
@@ -1060,7 +1060,7 @@ export default {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-25T15:46:17.412Z
+                at 2026-02-05T04:06:06.306Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

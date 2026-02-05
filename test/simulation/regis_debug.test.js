@@ -3,20 +3,20 @@
  * Tests the HydraSwarmTool and SwarmStatusTool classes
  */
 
-import { jest, describe, test, expect, beforeEach } from '@jest/globals';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Import the tools and processor
 import { tools } from '../../src/tools/swarm-bridge.js';
 
 describe('Swarm Bridge Tool', () => {
   describe('SwarmStatusTool', () => {
-    test('should be properly instantiated', () => {
+    it('should be properly instantiated', () => {
       expect(tools.swarmStatus).toBeDefined();
       expect(tools.swarmStatus.name).toBe('swarm_status');
       expect(tools.swarmStatus.description.toLowerCase()).toContain('swarm');
     });
 
-    test('should report swarm as unavailable when swarm.js is missing', async () => {
+    it('should report swarm as unavailable when swarm.js is missing', async () => {
       const result = await tools.swarmStatus.execute({});
 
       expect(result.success).toBe(true);
@@ -24,7 +24,7 @@ describe('Swarm Bridge Tool', () => {
       expect(result.data.error).toBeTruthy();
     });
 
-    test('should return capabilities array', async () => {
+    it('should return capabilities array', async () => {
       const result = await tools.swarmStatus.execute({});
 
       expect(result.data.capabilities).toBeInstanceOf(Array);
@@ -32,13 +32,13 @@ describe('Swarm Bridge Tool', () => {
   });
 
   describe('HydraSwarmTool', () => {
-    test('should be properly instantiated', () => {
+    it('should be properly instantiated', () => {
       expect(tools.hydraSwarm).toBeDefined();
       expect(tools.hydraSwarm.name).toBe('hydra_swarm');
       expect(tools.hydraSwarm.description.toLowerCase()).toContain('swarm');
     });
 
-    test('should have correct input schema', () => {
+    it('should have correct input schema', () => {
       const schema = tools.hydraSwarm.getJsonSchema();
 
       // Zod schema may be nested differently
@@ -48,7 +48,7 @@ describe('Swarm Bridge Tool', () => {
       expect(schemaStr).toContain('prompt');
     });
 
-    test('should fail gracefully when swarm engine is unavailable', async () => {
+    it('should fail gracefully when swarm engine is unavailable', async () => {
       const result = await tools.hydraSwarm.execute({
         prompt: 'Test task for the swarm'
       });
@@ -58,7 +58,7 @@ describe('Swarm Bridge Tool', () => {
       expect(result.error).toMatch(/SWARM_UNAVAILABLE|swarm/i);
     });
 
-    test('should validate input before execution', async () => {
+    it('should validate input before execution', async () => {
       const result = await tools.hydraSwarm.execute({
         // Missing required 'prompt' field
       });
@@ -69,12 +69,12 @@ describe('Swarm Bridge Tool', () => {
   });
 
   describe('Tool Registry Format', () => {
-    test('tools object should have correct structure', () => {
+    it('tools object should have correct structure', () => {
       expect(tools).toHaveProperty('hydraSwarm');
       expect(tools).toHaveProperty('swarmStatus');
     });
 
-    test('tools should have execute method', () => {
+    it('tools should have execute method', () => {
       expect(typeof tools.hydraSwarm.execute).toBe('function');
       expect(typeof tools.swarmStatus.execute).toBe('function');
     });

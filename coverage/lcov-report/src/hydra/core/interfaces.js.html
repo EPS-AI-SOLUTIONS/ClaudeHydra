@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">1.51% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/66</span>
+                <span class='fraction'>0/66</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">1.51% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/66</span>
+                <span class='fraction'>0/66</span>
             </div>
         
             
@@ -1229,7 +1229,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1377,7 +1377,7 @@ export class BaseProvider {
    * @param {ProviderConfig} [config={}] - Provider configuration
    * @throws {Error} If instantiated directly (abstract class)
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(name, config = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>name, config = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    if (new.target === BaseProvider) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('BaseProvider is abstract and cannot be instantiated directly');</span>
     }
@@ -1437,7 +1437,7 @@ export class BaseProvider {
    * const result = await provider.generate('What is 2+2?');
    * console.log(result.content); // '4'
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync generate(prompt, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  async <span class="fstat-no" title="function not covered" >generate(</span>prompt, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    throw new Error('generate() must be implemented by subclass');</span>
   }
 &nbsp;
@@ -1456,7 +1456,7 @@ export class BaseProvider {
    *   process.stdout.write(chunk);
    * }
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync *streamGenerate(prompt, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  async *<span class="fstat-no" title="function not covered" >streamGenerate(</span>prompt, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    throw new Error('streamGenerate() must be implemented by subclass');</span>
   }
 &nbsp;
@@ -1474,7 +1474,7 @@ export class BaseProvider {
    *   console.log('Provider is ready');
    * }
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync healthCheck() {
+  async <span class="fstat-no" title="function not covered" >healthCheck(</span>) {
 <span class="cstat-no" title="statement not covered" >    throw new Error('healthCheck() must be implemented by subclass');</span>
   }
 &nbsp;
@@ -1482,7 +1482,7 @@ export class BaseProvider {
    * Get the provider name
    * @returns {string} Provider name
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tName() {
+<span class="fstat-no" title="function not covered" >  getName(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.name;</span>
   }
 &nbsp;
@@ -1495,7 +1495,7 @@ export class BaseProvider {
    * console.log(`Success rate: ${stats.successRate}%`);
    * console.log(`Average latency: ${stats.averageLatency}ms`);
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tStats() {
+<span class="fstat-no" title="function not covered" >  getStats(</span>) {
 <span class="cstat-no" title="statement not covered" >    return {</span>
       ...this._stats,
       averageLatency: this._stats.totalRequests &gt; 0
@@ -1510,7 +1510,7 @@ export class BaseProvider {
   /**
    * Reset all statistics to initial values
    */
-<span class="fstat-no" title="function not covered" >  re</span>setStats() {
+<span class="fstat-no" title="function not covered" >  resetStats(</span>) {
 <span class="cstat-no" title="statement not covered" >    this._stats = {</span>
       totalRequests: 0,
       successfulRequests: 0,
@@ -1528,7 +1528,7 @@ export class BaseProvider {
    * @param {boolean} success - Whether the request succeeded
    * @protected
    */
-<span class="fstat-no" title="function not covered" >  _u</span>pdateStats(result, success) {
+<span class="fstat-no" title="function not covered" >  _updateStats(</span>result, success) {
 <span class="cstat-no" title="statement not covered" >    this._stats.totalRequests++;</span>
 <span class="cstat-no" title="statement not covered" >    if (success) {</span>
 <span class="cstat-no" title="statement not covered" >      this._stats.successfulRequests++;</span>
@@ -1554,7 +1554,7 @@ export class BaseProvider {
    * @param {string} model - Model name to check
    * @returns {boolean} Whether model is supported
    */
-<span class="fstat-no" title="function not covered" >  su</span>pportsModel(model) {
+<span class="fstat-no" title="function not covered" >  supportsModel(</span>model) {
 <span class="cstat-no" title="statement not covered" >    return false; </span>// Override in subclass
   }
 &nbsp;
@@ -1562,7 +1562,7 @@ export class BaseProvider {
    * Get the default model for this provider
    * @returns {string} Default model name
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tDefaultModel() {
+<span class="fstat-no" title="function not covered" >  getDefaultModel(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.config.defaultModel || 'default';</span>
   }
 &nbsp;
@@ -1570,7 +1570,7 @@ export class BaseProvider {
    * Get estimated cost per token
    * @returns {number} Cost per token (0 for free providers)
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tCostPerToken() {
+<span class="fstat-no" title="function not covered" >  getCostPerToken(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.config.costPerToken || 0;</span>
   }
 &nbsp;
@@ -1580,7 +1580,7 @@ export class BaseProvider {
    *
    * @returns {Object} Provider status
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tStatus() {
+<span class="fstat-no" title="function not covered" >  getStatus(</span>) {
 <span class="cstat-no" title="statement not covered" >    return {</span>
       name: this.name,
       healthy: this._healthCache?.available ?? false,
@@ -1597,7 +1597,7 @@ export class BaseProvider {
    *
    * @returns {Object|null} Pool status or null
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tPoolStatus() {
+<span class="fstat-no" title="function not covered" >  getPoolStatus(</span>) {
 <span class="cstat-no" title="statement not covered" >    return null;</span>
   }
 &nbsp;
@@ -1607,7 +1607,7 @@ export class BaseProvider {
    *
    * @returns {Object|null} Circuit status or null
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tCircuitStatus() {
+<span class="fstat-no" title="function not covered" >  getCircuitStatus(</span>) {
 <span class="cstat-no" title="statement not covered" >    return null;</span>
   }
 }
@@ -1634,7 +1634,7 @@ export class ProviderRegistry {
   /**
    * Creates a new provider registry
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor() {
+<span class="fstat-no" title="function not covered" >  constructor(</span>) {
     /**
      * Map of registered providers
      * @type {Map&lt;string, BaseProvider&gt;}
@@ -1661,7 +1661,7 @@ export class ProviderRegistry {
    * @example
    * registry.register('ollama', new OllamaProvider(), true);
    */
-<span class="fstat-no" title="function not covered" >  re</span>gister(name, provider, isDefault = <span class="branch-0 cbranch-no" title="branch not covered" >false)</span> {
+<span class="fstat-no" title="function not covered" >  register(</span>name, provider, isDefault = <span class="branch-0 cbranch-no" title="branch not covered" >false)</span> {
 <span class="cstat-no" title="statement not covered" >    if (!(provider instanceof BaseProvider)) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('Provider must extend BaseProvider');</span>
     }
@@ -1677,7 +1677,7 @@ export class ProviderRegistry {
    * @param {string} name - Provider name to remove
    * @returns {boolean} Whether provider was removed
    */
-<span class="fstat-no" title="function not covered" >  un</span>register(name) {
+<span class="fstat-no" title="function not covered" >  unregister(</span>name) {
     const removed = <span class="cstat-no" title="statement not covered" >this._providers.delete(name);</span>
 <span class="cstat-no" title="statement not covered" >    if (removed &amp;&amp; this._defaultProvider === name) {</span>
       // Set new default if available
@@ -1699,7 +1699,7 @@ export class ProviderRegistry {
    *   await gemini.generate('Hello');
    * }
    */
-<span class="fstat-no" title="function not covered" >  ge</span>t(name) {
+<span class="fstat-no" title="function not covered" >  get(</span>name) {
 <span class="cstat-no" title="statement not covered" >    return this._providers.get(name) || null;</span>
   }
 &nbsp;
@@ -1707,7 +1707,7 @@ export class ProviderRegistry {
    * Get the default provider
    * @returns {BaseProvider|null} Default provider or null if none registered
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tDefault() {
+<span class="fstat-no" title="function not covered" >  getDefault(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this._providers.get(this._defaultProvider) || null;</span>
   }
 &nbsp;
@@ -1717,7 +1717,7 @@ export class ProviderRegistry {
    * @param {string} name - Provider name to set as default
    * @returns {boolean} Whether provider was set as default
    */
-<span class="fstat-no" title="function not covered" >  se</span>tDefault(name) {
+<span class="fstat-no" title="function not covered" >  setDefault(</span>name) {
 <span class="cstat-no" title="statement not covered" >    if (this._providers.has(name)) {</span>
 <span class="cstat-no" title="statement not covered" >      this._defaultProvider = name;</span>
 <span class="cstat-no" title="statement not covered" >      return true;</span>
@@ -1729,7 +1729,7 @@ export class ProviderRegistry {
    * Get all registered provider names
    * @returns {string[]} Array of provider names
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tProviderNames() {
+<span class="fstat-no" title="function not covered" >  getProviderNames(</span>) {
 <span class="cstat-no" title="statement not covered" >    return Array.from(this._providers.keys());</span>
   }
 &nbsp;
@@ -1737,7 +1737,7 @@ export class ProviderRegistry {
    * Get all providers as an object
    * @returns {Object&lt;string, BaseProvider&gt;} Object mapping names to providers
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tAll() {
+<span class="fstat-no" title="function not covered" >  getAll(</span>) {
 <span class="cstat-no" title="statement not covered" >    return Object.fromEntries(this._providers);</span>
   }
 &nbsp;
@@ -1745,7 +1745,7 @@ export class ProviderRegistry {
    * Get number of registered providers
    * @returns {number} Provider count
    */
-<span class="fstat-no" title="function not covered" >  ge</span>t size() {
+  get <span class="fstat-no" title="function not covered" >size(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this._providers.size;</span>
   }
 &nbsp;
@@ -1755,7 +1755,7 @@ export class ProviderRegistry {
    * @param {string} name - Provider name to check
    * @returns {boolean} Whether provider is registered
    */
-<span class="fstat-no" title="function not covered" >  ha</span>s(name) {
+<span class="fstat-no" title="function not covered" >  has(</span>name) {
 <span class="cstat-no" title="statement not covered" >    return this._providers.has(name);</span>
   }
 &nbsp;
@@ -1770,10 +1770,10 @@ export class ProviderRegistry {
    *   console.log(`${name}: ${result.available ? 'OK' : 'FAILED'}`);
    * }
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync healthCheckAll() {
+  async <span class="fstat-no" title="function not covered" >healthCheckAll(</span>) {
     const results = <span class="cstat-no" title="statement not covered" >new Map();</span>
     const checks = <span class="cstat-no" title="statement not covered" >Array.from(this._providers.entries()).map(</span>
-<span class="fstat-no" title="function not covered" >      as</span>ync ([name, provider]) =&gt; {
+<span class="fstat-no" title="function not covered" >      async </span>([name, provider]) =&gt; {
 <span class="cstat-no" title="statement not covered" >        try {</span>
           const result = <span class="cstat-no" title="statement not covered" >await provider.healthCheck();</span>
 <span class="cstat-no" title="statement not covered" >          results.set(name, result);</span>
@@ -1800,7 +1800,7 @@ export class ProviderRegistry {
    *   console.error('No providers available');
    * }
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync getFirstAvailable() {
+  async <span class="fstat-no" title="function not covered" >getFirstAvailable(</span>) {
 <span class="cstat-no" title="statement not covered" >    for (const [name, provider] of this._providers) {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
         const health = <span class="cstat-no" title="statement not covered" >await provider.healthCheck();</span>
@@ -1818,7 +1818,7 @@ export class ProviderRegistry {
    * Iterate over all providers
    * @returns {IterableIterator&lt;[string, BaseProvider]&gt;}
    */
-<span class="fstat-no" title="function not covered" >  [S</span>ymbol.iterator]() {
+  [<span class="fstat-no" title="function not covered" >Symbol.iterator]</span>() {
 <span class="cstat-no" title="statement not covered" >    return this._providers.entries();</span>
   }
 }
@@ -1831,7 +1831,7 @@ export class ProviderRegistry {
  * Type exports for JSDoc type annotations
  * @constant
  */
-export const Types = {
+export const Types = <span class="cstat-no" title="statement not covered" >{</span>
   /**
    * Provider result type
    * @type {ProviderResult}
@@ -1876,7 +1876,7 @@ export default {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-25T15:46:17.412Z
+                at 2026-02-05T04:06:06.306Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

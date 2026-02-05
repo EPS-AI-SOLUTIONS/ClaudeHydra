@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0.93% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>2/213</span>
+                <span class='fraction'>0/213</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0.96% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>2/207</span>
+                <span class='fraction'>0/207</span>
             </div>
         
             
@@ -801,7 +801,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1465,7 +1465,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1512,7 +1512,7 @@ import {
   getDefaultFallbackChain
 } from './gemini-models.js';
 &nbsp;
-const IS_WINDOWS = platform() === 'win32';
+const IS_WINDOWS =<span class="cstat-no" title="statement not covered" > platform() === 'win32';</span>
 &nbsp;
 /**
  * Find Gemini CLI path
@@ -1549,9 +1549,9 @@ export class GeminiProvider extends BaseProvider {
   /**
    * @param {Object} config - Provider configuration
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(config = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>config = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
     // Get config from manager or use provided
-    const configManager = <span class="cstat-no" title="statement not covered" >getConfigManager();</span>
+    const configManager =<span class="cstat-no" title="statement not covered" > getConfigManager();</span>
     const geminiConfig = <span class="cstat-no" title="statement not covered" >configManager.getValue('providers.gemini', {});</span>
     const mergedConfig = <span class="cstat-no" title="statement not covered" >{ ...geminiConfig, ...config };</span>
 &nbsp;
@@ -1614,7 +1614,7 @@ export class GeminiProvider extends BaseProvider {
    * @private
    * @returns {Promise&lt;void&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync _initModels() {
+  async <span class="fstat-no" title="function not covered" >_initModels(</span>) {
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      if (this.apiKey) {</span>
 <span class="cstat-no" title="statement not covered" >        this.availableModels = await fetchAvailableModels(this.apiKey);</span>
@@ -1648,7 +1648,7 @@ export class GeminiProvider extends BaseProvider {
    * Call this at application startup to ensure models are ready
    * @returns {Promise&lt;void&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync waitForModelsReady() {
+  async <span class="fstat-no" title="function not covered" >waitForModelsReady(</span>) {
 <span class="cstat-no" title="statement not covered" >    if (this._modelsReady) {</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
     }
@@ -1661,7 +1661,7 @@ export class GeminiProvider extends BaseProvider {
    * Check if models are ready
    * @returns {boolean}
    */
-<span class="fstat-no" title="function not covered" >  is</span>ModelsReady() {
+<span class="fstat-no" title="function not covered" >  isModelsReady(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this._modelsReady;</span>
   }
 &nbsp;
@@ -1671,7 +1671,7 @@ export class GeminiProvider extends BaseProvider {
    * @param {Object} options
    * @returns {Promise&lt;Object&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync generate(prompt, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  async <span class="fstat-no" title="function not covered" >generate(</span>prompt, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
     const {
       model,
       timeout = <span class="branch-0 cbranch-no" title="branch not covered" >this.config.timeout || 120000,</span>
@@ -1702,8 +1702,8 @@ export class GeminiProvider extends BaseProvider {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      try {</span>
         // Execute through circuit breaker, pool, and retry
-        const result = <span class="cstat-no" title="statement not covered" >await this.circuitBreaker.execute(<span class="fstat-no" title="function not covered" >as</span>ync () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          return this.pool.execute(<span class="fstat-no" title="function not covered" >as</span>ync () =&gt; {</span>
+        const result = <span class="cstat-no" title="statement not covered" >await this.circuitBreaker.execute(<span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >          return this.pool.execute(<span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >            return withRetry(</span>
 <span class="fstat-no" title="function not covered" >              ()</span> =&gt; <span class="cstat-no" title="statement not covered" >this._doGenerate(prompt, { model: currentModel, timeout }),</span>
               {
@@ -1778,7 +1778,7 @@ export class GeminiProvider extends BaseProvider {
    * @returns {boolean}
    * @private
    */
-<span class="fstat-no" title="function not covered" >  _i</span>sModelSpecificError(error) {
+<span class="fstat-no" title="function not covered" >  _isModelSpecificError(</span>error) {
     const message = <span class="cstat-no" title="statement not covered" >error.message?.toLowerCase() || '';</span>
 &nbsp;
     // Model not found or unavailable
@@ -1802,7 +1802,7 @@ export class GeminiProvider extends BaseProvider {
    * Perform actual generation via CLI
    * @private
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync _doGenerate(prompt, options) {
+  async <span class="fstat-no" title="function not covered" >_doGenerate(</span>prompt, options) {
     const { model, timeout } = <span class="cstat-no" title="statement not covered" >options;</span>
     const startTime = <span class="cstat-no" title="statement not covered" >Date.now();</span>
 &nbsp;
@@ -1824,7 +1824,7 @@ export class GeminiProvider extends BaseProvider {
       let proc;
 <span class="cstat-no" title="statement not covered" >      if (IS_WINDOWS) {</span>
         // Build command string for shell execution on Windows
-        const escapedArgs = <span class="cstat-no" title="statement not covered" >args.map(<span class="fstat-no" title="function not covered" >ar</span>g =&gt;</span>
+        const escapedArgs = <span class="cstat-no" title="statement not covered" >args.map(<span class="fstat-no" title="function not covered" >arg </span>=&gt;</span>
 <span class="cstat-no" title="statement not covered" >          arg.includes(' ') || arg.includes('"') ? `"${arg.replace(/"/g, '\\"')}"` : arg</span>
         );
         const command = <span class="cstat-no" title="statement not covered" >`"${this.cliPath}" ${escapedArgs.join(' ')}`;</span>
@@ -1879,7 +1879,7 @@ export class GeminiProvider extends BaseProvider {
    * Parse CLI output
    * @private
    */
-<span class="fstat-no" title="function not covered" >  _p</span>arseOutput(stdout) {
+<span class="fstat-no" title="function not covered" >  _parseOutput(</span>stdout) {
 <span class="cstat-no" title="statement not covered" >    try {</span>
       // Filter out warnings before JSON
       const lines = <span class="cstat-no" title="statement not covered" >stdout.split('\n');</span>
@@ -1895,7 +1895,7 @@ export class GeminiProvider extends BaseProvider {
     // Fallback: filter warnings and return raw output
 <span class="cstat-no" title="statement not covered" >    return stdout</span>
       .split('\n')
-      .filter(<span class="fstat-no" title="function not covered" >li</span>ne =&gt; <span class="cstat-no" title="statement not covered" >!line.includes('GOOGLE_API_KEY') &amp;&amp; !line.includes('GEMINI_API_KEY'))</span>
+      .filter(<span class="fstat-no" title="function not covered" >line </span>=&gt; <span class="cstat-no" title="statement not covered" >!line.includes('GOOGLE_API_KEY') &amp;&amp; !line.includes('GEMINI_API_KEY'))</span>
       .join('\n')
       .trim();
   }
@@ -1906,7 +1906,7 @@ export class GeminiProvider extends BaseProvider {
    * @param {Function} onChunk
    * @param {Object} options
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync streamGenerate(prompt, onChunk, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  async <span class="fstat-no" title="function not covered" >streamGenerate(</span>prompt, onChunk, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
     const { model } = <span class="cstat-no" title="statement not covered" >options;</span>
 &nbsp;
     const args = <span class="cstat-no" title="statement not covered" >[];</span>
@@ -1918,7 +1918,7 @@ export class GeminiProvider extends BaseProvider {
 <span class="cstat-no" title="statement not covered" >    return new Promise(<span class="fstat-no" title="function not covered" >(r</span>esolve, reject) =&gt; {</span>
       let proc;
 <span class="cstat-no" title="statement not covered" >      if (IS_WINDOWS) {</span>
-        const escapedArgs = <span class="cstat-no" title="statement not covered" >args.map(<span class="fstat-no" title="function not covered" >ar</span>g =&gt;</span>
+        const escapedArgs = <span class="cstat-no" title="statement not covered" >args.map(<span class="fstat-no" title="function not covered" >arg </span>=&gt;</span>
 <span class="cstat-no" title="statement not covered" >          arg.includes(' ') || arg.includes('"') ? `"${arg.replace(/"/g, '\\"')}"` : arg</span>
         );
         const command = <span class="cstat-no" title="statement not covered" >`"${this.cliPath}" ${escapedArgs.join(' ')}`;</span>
@@ -1955,7 +1955,7 @@ export class GeminiProvider extends BaseProvider {
    * @param {boolean} forceRefresh
    * @returns {Promise&lt;Object&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync healthCheck(forceRefresh = <span class="branch-0 cbranch-no" title="branch not covered" >false)</span> {
+  async <span class="fstat-no" title="function not covered" >healthCheck(</span>forceRefresh = <span class="branch-0 cbranch-no" title="branch not covered" >false)</span> {
 <span class="cstat-no" title="statement not covered" >    return this.healthCache.get('gemini', forceRefresh);</span>
   }
 &nbsp;
@@ -1963,7 +1963,7 @@ export class GeminiProvider extends BaseProvider {
    * Perform actual health check
    * @private
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync _performHealthCheck() {
+  async <span class="fstat-no" title="function not covered" >_performHealthCheck(</span>) {
 <span class="cstat-no" title="statement not covered" >    return new Promise(<span class="fstat-no" title="function not covered" >(r</span>esolve) =&gt; {</span>
       let proc;
 <span class="cstat-no" title="statement not covered" >      if (IS_WINDOWS) {</span>
@@ -2002,7 +2002,7 @@ export class GeminiProvider extends BaseProvider {
    * Get default model
    * @returns {string}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tDefaultModel() {
+<span class="fstat-no" title="function not covered" >  getDefaultModel(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.defaultModel;</span>
   }
 &nbsp;
@@ -2010,7 +2010,7 @@ export class GeminiProvider extends BaseProvider {
    * Get best available model
    * @returns {string}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tBestModel() {
+<span class="fstat-no" title="function not covered" >  getBestModel(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.modelSelection?.model || this.defaultModel;</span>
   }
 &nbsp;
@@ -2018,7 +2018,7 @@ export class GeminiProvider extends BaseProvider {
    * Get thinking model (for deep reasoning)
    * @returns {string}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tThinkingModel() {
+<span class="fstat-no" title="function not covered" >  getThinkingModel(</span>) {
     // Prefer thinking-capable models
 <span class="cstat-no" title="statement not covered" >    if (this.modelSelection) {</span>
       const thinkingModel = <span class="cstat-no" title="statement not covered" >this.modelSelection.fallbackChain.find(<span class="fstat-no" title="function not covered" >m </span>=&gt;</span>
@@ -2035,7 +2035,7 @@ export class GeminiProvider extends BaseProvider {
    * Get available models
    * @returns {Array}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tAvailableModels() {
+<span class="fstat-no" title="function not covered" >  getAvailableModels(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.availableModels;</span>
   }
 &nbsp;
@@ -2043,7 +2043,7 @@ export class GeminiProvider extends BaseProvider {
    * Get current model selection with fallback chain
    * @returns {Object}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tModelSelection() {
+<span class="fstat-no" title="function not covered" >  getModelSelection(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.modelSelection;</span>
   }
 &nbsp;
@@ -2051,14 +2051,14 @@ export class GeminiProvider extends BaseProvider {
    * Get list of currently failed models
    * @returns {string[]}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tFailedModels() {
+<span class="fstat-no" title="function not covered" >  getFailedModels(</span>) {
 <span class="cstat-no" title="statement not covered" >    return [...this.failedModels];</span>
   }
 &nbsp;
   /**
    * Reset failed models list (allow retry)
    */
-<span class="fstat-no" title="function not covered" >  re</span>setFailedModels() {
+<span class="fstat-no" title="function not covered" >  resetFailedModels(</span>) {
 <span class="cstat-no" title="statement not covered" >    this.failedModels = [];</span>
 <span class="cstat-no" title="statement not covered" >    console.log('[Gemini] Reset failed models list');</span>
   }
@@ -2067,7 +2067,7 @@ export class GeminiProvider extends BaseProvider {
    * Refresh available models from API
    * @returns {Promise&lt;Object&gt;} Updated model selection
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync refreshModels() {
+  async <span class="fstat-no" title="function not covered" >refreshModels(</span>) {
 <span class="cstat-no" title="statement not covered" >    this.failedModels = [];</span>
 <span class="cstat-no" title="statement not covered" >    this._modelsReady = false;</span>
 <span class="cstat-no" title="statement not covered" >    this._modelsInitPromise = this._initModels();</span>
@@ -2080,7 +2080,7 @@ export class GeminiProvider extends BaseProvider {
    * @param {string} capability - Required capability (e.g., 'thinking', 'fast', 'cheap')
    * @returns {Promise&lt;string&gt;} Best model name
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync selectModelForCapability(capability) {
+  async <span class="fstat-no" title="function not covered" >selectModelForCapability(</span>capability) {
     const selection = <span class="cstat-no" title="statement not covered" >await selectBestModel({</span>
       apiKey: this.apiKey,
       preferredCapability: capability,
@@ -2093,7 +2093,7 @@ export class GeminiProvider extends BaseProvider {
    * Get cost per token
    * @returns {number}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tCostPerToken() {
+<span class="fstat-no" title="function not covered" >  getCostPerToken(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.costPerToken;</span>
   }
 &nbsp;
@@ -2103,7 +2103,7 @@ export class GeminiProvider extends BaseProvider {
    * @param {number} expectedOutputTokens
    * @returns {number}
    */
-<span class="fstat-no" title="function not covered" >  es</span>timateCost(prompt, expectedOutputTokens = <span class="branch-0 cbranch-no" title="branch not covered" >500)</span> {
+<span class="fstat-no" title="function not covered" >  estimateCost(</span>prompt, expectedOutputTokens = <span class="branch-0 cbranch-no" title="branch not covered" >500)</span> {
     const inputTokens = <span class="cstat-no" title="statement not covered" >Math.ceil(prompt.length / 4);</span>
 <span class="cstat-no" title="statement not covered" >    return this.fixedCost + ((inputTokens + expectedOutputTokens) * this.costPerToken);</span>
   }
@@ -2113,7 +2113,7 @@ export class GeminiProvider extends BaseProvider {
    * @param {Error} error
    * @returns {HydraError}
    */
-<span class="fstat-no" title="function not covered" >  _h</span>andleError(error) {
+<span class="fstat-no" title="function not covered" >  _handleError(</span>error) {
 <span class="cstat-no" title="statement not covered" >    if (error instanceof TimeoutError) {</span>
 <span class="cstat-no" title="statement not covered" >      return error;</span>
     }
@@ -2142,7 +2142,7 @@ export class GeminiProvider extends BaseProvider {
    * Get pool status
    * @returns {Object}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tPoolStatus() {
+<span class="fstat-no" title="function not covered" >  getPoolStatus(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.pool.getStatus();</span>
   }
 &nbsp;
@@ -2150,7 +2150,7 @@ export class GeminiProvider extends BaseProvider {
    * Get circuit breaker status
    * @returns {Object}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tCircuitStatus() {
+<span class="fstat-no" title="function not covered" >  getCircuitStatus(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.circuitBreaker.getState();</span>
   }
 &nbsp;
@@ -2158,7 +2158,7 @@ export class GeminiProvider extends BaseProvider {
    * Get combined provider status
    * @returns {Object}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tStatus() {
+<span class="fstat-no" title="function not covered" >  getStatus(</span>) {
 <span class="cstat-no" title="statement not covered" >    return {</span>
       name: this.name,
       cliPath: this.cliPath,
@@ -2176,7 +2176,7 @@ export class GeminiProvider extends BaseProvider {
 }
 &nbsp;
 // Singleton instance
-let _geminiProvider = null;
+let _geminiProvider = <span class="cstat-no" title="statement not covered" >null;</span>
 &nbsp;
 /**
  * Get or create Gemini provider singleton
@@ -2203,7 +2203,7 @@ export function <span class="fstat-no" title="function not covered" >resetGemini
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-25T15:46:17.412Z
+                at 2026-02-05T04:06:06.306Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

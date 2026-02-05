@@ -30,9 +30,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">12.58% </span>
+                <span class="strong">13.98% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>18/143</span>
+                <span class='fraction'>20/143</span>
             </div>
         
             
@@ -1935,7 +1935,7 @@ class ToolRegistry {
    * Uses the generateId function from utils/string.js
    * @returns {string}
    */
-<span class="fstat-no" title="function not covered" >  _g</span>enerateExecutionId() {
+<span class="fstat-no" title="function not covered" >  _generateExecutionId(</span>) {
 <span class="cstat-no" title="statement not covered" >    return generateId('exec');</span>
   }
 &nbsp;
@@ -1944,7 +1944,7 @@ class ToolRegistry {
    * @param {any} input - Input to hash
    * @returns {string}
    */
-<span class="fstat-no" title="function not covered" >  _h</span>ashInput(input) {
+<span class="fstat-no" title="function not covered" >  _hashInput(</span>input) {
 <span class="cstat-no" title="statement not covered" >    return JSON.stringify(input);</span>
   }
 &nbsp;
@@ -1955,7 +1955,7 @@ class ToolRegistry {
     if (this._cacheCleanupInterval) return;
 &nbsp;
     this._cacheCleanupInterval = setInterval(<span class="fstat-no" title="function not covered" >()</span> =&gt; {
-      const currentTime = <span class="cstat-no" title="statement not covered" >now();</span>
+      const currentTime =<span class="cstat-no" title="statement not covered" > now();</span>
 <span class="cstat-no" title="statement not covered" >      for (const [key, entry] of this.resultCache.entries()) {</span>
 <span class="cstat-no" title="statement not covered" >        if (currentTime - entry.timestamp &gt; entry.ttl) {</span>
 <span class="cstat-no" title="statement not covered" >          this.resultCache.delete(key);</span>
@@ -1974,7 +1974,7 @@ class ToolRegistry {
    * Discover available tools without loading them (lazy loading support)
    * Scans the tools directory and maps tool files for on-demand loading
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync discoverTools() {
+  async <span class="fstat-no" title="function not covered" >discoverTools(</span>) {
 <span class="cstat-no" title="statement not covered" >    Logger.info('Discovering tools...');</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (!fs.existsSync(this.toolsPath)) {</span>
@@ -2014,7 +2014,7 @@ class ToolRegistry {
    * @param {string} filename - File name for context
    * @returns {string[]}
    */
-<span class="fstat-no" title="function not covered" >  _e</span>xtractToolNames(content, filename) {
+<span class="fstat-no" title="function not covered" >  _extractToolNames(</span>content, filename) {
     const names = <span class="cstat-no" title="statement not covered" >[];</span>
 &nbsp;
     // Match patterns like: name: 'tool_name' or name: "tool_name"
@@ -2092,7 +2092,7 @@ class ToolRegistry {
    * @param {string} toolName - Name of the tool to load
    * @returns {Promise&lt;object&gt;} The loaded tool
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync _loadTool(toolName) {
+  async <span class="fstat-no" title="function not covered" >_loadTool(</span>toolName) {
     // Already loaded?
 <span class="cstat-no" title="statement not covered" >    if (this.tools.has(toolName)) {</span>
 <span class="cstat-no" title="statement not covered" >      return this.tools.get(toolName);</span>
@@ -2128,8 +2128,8 @@ class ToolRegistry {
    * @param {string} options.source - Source file name
    * @param {boolean} options.override - Allow overriding existing tools
    */
-  async registerTool(tool, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
-    const { source = <span class="branch-0 cbranch-no" title="branch not covered" >'manual',</span> override = false } = options;
+  async registerTool(tool, options = {}) {
+    const { source = 'manual', override = false } = options;
 &nbsp;
     // Validate the tool definition
     const validation = validateToolDefinition(tool);
@@ -2196,7 +2196,7 @@ class ToolRegistry {
    * @param {string} toolName - Name of the tool to unregister
    * @returns {boolean} Whether the tool was unregistered
    */
-<span class="fstat-no" title="function not covered" >  un</span>registerTool(toolName) {
+<span class="fstat-no" title="function not covered" >  unregisterTool(</span>toolName) {
     const tool = <span class="cstat-no" title="statement not covered" >this.tools.get(toolName);</span>
 <span class="cstat-no" title="statement not covered" >    if (!tool) <span class="cstat-no" title="statement not covered" >return false;</span></span>
 &nbsp;
@@ -2249,7 +2249,7 @@ class ToolRegistry {
    * @param {string} name - Tool name
    * @returns {object|undefined}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tToolSync(name) {
+<span class="fstat-no" title="function not covered" >  getToolSync(</span>name) {
 <span class="cstat-no" title="statement not covered" >    return this.tools.get(name);</span>
   }
 &nbsp;
@@ -2274,12 +2274,12 @@ class ToolRegistry {
    * @param {string} category - Category name
    * @returns {object[]}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tToolsByCategory(category) {
+<span class="fstat-no" title="function not covered" >  getToolsByCategory(</span>category) {
     const toolNames = <span class="cstat-no" title="statement not covered" >this.categories.get(category);</span>
 <span class="cstat-no" title="statement not covered" >    if (!toolNames) <span class="cstat-no" title="statement not covered" >return [];</span></span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    return Array.from(toolNames)</span>
-      .map(<span class="fstat-no" title="function not covered" >na</span>me =&gt; <span class="cstat-no" title="statement not covered" >this.tools.get(name))</span>
+      .map(<span class="fstat-no" title="function not covered" >name </span>=&gt; <span class="cstat-no" title="statement not covered" >this.tools.get(name))</span>
       .filter(Boolean);
   }
 &nbsp;
@@ -2287,7 +2287,7 @@ class ToolRegistry {
    * Get all discovered tool names (including not-yet-loaded)
    * @returns {string[]}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tDiscoveredToolNames() {
+<span class="fstat-no" title="function not covered" >  getDiscoveredToolNames(</span>) {
 <span class="cstat-no" title="statement not covered" >    return Array.from(this.toolPaths.keys());</span>
   }
 &nbsp;
@@ -2295,7 +2295,7 @@ class ToolRegistry {
    * Get all categories with their tool counts
    * @returns {Object&lt;string, number&gt;}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tCategorySummary() {
+<span class="fstat-no" title="function not covered" >  getCategorySummary(</span>) {
     const summary = <span class="cstat-no" title="statement not covered" >{};</span>
 <span class="cstat-no" title="statement not covered" >    for (const [category, tools] of this.categories.entries()) {</span>
 <span class="cstat-no" title="statement not covered" >      summary[category] = tools.size;</span>
@@ -2312,7 +2312,7 @@ class ToolRegistry {
    * @param {Function} hook - Hook function (context) =&gt; HookResult | void
    * @returns {Function} Unregister function
    */
-<span class="fstat-no" title="function not covered" >  on</span>BeforeExecute(hook) {
+<span class="fstat-no" title="function not covered" >  onBeforeExecute(</span>hook) {
 <span class="cstat-no" title="statement not covered" >    this.beforeHooks.push(hook);</span>
 <span class="cstat-no" title="statement not covered" >    return <span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
       const idx = <span class="cstat-no" title="statement not covered" >this.beforeHooks.indexOf(hook);</span>
@@ -2325,7 +2325,7 @@ class ToolRegistry {
    * @param {Function} hook - Hook function (context, result, error) =&gt; void
    * @returns {Function} Unregister function
    */
-<span class="fstat-no" title="function not covered" >  on</span>AfterExecute(hook) {
+<span class="fstat-no" title="function not covered" >  onAfterExecute(</span>hook) {
 <span class="cstat-no" title="statement not covered" >    this.afterHooks.push(hook);</span>
 <span class="cstat-no" title="statement not covered" >    return <span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
       const idx = <span class="cstat-no" title="statement not covered" >this.afterHooks.indexOf(hook);</span>
@@ -2339,7 +2339,7 @@ class ToolRegistry {
    * @param {Function} hook - Hook function
    * @returns {Function} Unregister function
    */
-<span class="fstat-no" title="function not covered" >  on</span>BeforeToolExecute(toolName, hook) {
+<span class="fstat-no" title="function not covered" >  onBeforeToolExecute(</span>toolName, hook) {
 <span class="cstat-no" title="statement not covered" >    if (!this.toolBeforeHooks.has(toolName)) {</span>
 <span class="cstat-no" title="statement not covered" >      this.toolBeforeHooks.set(toolName, []);</span>
     }
@@ -2360,7 +2360,7 @@ class ToolRegistry {
    * @param {Function} hook - Hook function
    * @returns {Function} Unregister function
    */
-<span class="fstat-no" title="function not covered" >  on</span>AfterToolExecute(toolName, hook) {
+<span class="fstat-no" title="function not covered" >  onAfterToolExecute(</span>toolName, hook) {
 <span class="cstat-no" title="statement not covered" >    if (!this.toolAfterHooks.has(toolName)) {</span>
 <span class="cstat-no" title="statement not covered" >      this.toolAfterHooks.set(toolName, []);</span>
     }
@@ -2380,7 +2380,7 @@ class ToolRegistry {
    * @param {ExecutionContext} context - Execution context
    * @returns {Promise&lt;HookResult&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync _runBeforeHooks(context) {
+  async <span class="fstat-no" title="function not covered" >_runBeforeHooks(</span>context) {
     const allHooks = <span class="cstat-no" title="statement not covered" >[</span>
       ...this.beforeHooks,
       ...(this.toolBeforeHooks.get(context.toolName) || [])
@@ -2417,7 +2417,7 @@ class ToolRegistry {
    * @param {any} result - Execution result
    * @param {Error|null} error - Execution error if any
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync _runAfterHooks(context, result, error) {
+  async <span class="fstat-no" title="function not covered" >_runAfterHooks(</span>context, result, error) {
     const allHooks = <span class="cstat-no" title="statement not covered" >[</span>
       ...this.afterHooks,
       ...(this.toolAfterHooks.get(context.toolName) || [])
@@ -2443,7 +2443,7 @@ class ToolRegistry {
    * @param {object} options - Execution options
    * @returns {Promise&lt;any&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync executeTool(toolName, input, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  async <span class="fstat-no" title="function not covered" >executeTool(</span>toolName, input, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
     const tool = <span class="cstat-no" title="statement not covered" >await this.getTool(toolName);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (!tool) {</span>
@@ -2469,7 +2469,7 @@ class ToolRegistry {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    try {</span>
       // Validate input
-      const inputValidation = <span class="cstat-no" title="statement not covered" >validateToolInput(tool, input);</span>
+      const inputValidation =<span class="cstat-no" title="statement not covered" > validateToolInput(tool, input);</span>
 <span class="cstat-no" title="statement not covered" >      if (!inputValidation.valid) {</span>
 <span class="cstat-no" title="statement not covered" >        throw new ToolValidationError(toolName, inputValidation.errors);</span>
       }
@@ -2521,7 +2521,7 @@ class ToolRegistry {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      if (stats) {</span>
 <span class="cstat-no" title="statement not covered" >        stats.successes++;</span>
-        const duration = <span class="cstat-no" title="statement not covered" >now() - context.startTime;</span>
+        const duration =<span class="cstat-no" title="statement not covered" > now() - context.startTime;</span>
 <span class="cstat-no" title="statement not covered" >        stats.totalDuration += duration;</span>
 <span class="cstat-no" title="statement not covered" >        stats.avgDuration = stats.totalDuration / stats.successes;</span>
       }
@@ -2562,18 +2562,18 @@ class ToolRegistry {
    * @param {number} timeout - Timeout in ms
    * @returns {Promise&lt;any&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync _executeWithTimeout(tool, input, timeout) {
+  async <span class="fstat-no" title="function not covered" >_executeWithTimeout(</span>tool, input, timeout) {
 <span class="cstat-no" title="statement not covered" >    return new Promise(<span class="fstat-no" title="function not covered" >(r</span>esolve, reject) =&gt; {</span>
       const timeoutId = <span class="cstat-no" title="statement not covered" >setTimeout(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >        reject(new ToolTimeoutError(tool.name, timeout));</span>
       }, timeout);
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      Promise.resolve(tool.execute(input))</span>
-        .then(<span class="fstat-no" title="function not covered" >re</span>sult =&gt; {
+        .then(<span class="fstat-no" title="function not covered" >result </span>=&gt; {
 <span class="cstat-no" title="statement not covered" >          clearTimeout(timeoutId);</span>
 <span class="cstat-no" title="statement not covered" >          resolve(result);</span>
         })
-        .catch(<span class="fstat-no" title="function not covered" >er</span>ror =&gt; {
+        .catch(<span class="fstat-no" title="function not covered" >error </span>=&gt; {
 <span class="cstat-no" title="statement not covered" >          clearTimeout(timeoutId);</span>
 <span class="cstat-no" title="statement not covered" >          if (error instanceof ToolExecutionError) {</span>
 <span class="cstat-no" title="statement not covered" >            reject(error);</span>
@@ -2593,7 +2593,7 @@ class ToolRegistry {
    * @param {string} toolName - Tool name
    * @returns {object|undefined}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tToolStats(toolName) {
+<span class="fstat-no" title="function not covered" >  getToolStats(</span>toolName) {
 <span class="cstat-no" title="statement not covered" >    return this.stats.get(toolName);</span>
   }
 &nbsp;
@@ -2601,7 +2601,7 @@ class ToolRegistry {
    * Get all tool statistics
    * @returns {Object&lt;string, object&gt;}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tAllStats() {
+<span class="fstat-no" title="function not covered" >  getAllStats(</span>) {
     const allStats = <span class="cstat-no" title="statement not covered" >{};</span>
 <span class="cstat-no" title="statement not covered" >    for (const [name, stats] of this.stats.entries()) {</span>
 <span class="cstat-no" title="statement not covered" >      allStats[name] = { ...stats };</span>
@@ -2639,7 +2639,7 @@ class ToolRegistry {
    * Clear the result cache
    * @param {string} [toolName] - Optional tool name (clears all if not provided)
    */
-<span class="fstat-no" title="function not covered" >  cl</span>earCache(toolName) {
+<span class="fstat-no" title="function not covered" >  clearCache(</span>toolName) {
 <span class="cstat-no" title="statement not covered" >    if (toolName) {</span>
 <span class="cstat-no" title="statement not covered" >      for (const key of this.resultCache.keys()) {</span>
 <span class="cstat-no" title="statement not covered" >        if (key.startsWith(`${toolName}:`)) {</span>
@@ -2656,8 +2656,8 @@ class ToolRegistry {
    * Get cache statistics
    * @returns {object}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tCacheStats() {
-    const currentTime = <span class="cstat-no" title="statement not covered" >now();</span>
+<span class="fstat-no" title="function not covered" >  getCacheStats(</span>) {
+    const currentTime =<span class="cstat-no" title="statement not covered" > now();</span>
 <span class="cstat-no" title="statement not covered" >    return {</span>
       size: this.resultCache.size,
       entries: Array.from(this.resultCache.entries()).map(<span class="fstat-no" title="function not covered" >([</span>key, entry]) =&gt; (<span class="cstat-no" title="statement not covered" >{</span>
@@ -2672,7 +2672,7 @@ class ToolRegistry {
   /**
    * Shutdown the registry (cleanup)
    */
-<span class="fstat-no" title="function not covered" >  sh</span>utdown() {
+<span class="fstat-no" title="function not covered" >  shutdown(</span>) {
 <span class="cstat-no" title="statement not covered" >    if (this._cacheCleanupInterval) {</span>
 <span class="cstat-no" title="statement not covered" >      clearInterval(this._cacheCleanupInterval);</span>
 <span class="cstat-no" title="statement not covered" >      this._cacheCleanupInterval = null;</span>
@@ -2707,7 +2707,7 @@ export default registry;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-27T11:55:40.869Z
+                at 2026-02-05T04:06:06.306Z
             </div>
         <script src="../prettify.js"></script>
         <script>

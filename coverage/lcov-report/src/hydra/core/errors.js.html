@@ -1837,7 +1837,7 @@ export class HydraError extends Error {
    * @param {string} message - Human-readable error message
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(message);</span>
 &nbsp;
     /** @type {string} */
@@ -1872,7 +1872,7 @@ export class HydraError extends Error {
    * @param {boolean} [includeStack=false] - Whether to include stack trace
    * @returns {SerializedError} Serialized error object
    */
-<span class="fstat-no" title="function not covered" >  to</span>JSON(includeStack = <span class="branch-0 cbranch-no" title="branch not covered" >false)</span> {
+<span class="fstat-no" title="function not covered" >  toJSON(</span>includeStack = <span class="branch-0 cbranch-no" title="branch not covered" >false)</span> {
     const json = <span class="cstat-no" title="statement not covered" >{</span>
       name: this.name,
       message: this.message,
@@ -1897,7 +1897,7 @@ export class HydraError extends Error {
    * @param {HydraErrorOptions} [overrides={}] - Options to override
    * @returns {HydraError} New HydraError instance
    */
-<span class="fstat-no" title="function not covered" >  st</span>atic from(source, overrides = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  static <span class="fstat-no" title="function not covered" >from(</span>source, overrides = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    if (source instanceof HydraError) {</span>
 <span class="cstat-no" title="statement not covered" >      return new HydraError(overrides.message || source.message, {</span>
         code: overrides.code || source.code,
@@ -1950,7 +1950,7 @@ export class ProviderError extends HydraError {
    * @param {string} message - Error message
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(provider, message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>provider, message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(message, {</span>
       code: options.code || `PROVIDER_${provider.toUpperCase()}_ERROR`,
       ...options
@@ -1976,7 +1976,7 @@ export class OllamaError extends ProviderError {
    * @param {string} message - Error message
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super('ollama', message, {</span>
       retryable: true,
       ...options
@@ -1997,7 +1997,7 @@ export class GeminiError extends ProviderError {
    * @param {string} message - Error message
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super('gemini', message, {</span>
       retryable: true,
       ...options
@@ -2022,7 +2022,7 @@ export class NetworkError extends HydraError {
    * @param {string} message - Error message
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(message, {</span>
       code: 'NETWORK_ERROR',
       retryable: true,
@@ -2045,7 +2045,7 @@ export class TimeoutError extends HydraError {
    * @param {number} timeout - Timeout duration in ms
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(operation, timeout, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>operation, timeout, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(`Operation '${operation}' timed out after ${timeout}ms`, {</span>
       code: 'TIMEOUT_ERROR',
       retryable: true,
@@ -2074,7 +2074,7 @@ export class ConfigurationError extends HydraError {
    * @param {string} message - Error message
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(message, {</span>
       code: 'CONFIGURATION_ERROR',
       recoverable: false,
@@ -2101,7 +2101,7 @@ export class RoutingError extends HydraError {
    * @param {string} message - Error message
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(message, {</span>
       code: 'ROUTING_ERROR',
       retryable: false,
@@ -2124,7 +2124,7 @@ export class PipelineError extends HydraError {
    * @param {string} message - Error message
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(stage, message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>stage, message, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(`Pipeline failed at stage '${stage}': ${message}`, {</span>
       code: 'PIPELINE_ERROR',
       context: { stage },
@@ -2154,7 +2154,7 @@ export class RateLimitError extends HydraError {
    * @param {number} retryAfter - Time until retry is allowed (ms)
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(provider, retryAfter, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>provider, retryAfter, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(`Rate limit exceeded for ${provider}. Retry after ${retryAfter}ms`, {</span>
       code: 'RATE_LIMIT_ERROR',
       retryable: true,
@@ -2184,7 +2184,7 @@ export class CircuitOpenError extends HydraError {
    * @param {number} nextAttempt - Timestamp when circuit may close
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(provider, nextAttempt, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>provider, nextAttempt, options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(`Circuit breaker open for ${provider}. Next attempt at ${new Date(nextAttempt).toISOString()}`, {</span>
       code: 'CIRCUIT_OPEN_ERROR',
       retryable: false,
@@ -2218,7 +2218,7 @@ export class ValidationError extends HydraError {
    * @param {Array&lt;Object&gt;} [validationErrors=[]] - List of validation errors
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(message, validationErrors = <span class="branch-0 cbranch-no" title="branch not covered" >[],</span> options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>message, validationErrors = <span class="branch-0 cbranch-no" title="branch not covered" >[],</span> options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(message, {</span>
       code: 'VALIDATION_ERROR',
       recoverable: false,
@@ -2244,7 +2244,7 @@ export class PoolExhaustedError extends HydraError {
    *
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super('Connection pool exhausted', {</span>
       code: 'POOL_EXHAUSTED_ERROR',
       retryable: true,
@@ -2277,7 +2277,7 @@ export class AggregateError extends HydraError {
    * @param {string} [message='Multiple errors occurred'] - Summary message
    * @param {HydraErrorOptions} [options={}] - Error options
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(errors, message = <span class="branch-0 cbranch-no" title="branch not covered" >'Multiple errors occurred',</span> options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>errors, message = <span class="branch-0 cbranch-no" title="branch not covered" >'Multiple errors occurred',</span> options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    super(message, {</span>
       code: 'AGGREGATE_ERROR',
       recoverable: errors.some(<span class="fstat-no" title="function not covered" >e </span>=&gt; <span class="cstat-no" title="statement not covered" >e.recoverable !== false)</span>,
@@ -2294,7 +2294,7 @@ export class AggregateError extends HydraError {
    * Get all error messages
    * @returns {string[]} Array of error messages
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tMessages() {
+<span class="fstat-no" title="function not covered" >  getMessages(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this.errors.map(<span class="fstat-no" title="function not covered" >e </span>=&gt; <span class="cstat-no" title="statement not covered" >e.message)</span>;</span>
   }
 &nbsp;
@@ -2304,7 +2304,7 @@ export class AggregateError extends HydraError {
    * @param {string} errorName - Error class name to check
    * @returns {boolean} Whether any error matches
    */
-<span class="fstat-no" title="function not covered" >  ha</span>sErrorType(errorName) {
+<span class="fstat-no" title="function not covered" >  hasErrorType(</span>errorName) {
 <span class="cstat-no" title="statement not covered" >    return this.errors.some(<span class="fstat-no" title="function not covered" >e </span>=&gt; <span class="cstat-no" title="statement not covered" >e.name === errorName)</span>;</span>
   }
 &nbsp;
@@ -2314,7 +2314,7 @@ export class AggregateError extends HydraError {
    * @param {string} errorName - Error class name to filter
    * @returns {Array&lt;Error&gt;} Matching errors
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tErrorsOfType(errorName) {
+<span class="fstat-no" title="function not covered" >  getErrorsOfType(</span>errorName) {
 <span class="cstat-no" title="statement not covered" >    return this.errors.filter(<span class="fstat-no" title="function not covered" >e </span>=&gt; <span class="cstat-no" title="statement not covered" >e.name === errorName)</span>;</span>
   }
 }
@@ -2343,7 +2343,7 @@ export class ErrorHandler {
   /**
    * Creates a new ErrorHandler
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor() {
+<span class="fstat-no" title="function not covered" >  constructor(</span>) {
     /** @type {Map&lt;string, Function&gt;} */
 <span class="cstat-no" title="statement not covered" >    this._handlers = new Map();</span>
 &nbsp;
@@ -2357,7 +2357,7 @@ export class ErrorHandler {
    * @param {string} errorName - Error class name to handle
    * @param {Function} handler - Handler function (error, context) =&gt; Promise&lt;any&gt;
    */
-<span class="fstat-no" title="function not covered" >  re</span>gister(errorName, handler) {
+<span class="fstat-no" title="function not covered" >  register(</span>errorName, handler) {
 <span class="cstat-no" title="statement not covered" >    this._handlers.set(errorName, handler);</span>
   }
 &nbsp;
@@ -2366,7 +2366,7 @@ export class ErrorHandler {
    *
    * @param {Function} handler - Default handler function
    */
-<span class="fstat-no" title="function not covered" >  se</span>tDefault(handler) {
+<span class="fstat-no" title="function not covered" >  setDefault(</span>handler) {
 <span class="cstat-no" title="statement not covered" >    this._defaultHandler = handler;</span>
   }
 &nbsp;
@@ -2378,7 +2378,7 @@ export class ErrorHandler {
    * @returns {Promise&lt;any&gt;} Handler result
    * @throws {Error} If no handler found and error not handled
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync handle(error, context = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+  async <span class="fstat-no" title="function not covered" >handle(</span>error, context = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
     // Find specific handler
     const handler = <span class="cstat-no" title="statement not covered" >this._handlers.get(error.name);</span>
 &nbsp;
@@ -2417,8 +2417,8 @@ export class ErrorHandler {
    * @param {Object} [context={}] - Context to pass to handler
    * @returns {Function} Wrapped function
    */
-<span class="fstat-no" title="function not covered" >  wr</span>ap(fn, context = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
-<span class="cstat-no" title="statement not covered" >    return <span class="fstat-no" title="function not covered" >as</span>ync (...args) =&gt; {</span>
+<span class="fstat-no" title="function not covered" >  wrap(</span>fn, context = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="cstat-no" title="statement not covered" >    return <span class="fstat-no" title="function not covered" >async </span>(...args) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
 <span class="cstat-no" title="statement not covered" >        return await fn(...args);</span>
       } catch (error) {
@@ -2514,7 +2514,7 @@ export function <span class="fstat-no" title="function not covered" >isRetryable
 &nbsp;
   const retryablePatterns = <span class="cstat-no" title="statement not covered" >['timeout', 'rate limit', 'too many requests', '503', '502', '429'];</span>
   const message = <span class="cstat-no" title="statement not covered" >(error.message || '').toLowerCase();</span>
-<span class="cstat-no" title="statement not covered" >  return retryablePatterns.some(<span class="fstat-no" title="function not covered" >pa</span>ttern =&gt; <span class="cstat-no" title="statement not covered" >message.includes(pattern))</span>;</span>
+<span class="cstat-no" title="statement not covered" >  return retryablePatterns.some(<span class="fstat-no" title="function not covered" >pattern </span>=&gt; <span class="cstat-no" title="statement not covered" >message.includes(pattern))</span>;</span>
 }
 &nbsp;
 /**
@@ -2614,7 +2614,7 @@ export default {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-25T15:46:17.412Z
+                at 2026-02-05T04:06:06.306Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

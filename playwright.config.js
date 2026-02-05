@@ -7,23 +7,37 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'list',
-  use: {
-    baseURL: 'http://localhost:8080',
-    trace: 'on-first-retry',
-  },
-  
-  /* Configure projects for major browsers */
+  reporter: [
+    ['list'],
+    ['html', { open: 'never' }]
+  ],
+  timeout: 30000,
+
+  /* Configure projects */
   projects: [
+    // Dashboard tests (require web server)
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'dashboard',
+      testMatch: '**/dashboard.spec.js',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:8080',
+        trace: 'on-first-retry',
+      },
+    },
+    // CLI tests (no web server needed)
+    {
+      name: 'cli',
+      testMatch: '**/cli.spec.js',
+      use: {
+        // CLI tests don't need a browser
+      },
     },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* Run your local dev server before starting the dashboard tests */
   webServer: {
-    command: 'node scripts/mock-dashboard-server.js', // We use a mock server for reliable testing
+    command: 'node scripts/mock-dashboard-server.js',
     url: 'http://localhost:8080',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

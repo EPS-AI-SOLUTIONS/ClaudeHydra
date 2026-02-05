@@ -28,7 +28,8 @@
       "Bash(grep:*)",
       "Bash(taskkill:*)",
       "Bash(timeout:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "mcp__llama-cpp__llama_info"
     ]
   }
 }

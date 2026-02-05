@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">3.77% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>4/106</span>
+                <span class='fraction'>0/106</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">3.92% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>4/102</span>
+                <span class='fraction'>0/102</span>
             </div>
         
             
@@ -561,14 +561,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -607,7 +607,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -639,7 +639,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1037,14 +1037,14 @@ import { TTLCache } from '../core/cache.js';
  * Gemini API base URL
  * @constant
  */
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const GEMINI_API_BASE = <span class="cstat-no" title="statement not covered" >'https://generativelanguage.googleapis.com/v1beta';</span>
 &nbsp;
 /**
  * Model ranking by capability tier (higher = better)
  * Based on Google's model hierarchy as of 2025
  * @constant
  */
-const MODEL_RANKINGS = {
+const MODEL_RANKINGS = <span class="cstat-no" title="statement not covered" >{</span>
   // Tier 1: Most intelligent/capable (score 100)
   'gemini-2.5-pro': { tier: 1, score: 100, capabilities: ['reasoning', 'thinking', 'complex'] },
   'gemini-2.5-pro-preview': { tier: 1, score: 99, capabilities: ['reasoning', 'thinking', 'complex'] },
@@ -1083,7 +1083,7 @@ const MODEL_RANKINGS = {
  * Default fallback chain if API fetch fails
  * @constant
  */
-const DEFAULT_FALLBACK_CHAIN = [
+const DEFAULT_FALLBACK_CHAIN = <span class="cstat-no" title="statement not covered" >[</span>
   'gemini-2.5-pro',
   'gemini-2.0-flash-thinking-exp',
   'gemini-2.5-flash',
@@ -1115,7 +1115,7 @@ const DEFAULT_FALLBACK_CHAIN = [
 /**
  * Cache for model list
  */
-const modelCache = new TTLCache({
+const modelCache = <span class="cstat-no" title="statement not covered" >new TTLCache({</span>
   ttl: 300000, // 5 minutes
   maxSize: 10,
   evictionPolicy: 'LRU'
@@ -1285,8 +1285,8 @@ export async function <span class="fstat-no" title="function not covered" >selec
   } else {
     // Use default fallback chain
 <span class="cstat-no" title="statement not covered" >    rankedModels = DEFAULT_FALLBACK_CHAIN</span>
-      .filter(<span class="fstat-no" title="function not covered" >na</span>me =&gt; <span class="cstat-no" title="statement not covered" >!excludeModels.includes(name))</span>
-      .map(<span class="fstat-no" title="function not covered" >na</span>me =&gt; (<span class="cstat-no" title="statement not covered" >{</span>
+      .filter(<span class="fstat-no" title="function not covered" >name </span>=&gt; <span class="cstat-no" title="statement not covered" >!excludeModels.includes(name))</span>
+      .map(<span class="fstat-no" title="function not covered" >name </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span>
         name,
         score: getModelScore(name),
         capabilities: getModelCapabilities(name)
@@ -1342,7 +1342,7 @@ export function <span class="fstat-no" title="function not covered" >createModel
      * @param {Object} genOptions - Generation options
      * @returns {Promise&lt;Object&gt;} Generation result
      */
-<span class="fstat-no" title="function not covered" >    as</span>ync generate(prompt, genOptions = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+    async <span class="fstat-no" title="function not covered" >generate(</span>prompt, genOptions = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
       // Get current selection or refresh
 <span class="cstat-no" title="statement not covered" >      if (!currentSelection || failedModels.length &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >        currentSelection = await selectBestModel({</span>
@@ -1391,7 +1391,7 @@ export function <span class="fstat-no" title="function not covered" >createModel
      * Get current model selection
      * @returns {ModelSelection|null}
      */
-<span class="fstat-no" title="function not covered" >    ge</span>tCurrentSelection() {
+<span class="fstat-no" title="function not covered" >    getCurrentSelection(</span>) {
 <span class="cstat-no" title="statement not covered" >      return currentSelection;</span>
     },
 &nbsp;
@@ -1399,14 +1399,14 @@ export function <span class="fstat-no" title="function not covered" >createModel
      * Get list of failed models
      * @returns {string[]}
      */
-<span class="fstat-no" title="function not covered" >    ge</span>tFailedModels() {
+<span class="fstat-no" title="function not covered" >    getFailedModels(</span>) {
 <span class="cstat-no" title="statement not covered" >      return [...failedModels];</span>
     },
 &nbsp;
     /**
      * Reset failed models (e.g., after some time has passed)
      */
-<span class="fstat-no" title="function not covered" >    re</span>setFailedModels() {
+<span class="fstat-no" title="function not covered" >    resetFailedModels(</span>) {
 <span class="cstat-no" title="statement not covered" >      failedModels = [];</span>
 <span class="cstat-no" title="statement not covered" >      currentSelection = null;</span>
     },
@@ -1414,7 +1414,7 @@ export function <span class="fstat-no" title="function not covered" >createModel
     /**
      * Force refresh model selection
      */
-<span class="fstat-no" title="function not covered" >    as</span>ync refreshSelection() {
+    async <span class="fstat-no" title="function not covered" >refreshSelection(</span>) {
 <span class="cstat-no" title="statement not covered" >      failedModels = [];</span>
 <span class="cstat-no" title="statement not covered" >      currentSelection = await selectBestModel({ apiKey });</span>
 <span class="cstat-no" title="statement not covered" >      return currentSelection;</span>
@@ -1498,7 +1498,7 @@ export default {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-25T15:46:17.412Z
+                at 2026-02-05T04:06:06.306Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

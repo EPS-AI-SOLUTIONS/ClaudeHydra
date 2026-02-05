@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0.93% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/107</span>
+                <span class='fraction'>0/107</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0.94% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/106</span>
+                <span class='fraction'>0/106</span>
             </div>
         
             
@@ -499,7 +499,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -918,7 +918,7 @@
 /**
  * Default pool configuration
  */
-export const DEFAULT_POOL_CONFIG = {
+export const DEFAULT_POOL_CONFIG = <span class="cstat-no" title="statement not covered" >{</span>
   maxConcurrent: 5,
   maxQueueSize: 100,
   acquireTimeout: 30000,
@@ -930,7 +930,7 @@ export const DEFAULT_POOL_CONFIG = {
  * Request wrapper for queuing
  */
 class QueuedRequest {
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(fn, resolve, reject, timeout) {
+<span class="fstat-no" title="function not covered" >  constructor(</span>fn, resolve, reject, timeout) {
 <span class="cstat-no" title="statement not covered" >    this.fn = fn;</span>
 <span class="cstat-no" title="statement not covered" >    this.resolve = resolve;</span>
 <span class="cstat-no" title="statement not covered" >    this.reject = reject;</span>
@@ -940,7 +940,7 @@ class QueuedRequest {
     }, timeout) : null;
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  ca</span>ncel() {
+<span class="fstat-no" title="function not covered" >  cancel(</span>) {
 <span class="cstat-no" title="statement not covered" >    if (this.timeoutId) {</span>
 <span class="cstat-no" title="statement not covered" >      clearTimeout(this.timeoutId);</span>
     }
@@ -955,7 +955,7 @@ export class ConnectionPool {
   /**
    * @param {PoolConfig} config
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(config = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>config = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    this.config = { ...DEFAULT_POOL_CONFIG, ...config };</span>
 <span class="cstat-no" title="statement not covered" >    this._active = 0;</span>
 <span class="cstat-no" title="statement not covered" >    this._queue = [];</span>
@@ -976,7 +976,7 @@ export class ConnectionPool {
    * @param {() =&gt; Promise&lt;T&gt;} fn - Function to execute
    * @returns {Promise&lt;T&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync execute(fn) {
+  async <span class="fstat-no" title="function not covered" >execute(</span>fn) {
 <span class="cstat-no" title="statement not covered" >    this._stats.totalRequests++;</span>
 &nbsp;
     // If we have capacity, execute immediately
@@ -1000,7 +1000,7 @@ export class ConnectionPool {
    * @param {() =&gt; Promise&lt;T&gt;} fn
    * @returns {Promise&lt;T&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync _executeImmediate(fn) {
+  async <span class="fstat-no" title="function not covered" >_executeImmediate(</span>fn) {
 <span class="cstat-no" title="statement not covered" >    this._active++;</span>
 <span class="cstat-no" title="statement not covered" >    this._updatePeakConcurrent();</span>
 &nbsp;
@@ -1018,7 +1018,7 @@ export class ConnectionPool {
    * @param {() =&gt; Promise&lt;T&gt;} fn
    * @returns {Promise&lt;T&gt;}
    */
-<span class="fstat-no" title="function not covered" >  _q</span>ueueRequest(fn) {
+<span class="fstat-no" title="function not covered" >  _queueRequest(</span>fn) {
 <span class="cstat-no" title="statement not covered" >    this._stats.queuedRequests++;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    return new Promise(<span class="fstat-no" title="function not covered" >(r</span>esolve, reject) =&gt; {</span>
@@ -1037,7 +1037,7 @@ export class ConnectionPool {
   /**
    * Process next item in queue
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync _processQueue() {
+  async <span class="fstat-no" title="function not covered" >_processQueue(</span>) {
 <span class="cstat-no" title="statement not covered" >    if (this._queue.length === 0 || this._active &gt;= this.config.maxConcurrent) {</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
     }
@@ -1069,7 +1069,7 @@ export class ConnectionPool {
   /**
    * Update peak concurrent metric
    */
-<span class="fstat-no" title="function not covered" >  _u</span>pdatePeakConcurrent() {
+<span class="fstat-no" title="function not covered" >  _updatePeakConcurrent(</span>) {
 <span class="cstat-no" title="statement not covered" >    if (this._active &gt; this._stats.peakConcurrent) {</span>
 <span class="cstat-no" title="statement not covered" >      this._stats.peakConcurrent = this._active;</span>
     }
@@ -1078,7 +1078,7 @@ export class ConnectionPool {
   /**
    * Update peak queue size metric
    */
-<span class="fstat-no" title="function not covered" >  _u</span>pdatePeakQueueSize() {
+<span class="fstat-no" title="function not covered" >  _updatePeakQueueSize(</span>) {
 <span class="cstat-no" title="statement not covered" >    if (this._queue.length &gt; this._stats.peakQueueSize) {</span>
 <span class="cstat-no" title="statement not covered" >      this._stats.peakQueueSize = this._queue.length;</span>
     }
@@ -1087,7 +1087,7 @@ export class ConnectionPool {
   /**
    * Update average wait time
    */
-<span class="fstat-no" title="function not covered" >  _u</span>pdateAverageWaitTime() {
+<span class="fstat-no" title="function not covered" >  _updateAverageWaitTime(</span>) {
 <span class="cstat-no" title="statement not covered" >    if (this._stats.queuedRequests &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >      this._stats.averageWaitTime = this._stats.totalWaitTime / this._stats.queuedRequests;</span>
     }
@@ -1097,7 +1097,7 @@ export class ConnectionPool {
    * Get current pool status
    * @returns {Object}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tStatus() {
+<span class="fstat-no" title="function not covered" >  getStatus(</span>) {
 <span class="cstat-no" title="statement not covered" >    return {</span>
       active: this._active,
       queued: this._queue.length,
@@ -1111,14 +1111,14 @@ export class ConnectionPool {
    * Get pool statistics
    * @returns {Object}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tStats() {
+<span class="fstat-no" title="function not covered" >  getStats(</span>) {
 <span class="cstat-no" title="statement not covered" >    return { ...this._stats };</span>
   }
 &nbsp;
   /**
    * Reset pool statistics
    */
-<span class="fstat-no" title="function not covered" >  re</span>setStats() {
+<span class="fstat-no" title="function not covered" >  resetStats(</span>) {
 <span class="cstat-no" title="statement not covered" >    this._stats = {</span>
       totalRequests: 0,
       queuedRequests: 0,
@@ -1133,7 +1133,7 @@ export class ConnectionPool {
   /**
    * Drain the queue (cancel all pending requests)
    */
-<span class="fstat-no" title="function not covered" >  dr</span>ain() {
+<span class="fstat-no" title="function not covered" >  drain(</span>) {
 <span class="cstat-no" title="statement not covered" >    for (const request of this._queue) {</span>
 <span class="cstat-no" title="statement not covered" >      request.cancel();</span>
 <span class="cstat-no" title="statement not covered" >      request.reject(new Error('Pool drained'));</span>
@@ -1145,7 +1145,7 @@ export class ConnectionPool {
    * Check if pool has capacity
    * @returns {boolean}
    */
-<span class="fstat-no" title="function not covered" >  ha</span>sCapacity() {
+<span class="fstat-no" title="function not covered" >  hasCapacity(</span>) {
 <span class="cstat-no" title="statement not covered" >    return this._active &lt; this.config.maxConcurrent;</span>
   }
 }
@@ -1161,7 +1161,7 @@ export class RateLimiter {
    * @property {number} interval - Interval in ms (default: 1000)
    * @property {number} maxBurst - Maximum burst capacity (default: tokensPerInterval)
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>options = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    this.tokensPerInterval = options.tokensPerInterval || 10;</span>
 <span class="cstat-no" title="statement not covered" >    this.interval = options.interval || 1000;</span>
 <span class="cstat-no" title="statement not covered" >    this.maxBurst = options.maxBurst || this.tokensPerInterval;</span>
@@ -1174,7 +1174,7 @@ export class RateLimiter {
   /**
    * Refill tokens based on elapsed time
    */
-<span class="fstat-no" title="function not covered" >  _r</span>efill() {
+<span class="fstat-no" title="function not covered" >  _refill(</span>) {
     const now = <span class="cstat-no" title="statement not covered" >Date.now();</span>
     const elapsed = <span class="cstat-no" title="statement not covered" >now - this._lastRefill;</span>
     const tokensToAdd = <span class="cstat-no" title="statement not covered" >(elapsed / this.interval) * this.tokensPerInterval;</span>
@@ -1187,7 +1187,7 @@ export class RateLimiter {
    * Try to acquire a token
    * @returns {boolean}
    */
-<span class="fstat-no" title="function not covered" >  tr</span>yAcquire() {
+<span class="fstat-no" title="function not covered" >  tryAcquire(</span>) {
 <span class="cstat-no" title="statement not covered" >    this._refill();</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (this._tokens &gt;= 1) {</span>
@@ -1203,7 +1203,7 @@ export class RateLimiter {
    * @param {number} timeout - Maximum wait time in ms
    * @returns {Promise&lt;boolean&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync acquire(timeout = <span class="branch-0 cbranch-no" title="branch not covered" >30000)</span> {
+  async <span class="fstat-no" title="function not covered" >acquire(</span>timeout = <span class="branch-0 cbranch-no" title="branch not covered" >30000)</span> {
 <span class="cstat-no" title="statement not covered" >    if (this.tryAcquire()) {</span>
 <span class="cstat-no" title="statement not covered" >      return true;</span>
     }
@@ -1238,7 +1238,7 @@ export class RateLimiter {
    * @param {number} timeout
    * @returns {Promise&lt;T&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync execute(fn, timeout = <span class="branch-0 cbranch-no" title="branch not covered" >30000)</span> {
+  async <span class="fstat-no" title="function not covered" >execute(</span>fn, timeout = <span class="branch-0 cbranch-no" title="branch not covered" >30000)</span> {
 <span class="cstat-no" title="statement not covered" >    await this.acquire(timeout);</span>
 <span class="cstat-no" title="statement not covered" >    return fn();</span>
   }
@@ -1247,7 +1247,7 @@ export class RateLimiter {
    * Get current token count
    * @returns {number}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tTokens() {
+<span class="fstat-no" title="function not covered" >  getTokens(</span>) {
 <span class="cstat-no" title="statement not covered" >    this._refill();</span>
 <span class="cstat-no" title="statement not covered" >    return this._tokens;</span>
   }
@@ -1256,7 +1256,7 @@ export class RateLimiter {
    * Get rate limiter status
    * @returns {Object}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tStatus() {
+<span class="fstat-no" title="function not covered" >  getStatus(</span>) {
 <span class="cstat-no" title="statement not covered" >    this._refill();</span>
 <span class="cstat-no" title="statement not covered" >    return {</span>
       availableTokens: Math.floor(this._tokens),
@@ -1276,7 +1276,7 @@ export class ManagedPool {
    * @param {PoolConfig} poolConfig
    * @param {Object} rateLimitConfig
    */
-<span class="fstat-no" title="function not covered" >  co</span>nstructor(poolConfig = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span> rateLimitConfig = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
+<span class="fstat-no" title="function not covered" >  constructor(</span>poolConfig = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span> rateLimitConfig = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> {
 <span class="cstat-no" title="statement not covered" >    this.pool = new ConnectionPool(poolConfig);</span>
 <span class="cstat-no" title="statement not covered" >    this.rateLimiter = rateLimitConfig.enabled !== false</span>
       ? new RateLimiter(rateLimitConfig)
@@ -1289,7 +1289,7 @@ export class ManagedPool {
    * @param {() =&gt; Promise&lt;T&gt;} fn
    * @returns {Promise&lt;T&gt;}
    */
-<span class="fstat-no" title="function not covered" >  as</span>ync execute(fn) {
+  async <span class="fstat-no" title="function not covered" >execute(</span>fn) {
     // Apply rate limiting first if enabled
 <span class="cstat-no" title="statement not covered" >    if (this.rateLimiter) {</span>
 <span class="cstat-no" title="statement not covered" >      await this.rateLimiter.acquire();</span>
@@ -1303,7 +1303,7 @@ export class ManagedPool {
    * Get combined status
    * @returns {Object}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tStatus() {
+<span class="fstat-no" title="function not covered" >  getStatus(</span>) {
 <span class="cstat-no" title="statement not covered" >    return {</span>
       pool: this.pool.getStatus(),
       rateLimit: this.rateLimiter ? this.rateLimiter.getStatus() : null
@@ -1314,7 +1314,7 @@ export class ManagedPool {
    * Get combined stats
    * @returns {Object}
    */
-<span class="fstat-no" title="function not covered" >  ge</span>tStats() {
+<span class="fstat-no" title="function not covered" >  getStats(</span>) {
 <span class="cstat-no" title="statement not covered" >    return {</span>
       pool: this.pool.getStats()
     };
@@ -1327,7 +1327,7 @@ export class ManagedPool {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-25T15:46:17.412Z
+                at 2026-02-05T04:06:06.306Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
