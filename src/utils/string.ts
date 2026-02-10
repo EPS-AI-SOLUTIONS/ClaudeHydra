@@ -70,9 +70,7 @@ export function truncate(text, maxLength, suffix = '...') {
  */
 export function toTitleCase(text) {
   if (!text) return '';
-  return text
-    .toLowerCase()
-    .replace(/(?:^|\s|[-_])\w/g, match => match.toUpperCase());
+  return text.toLowerCase().replace(/(?:^|\s|[-_])\w/g, (match) => match.toUpperCase());
 }
 
 /**
@@ -83,8 +81,8 @@ export function toTitleCase(text) {
 export function toCamelCase(text) {
   if (!text) return '';
   return text
-    .replace(/[-_\s]+(.)?/g, (_, c) => c ? c.toUpperCase() : '')
-    .replace(/^./, c => c.toLowerCase());
+    .replace(/[-_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''))
+    .replace(/^./, (c) => c.toLowerCase());
 }
 
 /**
@@ -182,9 +180,9 @@ export function escapeHtml(text) {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#39;'
+    "'": '&#39;',
   };
-  return text.replace(/[&<>"']/g, char => entities[char]);
+  return text.replace(/[&<>"']/g, (char) => entities[char]);
 }
 
 /**
@@ -226,5 +224,5 @@ export default {
   escapeRegex,
   escapeHtml,
   isBlank,
-  slugify
+  slugify,
 };

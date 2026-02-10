@@ -25,9 +25,7 @@ export function requireEnv(key, errorMessage) {
   const value = process.env[key];
 
   if (value === undefined || value === '') {
-    throw new Error(
-      errorMessage || `Required environment variable '${key}' is not set`
-    );
+    throw new Error(errorMessage || `Required environment variable '${key}' is not set`);
   }
 
   return value;
@@ -137,9 +135,10 @@ export function parseEnvList(key, defaultValue = [], separator = ',') {
     return defaultValue;
   }
 
-  return value.split(separator)
-    .map(item => item.trim())
-    .filter(item => item !== '');
+  return value
+    .split(separator)
+    .map((item) => item.trim())
+    .filter((item) => item !== '');
 }
 
 /**
@@ -250,5 +249,5 @@ export default {
   deleteEnv,
   hasEnv,
   getEnvMultiple,
-  parseEnvCustom
+  parseEnvCustom,
 };

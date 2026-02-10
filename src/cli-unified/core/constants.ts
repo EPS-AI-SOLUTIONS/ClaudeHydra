@@ -25,7 +25,7 @@ export const DATA_PATHS = {
   SESSIONS: 'sessions',
   PLUGINS: 'plugins',
   THEMES: 'themes',
-  MACROS: 'macros'
+  MACROS: 'macros',
 };
 
 // ============================================================================
@@ -116,7 +116,7 @@ export const KEYS = {
   // Alt combinations (for Vim mode)
   ALT_B: '\x1bb',
   ALT_F: '\x1bf',
-  ALT_D: '\x1bd'
+  ALT_D: '\x1bd',
 };
 
 // ============================================================================
@@ -212,7 +212,7 @@ export const ANSI = {
 
   // True color (24-bit) functions
   FG_RGB: (r, g, b) => `\x1b[38;2;${r};${g};${b}m`,
-  BG_RGB: (r, g, b) => `\x1b[48;2;${r};${g};${b}m`
+  BG_RGB: (r, g, b) => `\x1b[48;2;${r};${g};${b}m`,
 };
 
 // ============================================================================
@@ -225,14 +225,14 @@ export const PROMPT_STATES = {
   PROCESSING: 'processing',
   ERROR: 'error',
   SUCCESS: 'success',
-  WAITING: 'waiting'
+  WAITING: 'waiting',
 };
 
 /** Execution modes */
 export const EXECUTION_MODES = {
   NORMAL: 'normal',
   YOLO: 'yolo',
-  QUICK: 'quick'
+  QUICK: 'quick',
 };
 
 /** CLI modes */
@@ -240,14 +240,14 @@ export const CLI_MODES = {
   BASIC: 'basic',
   ENHANCED: 'enhanced',
   SWARM: 'swarm',
-  AUTO: 'auto'
+  AUTO: 'auto',
 };
 
 /** Response time thresholds (ms) */
 export const RESPONSE_TIME_THRESHOLDS = {
-  FAST: 1000,      // < 1s = green
-  MEDIUM: 5000,    // 1-5s = yellow
-  SLOW: 10000      // > 5s = red
+  FAST: 1000, // < 1s = green
+  MEDIUM: 5000, // 1-5s = yellow
+  SLOW: 10000, // > 5s = red
 };
 
 /** Spinner frame rate (ms) */
@@ -259,62 +259,62 @@ export const SPINNER_INTERVAL = 80;
 
 /** Box drawing - Single line (Unicode) */
 export const BOX_SINGLE = {
-  topLeft: '\u250c',      // ┌
-  topRight: '\u2510',     // ┐
-  bottomLeft: '\u2514',   // └
-  bottomRight: '\u2518',  // ┘
-  horizontal: '\u2500',   // ─
-  vertical: '\u2502',     // │
-  teeRight: '\u251c',     // ├
-  teeLeft: '\u2524',      // ┤
-  teeDown: '\u252c',      // ┬
-  teeUp: '\u2534',        // ┴
-  cross: '\u253c'         // ┼
+  topLeft: '\u250c', // ┌
+  topRight: '\u2510', // ┐
+  bottomLeft: '\u2514', // └
+  bottomRight: '\u2518', // ┘
+  horizontal: '\u2500', // ─
+  vertical: '\u2502', // │
+  teeRight: '\u251c', // ├
+  teeLeft: '\u2524', // ┤
+  teeDown: '\u252c', // ┬
+  teeUp: '\u2534', // ┴
+  cross: '\u253c', // ┼
 };
 
 /** Box drawing - Double line */
 export const BOX_DOUBLE = {
-  topLeft: '\u2554',      // ╔
-  topRight: '\u2557',     // ╗
-  bottomLeft: '\u255a',   // ╚
-  bottomRight: '\u255d',  // ╝
-  horizontal: '\u2550',   // ═
-  vertical: '\u2551',     // ║
-  teeRight: '\u2560',     // ╠
-  teeLeft: '\u2563',      // ╣
-  teeDown: '\u2566',      // ╦
-  teeUp: '\u2569',        // ╩
-  cross: '\u256c'         // ╬
+  topLeft: '\u2554', // ╔
+  topRight: '\u2557', // ╗
+  bottomLeft: '\u255a', // ╚
+  bottomRight: '\u255d', // ╝
+  horizontal: '\u2550', // ═
+  vertical: '\u2551', // ║
+  teeRight: '\u2560', // ╠
+  teeLeft: '\u2563', // ╣
+  teeDown: '\u2566', // ╦
+  teeUp: '\u2569', // ╩
+  cross: '\u256c', // ╬
 };
 
 /** Box drawing - Rounded corners */
 export const BOX_ROUNDED = {
-  topLeft: '\u256d',      // ╭
-  topRight: '\u256e',     // ╮
-  bottomLeft: '\u2570',   // ╰
-  bottomRight: '\u256f',  // ╯
-  horizontal: '\u2500',   // ─
-  vertical: '\u2502',     // │
-  teeRight: '\u251c',     // ├
-  teeLeft: '\u2524',      // ┤
-  teeDown: '\u252c',      // ┬
-  teeUp: '\u2534',        // ┴
-  cross: '\u253c'         // ┼
+  topLeft: '\u256d', // ╭
+  topRight: '\u256e', // ╮
+  bottomLeft: '\u2570', // ╰
+  bottomRight: '\u256f', // ╯
+  horizontal: '\u2500', // ─
+  vertical: '\u2502', // │
+  teeRight: '\u251c', // ├
+  teeLeft: '\u2524', // ┤
+  teeDown: '\u252c', // ┬
+  teeUp: '\u2534', // ┴
+  cross: '\u253c', // ┼
 };
 
 /** Box drawing - Bold (heavy) lines */
 export const BOX_BOLD = {
-  topLeft: '\u250f',      // ┏
-  topRight: '\u2513',     // ┓
-  bottomLeft: '\u2517',   // ┗
-  bottomRight: '\u251b',  // ┛
-  horizontal: '\u2501',   // ━
-  vertical: '\u2503',     // ┃
-  teeRight: '\u2523',     // ┣
-  teeLeft: '\u252b',      // ┫
-  teeDown: '\u2533',      // ┳
-  teeUp: '\u253b',        // ┻
-  cross: '\u254b'         // ╋
+  topLeft: '\u250f', // ┏
+  topRight: '\u2513', // ┓
+  bottomLeft: '\u2517', // ┗
+  bottomRight: '\u251b', // ┛
+  horizontal: '\u2501', // ━
+  vertical: '\u2503', // ┃
+  teeRight: '\u2523', // ┣
+  teeLeft: '\u252b', // ┫
+  teeDown: '\u2533', // ┳
+  teeUp: '\u253b', // ┻
+  cross: '\u254b', // ╋
 };
 
 /** Box drawing - Dashed lines */
@@ -323,13 +323,13 @@ export const BOX_DASHED = {
   topRight: '\u2510',
   bottomLeft: '\u2514',
   bottomRight: '\u2518',
-  horizontal: '\u2504',   // ┄
-  vertical: '\u2506',     // ┆
+  horizontal: '\u2504', // ┄
+  vertical: '\u2506', // ┆
   teeRight: '\u251c',
   teeLeft: '\u2524',
   teeDown: '\u252c',
   teeUp: '\u2534',
-  cross: '\u253c'
+  cross: '\u253c',
 };
 
 /** Box drawing - Dotted lines */
@@ -338,13 +338,13 @@ export const BOX_DOTTED = {
   topRight: '\u2510',
   bottomLeft: '\u2514',
   bottomRight: '\u2518',
-  horizontal: '\u2508',   // ┈
-  vertical: '\u250a',     // ┊
+  horizontal: '\u2508', // ┈
+  vertical: '\u250a', // ┊
   teeRight: '\u251c',
   teeLeft: '\u2524',
   teeDown: '\u252c',
   teeUp: '\u2534',
-  cross: '\u253c'
+  cross: '\u253c',
 };
 
 /** Box drawing - ASCII fallback */
@@ -361,7 +361,7 @@ export const BOX_ASCII = {
   teeUp: '+',
   cross: '+',
   doubleHorizontal: '=',
-  doubleVertical: '|'
+  doubleVertical: '|',
 };
 
 /** All border styles mapping */
@@ -372,7 +372,7 @@ export const BORDER_STYLES = {
   bold: BOX_BOLD,
   dashed: BOX_DASHED,
   dotted: BOX_DOTTED,
-  ascii: BOX_ASCII
+  ascii: BOX_ASCII,
 };
 
 // Backward compatibility aliases
@@ -385,33 +385,33 @@ export const BOX_UNICODE = BOX_SINGLE;
 /** Progress bar characters */
 export const PROGRESS_CHARS = {
   // Block style
-  BLOCK_FULL: '\u2588',      // █
-  BLOCK_7_8: '\u2587',       // ▇
-  BLOCK_3_4: '\u2586',       // ▆
-  BLOCK_5_8: '\u2585',       // ▅
-  BLOCK_1_2: '\u2584',       // ▄
-  BLOCK_3_8: '\u2583',       // ▃
-  BLOCK_1_4: '\u2582',       // ▂
-  BLOCK_1_8: '\u2581',       // ▁
+  BLOCK_FULL: '\u2588', // █
+  BLOCK_7_8: '\u2587', // ▇
+  BLOCK_3_4: '\u2586', // ▆
+  BLOCK_5_8: '\u2585', // ▅
+  BLOCK_1_2: '\u2584', // ▄
+  BLOCK_3_8: '\u2583', // ▃
+  BLOCK_1_4: '\u2582', // ▂
+  BLOCK_1_8: '\u2581', // ▁
   BLOCK_EMPTY: ' ',
 
   // Shade style
-  SHADE_FULL: '\u2588',      // █
-  SHADE_DARK: '\u2593',      // ▓
-  SHADE_MEDIUM: '\u2592',    // ▒
-  SHADE_LIGHT: '\u2591',     // ░
+  SHADE_FULL: '\u2588', // █
+  SHADE_DARK: '\u2593', // ▓
+  SHADE_MEDIUM: '\u2592', // ▒
+  SHADE_LIGHT: '\u2591', // ░
 
   // Braille patterns
-  BRAILLE_EMPTY: '\u2800',   // ⠀
-  BRAILLE_FULL: '\u28FF',    // ⣿
+  BRAILLE_EMPTY: '\u2800', // ⠀
+  BRAILLE_FULL: '\u28FF', // ⣿
 
   // Simple
-  FILLED: '\u25a0',          // ■
-  EMPTY: '\u25a1',           // □
+  FILLED: '\u25a0', // ■
+  EMPTY: '\u25a1', // □
 
   // ASCII fallback
   ASCII_FILLED: '#',
-  ASCII_EMPTY: '-'
+  ASCII_EMPTY: '-',
 };
 
 // ============================================================================
@@ -466,7 +466,7 @@ export const EVENT_TYPES = {
   // Lifecycle events
   CLI_INIT: 'cli:init',
   CLI_READY: 'cli:ready',
-  CLI_EXIT: 'cli:exit'
+  CLI_EXIT: 'cli:exit',
 };
 
 // ============================================================================
@@ -475,34 +475,34 @@ export const EVENT_TYPES = {
 
 /** Witcher Swarm agent names */
 export const AGENT_NAMES = [
-  'Geralt',    // Security & validation
-  'Yennefer',  // Architecture & synthesis
-  'Triss',     // Data & integration
-  'Jaskier',   // Documentation & logging
-  'Vesemir',   // Code review & mentoring
-  'Ciri',      // Fast execution & portals
-  'Eskel',     // Testing & stability
-  'Lambert',   // Refactoring & cleanup
-  'Zoltan',    // Infrastructure & DevOps
-  'Regis',     // Research & speculation
-  'Dijkstra',  // Planning & strategy
-  'Philippa'   // UI/UX & frontend
+  'Geralt', // Security & validation
+  'Yennefer', // Architecture & synthesis
+  'Triss', // Data & integration
+  'Jaskier', // Documentation & logging
+  'Vesemir', // Code review & mentoring
+  'Ciri', // Fast execution & portals
+  'Eskel', // Testing & stability
+  'Lambert', // Refactoring & cleanup
+  'Zoltan', // Infrastructure & DevOps
+  'Regis', // Research & speculation
+  'Dijkstra', // Planning & strategy
+  'Philippa', // UI/UX & frontend
 ];
 
 /** Agent emoji avatars */
 export const AGENT_AVATARS = {
-  Geralt: '\u2694\ufe0f',     // Crossed swords ⚔️
-  Yennefer: '\u2728',         // Sparkles ✨
-  Triss: '\ud83d\udd25',      // Fire 🔥
-  Jaskier: '\ud83c\udfb5',    // Musical note 🎵
-  Vesemir: '\ud83d\udcda',    // Books 📚
-  Ciri: '\u26a1',             // Lightning ⚡
-  Eskel: '\ud83d\udee1\ufe0f',// Shield 🛡️
-  Lambert: '\ud83d\udd27',    // Wrench 🔧
-  Zoltan: '\ud83c\udfed',     // Factory 🏭
-  Regis: '\ud83e\udddb',      // Vampire 🧛
-  Dijkstra: '\ud83c\udfaf',   // Target 🎯
-  Philippa: '\ud83e\udd89'    // Owl 🦉
+  Geralt: '\u2694\ufe0f', // Crossed swords ⚔️
+  Yennefer: '\u2728', // Sparkles ✨
+  Triss: '\ud83d\udd25', // Fire 🔥
+  Jaskier: '\ud83c\udfb5', // Musical note 🎵
+  Vesemir: '\ud83d\udcda', // Books 📚
+  Ciri: '\u26a1', // Lightning ⚡
+  Eskel: '\ud83d\udee1\ufe0f', // Shield 🛡️
+  Lambert: '\ud83d\udd27', // Wrench 🔧
+  Zoltan: '\ud83c\udfed', // Factory 🏭
+  Regis: '\ud83e\udddb', // Vampire 🧛
+  Dijkstra: '\ud83c\udfaf', // Target 🎯
+  Philippa: '\ud83e\udd89', // Owl 🦉
 };
 
 // ============================================================================

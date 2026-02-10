@@ -1,0 +1,91 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+*.min.js
+*.min.css
+
+# Tauri target directory (Rust build artifacts)
+claude-gui/src-tauri/target/
+
+# Package manager files
+.npm/
+.yarn/
+.pnp.*
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Other
+.cache/
+.next/
+coverage/
+*.map
+
+# Git metadata (packfiles = OOM)
+.git/
+
+# Playwright MCP cache (binary screenshots)
+.playwright-mcp/
+
+# Tauri generated schemas
+claude-gui/src-tauri/gen/
+
+# AI/Agent data
+.serena/
+.claude/
+.hydra/
+.hydra-data/
+data/
+logs/
+transcripts/
+
+# Binary/model files
+models/
+bin/
+*.gguf
+*.exe
+*.zip
+
+# Python artifacts
+__pycache__/
+venv/
+.venv/
+
+# Test infrastructure
+test-results/
+claude-gui/drivers/
+
+# Secrets & config
+.env
+.env.*
+config/
+.mcp.json
+
+# Lock files (duże, bez wartości analitycznej)
+pnpm-lock.yaml
+package-lock.json
+claude-gui/package-lock.json
+Cargo.lock
+
+# Debug / temp
+_sdk-debug.log
+repomix-output.xml
+debug-bridge.mjs

@@ -66,7 +66,7 @@ export class RollingStats {
   stdDev() {
     if (this._samples.length < 2) return 0;
     const avg = this.average();
-    const squareDiffs = this._samples.map(v => Math.pow(v - avg, 2));
+    const squareDiffs = this._samples.map((v) => (v - avg) ** 2);
     return Math.sqrt(squareDiffs.reduce((a, b) => a + b, 0) / (this._samples.length - 1));
   }
 
@@ -104,7 +104,7 @@ export class RollingStats {
       p50: this.percentile(50),
       p90: this.percentile(90),
       p95: this.percentile(95),
-      p99: this.percentile(99)
+      p99: this.percentile(99),
     };
   }
 
@@ -151,7 +151,7 @@ export class TimeSeriesMetrics {
         sum: 0,
         min: Infinity,
         max: -Infinity,
-        values: []
+        values: [],
       });
       this._prune();
     }
@@ -162,7 +162,7 @@ export class TimeSeriesMetrics {
    * Remove old buckets
    */
   _prune() {
-    const cutoff = this._getBucketKey() - (this.retention * this.bucketSize);
+    const cutoff = this._getBucketKey() - this.retention * this.bucketSize;
     for (const key of this._buckets.keys()) {
       if (key < cutoff) {
         this._buckets.delete(key);
@@ -222,7 +222,7 @@ export class TimeSeriesMetrics {
       max: max === -Infinity ? 0 : max,
       p50: allValues[Math.floor(allValues.length * 0.5)] || 0,
       p95: allValues[Math.floor(allValues.length * 0.95)] || 0,
-      p99: allValues[Math.floor(allValues.length * 0.99)] || 0
+      p99: allValues[Math.floor(allValues.length * 0.99)] || 0,
     };
   }
 
@@ -242,7 +242,7 @@ export class TimeSeriesMetrics {
           count: bucket.count,
           average: bucket.count > 0 ? bucket.sum / bucket.count : 0,
           min: bucket.min === Infinity ? 0 : bucket.min,
-          max: bucket.max === -Infinity ? 0 : bucket.max
+          max: bucket.max === -Infinity ? 0 : bucket.max,
         });
       }
     }
@@ -307,7 +307,7 @@ export class Counter {
     for (const [key, value] of this._values) {
       result.push({
         labels: JSON.parse(key).reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {}),
-        value
+        value,
       });
     }
     return result;
@@ -361,12 +361,12 @@ export class Histogram {
   getData() {
     const bucketData = this.buckets.map((boundary, i) => ({
       le: boundary,
-      count: this._counts.slice(0, i + 1).reduce((a, b) => a + b, 0)
+      count: this._counts.slice(0, i + 1).reduce((a, b) => a + b, 0),
     }));
 
     bucketData.push({
       le: '+Inf',
-      count: this._count
+      count: this._count,
     });
 
     return {
@@ -374,7 +374,7 @@ export class Histogram {
       buckets: bucketData,
       sum: this._sum,
       count: this._count,
-      average: this._count > 0 ? this._sum / this._count : 0
+      average: this._count > 0 ? this._sum / this._count : 0,
     };
   }
 
@@ -473,7 +473,7 @@ export class StatsCollector {
       type: 'routing',
       category,
       provider,
-      complexity: complexity?.toString()
+      complexity: complexity?.toString(),
     });
   }
 
@@ -487,25 +487,25 @@ export class StatsCollector {
         total: this.requests.getAll().reduce((sum, r) => sum + r.value, 0),
         byProvider: this._aggregateByLabel(this.requests.getAll(), 'provider'),
         byCategory: this._aggregateByLabel(this.requests.getAll(), 'category'),
-        byStatus: this._aggregateByLabel(this.requests.getAll(), 'status')
+        byStatus: this._aggregateByLabel(this.requests.getAll(), 'status'),
       },
       errors: {
         total: this.errors.getAll().reduce((sum, r) => sum + r.value, 0),
-        byType: this._aggregateByLabel(this.errors.getAll(), 'error_type')
+        byType: this._aggregateByLabel(this.errors.getAll(), 'error_type'),
       },
       latency: {
         histogram: this.latency.getData(),
-        recent: this.recentLatency.getStats()
+        recent: this.recentLatency.getStats(),
       },
       cost: {
         total: this.cost.getAll().reduce((sum, r) => sum + r.value, 0),
         byProvider: this._aggregateByLabel(this.cost.getAll(), 'provider'),
-        savings: this.savings.get()
+        savings: this.savings.get(),
       },
       tokens: {
         total: this.tokens.getAll().reduce((sum, r) => sum + r.value, 0),
-        byProvider: this._aggregateByLabel(this.tokens.getAll(), 'provider')
-      }
+        byProvider: this._aggregateByLabel(this.tokens.getAll(), 'provider'),
+      },
     };
   }
 
@@ -538,8 +538,8 @@ export class StatsCollector {
       requests: this.requestTimeSeries.getTimeSeries(startTime, endTime),
       aggregated: {
         latency: this.latencyTimeSeries.getMetrics(startTime, endTime),
-        requests: this.requestTimeSeries.getMetrics(startTime, endTime)
-      }
+        requests: this.requestTimeSeries.getMetrics(startTime, endTime),
+      },
     };
   }
 
@@ -554,8 +554,20 @@ export class StatsCollector {
     lines.push(`# HELP ${this.requests.name} ${this.requests.description}`);
     lines.push(`# TYPE ${this.requests.name} counter`);
     for (const item of this.requests.getAll()) {
-      const labels = Object.entries(item.labels).map(([k, v]) => `${k}="${v}"`).join(',');
+      const labels = Object.entries(item.labels)
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(',');
       lines.push(`${this.requests.name}{${labels}} ${item.value}`);
+    }
+
+    // Errors counter
+    lines.push(`# HELP ${this.errors.name} ${this.errors.description}`);
+    lines.push(`# TYPE ${this.errors.name} counter`);
+    for (const item of this.errors.getAll()) {
+      const labels = Object.entries(item.labels)
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(',');
+      lines.push(`${this.errors.name}{${labels}} ${item.value}`);
     }
 
     // Latency histogram
@@ -567,6 +579,31 @@ export class StatsCollector {
     }
     lines.push(`${this.latency.name}_sum ${histData.sum}`);
     lines.push(`${this.latency.name}_count ${histData.count}`);
+
+    // Cost counter
+    lines.push(`# HELP ${this.cost.name} ${this.cost.description}`);
+    lines.push(`# TYPE ${this.cost.name} counter`);
+    for (const item of this.cost.getAll()) {
+      const labels = Object.entries(item.labels)
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(',');
+      lines.push(`${this.cost.name}{${labels}} ${item.value}`);
+    }
+
+    // Tokens counter
+    lines.push(`# HELP ${this.tokens.name} ${this.tokens.description}`);
+    lines.push(`# TYPE ${this.tokens.name} counter`);
+    for (const item of this.tokens.getAll()) {
+      const labels = Object.entries(item.labels)
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(',');
+      lines.push(`${this.tokens.name}{${labels}} ${item.value}`);
+    }
+
+    // Savings counter
+    lines.push(`# HELP ${this.savings.name} ${this.savings.description}`);
+    lines.push(`# TYPE ${this.savings.name} counter`);
+    lines.push(`${this.savings.name} ${this.savings.get()}`);
 
     return lines.join('\n');
   }

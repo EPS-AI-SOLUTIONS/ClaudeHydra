@@ -6,7 +6,7 @@
  * @module src/agents/base-agent
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 // ============================================================================
 // Constants
@@ -21,7 +21,7 @@ export const AgentState = {
   RUNNING: 'running',
   COMPLETED: 'completed',
   FAILED: 'failed',
-  CANCELLED: 'cancelled'
+  CANCELLED: 'cancelled',
 };
 
 // ============================================================================
@@ -81,7 +81,7 @@ export class BaseAgent extends EventEmitter {
    * @param {Object} params - Task parameters
    * @returns {Promise<any>}
    */
-  async execute(params) {
+  async execute(_params) {
     throw new Error('execute() must be implemented by subclass');
   }
 
@@ -105,14 +105,17 @@ export class BaseAgent extends EventEmitter {
 
     this.emit('started', {
       taskId: this.currentTaskId,
-      params
+      params,
     });
 
     try {
       // Create timeout promise
       const timeoutMs = options.timeout || this.timeout;
+      let timeoutId;
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
+          // Signal abort so execute() can stop work
+          this.abortController.abort();
           reject(new Error(`Agent timeout after ${timeoutMs}ms`));
         }, timeoutMs);
       });
@@ -120,11 +123,12 @@ export class BaseAgent extends EventEmitter {
       // Execute with signal
       const executePromise = this.execute({
         ...params,
-        signal: this.abortController.signal
+        signal: this.abortController.signal,
       });
 
       // Race execution against timeout
       const result = await Promise.race([executePromise, timeoutPromise]);
+      clearTimeout(timeoutId);
 
       const duration = Date.now() - this.startTime;
 
@@ -132,7 +136,7 @@ export class BaseAgent extends EventEmitter {
       this.emit('completed', {
         taskId: this.currentTaskId,
         result,
-        duration
+        duration,
       });
 
       return {
@@ -140,7 +144,7 @@ export class BaseAgent extends EventEmitter {
         taskId: this.currentTaskId,
         result,
         duration,
-        agent: this.name
+        agent: this.name,
       };
     } catch (error) {
       const duration = Date.now() - this.startTime;
@@ -149,7 +153,7 @@ export class BaseAgent extends EventEmitter {
         this.state = AgentState.CANCELLED;
         this.emit('cancelled', {
           taskId: this.currentTaskId,
-          duration
+          duration,
         });
 
         return {
@@ -157,7 +161,7 @@ export class BaseAgent extends EventEmitter {
           taskId: this.currentTaskId,
           cancelled: true,
           duration,
-          agent: this.name
+          agent: this.name,
         };
       }
 
@@ -165,7 +169,7 @@ export class BaseAgent extends EventEmitter {
       this.emit('failed', {
         taskId: this.currentTaskId,
         error,
-        duration
+        duration,
       });
 
       return {
@@ -173,7 +177,7 @@ export class BaseAgent extends EventEmitter {
         taskId: this.currentTaskId,
         error: error.message,
         duration,
-        agent: this.name
+        agent: this.name,
       };
     } finally {
       this.cleanup();
@@ -199,7 +203,7 @@ export class BaseAgent extends EventEmitter {
     this.emit('progress', {
       taskId: this.currentTaskId,
       percent,
-      message
+      message,
     });
   }
 
@@ -244,7 +248,7 @@ export class BaseAgent extends EventEmitter {
       witcherName: this.witcherName,
       capabilities: this.capabilities,
       state: this.state,
-      currentTaskId: this.currentTaskId
+      currentTaskId: this.currentTaskId,
     };
   }
 

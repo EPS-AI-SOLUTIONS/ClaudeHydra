@@ -4,9 +4,9 @@
  * @module cli-unified/processing/UnifiedCommandParser
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 import { COMMAND_PREFIX } from '../core/constants.js';
-import { eventBus, EVENT_TYPES } from '../core/EventBus.js';
+import { EVENT_TYPES, eventBus } from '../core/EventBus.js';
 
 /**
  * Command definition
@@ -36,7 +36,7 @@ export class UnifiedCommandParser extends EventEmitter {
     this.hooks = {
       before: [],
       after: [],
-      error: []
+      error: [],
     };
 
     // Register built-in commands
@@ -55,12 +55,12 @@ export class UnifiedCommandParser extends EventEmitter {
       description: 'Show help',
       usage: '/help [command]',
       category: 'general',
-      handler: async (args, ctx) => {
+      handler: async (args, _ctx) => {
         if (args[0]) {
           return this.getCommandHelp(args[0]);
         }
         return this.getFullHelp();
-      }
+      },
     });
 
     this.register({
@@ -71,7 +71,7 @@ export class UnifiedCommandParser extends EventEmitter {
       handler: async () => {
         process.stdout.write('\x1b[2J\x1b[H');
         return null;
-      }
+      },
     });
 
     this.register({
@@ -79,10 +79,10 @@ export class UnifiedCommandParser extends EventEmitter {
       aliases: ['quit', 'q'],
       description: 'Exit CLI',
       category: 'general',
-      handler: async (args, ctx) => {
+      handler: async (_args, ctx) => {
         ctx.exit = true;
         return 'Goodbye!';
-      }
+      },
     });
   }
 
@@ -177,7 +177,7 @@ export class UnifiedCommandParser extends EventEmitter {
         command: null,
         args: rawArgs,
         flags: {},
-        error: `Unknown command: ${name}`
+        error: `Unknown command: ${name}`,
       };
     }
 
@@ -189,7 +189,7 @@ export class UnifiedCommandParser extends EventEmitter {
       command,
       args,
       flags,
-      error: null
+      error: null,
     };
   }
 
@@ -241,7 +241,7 @@ export class UnifiedCommandParser extends EventEmitter {
       // Long flag (--flag or --flag=value)
       if (arg.startsWith('--')) {
         const [flagName, value] = arg.slice(2).split('=');
-        const flagDef = flagDefs.find(f => f.name === flagName || f.long === flagName);
+        const flagDef = flagDefs.find((f) => f.name === flagName || f.long === flagName);
 
         if (value !== undefined) {
           flags[flagName] = value;
@@ -256,7 +256,7 @@ export class UnifiedCommandParser extends EventEmitter {
       // Short flag (-f or -f value)
       else if (arg.startsWith('-') && arg.length > 1) {
         const flagChar = arg.slice(1);
-        const flagDef = flagDefs.find(f => f.short === flagChar);
+        const flagDef = flagDefs.find((f) => f.short === flagChar);
 
         if (flagDef?.type === 'boolean') {
           flags[flagDef.name || flagChar] = true;
@@ -385,14 +385,14 @@ export class UnifiedCommandParser extends EventEmitter {
 
     if (lastPart.startsWith('--')) {
       return flags
-        .filter(f => f.long && `--${f.long}`.startsWith(lastPart))
-        .map(f => `--${f.long}`);
+        .filter((f) => f.long && `--${f.long}`.startsWith(lastPart))
+        .map((f) => `--${f.long}`);
     }
 
     if (lastPart.startsWith('-')) {
       return flags
-        .filter(f => f.short && `-${f.short}`.startsWith(lastPart))
-        .map(f => `-${f.short}`);
+        .filter((f) => f.short && `-${f.short}`.startsWith(lastPart))
+        .map((f) => `-${f.short}`);
     }
 
     return [];
@@ -445,7 +445,7 @@ export class UnifiedCommandParser extends EventEmitter {
     let help = '\nAvailable Commands:\n';
 
     for (const [category, cmdNames] of this.categories) {
-      const visibleCmds = cmdNames.filter(n => !this.commands.get(n)?.hidden);
+      const visibleCmds = cmdNames.filter((n) => !this.commands.get(n)?.hidden);
       if (visibleCmds.length === 0) continue;
 
       help += `\n  ${category.toUpperCase()}:\n`;

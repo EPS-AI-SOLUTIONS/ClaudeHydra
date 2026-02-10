@@ -7,11 +7,14 @@
  * @module src/mcp/client-manager
  */
 
-import { EventEmitter } from 'events';
-import { MCPConfigLoader, getConfigLoader } from './config-loader.js';
-import { ServerRegistry, ServerState, getServerRegistry } from './server-registry.js';
-import { HealthChecker, HealthStatus, getHealthChecker } from './health-checker.js';
+import { EventEmitter } from 'node:events';
+import { getLogger } from '../utils/logger.js';
+import { getConfigLoader, MCPConfigLoader } from './config-loader.js';
+import { getHealthChecker, HealthChecker, HealthStatus } from './health-checker.js';
+import { getServerRegistry, ServerRegistry, ServerState } from './server-registry.js';
 import { createTransport } from './transports/index.js';
+
+const _logger = getLogger('MCPClientManager');
 
 // ============================================================================
 // MCP Client Manager Class
@@ -45,13 +48,13 @@ export class MCPClientManager extends EventEmitter {
       configPath: options.configPath,
       autoConnect: options.autoConnect ?? true,
       watchConfig: options.watchConfig ?? false,
-      enableHealthChecks: options.enableHealthChecks ?? true
+      enableHealthChecks: options.enableHealthChecks ?? true,
     };
 
     /** @type {MCPConfigLoader} */
     this.configLoader = getConfigLoader({
       configPath: this.options.configPath,
-      watchChanges: this.options.watchConfig
+      watchChanges: this.options.watchConfig,
     });
 
     /** @type {ServerRegistry} */
@@ -241,7 +244,7 @@ export class MCPClientManager extends EventEmitter {
 
       // Update registry
       this.registry.updateState(serverId, ServerState.CONNECTED, {
-        transport
+        transport,
       });
       this.registry.registerTools(serverId, tools);
 
@@ -263,7 +266,7 @@ export class MCPClientManager extends EventEmitter {
   async connectAll() {
     const results = {
       connected: [],
-      failed: []
+      failed: [],
     };
 
     const servers = this.registry.list();
@@ -278,7 +281,7 @@ export class MCPClientManager extends EventEmitter {
         } catch (error) {
           results.failed.push({ id: entry.id, error });
         }
-      })
+      }),
     );
 
     return results;
@@ -337,7 +340,7 @@ export class MCPClientManager extends EventEmitter {
       // Some servers might not support tools/list
       this.emit('error', {
         serverId,
-        error: new Error(`Failed to discover tools: ${error.message}`)
+        error: new Error(`Failed to discover tools: ${error.message}`),
       });
       return [];
     }
@@ -376,7 +379,7 @@ export class MCPClientManager extends EventEmitter {
       const result = await transport.request(
         'tools/call',
         { name: toolName, arguments: args },
-        options.timeout || entry.config.timeout
+        options.timeout || entry.config.timeout,
       );
 
       // Record success
@@ -447,7 +450,7 @@ export class MCPClientManager extends EventEmitter {
         serverId,
         status: HealthStatus.UNKNOWN,
         available: false,
-        error: new Error('No transport')
+        error: new Error('No transport'),
       };
     }
 
@@ -471,7 +474,7 @@ export class MCPClientManager extends EventEmitter {
       servers.map(async (entry) => {
         const health = await this.checkHealth(entry.id);
         results.set(entry.id, health);
-      })
+      }),
     );
 
     return results;

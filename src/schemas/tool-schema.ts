@@ -16,7 +16,7 @@ export const ToolCategory = {
   SECURITY: 'security',
   SWARM: 'swarm',
   KNOWLEDGE: 'knowledge',
-  CUSTOM: 'custom'
+  CUSTOM: 'custom',
 };
 
 /**
@@ -28,36 +28,36 @@ export const toolMetadataSchema = {
     version: {
       type: 'string',
       pattern: '^\\d+\\.\\d+\\.\\d+$',
-      description: 'Semantic version of the tool'
+      description: 'Semantic version of the tool',
     },
     author: {
       type: 'string',
-      description: 'Author or maintainer of the tool'
+      description: 'Author or maintainer of the tool',
     },
     license: {
       type: 'string',
-      description: 'License under which the tool is released'
+      description: 'License under which the tool is released',
     },
     repository: {
       type: 'string',
       format: 'uri',
-      description: 'URL to the tool source repository'
+      description: 'URL to the tool source repository',
     },
     tags: {
       type: 'array',
       items: { type: 'string' },
-      description: 'Tags for tool discovery'
+      description: 'Tags for tool discovery',
     },
     deprecated: {
       type: 'boolean',
       default: false,
-      description: 'Whether this tool is deprecated'
+      description: 'Whether this tool is deprecated',
     },
     deprecationMessage: {
       type: 'string',
-      description: 'Message explaining deprecation and alternatives'
-    }
-  }
+      description: 'Message explaining deprecation and alternatives',
+    },
+  },
 };
 
 /**
@@ -72,27 +72,27 @@ export const toolDefinitionSchema = {
       pattern: '^[a-z][a-z0-9_]*$',
       minLength: 2,
       maxLength: 64,
-      description: 'Unique identifier for the tool (snake_case)'
+      description: 'Unique identifier for the tool (snake_case)',
     },
     description: {
       type: 'string',
       minLength: 10,
       maxLength: 500,
-      description: 'Human-readable description of what the tool does'
+      description: 'Human-readable description of what the tool does',
     },
     category: {
       type: 'string',
       enum: Object.values(ToolCategory),
       default: ToolCategory.CUSTOM,
-      description: 'Category for tool organization'
+      description: 'Category for tool organization',
     },
     inputSchema: {
       type: 'object',
-      description: 'JSON Schema for tool input validation'
+      description: 'JSON Schema for tool input validation',
     },
     outputSchema: {
       type: 'object',
-      description: 'JSON Schema for tool output validation'
+      description: 'JSON Schema for tool output validation',
     },
     metadata: toolMetadataSchema,
     timeout: {
@@ -100,42 +100,42 @@ export const toolDefinitionSchema = {
       minimum: 100,
       maximum: 300000,
       default: 30000,
-      description: 'Execution timeout in milliseconds'
+      description: 'Execution timeout in milliseconds',
     },
     retryable: {
       type: 'boolean',
       default: false,
-      description: 'Whether this tool can be retried on failure'
+      description: 'Whether this tool can be retried on failure',
     },
     maxRetries: {
       type: 'number',
       minimum: 0,
       maximum: 5,
       default: 0,
-      description: 'Maximum number of retries on failure'
+      description: 'Maximum number of retries on failure',
     },
     cacheable: {
       type: 'boolean',
       default: false,
-      description: 'Whether results can be cached'
+      description: 'Whether results can be cached',
     },
     cacheTTL: {
       type: 'number',
       minimum: 0,
       default: 0,
-      description: 'Cache time-to-live in milliseconds'
+      description: 'Cache time-to-live in milliseconds',
     },
     requiresConfirmation: {
       type: 'boolean',
       default: false,
-      description: 'Whether this tool requires user confirmation before execution'
+      description: 'Whether this tool requires user confirmation before execution',
     },
     dangerous: {
       type: 'boolean',
       default: false,
-      description: 'Whether this tool performs dangerous operations'
-    }
-  }
+      description: 'Whether this tool performs dangerous operations',
+    },
+  },
 };
 
 /**
@@ -151,7 +151,7 @@ export class SchemaValidator {
    */
   static validate(data, schema) {
     const errors = [];
-    this._validateNode(data, schema, '', errors);
+    SchemaValidator._validateNode(data, schema, '', errors);
     return { valid: errors.length === 0, errors };
   }
 
@@ -162,7 +162,7 @@ export class SchemaValidator {
 
     // Handle type validation
     if (schema.type) {
-      const actualType = this._getType(data);
+      const actualType = SchemaValidator._getType(data);
       const expectedTypes = Array.isArray(schema.type) ? schema.type : [schema.type];
 
       if (!expectedTypes.includes(actualType) && data !== undefined && data !== null) {
@@ -184,10 +184,14 @@ export class SchemaValidator {
     // String validations
     if (schema.type === 'string' && typeof data === 'string') {
       if (schema.minLength !== undefined && data.length < schema.minLength) {
-        errors.push(`${currentPath}: string length ${data.length} is less than minLength ${schema.minLength}`);
+        errors.push(
+          `${currentPath}: string length ${data.length} is less than minLength ${schema.minLength}`,
+        );
       }
       if (schema.maxLength !== undefined && data.length > schema.maxLength) {
-        errors.push(`${currentPath}: string length ${data.length} exceeds maxLength ${schema.maxLength}`);
+        errors.push(
+          `${currentPath}: string length ${data.length} exceeds maxLength ${schema.maxLength}`,
+        );
       }
       if (schema.pattern) {
         const regex = new RegExp(schema.pattern);
@@ -216,14 +220,18 @@ export class SchemaValidator {
     // Array validations
     if (schema.type === 'array' && Array.isArray(data)) {
       if (schema.minItems !== undefined && data.length < schema.minItems) {
-        errors.push(`${currentPath}: array length ${data.length} is less than minItems ${schema.minItems}`);
+        errors.push(
+          `${currentPath}: array length ${data.length} is less than minItems ${schema.minItems}`,
+        );
       }
       if (schema.maxItems !== undefined && data.length > schema.maxItems) {
-        errors.push(`${currentPath}: array length ${data.length} exceeds maxItems ${schema.maxItems}`);
+        errors.push(
+          `${currentPath}: array length ${data.length} exceeds maxItems ${schema.maxItems}`,
+        );
       }
       if (schema.items) {
         data.forEach((item, index) => {
-          this._validateNode(item, schema.items, `${currentPath}[${index}]`, errors);
+          SchemaValidator._validateNode(item, schema.items, `${currentPath}[${index}]`, errors);
         });
       }
     }
@@ -243,7 +251,12 @@ export class SchemaValidator {
       if (schema.properties) {
         for (const [propName, propSchema] of Object.entries(schema.properties)) {
           if (propName in data) {
-            this._validateNode(data[propName], propSchema, `${currentPath}.${propName}`, errors);
+            SchemaValidator._validateNode(
+              data[propName],
+              propSchema,
+              `${currentPath}.${propName}`,
+              errors,
+            );
           }
         }
       }
@@ -301,7 +314,9 @@ export function validateToolDefinition(tool) {
 
   // Optional field validations
   if (tool.category && !Object.values(ToolCategory).includes(tool.category)) {
-    errors.push(`Invalid category '${tool.category}'. Must be one of: ${Object.values(ToolCategory).join(', ')}`);
+    errors.push(
+      `Invalid category '${tool.category}'. Must be one of: ${Object.values(ToolCategory).join(', ')}`,
+    );
   }
 
   if (tool.timeout !== undefined) {
@@ -340,5 +355,5 @@ export default {
   toolDefinitionSchema,
   SchemaValidator,
   validateToolDefinition,
-  validateToolInput
+  validateToolInput,
 };

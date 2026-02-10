@@ -20,7 +20,7 @@ export const PhaseName = {
   EXECUTE: 'execute',
   SYNTHESIZE: 'synthesize',
   LOG: 'log',
-  ARCHIVE: 'archive'
+  ARCHIVE: 'archive',
 };
 
 /**
@@ -32,7 +32,7 @@ export const PhaseStatus = {
   ACTIVE: 'active',
   COMPLETED: 'completed',
   FAILED: 'failed',
-  SKIPPED: 'skipped'
+  SKIPPED: 'skipped',
 };
 
 /**
@@ -74,7 +74,7 @@ Output a structured analysis with:
 - concepts: Key concepts involved
 - approaches: Possible implementation approaches
 - complexity: Simple/Medium/Complex
-- unknowns: Information gaps that need clarification`
+- unknowns: Information gaps that need clarification`,
   },
 
   [PhaseName.PLAN]: {
@@ -109,7 +109,7 @@ Output a structured plan with tasks in JSON format:
   ],
   "executionOrder": ["task-1", "task-2"],
   "parallelGroups": [["task-1"], ["task-2", "task-3"]]
-}`
+}`,
   },
 
   [PhaseName.EXECUTE]: {
@@ -120,7 +120,7 @@ Output a structured plan with tasks in JSON format:
     required: true,
     parallel: true,
     dependencies: [PhaseName.PLAN],
-    systemPrompt: null // Uses task-specific prompts
+    systemPrompt: null, // Uses task-specific prompts
   },
 
   [PhaseName.SYNTHESIZE]: {
@@ -145,7 +145,7 @@ Output a structured synthesis with:
 - summary: Overall result summary
 - outputs: Combined task outputs
 - issues: Any problems encountered
-- recommendations: Next steps if applicable`
+- recommendations: Next steps if applicable`,
   },
 
   [PhaseName.LOG]: {
@@ -165,7 +165,7 @@ Document:
 3. What was accomplished
 4. Any lessons learned
 
-Keep it brief but informative for future reference.`
+Keep it brief but informative for future reference.`,
   },
 
   [PhaseName.ARCHIVE]: {
@@ -176,8 +176,8 @@ Keep it brief but informative for future reference.`
     required: false,
     parallel: false,
     dependencies: [PhaseName.LOG],
-    systemPrompt: null
-  }
+    systemPrompt: null,
+  },
 };
 
 // ============================================================================
@@ -240,7 +240,7 @@ export const TASK_AGENT_MAPPING = {
   strategy: 'Dijkstra',
 
   // Default
-  default: 'Yennefer'
+  default: 'Yennefer',
 };
 
 /**
@@ -301,7 +301,7 @@ export function getOrderedPhases(options = { includeOptional: true }) {
     PhaseName.EXECUTE,
     PhaseName.SYNTHESIZE,
     PhaseName.LOG,
-    PhaseName.ARCHIVE
+    PhaseName.ARCHIVE,
   ];
 
   return order
@@ -368,5 +368,5 @@ export default {
   getOrderedPhases,
   canPhaseStart,
   getPhaseConfig,
-  createInitialPhaseStatuses
+  createInitialPhaseStatuses,
 };

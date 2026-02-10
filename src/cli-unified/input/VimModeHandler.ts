@@ -4,7 +4,7 @@
  * @module cli-unified/input/VimModeHandler
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 import { KEYS } from '../core/constants.js';
 
 /**
@@ -14,7 +14,7 @@ export const VIM_MODES = {
   NORMAL: 'normal',
   INSERT: 'insert',
   VISUAL: 'visual',
-  COMMAND: 'command'
+  COMMAND: 'command',
 };
 
 /**
@@ -97,7 +97,7 @@ export class VimModeHandler extends EventEmitter {
       return null;
     }
 
-    const count = parseInt(this.count) || 1;
+    const count = parseInt(this.count, 10) || 1;
     this.count = '';
 
     // Movement commands
@@ -134,7 +134,10 @@ export class VimModeHandler extends EventEmitter {
 
       case 'l':
       case KEYS.RIGHT:
-        return { action: 'cursor', payload: { position: Math.min(input.length, cursorPos + count) } };
+        return {
+          action: 'cursor',
+          payload: { position: Math.min(input.length, cursorPos + count) },
+        };
 
       case 'j':
       case KEYS.DOWN:
@@ -151,24 +154,35 @@ export class VimModeHandler extends EventEmitter {
         return { action: 'cursor', payload: { position: input.length } };
 
       case 'w':
-        return { action: 'cursor', payload: { position: this.findNextWord(input, cursorPos, count) } };
+        return {
+          action: 'cursor',
+          payload: { position: this.findNextWord(input, cursorPos, count) },
+        };
 
       case 'b':
-        return { action: 'cursor', payload: { position: this.findPrevWord(input, cursorPos, count) } };
+        return {
+          action: 'cursor',
+          payload: { position: this.findPrevWord(input, cursorPos, count) },
+        };
 
       case 'e':
-        return { action: 'cursor', payload: { position: this.findWordEnd(input, cursorPos, count) } };
+        return {
+          action: 'cursor',
+          payload: { position: this.findWordEnd(input, cursorPos, count) },
+        };
 
       // Delete
-      case 'x':
+      case 'x': {
         const deleteEnd = Math.min(input.length, cursorPos + count);
         this.registers.set('"', input.slice(cursorPos, deleteEnd));
         return { action: 'delete', payload: { start: cursorPos, end: deleteEnd } };
+      }
 
-      case 'X':
+      case 'X': {
         const deleteStart = Math.max(0, cursorPos - count);
         this.registers.set('"', input.slice(deleteStart, cursorPos));
         return { action: 'delete', payload: { start: deleteStart, end: cursorPos } };
+      }
 
       case 'd':
         this.buffer = 'd';
@@ -183,13 +197,15 @@ export class VimModeHandler extends EventEmitter {
         return null;
 
       // Paste
-      case 'p':
+      case 'p': {
         const pasteContent = this.registers.get('"') || '';
         return { action: 'paste', payload: { content: pasteContent, after: true } };
+      }
 
-      case 'P':
+      case 'P': {
         const pasteContentBefore = this.registers.get('"') || '';
         return { action: 'paste', payload: { content: pasteContentBefore, after: false } };
+      }
 
       // Visual mode
       case 'v':
@@ -255,15 +271,17 @@ export class VimModeHandler extends EventEmitter {
         this.setMode(VIM_MODES.INSERT);
         return { action: 'delete', payload: { start: 0, end: input.length } };
 
-      case 'dw':
+      case 'dw': {
         const wordEnd = this.findNextWord(input, cursorPos, count);
         this.registers.set('"', input.slice(cursorPos, wordEnd));
         return { action: 'delete', payload: { start: cursorPos, end: wordEnd } };
+      }
 
-      case 'db':
+      case 'db': {
         const wordStart = this.findPrevWord(input, cursorPos, count);
         this.registers.set('"', input.slice(wordStart, cursorPos));
         return { action: 'delete', payload: { start: wordStart, end: cursorPos } };
+      }
 
       case 'd$':
         this.registers.set('"', input.slice(cursorPos));
@@ -286,7 +304,7 @@ export class VimModeHandler extends EventEmitter {
   /**
    * Process insert mode keys
    */
-  processInsertMode(key, input, cursorPos) {
+  processInsertMode(key, _input, _cursorPos) {
     if (key === KEYS.ESCAPE) {
       this.setMode(VIM_MODES.NORMAL);
       return { action: 'mode', payload: { mode: 'normal' } };
@@ -299,7 +317,7 @@ export class VimModeHandler extends EventEmitter {
   /**
    * Process visual mode keys
    */
-  processVisualMode(key, input, cursorPos) {
+  processVisualMode(key, input, _cursorPos) {
     switch (key) {
       case KEYS.ESCAPE:
         this.setMode(VIM_MODES.NORMAL);
@@ -315,18 +333,26 @@ export class VimModeHandler extends EventEmitter {
         this.visualEnd = Math.min(input.length, this.visualEnd + 1);
         return { action: 'visual', payload: { start: this.visualStart, end: this.visualEnd } };
 
-      case 'y':
-        const [start, end] = [Math.min(this.visualStart, this.visualEnd), Math.max(this.visualStart, this.visualEnd)];
+      case 'y': {
+        const [start, end] = [
+          Math.min(this.visualStart, this.visualEnd),
+          Math.max(this.visualStart, this.visualEnd),
+        ];
         this.registers.set('"', input.slice(start, end + 1));
         this.setMode(VIM_MODES.NORMAL);
         return { action: 'yank', payload: { content: input.slice(start, end + 1) } };
+      }
 
       case 'd':
-      case 'x':
-        const [delStart, delEnd] = [Math.min(this.visualStart, this.visualEnd), Math.max(this.visualStart, this.visualEnd)];
+      case 'x': {
+        const [delStart, delEnd] = [
+          Math.min(this.visualStart, this.visualEnd),
+          Math.max(this.visualStart, this.visualEnd),
+        ];
         this.registers.set('"', input.slice(delStart, delEnd + 1));
         this.setMode(VIM_MODES.NORMAL);
         return { action: 'delete', payload: { start: delStart, end: delEnd + 1 } };
+      }
 
       default:
         return null;
@@ -336,7 +362,7 @@ export class VimModeHandler extends EventEmitter {
   /**
    * Process command mode keys
    */
-  processCommandMode(key, input, cursorPos) {
+  processCommandMode(key, _input, _cursorPos) {
     if (key === KEYS.ESCAPE) {
       this.setMode(VIM_MODES.NORMAL);
       this.commandBuffer = '';

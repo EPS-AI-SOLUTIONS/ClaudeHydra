@@ -3,8 +3,8 @@
  * @module utils/fs
  */
 
-import { promises as fs } from 'fs';
-import { dirname, resolve, join } from 'path';
+import { promises as fs } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 
 /**
  * Ensure directory exists, creating it if necessary
@@ -87,7 +87,7 @@ export async function safeWrite(filePath, content, encoding = 'utf-8') {
  */
 export async function safeWriteJson(filePath, data, indent = 2) {
   const content = JSON.stringify(data, null, indent);
-  await safeWrite(filePath, content + '\n');
+  await safeWrite(filePath, `${content}\n`);
 }
 
 /**
@@ -258,5 +258,5 @@ export default {
   safeDeleteDir,
   copyFile,
   moveFile,
-  getAbsolutePath
+  getAbsolutePath,
 };

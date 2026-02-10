@@ -16,23 +16,18 @@
  * @param {Object} context - Hook context
  * @returns {Promise<Object>}
  */
-export async function loadProjectContext(context) {
-  const fs = await import('fs/promises');
-  const path = await import('path');
+export async function loadProjectContext(_context) {
+  const fs = await import('node:fs/promises');
+  const path = await import('node:path');
 
   const projectContext = {
     cwd: process.cwd(),
     files: {},
-    loaded: []
+    loaded: [],
   };
 
   // Try to load common context files
-  const contextFiles = [
-    'CLAUDE.md',
-    'README.md',
-    '.hydra/context.md',
-    'package.json'
-  ];
+  const contextFiles = ['CLAUDE.md', 'README.md', '.hydra/context.md', 'package.json'];
 
   for (const file of contextFiles) {
     try {
@@ -48,7 +43,7 @@ export async function loadProjectContext(context) {
   return {
     success: true,
     context: projectContext,
-    message: `Loaded ${projectContext.loaded.length} context files`
+    message: `Loaded ${projectContext.loaded.length} context files`,
   };
 }
 
@@ -58,12 +53,12 @@ export async function loadProjectContext(context) {
  * @param {Object} context - Hook context
  * @returns {Promise<Object>}
  */
-export async function checkMCPHealth(context) {
+export async function checkMCPHealth(_context) {
   const results = {
     servers: {},
     healthy: 0,
     unhealthy: 0,
-    total: 0
+    total: 0,
   };
 
   try {
@@ -75,7 +70,7 @@ export async function checkMCPHealth(context) {
       return {
         success: true,
         skipped: true,
-        message: 'MCP not initialized yet'
+        message: 'MCP not initialized yet',
       };
     }
 
@@ -89,13 +84,13 @@ export async function checkMCPHealth(context) {
     return {
       success: true,
       results,
-      message: `MCP Health: ${results.healthy}/${results.total} healthy`
+      message: `MCP Health: ${results.healthy}/${results.total} healthy`,
     };
   } catch (error) {
     return {
       success: false,
       error: error.message,
-      message: 'Failed to check MCP health'
+      message: 'Failed to check MCP health',
     };
   }
 }
@@ -124,7 +119,7 @@ export async function securityAudit(context) {
     { pattern: /chmod\s+777/, message: 'Insecure permission change' },
     { pattern: /\|\s*bash/, message: 'Piped bash execution' },
     { pattern: /curl.*\|\s*sh/, message: 'Remote script execution' },
-    { pattern: /eval\s*\(/, message: 'Eval execution detected' }
+    { pattern: /eval\s*\(/, message: 'Eval execution detected' },
   ];
 
   // Convert args to string for pattern matching
@@ -148,7 +143,7 @@ export async function securityAudit(context) {
     /\.ssh\/id_/,
     /\.env/,
     /credentials/i,
-    /secrets/i
+    /secrets/i,
   ];
 
   for (const pattern of sensitivePatterns) {
@@ -163,7 +158,7 @@ export async function securityAudit(context) {
     blocked: blocked.length > 0,
     warnings,
     blockedReasons: blocked,
-    message: blocked.length > 0 ? `Blocked: ${blocked.join(', ')}` : 'Security check passed'
+    message: blocked.length > 0 ? `Blocked: ${blocked.join(', ')}` : 'Security check passed',
   };
 }
 
@@ -175,7 +170,7 @@ export async function securityAudit(context) {
  */
 const rateLimitState = {
   counts: new Map(),
-  windowStart: Date.now()
+  windowStart: Date.now(),
 };
 
 export async function rateLimit(context) {
@@ -198,7 +193,7 @@ export async function rateLimit(context) {
       success: false,
       blocked: true,
       message: `Rate limit exceeded for tool: ${toolName}`,
-      retryAfter: windowMs - (now - rateLimitState.windowStart)
+      retryAfter: windowMs - (now - rateLimitState.windowStart),
     };
   }
 
@@ -209,7 +204,7 @@ export async function rateLimit(context) {
     success: true,
     currentCount: currentCount + 1,
     maxRequests,
-    remaining: maxRequests - currentCount - 1
+    remaining: maxRequests - currentCount - 1,
   };
 }
 
@@ -232,7 +227,7 @@ export async function logToolExecution(context) {
     args: sanitizeArgs(args),
     success,
     duration,
-    resultSize: JSON.stringify(result || {}).length
+    resultSize: JSON.stringify(result || {}).length,
   };
 
   // Log to console in development
@@ -244,7 +239,7 @@ export async function logToolExecution(context) {
   return {
     success: true,
     logged: true,
-    entry: logEntry
+    entry: logEntry,
   };
 }
 
@@ -289,7 +284,7 @@ export async function attemptRecovery(context) {
     return {
       success: false,
       shouldRetry: false,
-      message: `Max retries (${maxRetries}) exceeded for ${toolName}`
+      message: `Max retries (${maxRetries}) exceeded for ${toolName}`,
     };
   }
 
@@ -299,7 +294,7 @@ export async function attemptRecovery(context) {
     { pattern: /rate.?limit/i, action: 'retry', delay: 5000 },
     { pattern: /503|502|504/, action: 'retry', delay: 2000 },
     { pattern: /ENOENT/, action: 'skip', message: 'Resource not found' },
-    { pattern: /EACCES|EPERM/, action: 'fail', message: 'Permission denied' }
+    { pattern: /EACCES|EPERM/, action: 'fail', message: 'Permission denied' },
   ];
 
   const errorString = error?.message || String(error);
@@ -313,7 +308,7 @@ export async function attemptRecovery(context) {
             shouldRetry: true,
             delay,
             retryCount: retryCount + 1,
-            message: `Will retry after ${delay}ms`
+            message: `Will retry after ${delay}ms`,
           };
 
         case 'skip':
@@ -321,14 +316,14 @@ export async function attemptRecovery(context) {
             success: true,
             shouldRetry: false,
             skip: true,
-            message
+            message,
           };
 
         case 'fail':
           return {
             success: false,
             shouldRetry: false,
-            message
+            message,
           };
       }
     }
@@ -338,7 +333,7 @@ export async function attemptRecovery(context) {
   return {
     success: false,
     shouldRetry: false,
-    message: 'Unknown error, not retrying'
+    message: 'Unknown error, not retrying',
   };
 }
 
@@ -361,20 +356,20 @@ export async function validatePlanPhase(context) {
     plan: () => !!plan.phases?.speculate?.output,
     execute: () => !!plan.phases?.plan?.output?.tasks,
     synthesize: () => !!plan.phases?.execute?.output,
-    log: () => !!plan.phases?.synthesize?.output
+    log: () => !!plan.phases?.synthesize?.output,
   };
 
   const validator = validations[phase];
   if (validator && !validator()) {
     return {
       success: false,
-      message: `Prerequisites not met for phase: ${phase}`
+      message: `Prerequisites not met for phase: ${phase}`,
     };
   }
 
   return {
     success: true,
-    message: `Phase ${phase} validated`
+    message: `Phase ${phase} validated`,
   };
 }
 
@@ -392,7 +387,7 @@ export async function logPlanPhase(context) {
     planId: plan.id,
     phase,
     duration,
-    outputSize: JSON.stringify(output || {}).length
+    outputSize: JSON.stringify(output || {}).length,
   };
 
   console.log(`[Plan] Phase ${phase} completed in ${duration}ms`);
@@ -400,7 +395,7 @@ export async function logPlanPhase(context) {
   return {
     success: true,
     logged: true,
-    entry: logEntry
+    entry: logEntry,
   };
 }
 
@@ -414,7 +409,7 @@ export async function logPlanPhase(context) {
  * @param {Object} context - Hook context
  * @returns {Promise<Object>}
  */
-export async function cleanupSession(context) {
+export async function cleanupSession(_context) {
   const actions = [];
 
   try {
@@ -444,7 +439,7 @@ export async function cleanupSession(context) {
   return {
     success: true,
     actions,
-    message: actions.length > 0 ? actions.join(', ') : 'No cleanup needed'
+    message: actions.length > 0 ? actions.join(', ') : 'No cleanup needed',
   };
 }
 
@@ -471,7 +466,7 @@ export const BUILTIN_HOOKS = {
 
   // Plan phase hooks
   validatePlanPhase,
-  logPlanPhase
+  logPlanPhase,
 };
 
 /**

@@ -7,7 +7,7 @@
  * @module src/agents/plan-agent
  */
 
-import { BaseAgent, AgentState } from './base-agent.js';
+import { BaseAgent } from './base-agent.js';
 
 // ============================================================================
 // Constants
@@ -25,9 +25,9 @@ Designs step-by-step approaches without code modifications.`,
     'decomposition',
     'dependency_analysis',
     'task_creation',
-    'prioritization'
+    'prioritization',
   ],
-  timeout: 90000
+  timeout: 90000,
 };
 
 // ============================================================================
@@ -48,7 +48,7 @@ export class PlanAgent extends BaseAgent {
   constructor(options = {}) {
     super({
       ...AGENT_CONFIG,
-      ...options
+      ...options,
     });
   }
 
@@ -74,7 +74,7 @@ export class PlanAgent extends BaseAgent {
       parallelGroups: [],
       dependencies: {},
       estimates: {},
-      risks: []
+      risks: [],
     };
 
     try {
@@ -126,7 +126,7 @@ export class PlanAgent extends BaseAgent {
       refactor: ['refactor', 'improve', 'optimize', 'clean'],
       test: ['test', 'coverage', 'spec', 'verify'],
       docs: ['document', 'readme', 'docs', 'explain'],
-      config: ['configure', 'setup', 'config', 'setting']
+      config: ['configure', 'setup', 'config', 'setting'],
     };
 
     let taskType = 'feature';
@@ -141,7 +141,7 @@ export class PlanAgent extends BaseAgent {
     const scopeIndicators = {
       small: ['simple', 'small', 'quick', 'minor', 'single'],
       medium: ['add', 'update', 'modify', 'change'],
-      large: ['complete', 'full', 'entire', 'system', 'major', 'redesign']
+      large: ['complete', 'full', 'entire', 'system', 'major', 'redesign'],
     };
 
     let scope = 'medium';
@@ -160,7 +160,7 @@ export class PlanAgent extends BaseAgent {
       database: ['database', 'db', 'model', 'schema', 'migration'],
       testing: ['test', 'spec', 'coverage', 'mock'],
       deployment: ['deploy', 'ci', 'cd', 'docker', 'build'],
-      documentation: ['doc', 'readme', 'comment', 'explain']
+      documentation: ['doc', 'readme', 'comment', 'explain'],
     };
 
     for (const [area, keywords] of Object.entries(areaPatterns)) {
@@ -179,7 +179,7 @@ export class PlanAgent extends BaseAgent {
       scope,
       areas,
       contextAvailable: Object.keys(context).length > 0,
-      complexity: this.estimateComplexity(scope, areas.length)
+      complexity: this.estimateComplexity(scope, areas.length),
     };
   }
 
@@ -207,7 +207,7 @@ export class PlanAgent extends BaseAgent {
    * @param {Object} constraints - Planning constraints
    * @returns {Object[]}
    */
-  decomposeTasks(analysis, constraints) {
+  decomposeTasks(analysis, _constraints) {
     const tasks = [];
     let taskId = 1;
 
@@ -219,14 +219,12 @@ export class PlanAgent extends BaseAgent {
       agent,
       priority,
       status: 'pending',
-      verification: `Verify: ${description.toLowerCase().replace(/^(implement|add|create|fix|update)\s*/i, '')}`
+      verification: `Verify: ${description.toLowerCase().replace(/^(implement|add|create|fix|update)\s*/i, '')}`,
     });
 
     // Add research task if needed
     if (analysis.complexity !== 'low' || !analysis.contextAvailable) {
-      tasks.push(
-        createTask('Research existing code and patterns', 'research', 'Regis', 1)
-      );
+      tasks.push(createTask('Research existing code and patterns', 'research', 'Regis', 1));
     }
 
     // Add type-specific tasks
@@ -234,7 +232,7 @@ export class PlanAgent extends BaseAgent {
       case 'feature':
         tasks.push(
           createTask('Design feature architecture', 'planning', 'Dijkstra', 2),
-          createTask('Implement core functionality', 'implementation', 'Yennefer', 3)
+          createTask('Implement core functionality', 'implementation', 'Yennefer', 3),
         );
         if (analysis.areas.includes('frontend')) {
           tasks.push(createTask('Create UI components', 'implementation', 'Yennefer', 4));
@@ -251,7 +249,7 @@ export class PlanAgent extends BaseAgent {
         tasks.push(
           createTask('Identify root cause', 'research', 'Regis', 1),
           createTask('Implement fix', 'implementation', 'Lambert', 2),
-          createTask('Add regression test', 'test', 'Triss', 3)
+          createTask('Add regression test', 'test', 'Triss', 3),
         );
         break;
 
@@ -260,7 +258,7 @@ export class PlanAgent extends BaseAgent {
           createTask('Analyze current implementation', 'research', 'Regis', 1),
           createTask('Design improved structure', 'planning', 'Dijkstra', 2),
           createTask('Refactor code', 'refactor', 'Lambert', 3),
-          createTask('Update tests', 'test', 'Triss', 4)
+          createTask('Update tests', 'test', 'Triss', 4),
         );
         break;
 
@@ -268,14 +266,14 @@ export class PlanAgent extends BaseAgent {
         tasks.push(
           createTask('Identify test coverage gaps', 'research', 'Regis', 1),
           createTask('Write unit tests', 'test', 'Triss', 2),
-          createTask('Write integration tests', 'test', 'Triss', 3)
+          createTask('Write integration tests', 'test', 'Triss', 3),
         );
         break;
 
       case 'docs':
         tasks.push(
           createTask('Review code to document', 'research', 'Regis', 1),
-          createTask('Write documentation', 'documentation', 'Jaskier', 2)
+          createTask('Write documentation', 'documentation', 'Jaskier', 2),
         );
         break;
 
@@ -283,14 +281,14 @@ export class PlanAgent extends BaseAgent {
         tasks.push(
           createTask('Review configuration requirements', 'research', 'Regis', 1),
           createTask('Update configuration', 'infrastructure', 'Eskel', 2),
-          createTask('Verify configuration', 'test', 'Triss', 3)
+          createTask('Verify configuration', 'test', 'Triss', 3),
         );
         break;
 
       default:
         tasks.push(
           createTask('Analyze requirements', 'research', 'Regis', 1),
-          createTask('Implement changes', 'implementation', 'Yennefer', 2)
+          createTask('Implement changes', 'implementation', 'Yennefer', 2),
         );
     }
 
@@ -324,7 +322,7 @@ export class PlanAgent extends BaseAgent {
       refactor: ['research', 'planning'],
       test: ['implementation', 'refactor'],
       documentation: ['implementation', 'test'],
-      infrastructure: ['research', 'planning']
+      infrastructure: ['research', 'planning'],
     };
 
     for (const task of tasks) {
@@ -334,7 +332,7 @@ export class PlanAgent extends BaseAgent {
 
       for (const requiredType of requiredTypes) {
         const dependencyTask = tasks.find(
-          (t) => t.type === requiredType && t.priority < task.priority
+          (t) => t.type === requiredType && t.priority < task.priority,
         );
         if (dependencyTask) {
           dependencies[task.id].push(dependencyTask.id);
@@ -409,12 +407,12 @@ export class PlanAgent extends BaseAgent {
       data: 'medium',
       test: 'low',
       documentation: 'low',
-      infrastructure: 'medium'
+      infrastructure: 'medium',
     };
 
     const estimates = {
       tasks: {},
-      total: 'medium'
+      total: 'medium',
     };
 
     let totalScore = 0;
@@ -452,7 +450,7 @@ export class PlanAgent extends BaseAgent {
           type: 'dependency_chain',
           severity: 'medium',
           description: `Task "${task.description}" has ${deps.length} dependencies`,
-          mitigation: 'Consider breaking into smaller independent tasks'
+          mitigation: 'Consider breaking into smaller independent tasks',
         });
       }
     }
@@ -464,7 +462,7 @@ export class PlanAgent extends BaseAgent {
         type: 'scope',
         severity: 'high',
         description: `Large scope with ${implTasks.length} implementation tasks`,
-        mitigation: 'Consider breaking into multiple smaller plans'
+        mitigation: 'Consider breaking into multiple smaller plans',
       });
     }
 
@@ -476,7 +474,7 @@ export class PlanAgent extends BaseAgent {
         type: 'quality',
         severity: 'medium',
         description: 'No testing tasks in plan',
-        mitigation: 'Add verification/testing tasks'
+        mitigation: 'Add verification/testing tasks',
       });
     }
 

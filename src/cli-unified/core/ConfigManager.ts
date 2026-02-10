@@ -4,10 +4,10 @@
  * @module cli-unified/core/ConfigManager
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { homedir } from 'os';
-import { DATA_DIR, DATA_PATHS, CLI_MODES } from './constants.js';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { CLI_MODES, DATA_DIR, DATA_PATHS } from './constants.js';
 
 /**
  * Configuration schema definition
@@ -17,13 +17,13 @@ export const CONFIG_SCHEMA = {
     mode: { type: 'enum', values: Object.values(CLI_MODES), default: 'swarm' },
     theme: { type: 'string', default: 'hydra' },
     unicode: { type: 'boolean', default: true },
-    debug: { type: 'boolean', default: false }
+    debug: { type: 'boolean', default: false },
   },
   agents: {
     default: { type: 'string', default: 'auto' },
     temperature: { type: 'number', min: 0, max: 2, default: 0.7 },
     maxTokens: { type: 'number', min: 100, max: 32000, default: 4096 },
-    parallelLimit: { type: 'number', min: 1, max: 10, default: 3 }
+    parallelLimit: { type: 'number', min: 1, max: 10, default: 3 },
   },
   models: {
     llamacpp: {
@@ -32,44 +32,44 @@ export const CONFIG_SCHEMA = {
         main: { type: 'string', default: 'main' },
         draft: { type: 'string', default: 'draft' },
         vision: { type: 'string', default: 'vision' },
-        functionary: { type: 'string', default: 'functionary' }
-      }
+        functionary: { type: 'string', default: 'functionary' },
+      },
     },
     gemini: {
       enabled: { type: 'boolean', default: false },
-      apiKey: { type: 'string', default: '' }
+      apiKey: { type: 'string', default: '' },
     },
     claude: {
       enabled: { type: 'boolean', default: false },
-      apiKey: { type: 'string', default: '' }
-    }
+      apiKey: { type: 'string', default: '' },
+    },
   },
   performance: {
     cacheEnabled: { type: 'boolean', default: true },
     cacheTTL: { type: 'number', min: 0, max: 86400, default: 3600 },
     cacheMaxSize: { type: 'number', min: 10, max: 1000, default: 100 },
     lazyLoading: { type: 'boolean', default: true },
-    prefetch: { type: 'boolean', default: false }
+    prefetch: { type: 'boolean', default: false },
   },
   ui: {
     spinnerType: { type: 'string', default: 'dots' },
     borderStyle: { type: 'string', default: 'rounded' },
     showTimestamps: { type: 'boolean', default: false },
     compactMode: { type: 'boolean', default: false },
-    streamingEnabled: { type: 'boolean', default: true }
+    streamingEnabled: { type: 'boolean', default: true },
   },
   input: {
     vimMode: { type: 'boolean', default: false },
     multilineDefault: { type: 'boolean', default: false },
     historyLimit: { type: 'number', min: 100, max: 10000, default: 1000 },
     autoComplete: { type: 'boolean', default: true },
-    macrosEnabled: { type: 'boolean', default: true }
+    macrosEnabled: { type: 'boolean', default: true },
   },
   history: {
     enabled: { type: 'boolean', default: true },
     autoTags: { type: 'boolean', default: true },
-    exportFormat: { type: 'enum', values: ['json', 'md', 'html'], default: 'json' }
-  }
+    exportFormat: { type: 'enum', values: ['json', 'md', 'html'], default: 'json' },
+  },
 };
 
 /**

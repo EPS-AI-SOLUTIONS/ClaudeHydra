@@ -6,8 +6,8 @@
  * @module src/tasks/todo-storage
  */
 
-import fs from 'fs/promises';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 // ============================================================================
 // Constants
@@ -24,7 +24,7 @@ const ARCHIVE_FILE = 'archive.json';
 export const TodoStatus = {
   PENDING: 'pending',
   IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed'
+  COMPLETED: 'completed',
 };
 
 // ============================================================================
@@ -108,7 +108,7 @@ export class TodoStorage {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       sessionId: this.generateSessionId(),
-      todos: []
+      todos: [],
     };
   }
 
@@ -137,7 +137,7 @@ export class TodoStorage {
       status: todo.status || TodoStatus.PENDING,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      metadata: todo.metadata || {}
+      metadata: todo.metadata || {},
     };
 
     state.todos.push(newTodo);
@@ -164,7 +164,7 @@ export class TodoStorage {
     state.todos[index] = {
       ...state.todos[index],
       ...updates,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     await this.save(state);
@@ -237,7 +237,7 @@ export class TodoStorage {
       createdAt: todo.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       order: index,
-      metadata: todo.metadata || {}
+      metadata: todo.metadata || {},
     }));
 
     await this.save(state);
@@ -273,10 +273,10 @@ export class TodoStorage {
     try {
       const content = await fs.readFile(this.archiveFile, 'utf-8');
       archive = JSON.parse(content);
-    } catch (error) {
+    } catch (_error) {
       archive = {
         version: '1.0.0',
-        sessions: []
+        sessions: [],
       };
     }
 
@@ -286,8 +286,8 @@ export class TodoStorage {
       archivedAt: new Date().toISOString(),
       todos: completed.map((t) => ({
         ...t,
-        archivedAt: new Date().toISOString()
-      }))
+        archivedAt: new Date().toISOString(),
+      })),
     });
 
     // Save archive
@@ -341,7 +341,7 @@ export class TodoStorage {
       completed: 0,
       sessionId: state.sessionId,
       createdAt: state.createdAt,
-      updatedAt: state.updatedAt
+      updatedAt: state.updatedAt,
     };
 
     for (const todo of state.todos) {

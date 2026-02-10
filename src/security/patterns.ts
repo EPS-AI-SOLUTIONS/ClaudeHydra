@@ -15,7 +15,7 @@
  */
 export const DANGEROUS_PATTERNS = Object.freeze([
   // Recursive deletion patterns
-  /rm\s+-rf?\s+[\/~]/i,
+  /rm\s+-rf?\s+[/~]/i,
   /rm\s+-rf?\s+\.\./i,
   /rmdir\s+\/s\s+\/q/i, // Windows recursive delete
 
@@ -73,7 +73,7 @@ export const DANGEROUS_PATTERNS = Object.freeze([
   // Windows-specific dangerous commands
   /format\s+[a-z]:/i,
   /del\s+\/s\s+\/q\s+[a-z]:\\/i,
-  /rd\s+\/s\s+\/q\s+[a-z]:\\/i
+  /rd\s+\/s\s+\/q\s+[a-z]:\\/i,
 ]);
 
 // ============================================================================
@@ -121,7 +121,7 @@ export const BLOCKED_COMMANDS = Object.freeze([
   // Privilege escalation attempts
   'sudo su -',
   'sudo bash',
-  'su root'
+  'su root',
 ]);
 
 // ============================================================================
@@ -208,7 +208,7 @@ export const SENSITIVE_PATTERNS = Object.freeze([
   // Shell history (may contain sensitive data)
   /\.bash_history$/i,
   /\.zsh_history$/i,
-  /\.history$/i
+  /\.history$/i,
 ]);
 
 // ============================================================================
@@ -247,7 +247,7 @@ export const DANGEROUS_PATH_PATTERNS = Object.freeze([
   /\.ssh\//i,
   /\.gnupg\//i,
   /\.aws\//i,
-  /\.kube\//i
+  /\.kube\//i,
 ]);
 
 // ============================================================================
@@ -280,7 +280,7 @@ export const SUSPICIOUS_NETWORK_PATTERNS = Object.freeze([
   // Reverse shell ports
   /:4444\b/,
   /:1337\b/,
-  /:31337\b/
+  /:31337\b/,
 ]);
 
 // ============================================================================
@@ -314,7 +314,7 @@ export const SHELL_ESCAPE_CHARS = Object.freeze([
   '#', // Comment
   '~', // Home directory
   '\n', // Newline
-  '\r' // Carriage return
+  '\r', // Carriage return
 ]);
 
 // ============================================================================
@@ -331,7 +331,7 @@ export const RiskLevel = Object.freeze({
   LOW: 'low',
   MEDIUM: 'medium',
   HIGH: 'high',
-  CRITICAL: 'critical'
+  CRITICAL: 'critical',
 });
 
 /**
@@ -343,7 +343,7 @@ export const PATTERN_RISK_LEVELS = Object.freeze({
   BLOCKED_COMMANDS: RiskLevel.CRITICAL,
   SENSITIVE_PATTERNS: RiskLevel.HIGH,
   DANGEROUS_PATH_PATTERNS: RiskLevel.HIGH,
-  SUSPICIOUS_NETWORK_PATTERNS: RiskLevel.MEDIUM
+  SUSPICIOUS_NETWORK_PATTERNS: RiskLevel.MEDIUM,
 });
 
 // ============================================================================
@@ -358,7 +358,7 @@ export const PATTERN_RISK_LEVELS = Object.freeze({
  */
 export function matchesAnyPattern(input, patterns) {
   if (!input || typeof input !== 'string') return false;
-  return patterns.some(pattern => pattern.test(input));
+  return patterns.some((pattern) => pattern.test(input));
 }
 
 /**
@@ -369,7 +369,7 @@ export function matchesAnyPattern(input, patterns) {
  */
 export function getMatchingPatterns(input, patterns) {
   if (!input || typeof input !== 'string') return [];
-  return patterns.filter(pattern => pattern.test(input));
+  return patterns.filter((pattern) => pattern.test(input));
 }
 
 /**
@@ -380,9 +380,9 @@ export function getMatchingPatterns(input, patterns) {
 export function isBlockedCommand(command) {
   if (!command || typeof command !== 'string') return false;
   const normalized = command.toLowerCase().trim();
-  return BLOCKED_COMMANDS.some(blocked =>
-    normalized === blocked.toLowerCase() ||
-    normalized.startsWith(blocked.toLowerCase() + ' ')
+  return BLOCKED_COMMANDS.some(
+    (blocked) =>
+      normalized === blocked.toLowerCase() || normalized.startsWith(`${blocked.toLowerCase()} `),
   );
 }
 
@@ -421,5 +421,5 @@ export default {
   getMatchingPatterns,
   isBlockedCommand,
   isSensitivePath,
-  isDangerousPath
+  isDangerousPath,
 };

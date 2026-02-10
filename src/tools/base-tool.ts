@@ -4,8 +4,8 @@
  */
 
 import { z } from 'zod';
+import { TimeoutError, ValidationError } from '../errors/AppError.js';
 import { createLogger } from '../logger.js';
-import { ValidationError, ToolExecutionError, TimeoutError } from '../errors/AppError.js';
 
 /**
  * Standard result format for all tool operations
@@ -17,7 +17,7 @@ export class ToolResult {
     this.error = error;
     this.metadata = {
       timestamp: new Date().toISOString(),
-      ...metadata
+      ...metadata,
     };
   }
 
@@ -29,7 +29,7 @@ export class ToolResult {
     return new ToolResult({
       success: false,
       error: error instanceof Error ? error.message : error,
-      metadata
+      metadata,
     });
   }
 
@@ -37,7 +37,7 @@ export class ToolResult {
     return {
       success: this.success,
       ...(this.success ? { data: this.data } : { error: this.error }),
-      metadata: this.metadata
+      metadata: this.metadata,
     };
   }
 }
@@ -92,8 +92,10 @@ export class BaseTool {
     if (!result.success) {
       // Zod uses 'issues' not 'errors' for validation errors
       const issues = result.error.issues || result.error.errors || [];
-      const errors = issues.map(e => `${e.path?.join('.') || ''}: ${e.message}`).join('; ');
-      throw new ValidationError(`Input validation failed for ${this.name}: ${errors || result.error.message || 'Unknown validation error'}`);
+      const errors = issues.map((e) => `${e.path?.join('.') || ''}: ${e.message}`).join('; ');
+      throw new ValidationError(
+        `Input validation failed for ${this.name}: ${errors || result.error.message || 'Unknown validation error'}`,
+      );
     }
 
     return result.data;
@@ -115,7 +117,7 @@ export class BaseTool {
     return {
       name: this.name,
       description: this.description,
-      inputSchema: this.getJsonSchema()
+      inputSchema: this.getJsonSchema(),
     };
   }
 
@@ -133,22 +135,18 @@ export class BaseTool {
       this.logger.info(`Executing ${this.name}`, { input: this.sanitizeForLog(validatedInput) });
 
       // Execute with timeout
-      const result = await this.withTimeout(
-        this.run(validatedInput),
-        this.timeoutMs
-      );
+      const result = await this.withTimeout(this.run(validatedInput), this.timeoutMs);
 
       const duration = Date.now() - startTime;
       this.logger.info(`${this.name} completed successfully`, { durationMs: duration });
 
       return ToolResult.ok(result, { durationMs: duration, tool: this.name });
-
     } catch (error) {
       const duration = Date.now() - startTime;
       this.logger.error(`${this.name} failed`, {
         error: error.message,
         durationMs: duration,
-        stack: error.stack
+        stack: error.stack,
       });
 
       if (error instanceof ValidationError || error instanceof TimeoutError) {
@@ -156,10 +154,11 @@ export class BaseTool {
       }
 
       // Wrap unknown errors
-      return ToolResult.fail(
-        error.message || 'Unknown error occurred',
-        { durationMs: duration, tool: this.name, errorCode: error.code }
-      );
+      return ToolResult.fail(error.message || 'Unknown error occurred', {
+        durationMs: duration,
+        tool: this.name,
+        errorCode: error.code,
+      });
     }
   }
 
@@ -169,7 +168,7 @@ export class BaseTool {
    * @returns {Promise<*>} Tool-specific result
    * @abstract
    */
-  async run(input) {
+  async run(_input) {
     throw new Error(`${this.name}: run() method must be implemented`);
   }
 
@@ -208,10 +207,10 @@ export class BaseTool {
     const sanitized = { ...input };
 
     for (const key of Object.keys(sanitized)) {
-      if (sensitiveKeys.some(s => key.toLowerCase().includes(s))) {
+      if (sensitiveKeys.some((s) => key.toLowerCase().includes(s))) {
         sanitized[key] = '[REDACTED]';
       } else if (typeof sanitized[key] === 'string' && sanitized[key].length > 500) {
-        sanitized[key] = sanitized[key].substring(0, 100) + '...[TRUNCATED]';
+        sanitized[key] = `${sanitized[key].substring(0, 100)}...[TRUNCATED]`;
       }
     }
 
@@ -246,7 +245,8 @@ function zodToJsonSchema(zodSchema) {
       properties[key] = zodToJsonSchema(value);
 
       // Check if field is required (not optional/nullable)
-      const isOptional = value.isOptional?.() ||
+      const isOptional =
+        value.isOptional?.() ||
         value._def?.type === 'optional' ||
         value._def?.typeName?.includes('Optional');
 
@@ -258,7 +258,7 @@ function zodToJsonSchema(zodSchema) {
     return {
       type: 'object',
       properties,
-      ...(required.length > 0 && { required })
+      ...(required.length > 0 && { required }),
     };
   }
 
@@ -299,7 +299,7 @@ function zodToJsonSchema(zodSchema) {
     return {
       type: 'array',
       items: itemSchema ? zodToJsonSchema(itemSchema) : {},
-      ...(def.description && { description: def.description })
+      ...(def.description && { description: def.description }),
     };
   }
 
@@ -308,13 +308,17 @@ function zodToJsonSchema(zodSchema) {
     return {
       type: 'string',
       enum: def.values || def.entries,
-      ...(def.description && { description: def.description })
+      ...(def.description && { description: def.description }),
     };
   }
 
   // Handle optional/nullable wrappers
-  if (typeName === 'ZodOptional' || typeName === 'optional' ||
-      typeName === 'ZodNullable' || typeName === 'nullable') {
+  if (
+    typeName === 'ZodOptional' ||
+    typeName === 'optional' ||
+    typeName === 'ZodNullable' ||
+    typeName === 'nullable'
+  ) {
     const inner = def.innerType || def.inner;
     // innerType can be a string (Zod v4 primitive) or object (schema)
     if (typeof inner === 'string') {

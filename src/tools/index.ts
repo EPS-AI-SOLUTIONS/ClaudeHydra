@@ -5,10 +5,29 @@
  */
 
 // Import tools
-import filesystemTools, { tools as filesystemClasses, ListDirectoryTool, ReadFileTool, WriteFileTool, DeleteFileTool, PathResolver } from './filesystem.js';
-import shellTools, { tools as shellClasses, RunShellTool, CommandSanitizer } from './shell.js';
-import knowledgeTools, { tools as knowledgeClasses, KnowledgeAddTool, KnowledgeSearchTool, KnowledgeDeleteTool, SearchResultFormatter } from './knowledge.js';
-import swarmTools, { tools as swarmClasses, HydraSwarmTool, SwarmResultProcessor, SwarmStatusTool, loadSwarmModule } from './swarm-bridge.js';
+import filesystemTools, {
+  DeleteFileTool,
+  tools as filesystemClasses,
+  ListDirectoryTool,
+  PathResolver,
+  ReadFileTool,
+  WriteFileTool,
+} from './filesystem.js';
+import knowledgeTools, {
+  KnowledgeAddTool,
+  KnowledgeDeleteTool,
+  KnowledgeSearchTool,
+  tools as knowledgeClasses,
+  SearchResultFormatter,
+} from './knowledge.js';
+import shellTools, { CommandSanitizer, RunShellTool, tools as shellClasses } from './shell.js';
+import swarmTools, {
+  HydraSwarmTool,
+  loadSwarmModule,
+  SwarmResultProcessor,
+  SwarmStatusTool,
+  tools as swarmClasses,
+} from './swarm-bridge.js';
 
 // Import base tool and result
 export { BaseTool, ToolResult } from './base-tool.js';
@@ -17,20 +36,13 @@ export { BaseTool, ToolResult } from './base-tool.js';
  * All tools in legacy array format for backward compatibility
  * @type {Array<{name: string, description: string, inputSchema: Object, execute: Function}>}
  */
-export const allTools = [
-  ...filesystemTools,
-  ...shellTools,
-  ...knowledgeTools,
-  ...swarmTools
-];
+export const allTools = [...filesystemTools, ...shellTools, ...knowledgeTools, ...swarmTools];
 
 /**
  * Tool registry - Map of tool names to tool definitions
  * @type {Map<string, Object>}
  */
-export const toolRegistry = new Map(
-  allTools.map(tool => [tool.name, tool])
-);
+export const toolRegistry = new Map(allTools.map((tool) => [tool.name, tool]));
 
 /**
  * Get a tool by name
@@ -65,7 +77,7 @@ export const toolClasses = {
   filesystem: filesystemClasses,
   shell: shellClasses,
   knowledge: knowledgeClasses,
-  swarm: swarmClasses
+  swarm: swarmClasses,
 };
 
 /**
@@ -75,7 +87,7 @@ export const utilities = {
   PathResolver,
   CommandSanitizer,
   SearchResultFormatter,
-  SwarmResultProcessor
+  SwarmResultProcessor,
 };
 
 // Named exports for individual tool classes
@@ -86,22 +98,19 @@ export {
   WriteFileTool,
   DeleteFileTool,
   PathResolver,
-
   // Shell
   RunShellTool,
   CommandSanitizer,
-
   // Knowledge
   KnowledgeAddTool,
   KnowledgeSearchTool,
   KnowledgeDeleteTool,
   SearchResultFormatter,
-
   // Swarm
   HydraSwarmTool,
   SwarmResultProcessor,
   SwarmStatusTool,
-  loadSwarmModule
+  loadSwarmModule,
 };
 
 /**
@@ -113,7 +122,7 @@ export function getToolCountByCategory() {
     filesystem: filesystemTools.length,
     shell: shellTools.length,
     knowledge: knowledgeTools.length,
-    swarm: swarmTools.length
+    swarm: swarmTools.length,
   };
   return counts;
 }

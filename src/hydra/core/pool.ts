@@ -20,7 +20,7 @@ export const DEFAULT_POOL_CONFIG = {
   maxQueueSize: 100,
   acquireTimeout: 30000,
   idleTimeout: 60000,
-  fifo: true
+  fifo: true,
 };
 
 /**
@@ -32,9 +32,11 @@ class QueuedRequest {
     this.resolve = resolve;
     this.reject = reject;
     this.createdAt = Date.now();
-    this.timeoutId = timeout ? setTimeout(() => {
-      this.reject(new Error('Request timed out while waiting in queue'));
-    }, timeout) : null;
+    this.timeoutId = timeout
+      ? setTimeout(() => {
+          this.reject(new Error('Request timed out while waiting in queue'));
+        }, timeout)
+      : null;
   }
 
   cancel() {
@@ -63,7 +65,7 @@ export class ConnectionPool {
       peakConcurrent: 0,
       peakQueueSize: 0,
       averageWaitTime: 0,
-      totalWaitTime: 0
+      totalWaitTime: 0,
     };
   }
 
@@ -200,7 +202,7 @@ export class ConnectionPool {
       queued: this._queue.length,
       available: this.config.maxConcurrent - this._active,
       maxConcurrent: this.config.maxConcurrent,
-      maxQueueSize: this.config.maxQueueSize
+      maxQueueSize: this.config.maxQueueSize,
     };
   }
 
@@ -223,7 +225,7 @@ export class ConnectionPool {
       peakConcurrent: 0,
       peakQueueSize: 0,
       averageWaitTime: 0,
-      totalWaitTime: 0
+      totalWaitTime: 0,
     };
   }
 
@@ -359,7 +361,7 @@ export class RateLimiter {
       availableTokens: Math.floor(this._tokens),
       tokensPerInterval: this.tokensPerInterval,
       interval: this.interval,
-      maxBurst: this.maxBurst
+      maxBurst: this.maxBurst,
     };
   }
 }
@@ -375,9 +377,7 @@ export class ManagedPool {
    */
   constructor(poolConfig = {}, rateLimitConfig = {}) {
     this.pool = new ConnectionPool(poolConfig);
-    this.rateLimiter = rateLimitConfig.enabled !== false
-      ? new RateLimiter(rateLimitConfig)
-      : null;
+    this.rateLimiter = rateLimitConfig.enabled !== false ? new RateLimiter(rateLimitConfig) : null;
   }
 
   /**
@@ -403,7 +403,7 @@ export class ManagedPool {
   getStatus() {
     return {
       pool: this.pool.getStatus(),
-      rateLimit: this.rateLimiter ? this.rateLimiter.getStatus() : null
+      rateLimit: this.rateLimiter ? this.rateLimiter.getStatus() : null,
     };
   }
 
@@ -413,7 +413,7 @@ export class ManagedPool {
    */
   getStats() {
     return {
-      pool: this.pool.getStats()
+      pool: this.pool.getStats(),
     };
   }
 }

@@ -4,13 +4,17 @@
  * @module tools/filesystem
  */
 
-import fs from 'fs/promises';
-import fsSync from 'fs';
-import path from 'path';
-import { BaseTool, ToolResult } from './base-tool.js';
-import { listDirectorySchema, readFileSchema, writeFileSchema, deleteFileSchema } from '../schemas/tools.js';
-import { ValidationError, FileNotFoundError, PermissionError } from '../errors/AppError.js';
-import { ensureDir, ensureParentDir, exists, isDirectory, isFile } from '../utils/fs.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { FileNotFoundError, ValidationError } from '../errors/AppError.js';
+import {
+  deleteFileSchema,
+  listDirectorySchema,
+  readFileSchema,
+  writeFileSchema,
+} from '../schemas/tools.js';
+import { ensureDir, exists } from '../utils/fs.js';
+import { BaseTool } from './base-tool.js';
 
 /**
  * Security utility - resolves and validates paths
@@ -34,7 +38,7 @@ class PathResolver {
     // Verify path is within root
     if (!resolvedPath.startsWith(this.rootDir + path.sep) && resolvedPath !== this.rootDir) {
       throw new ValidationError(
-        `Access denied: Path '${relativePath}' resolves outside project root`
+        `Access denied: Path '${relativePath}' resolves outside project root`,
       );
     }
 
@@ -61,7 +65,7 @@ class ListDirectoryTool extends BaseTool {
       name: 'list_directory',
       description: 'List contents of a directory with optional recursive listing',
       inputSchema: listDirectorySchema,
-      timeoutMs: 30000
+      timeoutMs: 30000,
     });
   }
 
@@ -87,13 +91,13 @@ class ListDirectoryTool extends BaseTool {
       includeHidden,
       maxDepth,
       currentDepth: 0,
-      basePath: safePath
+      basePath: safePath,
     });
 
     return {
       path: dirPath,
       itemCount: items.length,
-      items
+      items,
     };
   }
 
@@ -116,7 +120,7 @@ class ListDirectoryTool extends BaseTool {
       const item = {
         name: entry.name,
         path: relativePath,
-        type: isDir ? 'directory' : 'file'
+        type: isDir ? 'directory' : 'file',
       };
 
       // Add file stats if it's a file
@@ -137,7 +141,7 @@ class ListDirectoryTool extends BaseTool {
         try {
           const subItems = await this.listDir(fullPath, {
             ...options,
-            currentDepth: currentDepth + 1
+            currentDepth: currentDepth + 1,
           });
           items.push(...subItems);
         } catch {
@@ -159,7 +163,7 @@ class ReadFileTool extends BaseTool {
       name: 'read_file',
       description: 'Read file content with encoding support and size limits',
       inputSchema: readFileSchema,
-      timeoutMs: 30000
+      timeoutMs: 30000,
     });
   }
 
@@ -198,7 +202,7 @@ class ReadFileTool extends BaseTool {
       content,
       encoding,
       truncated,
-      ...(truncated && { originalLength: content.length + (truncated ? '...' : '').length })
+      ...(truncated && { originalLength: content.length + (truncated ? '...' : '').length }),
     };
   }
 }
@@ -212,7 +216,7 @@ class WriteFileTool extends BaseTool {
       name: 'write_file',
       description: 'Write content to a file with optional directory creation',
       inputSchema: writeFileSchema,
-      timeoutMs: 30000
+      timeoutMs: 30000,
     });
   }
 
@@ -254,7 +258,7 @@ class WriteFileTool extends BaseTool {
       path: filePath,
       size: stats.size,
       created: !overwrite,
-      modified: stats.mtime.toISOString()
+      modified: stats.mtime.toISOString(),
     };
   }
 }
@@ -268,7 +272,7 @@ class DeleteFileTool extends BaseTool {
       name: 'delete_file',
       description: 'Delete a file or directory (with optional recursive deletion)',
       inputSchema: deleteFileSchema,
-      timeoutMs: 30000
+      timeoutMs: 30000,
     });
   }
 
@@ -291,7 +295,7 @@ class DeleteFileTool extends BaseTool {
     // Require recursive flag for directories
     if (isDir && !recursive) {
       throw new ValidationError(
-        `'${targetPath}' is a directory. Set recursive=true to delete directories.`
+        `'${targetPath}' is a directory. Set recursive=true to delete directories.`,
       );
     }
 
@@ -305,7 +309,7 @@ class DeleteFileTool extends BaseTool {
     return {
       path: targetPath,
       type: isDir ? 'directory' : 'file',
-      deleted: true
+      deleted: true,
     };
   }
 }
@@ -324,7 +328,7 @@ export const tools = {
   listDirectory: listDirectoryTool,
   readFile: readFileTool,
   writeFile: writeFileTool,
-  deleteFile: deleteFileTool
+  deleteFile: deleteFileTool,
 };
 
 // Legacy export format for existing tool registry
@@ -333,26 +337,26 @@ export default [
     name: listDirectoryTool.name,
     description: listDirectoryTool.description,
     inputSchema: listDirectoryTool.getJsonSchema(),
-    execute: (input) => listDirectoryTool.execute(input)
+    execute: (input) => listDirectoryTool.execute(input),
   },
   {
     name: readFileTool.name,
     description: readFileTool.description,
     inputSchema: readFileTool.getJsonSchema(),
-    execute: (input) => readFileTool.execute(input)
+    execute: (input) => readFileTool.execute(input),
   },
   {
     name: writeFileTool.name,
     description: writeFileTool.description,
     inputSchema: writeFileTool.getJsonSchema(),
-    execute: (input) => writeFileTool.execute(input)
+    execute: (input) => writeFileTool.execute(input),
   },
   {
     name: deleteFileTool.name,
     description: deleteFileTool.description,
     inputSchema: deleteFileTool.getJsonSchema(),
-    execute: (input) => deleteFileTool.execute(input)
-  }
+    execute: (input) => deleteFileTool.execute(input),
+  },
 ];
 
 // Named exports for direct access

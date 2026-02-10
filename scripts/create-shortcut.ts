@@ -4,10 +4,9 @@
  * Replaces create-shortcut.ps1
  */
 
-import { execSync } from 'child_process';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
+import { execSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -78,14 +77,14 @@ createShortcut(
   'ClaudeHydra',
   nodePath,
   `"${join(ROOT_DIR, 'src', 'cli-unified', 'index.js')}"`,
-  ROOT_DIR
+  ROOT_DIR,
 );
 
 createShortcut(
   'ClaudeHydra Swarm',
   nodePath,
   `"${join(ROOT_DIR, 'src', 'cli-unified', 'index.js')}" --mode swarm`,
-  ROOT_DIR
+  ROOT_DIR,
 );
 
 console.log('');

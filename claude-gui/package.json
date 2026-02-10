@@ -13,6 +13,14 @@
     "tauri:build-fast": "build-fast.bat",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:codegen": "playwright codegen http://localhost:4200",
+    "test:tauri": "wdio run wdio.conf.ts",
+    "test:all": "vitest run && playwright test",
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
@@ -53,6 +61,12 @@
     "typescript-eslint": "^8.53.1",
     "vite": "^7.0.4",
     "vite-plugin-compression": "^0.5.1",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.17",
+    "@playwright/test": "^1.49.0",
+    "@wdio/cli": "^9.4.0",
+    "@wdio/local-runner": "^9.4.0",
+    "@wdio/mocha-framework": "^9.4.0",
+    "@wdio/spec-reporter": "^9.4.0",
+    "edgedriver": "^6.3.0"
   }
 }

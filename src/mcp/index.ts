@@ -7,56 +7,53 @@
  * @module src/mcp
  */
 
+// Client Manager
+export {
+  getMCPClientManager,
+  initializeMCPClientManager,
+  MCPClientManager,
+  resetMCPClientManager,
+} from './client-manager.js';
 // Config Loader
 export {
-  MCPConfigLoader,
+  ConfigNotFoundError,
+  ConfigParseError,
+  ConfigValidationError,
   getConfigLoader,
-  resetConfigLoader,
+  HealthCheckConfigSchema,
+  MCPConfigLoader,
   MCPConfigSchema,
   MCPServerConfigSchema,
-  HealthCheckConfigSchema,
   RetryConfigSchema,
-  ConfigNotFoundError,
-  ConfigValidationError,
-  ConfigParseError
+  resetConfigLoader,
 } from './config-loader.js';
-
-// Server Registry
-export {
-  ServerRegistry,
-  ServerEntry,
-  ServerState,
-  getServerRegistry,
-  resetServerRegistry
-} from './server-registry.js';
 
 // Health Checker
 export {
+  getHealthChecker,
   HealthChecker,
   HealthStatus,
+  resetHealthChecker,
   TTLCache,
-  getHealthChecker,
-  resetHealthChecker
 } from './health-checker.js';
-
+// Server Registry
+export {
+  getServerRegistry,
+  resetServerRegistry,
+  ServerEntry,
+  ServerRegistry,
+  ServerState,
+} from './server-registry.js';
 // Transports
 export {
   createTransport,
-  isSupported as isTransportSupported,
   getSupportedTypes as getSupportedTransportTypes,
-  TransportType,
-  StdioTransport,
   HttpTransport,
-  SseTransport
+  isSupported as isTransportSupported,
+  SseTransport,
+  StdioTransport,
+  TransportType,
 } from './transports/index.js';
-
-// Client Manager
-export {
-  MCPClientManager,
-  getMCPClientManager,
-  initializeMCPClientManager,
-  resetMCPClientManager
-} from './client-manager.js';
 
 // ============================================================================
 // Convenience Functions
@@ -125,7 +122,7 @@ export async function getMCPStatus() {
   return {
     initialized: true,
     ...manager.getAllStatus(),
-    health: manager.getHealthSummary()
+    health: manager.getHealthSummary(),
   };
 }
 
@@ -148,5 +145,5 @@ export default {
   executeTool,
   listAllTools,
   getMCPStatus,
-  shutdownMCP
+  shutdownMCP,
 };

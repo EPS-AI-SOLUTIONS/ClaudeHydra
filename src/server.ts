@@ -1,10 +1,9 @@
+import fs from 'node:fs'; // Needed for package.json read
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import fs from 'fs'; // Needed for package.json read
 import Logger from './logger.js';
 import ToolRegistry from './tool-registry.js';
-import { CONFIG } from './config.js';
 
 // Initialize System
 Logger.info('Initializing GeminiCLI (HYDRA) MCP Server...');
@@ -24,7 +23,7 @@ const server = new Server(
     capabilities: {
       tools: {},
     },
-  }
+  },
 );
 
 /**
@@ -33,7 +32,7 @@ const server = new Server(
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   const tools = ToolRegistry.getAllTools();
   return {
-    tools: tools
+    tools: tools,
   };
 });
 
@@ -44,7 +43,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
   Logger.info(`Tool request received: ${name}`, { args });
 
-  const tool = ToolRegistry.getTool(name);
+  const tool = await ToolRegistry.getTool(name);
 
   if (!tool) {
     Logger.warn(`Tool not found: ${name}`);
@@ -53,7 +52,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     const result = await tool.execute(args);
-    
+
     // Normalize result to MCP format
     let content = [];
     if (typeof result === 'string') {
@@ -66,10 +65,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     Logger.info(`Tool execution successful: ${name}`);
     return { content };
-
   } catch (error) {
     Logger.error(`Tool execution failed: ${name}`, { error: error.message, stack: error.stack });
-    
+
     return {
       content: [{ type: 'text', text: `Error: ${error.message}` }],
       isError: true,
@@ -77,7 +75,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'node:url';
 
 /**
  * Start the Server
@@ -95,4 +93,3 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1);
   });
 }
-

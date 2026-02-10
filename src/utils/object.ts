@@ -15,7 +15,7 @@ export function deepMerge(target, ...sources) {
 
   if (isPlainObject(target) && isPlainObject(source)) {
     for (const key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
+      if (Object.hasOwn(source, key)) {
         if (isPlainObject(source[key])) {
           if (!target[key]) {
             Object.assign(target, { [key]: {} });
@@ -39,9 +39,11 @@ export function deepMerge(target, ...sources) {
  * @returns {boolean} True if plain object
  */
 function isPlainObject(value) {
-  return value !== null &&
+  return (
+    value !== null &&
     typeof value === 'object' &&
-    Object.prototype.toString.call(value) === '[object Object]';
+    Object.prototype.toString.call(value) === '[object Object]'
+  );
 }
 
 /**
@@ -54,7 +56,7 @@ export function pick(obj, keys) {
   if (!obj || typeof obj !== 'object') return {};
 
   return keys.reduce((result, key) => {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+    if (Object.hasOwn(obj, key)) {
       result[key] = obj[key];
     }
     return result;
@@ -138,19 +140,19 @@ export function deepClone(value) {
 
   if (value instanceof Set) {
     const clonedSet = new Set();
-    value.forEach(v => {
+    value.forEach((v) => {
       clonedSet.add(deepClone(v));
     });
     return clonedSet;
   }
 
   if (Array.isArray(value)) {
-    return value.map(item => deepClone(item));
+    return value.map((item) => deepClone(item));
   }
 
   const clonedObj = {};
   for (const key in value) {
-    if (Object.prototype.hasOwnProperty.call(value, key)) {
+    if (Object.hasOwn(value, key)) {
       clonedObj[key] = deepClone(value[key]);
     }
   }
@@ -184,7 +186,7 @@ export function deepEqual(a, b) {
 
   if (keysA.length !== keysB.length) return false;
 
-  return keysA.every(key => deepEqual(a[key], b[key]));
+  return keysA.every((key) => deepEqual(a[key], b[key]));
 }
 
 /**
@@ -243,5 +245,5 @@ export default {
   deepClone,
   deepEqual,
   get,
-  set
+  set,
 };

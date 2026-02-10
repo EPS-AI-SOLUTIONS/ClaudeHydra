@@ -3,9 +3,9 @@
  * @module vitest.config
  */
 
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -17,18 +17,14 @@ export default defineConfig({
 
     // Test file patterns
     include: [
-      'test/**/*.test.js',
-      'test/**/*.spec.js',
-      'src/**/*.test.js',
-      'src/**/*.spec.js'
+      'test/**/*.test.{js,ts}',
+      'test/**/*.spec.{js,ts}',
+      'src/**/*.test.{js,ts}',
+      'src/**/*.spec.{js,ts}',
     ],
 
     // Exclude patterns
-    exclude: [
-      'node_modules/**',
-      'claude-gui/**',
-      'test/e2e/**'
-    ],
+    exclude: ['node_modules/**', 'claude-gui/**', 'test/e2e/**'],
 
     // Global test timeout
     testTimeout: 30000,
@@ -44,23 +40,21 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'text-summary', 'lcov', 'html', 'json'],
       reportsDirectory: './coverage',
-      include: [
-        'src/**/*.js'
-      ],
+      include: ['src/**/*.{js,ts}'],
       exclude: [
-        'src/**/*.test.js',
-        'src/**/*.spec.js',
+        'src/**/*.test.{js,ts}',
+        'src/**/*.spec.{js,ts}',
         'node_modules/**',
         'claude-gui/**',
-        'test/**'
+        'test/**',
       ],
       // Realistic thresholds - to be increased as coverage improves
       thresholds: {
         statements: 5,
         branches: 5,
         functions: 5,
-        lines: 5
-      }
+        lines: 5,
+      },
     },
 
     // Reporters
@@ -79,13 +73,13 @@ export default defineConfig({
     retry: 1,
 
     // Watch mode exclude
-    watchExclude: ['node_modules/**', 'coverage/**']
+    watchExclude: ['node_modules/**', 'coverage/**'],
   },
 
   // Resolve aliases
   resolve: {
     alias: {
-      '@': '/src'
-    }
-  }
+      '@': '/src',
+    },
+  },
 });

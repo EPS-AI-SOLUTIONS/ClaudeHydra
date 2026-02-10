@@ -62,7 +62,20 @@ export const ErrorCode = Object.freeze({
   // Swarm/Agent errors
   SWARM_ERROR: 'SWARM_ERROR',
   AGENT_ERROR: 'AGENT_ERROR',
-  COORDINATION_ERROR: 'COORDINATION_ERROR'
+  COORDINATION_ERROR: 'COORDINATION_ERROR',
+
+  // Claude SDK errors
+  CLAUDE_SDK_ERROR: 'CLAUDE_SDK_ERROR',
+  CLAUDE_SDK_AUTH: 'CLAUDE_SDK_AUTH',
+  CLAUDE_SDK_NOT_INSTALLED: 'CLAUDE_SDK_NOT_INSTALLED',
+  CLAUDE_SDK_CRASH: 'CLAUDE_SDK_CRASH',
+  CLAUDE_SDK_MAX_TURNS: 'CLAUDE_SDK_MAX_TURNS',
+
+  // Claude Instance Pool errors
+  CLAUDE_INSTANCE_ERROR: 'CLAUDE_INSTANCE_ERROR',
+  CLAUDE_INSTANCE_POOL_EXHAUSTED: 'CLAUDE_INSTANCE_POOL_EXHAUSTED',
+  CLAUDE_INSTANCE_SPAWN_FAILED: 'CLAUDE_INSTANCE_SPAWN_FAILED',
+  CLAUDE_INSTANCE_CRASHED: 'CLAUDE_INSTANCE_CRASHED',
 });
 
 /**
@@ -74,7 +87,7 @@ export const ErrorSeverity = Object.freeze({
   LOW: 'low',
   MEDIUM: 'medium',
   HIGH: 'high',
-  CRITICAL: 'critical'
+  CRITICAL: 'critical',
 });
 
 /**
@@ -102,7 +115,7 @@ export class AppError extends Error {
       isOperational = true,
       severity = ErrorSeverity.MEDIUM,
       context = {},
-      cause = null
+      cause = null,
     } = options;
 
     /** @type {string} */
@@ -152,7 +165,7 @@ export class AppError extends Error {
       severity: this.severity,
       timestamp: this.timestamp,
       isOperational: this.isOperational,
-      context: this.context
+      context: this.context,
     };
 
     if (this.requestId) {
@@ -164,9 +177,10 @@ export class AppError extends Error {
     }
 
     if (this.cause) {
-      json.cause = this.cause instanceof AppError
-        ? this.cause.toJSON(includeStack)
-        : { message: this.cause.message, name: this.cause.name };
+      json.cause =
+        this.cause instanceof AppError
+          ? this.cause.toJSON(includeStack)
+          : { message: this.cause.message, name: this.cause.name };
     }
 
     return json;
@@ -181,8 +195,8 @@ export class AppError extends Error {
       error: {
         code: this.code,
         message: this.isOperational ? this.message : 'An internal error occurred',
-        ...(this.requestId && { requestId: this.requestId })
-      }
+        ...(this.requestId && { requestId: this.requestId }),
+      },
     };
   }
 
@@ -200,13 +214,13 @@ export class AppError extends Error {
         isOperational: overrides.isOperational ?? source.isOperational,
         severity: overrides.severity || source.severity,
         context: { ...source.context, ...overrides.context },
-        cause: source.cause
+        cause: source.cause,
       });
     }
 
     return new AppError(source.message || 'Unknown error', {
       cause: source,
-      ...overrides
+      ...overrides,
     });
   }
 }
@@ -231,7 +245,7 @@ export class ValidationError extends AppError {
       code: ErrorCode.VALIDATION_ERROR,
       severity: ErrorSeverity.LOW,
       context: { errors, field },
-      ...rest
+      ...rest,
     });
 
     /** @type {Array} */
@@ -247,15 +261,15 @@ export class ValidationError extends AppError {
    * @returns {ValidationError} New ValidationError instance
    */
   static fromZod(zodError) {
-    const errors = zodError.errors.map(err => ({
+    const errors = zodError.errors.map((err) => ({
       path: err.path.join('.'),
       message: err.message,
-      code: err.code
+      code: err.code,
     }));
 
     return new ValidationError('Validation failed', {
       code: ErrorCode.SCHEMA_VALIDATION_FAILED,
-      errors
+      errors,
     });
   }
 }
@@ -283,7 +297,7 @@ export class APIError extends AppError {
       severity: ErrorSeverity.HIGH,
       context: { service, endpoint, responseStatus },
       cause: originalError,
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -318,7 +332,7 @@ export class NetworkError extends AppError {
       code: ErrorCode.NETWORK_ERROR,
       severity: ErrorSeverity.HIGH,
       context: { host, port, protocol },
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -349,7 +363,7 @@ export class TimeoutError extends AppError {
       code: ErrorCode.TIMEOUT_ERROR,
       severity: ErrorSeverity.MEDIUM,
       context: { timeoutMs, operation },
-      ...rest
+      ...rest,
     });
 
     /** @type {number|undefined} */
@@ -382,7 +396,7 @@ export class ConfigError extends AppError {
       severity: ErrorSeverity.CRITICAL,
       isOperational: false,
       context: { configKey, expectedType, actualValue: String(actualValue) },
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -410,7 +424,7 @@ export class FileSystemError extends AppError {
       code: ErrorCode.FILE_READ_ERROR,
       severity: ErrorSeverity.MEDIUM,
       context: { path: filePath, operation },
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -432,18 +446,17 @@ export class FileSystemError extends AppError {
       EACCES: ErrorCode.PERMISSION_DENIED,
       EPERM: ErrorCode.PERMISSION_DENIED,
       EISDIR: ErrorCode.FILE_READ_ERROR,
-      ENOTDIR: ErrorCode.FILE_READ_ERROR
+      ENOTDIR: ErrorCode.FILE_READ_ERROR,
     };
 
     return new FileSystemError(nodeError.message, {
       code: codeMap[nodeError.code] || ErrorCode.FILE_READ_ERROR,
       path,
       cause: nodeError,
-      context: { syscall: nodeError.syscall, errno: nodeError.errno }
+      context: { syscall: nodeError.syscall, errno: nodeError.errno },
     });
   }
 }
-
 
 /**
  * Rate limit error
@@ -466,7 +479,7 @@ export class RateLimitError extends AppError {
       code: ErrorCode.RATE_LIMIT_EXCEEDED,
       severity: ErrorSeverity.LOW,
       context: { retryAfter, limit, remaining },
-      ...rest
+      ...rest,
     });
 
     /** @type {number|undefined} */
@@ -492,7 +505,7 @@ export class AuthenticationError extends AppError {
       statusCode: 401,
       code: ErrorCode.AUTHENTICATION_ERROR,
       severity: ErrorSeverity.MEDIUM,
-      ...options
+      ...options,
     });
   }
 }
@@ -517,7 +530,7 @@ export class AuthorizationError extends AppError {
       code: ErrorCode.AUTHORIZATION_ERROR,
       severity: ErrorSeverity.MEDIUM,
       context: { resource, action },
-      ...rest
+      ...rest,
     });
   }
 }
@@ -541,7 +554,7 @@ export class FileNotFoundError extends AppError {
       code: ErrorCode.FILE_NOT_FOUND,
       severity: ErrorSeverity.LOW,
       context: { path: filePath },
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -569,7 +582,7 @@ export class PermissionError extends AppError {
       code: ErrorCode.PERMISSION_DENIED,
       severity: ErrorSeverity.MEDIUM,
       context: { path: filePath, operation },
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -579,7 +592,6 @@ export class PermissionError extends AppError {
     this.operation = operation;
   }
 }
-
 
 /**
  * Security error for security policy violations
@@ -601,7 +613,7 @@ export class SecurityError extends AppError {
       code: ErrorCode.AUTHORIZATION_ERROR,
       severity: ErrorSeverity.HIGH,
       context: { violationType, resource },
-      ...rest
+      ...rest,
     });
 
     /** @type {string} */
@@ -632,7 +644,7 @@ export class NotFoundError extends AppError {
       code: ErrorCode.NOT_FOUND,
       severity: ErrorSeverity.LOW,
       context: { resourceType, resourceId },
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -663,7 +675,7 @@ export class ConnectionError extends AppError {
       code: ErrorCode.CONNECTION_REFUSED,
       severity: ErrorSeverity.HIGH,
       context: { host, port },
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -694,7 +706,7 @@ export class ConfigurationError extends AppError {
       severity: ErrorSeverity.CRITICAL,
       isOperational: false,
       context: { configKey },
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -723,7 +735,7 @@ export class SwarmError extends AppError {
       code: ErrorCode.SWARM_ERROR,
       severity: ErrorSeverity.HIGH,
       context: { agentName, phase, failedAgents },
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -789,7 +801,7 @@ export class ToolError extends AppError {
       code,
       severity: ErrorSeverity.MEDIUM,
       context: { toolName, ...details },
-      ...rest
+      ...rest,
     });
 
     /** @type {string|undefined} */
@@ -814,7 +826,7 @@ export class ToolNotFoundError extends ToolError {
     super(`Tool '${toolName}' not found in registry`, {
       code: 'TOOL_NOT_FOUND',
       toolName,
-      details: { availableTools: availableTools.slice(0, 10) }
+      details: { availableTools: availableTools.slice(0, 10) },
     });
   }
 }
@@ -834,7 +846,7 @@ export class ToolLoadError extends ToolError {
     super(`Failed to load tool from '${toolPath}': ${reason}`, {
       code: 'TOOL_LOAD_ERROR',
       details: { toolPath, reason, originalError: originalError?.message },
-      cause: originalError
+      cause: originalError,
     });
 
     /** @type {string} */
@@ -857,13 +869,13 @@ export class ToolValidationError extends ToolError {
    */
   constructor(toolName, validationErrors) {
     const errorMessages = Array.isArray(validationErrors)
-      ? validationErrors.map(e => e.message || e).join('; ')
+      ? validationErrors.map((e) => e.message || e).join('; ')
       : validationErrors;
 
     super(`Validation failed for tool '${toolName}': ${errorMessages}`, {
       code: 'TOOL_VALIDATION_ERROR',
       toolName,
-      details: { validationErrors }
+      details: { validationErrors },
     });
 
     /** @type {Array|string} */
@@ -887,7 +899,7 @@ export class ToolExecutionError extends ToolError {
       code: 'TOOL_EXECUTION_ERROR',
       toolName,
       details: { reason, originalError: originalError?.message },
-      cause: originalError
+      cause: originalError,
     });
 
     /** @type {Error|null} */
@@ -909,7 +921,7 @@ export class ToolTimeoutError extends ToolError {
     super(`Tool '${toolName}' execution timed out after ${timeoutMs}ms`, {
       code: 'TOOL_TIMEOUT_ERROR',
       toolName,
-      details: { timeoutMs }
+      details: { timeoutMs },
     });
 
     /** @type {number} */
@@ -931,7 +943,7 @@ export class ToolRegistrationError extends ToolError {
     super(`Failed to register tool '${toolName}': ${reason}`, {
       code: 'TOOL_REGISTRATION_ERROR',
       toolName,
-      details: { reason }
+      details: { reason },
     });
   }
 }
@@ -953,7 +965,7 @@ export class ToolHookError extends ToolError {
       code: 'TOOL_HOOK_ERROR',
       toolName,
       details: { hookType, reason },
-      cause: originalError
+      cause: originalError,
     });
 
     /** @type {string} */
@@ -961,5 +973,48 @@ export class ToolHookError extends ToolError {
 
     /** @type {Error|null} */
     this.originalError = originalError;
+  }
+}
+
+/**
+ * Claude SDK error for Claude Agent SDK subprocess failures
+ * @extends APIError
+ */
+export class ClaudeSDKError extends APIError {
+  /**
+   * Creates a new ClaudeSDKError
+   * @param {string} message - Error message
+   * @param {Object} [options={}] - Additional options
+   * @param {string} [options.errorType] - Error classification
+   * @param {string[]} [options.suggestions] - Actionable suggestions for the user
+   * @param {string} [options.stderrOutput] - Captured stderr from SDK subprocess
+   */
+  constructor(
+    message,
+    options: {
+      errorType?: string;
+      suggestions?: string[];
+      stderrOutput?: string;
+      [key: string]: unknown;
+    } = {},
+  ) {
+    const { errorType = 'unknown', suggestions = [], stderrOutput, ...rest } = options;
+
+    super(message, {
+      code: ErrorCode.CLAUDE_SDK_ERROR,
+      severity: ErrorSeverity.HIGH,
+      service: 'claude-agent-sdk',
+      context: { errorType, stderrOutput },
+      ...rest,
+    });
+
+    /** @type {string} */
+    this.errorType = errorType;
+
+    /** @type {string[]} */
+    this.suggestions = suggestions;
+
+    /** @type {string|undefined} */
+    this.stderrOutput = stderrOutput;
   }
 }

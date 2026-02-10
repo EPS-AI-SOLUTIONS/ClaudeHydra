@@ -4,11 +4,29 @@
  * @module cli-unified/output/BorderRenderer
  */
 
-import { BORDER_STYLES, BOX_SINGLE, BOX_DOUBLE, BOX_ROUNDED, BOX_BOLD, BOX_DASHED, BOX_DOTTED, BOX_ASCII } from '../core/constants.js';
+import {
+  BORDER_STYLES,
+  BOX_ASCII,
+  BOX_BOLD,
+  BOX_DASHED,
+  BOX_DOTTED,
+  BOX_DOUBLE,
+  BOX_ROUNDED,
+  BOX_SINGLE,
+} from '../core/constants.js';
 import { themeRegistry } from '../core/ThemeRegistry.js';
 
 // Re-export border style constants
-export { BORDER_STYLES, BOX_SINGLE, BOX_DOUBLE, BOX_ROUNDED, BOX_BOLD, BOX_DASHED, BOX_DOTTED, BOX_ASCII };
+export {
+  BORDER_STYLES,
+  BOX_SINGLE,
+  BOX_DOUBLE,
+  BOX_ROUNDED,
+  BOX_BOLD,
+  BOX_DASHED,
+  BOX_DOTTED,
+  BOX_ASCII,
+};
 
 // Backward compatibility exports
 export const SINGLE = BOX_SINGLE;
@@ -42,10 +60,11 @@ export function padString(str, width, align = 'left', padChar = ' ') {
   if (needed <= 0) return str;
 
   switch (align) {
-    case 'center':
+    case 'center': {
       const left = Math.floor(needed / 2);
       const right = needed - left;
       return padChar.repeat(left) + str + padChar.repeat(right);
+    }
     case 'right':
       return padChar.repeat(needed) + str;
     default:
@@ -106,7 +125,7 @@ export class BorderRenderer {
     const contentAlign = options.align || 'left';
     const color = options.color || this.theme.colors.border;
 
-    const innerWidth = width - 2 - (padding * 2);
+    const innerWidth = width - 2 - padding * 2;
     const lines = Array.isArray(content) ? content : wordWrap(content, innerWidth);
     const marginStr = ' '.repeat(this.margin);
     const paddingStr = ' '.repeat(padding);
@@ -116,12 +135,14 @@ export class BorderRenderer {
     let topLine = chars.topLeft + chars.horizontal.repeat(width - 2) + chars.topRight;
     if (title) {
       const titleText = ` ${title} `;
-      const titlePos = titleAlign === 'center'
-        ? Math.floor((width - titleText.length) / 2)
-        : titleAlign === 'right'
-          ? width - titleText.length - 2
-          : 2;
-      topLine = chars.topLeft +
+      const titlePos =
+        titleAlign === 'center'
+          ? Math.floor((width - titleText.length) / 2)
+          : titleAlign === 'right'
+            ? width - titleText.length - 2
+            : 2;
+      topLine =
+        chars.topLeft +
         chars.horizontal.repeat(titlePos - 1) +
         this.theme.colors.highlight(titleText) +
         chars.horizontal.repeat(width - titlePos - titleText.length - 1) +
@@ -131,7 +152,9 @@ export class BorderRenderer {
 
     // Content lines with padding
     for (let i = 0; i < padding; i++) {
-      output.push(marginStr + color(chars.vertical) + ' '.repeat(width - 2) + color(chars.vertical));
+      output.push(
+        marginStr + color(chars.vertical) + ' '.repeat(width - 2) + color(chars.vertical),
+      );
     }
 
     for (const line of lines) {
@@ -140,11 +163,15 @@ export class BorderRenderer {
     }
 
     for (let i = 0; i < padding; i++) {
-      output.push(marginStr + color(chars.vertical) + ' '.repeat(width - 2) + color(chars.vertical));
+      output.push(
+        marginStr + color(chars.vertical) + ' '.repeat(width - 2) + color(chars.vertical),
+      );
     }
 
     // Bottom border
-    output.push(marginStr + color(chars.bottomLeft + chars.horizontal.repeat(width - 2) + chars.bottomRight));
+    output.push(
+      marginStr + color(chars.bottomLeft + chars.horizontal.repeat(width - 2) + chars.bottomRight),
+    );
 
     return output.join('\n');
   }
@@ -159,7 +186,7 @@ export class BorderRenderer {
     const headerColor = options.headerColor || this.theme.colors.primary;
     const borderColor = options.borderColor || this.theme.colors.border;
 
-    const innerWidth = width - 2 - (padding * 2);
+    const innerWidth = width - 2 - padding * 2;
     const contentLines = Array.isArray(content) ? content : wordWrap(content, innerWidth);
     const paddingStr = ' '.repeat(padding);
     const output = [];
@@ -169,7 +196,9 @@ export class BorderRenderer {
 
     // Header
     const headerText = paddingStr + padString(header, innerWidth, 'left') + paddingStr;
-    output.push(borderColor(chars.vertical) + headerColor(headerText) + borderColor(chars.vertical));
+    output.push(
+      borderColor(chars.vertical) + headerColor(headerText) + borderColor(chars.vertical),
+    );
 
     // Separator
     output.push(borderColor(chars.teeRight + chars.horizontal.repeat(width - 2) + chars.teeLeft));
@@ -181,7 +210,9 @@ export class BorderRenderer {
     }
 
     // Bottom border
-    output.push(borderColor(chars.bottomLeft + chars.horizontal.repeat(width - 2) + chars.bottomRight));
+    output.push(
+      borderColor(chars.bottomLeft + chars.horizontal.repeat(width - 2) + chars.bottomRight),
+    );
 
     return output.join('\n');
   }
@@ -195,7 +226,7 @@ export class BorderRenderer {
     const padding = options.padding ?? this.padding;
     const borderColor = options.borderColor || this.theme.colors.border;
 
-    const innerWidth = width - 2 - (padding * 2);
+    const innerWidth = width - 2 - padding * 2;
     const paddingStr = ' '.repeat(padding);
     const output = [];
 
@@ -211,7 +242,9 @@ export class BorderRenderer {
       // Section header
       if (section.header) {
         const headerText = paddingStr + padString(section.header, innerWidth, 'left') + paddingStr;
-        output.push(borderColor(chars.vertical) + headerColor(headerText) + borderColor(chars.vertical));
+        output.push(
+          borderColor(chars.vertical) + headerColor(headerText) + borderColor(chars.vertical),
+        );
       }
 
       // Section content
@@ -222,12 +255,16 @@ export class BorderRenderer {
 
       // Section separator (not for last section)
       if (idx < sectionsData.length - 1) {
-        output.push(borderColor(chars.teeRight + chars.horizontal.repeat(width - 2) + chars.teeLeft));
+        output.push(
+          borderColor(chars.teeRight + chars.horizontal.repeat(width - 2) + chars.teeLeft),
+        );
       }
     });
 
     // Bottom border
-    output.push(borderColor(chars.bottomLeft + chars.horizontal.repeat(width - 2) + chars.bottomRight));
+    output.push(
+      borderColor(chars.bottomLeft + chars.horizontal.repeat(width - 2) + chars.bottomRight),
+    );
 
     return output.join('\n');
   }
@@ -260,9 +297,11 @@ export class BorderRenderer {
     const left = Math.floor(remaining / 2);
     const right = remaining - left;
 
-    return color(chars.horizontal.repeat(left)) +
-           this.theme.colors.highlight(textWithSpace) +
-           color(chars.horizontal.repeat(right));
+    return (
+      color(chars.horizontal.repeat(left)) +
+      this.theme.colors.highlight(textWithSpace) +
+      color(chars.horizontal.repeat(right))
+    );
   }
 }
 

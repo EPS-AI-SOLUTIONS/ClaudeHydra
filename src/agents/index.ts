@@ -7,12 +7,21 @@
  */
 
 // Base Agent
-export { BaseAgent, AgentState } from './base-agent.js';
+import { AgentState as _AgentState, BaseAgent as _BaseAgent } from './base-agent.js';
+export { _BaseAgent as BaseAgent, _AgentState as AgentState };
 
 // Specialized Agents
-export { ExploreAgent, createExploreAgent } from './explore-agent.js';
-export { PlanAgent, createPlanAgent } from './plan-agent.js';
-export { BashAgent, createBashAgent } from './bash-agent.js';
+import {
+  createExploreAgent as _createExploreAgent,
+  ExploreAgent as _ExploreAgent,
+} from './explore-agent.js';
+export { _ExploreAgent as ExploreAgent, _createExploreAgent as createExploreAgent };
+
+import { createPlanAgent as _createPlanAgent, PlanAgent as _PlanAgent } from './plan-agent.js';
+export { _PlanAgent as PlanAgent, _createPlanAgent as createPlanAgent };
+
+import { BashAgent as _BashAgent, createBashAgent as _createBashAgent } from './bash-agent.js';
+export { _BashAgent as BashAgent, _createBashAgent as createBashAgent };
 
 // ============================================================================
 // Agent Registry
@@ -25,7 +34,7 @@ export { BashAgent, createBashAgent } from './bash-agent.js';
 const AGENT_CLASSES = {
   explore: () => import('./explore-agent.js').then((m) => m.ExploreAgent),
   plan: () => import('./plan-agent.js').then((m) => m.PlanAgent),
-  bash: () => import('./bash-agent.js').then((m) => m.BashAgent)
+  bash: () => import('./bash-agent.js').then((m) => m.BashAgent),
 };
 
 /**
@@ -44,15 +53,15 @@ export const WITCHER_AGENT_MAP = {
 
   // Additional mappings for other Witcher agents
   // (These could be implemented as needed)
-  Yennefer: 'code',        // System Architecture
-  Lambert: 'refactor',     // Code Optimization
-  Triss: 'test',           // QA & Testing
-  Jaskier: 'document',     // Documentation
-  Vesemir: 'review',       // Code Review
-  Geralt: 'security',      // Security
-  Ciri: 'performance',     // Performance
-  Zoltan: 'data',          // Data & Database
-  Philippa: 'api'          // API & Integration
+  Yennefer: 'code', // System Architecture
+  Lambert: 'refactor', // Code Optimization
+  Triss: 'test', // QA & Testing
+  Jaskier: 'document', // Documentation
+  Vesemir: 'review', // Code Review
+  Geralt: 'security', // Security
+  Ciri: 'performance', // Performance
+  Zoltan: 'data', // Data & Database
+  Philippa: 'api', // API & Integration
 };
 
 /**
@@ -75,15 +84,20 @@ export async function getAgent(type, options = {}) {
     return agentCache.get(cacheKey);
   }
 
-  const AgentClass = await getAgentClass(type);
-  if (!AgentClass) {
-    throw new Error(`Unknown agent type: ${type}`);
-  }
+  // Store promise immediately to prevent race condition
+  const agentPromise = (async () => {
+    const AgentClass = await getAgentClass(type);
+    if (!AgentClass) {
+      // Remove failed promise from cache
+      agentCache.delete(cacheKey);
+      throw new Error(`Unknown agent type: ${type}`);
+    }
+    return new AgentClass(options);
+  })();
 
-  const agent = new AgentClass(options);
-  agentCache.set(cacheKey, agent);
+  agentCache.set(cacheKey, agentPromise);
 
-  return agent;
+  return agentPromise;
 }
 
 /**
@@ -118,9 +132,12 @@ export async function getAgentByWitcherName(witcherName, options = {}) {
 /**
  * Clear agent cache
  */
-export function clearAgentCache() {
-  for (const agent of agentCache.values()) {
-    agent.reset();
+export async function clearAgentCache() {
+  const agents = await Promise.allSettled([...agentCache.values()]);
+  for (const result of agents) {
+    if (result.status === 'fulfilled' && result.value?.reset) {
+      result.value.reset();
+    }
   }
   agentCache.clear();
 }
@@ -189,18 +206,18 @@ export function listWitcherAgents() {
 
 export default {
   // Base
-  BaseAgent,
-  AgentState,
+  BaseAgent: _BaseAgent,
+  AgentState: _AgentState,
 
   // Agents
-  ExploreAgent,
-  PlanAgent,
-  BashAgent,
+  ExploreAgent: _ExploreAgent,
+  PlanAgent: _PlanAgent,
+  BashAgent: _BashAgent,
 
   // Factory
-  createExploreAgent,
-  createPlanAgent,
-  createBashAgent,
+  createExploreAgent: _createExploreAgent,
+  createPlanAgent: _createPlanAgent,
+  createBashAgent: _createBashAgent,
 
   // Registry
   getAgent,
@@ -216,5 +233,5 @@ export default {
   listWitcherAgents,
 
   // Mappings
-  WITCHER_AGENT_MAP
+  WITCHER_AGENT_MAP,
 };

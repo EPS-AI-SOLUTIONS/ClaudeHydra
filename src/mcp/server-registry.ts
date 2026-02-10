@@ -7,7 +7,7 @@
  * @module src/mcp/server-registry
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 // ============================================================================
 // Constants
@@ -22,7 +22,7 @@ export const ServerState = {
   CONNECTING: 'connecting',
   CONNECTED: 'connected',
   RECONNECTING: 'reconnecting',
-  ERROR: 'error'
+  ERROR: 'error',
 };
 
 // ============================================================================
@@ -83,7 +83,7 @@ export class ServerEntry {
       successfulCalls: 0,
       failedCalls: 0,
       totalLatency: 0,
-      errors: []
+      errors: [],
     };
   }
 
@@ -132,7 +132,7 @@ export class ServerEntry {
     this.stats.failedCalls++;
     this.stats.errors.push({
       message: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Keep only last 10 errors
@@ -150,7 +150,7 @@ export class ServerEntry {
       successfulCalls: 0,
       failedCalls: 0,
       totalLatency: 0,
-      errors: []
+      errors: [],
     };
   }
 
@@ -172,13 +172,13 @@ export class ServerEntry {
       stats: {
         ...this.stats,
         averageLatency: this.averageLatency,
-        successRate: this.successRate
+        successRate: this.successRate,
       },
       config: {
         type: this.config.type,
         enabled: this.config.enabled,
-        tags: this.config.tags
-      }
+        tags: this.config.tags,
+      },
     };
   }
 }
@@ -346,9 +346,7 @@ export class ServerRegistry extends EventEmitter {
    * @returns {ServerEntry[]}
    */
   getByTag(tag) {
-    return Array.from(this.servers.values()).filter((entry) =>
-      entry.config.tags?.includes(tag)
-    );
+    return Array.from(this.servers.values()).filter((entry) => entry.config.tags?.includes(tag));
   }
 
   /**
@@ -386,7 +384,7 @@ export class ServerRegistry extends EventEmitter {
     this.emit('serverStateChanged', {
       entry,
       previousState,
-      currentState: state
+      currentState: state,
     });
   }
 
@@ -477,7 +475,7 @@ export class ServerRegistry extends EventEmitter {
           ...tool,
           name: `mcp__${entry.id}__${tool.name}`,
           serverId: entry.id,
-          serverType: entry.config.type
+          serverType: entry.config.type,
         });
       }
     }
@@ -516,7 +514,7 @@ export class ServerRegistry extends EventEmitter {
       disconnected: this.getByState(ServerState.DISCONNECTED).length,
       error: this.getByState(ServerState.ERROR).length,
       totalTools: this.toolToServer.size,
-      servers: servers.map((entry) => entry.toJSON())
+      servers: servers.map((entry) => entry.toJSON()),
     };
   }
 

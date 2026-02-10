@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * Bridge IPC - Bidirectional communication between CLI and GUI
  * Replacement for bridge.ps1
@@ -11,10 +12,10 @@
  *   node scripts/bridge.js -m "Read file.txt" -t file --timeout 60
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,7 +29,7 @@ const REQUEST_TYPES = ['command', 'file', 'network', 'system'];
 const DEFAULT_SETTINGS = {
   poll_interval_ms: 2000,
   max_pending_requests: 10,
-  timeout_ms: 300000
+  timeout_ms: 300000,
 };
 
 // ANSI colors
@@ -36,7 +37,7 @@ const colors = {
   green: (text) => `\x1b[32m${text}\x1b[0m`,
   yellow: (text) => `\x1b[33m${text}\x1b[0m`,
   red: (text) => `\x1b[31m${text}\x1b[0m`,
-  cyan: (text) => `\x1b[36m${text}\x1b[0m`
+  cyan: (text) => `\x1b[36m${text}\x1b[0m`,
 };
 
 /**
@@ -48,7 +49,7 @@ function parseArgs() {
   const result = {
     message: '',
     type: 'command',
-    timeout: 300
+    timeout: 300,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -121,7 +122,7 @@ function getBridgeData() {
   return {
     auto_approve: false,
     requests: [],
-    settings: { ...DEFAULT_SETTINGS }
+    settings: { ...DEFAULT_SETTINGS },
   };
 }
 
@@ -139,7 +140,7 @@ function setBridgeData(data) {
  * @returns {Promise<void>}
  */
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -165,7 +166,7 @@ async function createRequest(message, type, timeout) {
     message,
     type,
     status: 'pending',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   // Add request
@@ -177,7 +178,7 @@ async function createRequest(message, type, timeout) {
 
   // Poll for status
   const startTime = Date.now();
-  const pollInterval = Math.max(1000, (data.settings?.poll_interval_ms || 2000));
+  const pollInterval = Math.max(1000, data.settings?.poll_interval_ms || 2000);
 
   while (true) {
     await sleep(pollInterval);
@@ -188,14 +189,14 @@ async function createRequest(message, type, timeout) {
 
       // Clean up timed out request
       const currentData = getBridgeData();
-      currentData.requests = (currentData.requests || []).filter(r => r.id !== requestId);
+      currentData.requests = (currentData.requests || []).filter((r) => r.id !== requestId);
       setBridgeData(currentData);
 
       return false;
     }
 
     const currentData = getBridgeData();
-    const myRequest = (currentData.requests || []).find(r => r.id === requestId);
+    const myRequest = (currentData.requests || []).find((r) => r.id === requestId);
 
     if (!myRequest) {
       console.log(colors.red('\n[Bridge] Request not found (possibly cleared)'));
@@ -207,7 +208,7 @@ async function createRequest(message, type, timeout) {
         console.log(colors.green('\n[Bridge] APPROVED by GUI'));
 
         // Clean up approved request
-        currentData.requests = currentData.requests.filter(r => r.id !== requestId);
+        currentData.requests = currentData.requests.filter((r) => r.id !== requestId);
         setBridgeData(currentData);
 
         return true;
@@ -216,7 +217,7 @@ async function createRequest(message, type, timeout) {
         console.log(colors.red('\n[Bridge] REJECTED by GUI'));
 
         // Clean up rejected request
-        currentData.requests = currentData.requests.filter(r => r.id !== requestId);
+        currentData.requests = currentData.requests.filter((r) => r.id !== requestId);
         setBridgeData(currentData);
 
         return false;

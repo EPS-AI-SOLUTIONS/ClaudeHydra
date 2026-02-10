@@ -4,9 +4,9 @@
  * @module logger/stack-trace-formatter
  */
 
-import { colorize, stripAnsi, FgColors, Styles, RESET } from './colors.js';
-import { Icons, BoxChars } from './message-formatter.js';
-import path from 'path';
+import path from 'node:path';
+import { FgColors, RESET, Styles } from './colors.js';
+import { BoxChars } from './message-formatter.js';
 
 // ============================================================================
 // Stack Frame Parser
@@ -40,7 +40,7 @@ const STACK_PATTERNS = {
   // Eval: at eval (eval at functionName (filePath:line:col), <anonymous>:line:col)
   v8Eval: /^\s*at\s+eval\s+\(eval\s+at\s+(.+?)\s+\((.+?):(\d+):(\d+)\)/,
   // Simple: at filePath:line:col
-  v8Simple: /^\s*at\s+(.+?):(\d+):(\d+)$/
+  v8Simple: /^\s*at\s+(.+?):(\d+):(\d+)$/,
 };
 
 /**
@@ -56,7 +56,7 @@ export function parseStackTrace(stack) {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    
+
     // Skip error message line
     if (!trimmed.startsWith('at ')) {
       continue;
@@ -92,7 +92,7 @@ export function parseStackFrame(line) {
       isNative: true,
       isNodeModule: false,
       isInternal: false,
-      isApp: false
+      isApp: false,
     };
   }
 
@@ -132,12 +132,10 @@ export function parseStackFrame(line) {
 function createFrame(raw, functionName, filePath, lineNumber, columnNumber) {
   const isNodeModule = filePath ? filePath.includes('node_modules') : false;
   // Check for path separator - support both Unix (/) and Windows (\)
-  const hasPathSeparator = filePath ? (filePath.includes('/') || filePath.includes('\\')) : false;
-  const isInternal = filePath ? (
-    filePath.startsWith('node:') ||
-    filePath.startsWith('internal/') ||
-    !hasPathSeparator
-  ) : false;
+  const hasPathSeparator = filePath ? filePath.includes('/') || filePath.includes('\\') : false;
+  const isInternal = filePath
+    ? filePath.startsWith('node:') || filePath.startsWith('internal/') || !hasPathSeparator
+    : false;
 
   return {
     raw,
@@ -149,7 +147,7 @@ function createFrame(raw, functionName, filePath, lineNumber, columnNumber) {
     isNative: false,
     isNodeModule,
     isInternal,
-    isApp: !isNodeModule && !isInternal
+    isApp: !isNodeModule && !isInternal,
   };
 }
 
@@ -185,7 +183,7 @@ export class StackTraceFormatter {
       maxFrames = 10,
       showFullPaths = false,
       cwd = process.cwd(),
-      highlightApp = true
+      highlightApp = true,
     } = options;
 
     /** @type {boolean} */
@@ -224,7 +222,7 @@ export class StackTraceFormatter {
     const opts = { ...this, ...options };
 
     // Filter frames
-    let filtered = frames.filter(frame => {
+    let filtered = frames.filter((frame) => {
       if (!opts.showNodeModules && frame.isNodeModule) return false;
       if (!opts.showInternals && frame.isInternal) return false;
       return true;
@@ -237,7 +235,7 @@ export class StackTraceFormatter {
 
     // Format each frame
     const lines = [];
-    
+
     // Header
     lines.push(this.formatHeader());
 
@@ -275,7 +273,7 @@ export class StackTraceFormatter {
    * @param {Object} opts - Options
    * @returns {string} Formatted frame
    */
-  formatFrame(frame, index, isLast, opts) {
+  formatFrame(frame, _index, isLast, opts) {
     const box = BoxChars.single;
     const prefix = isLast ? box.corner : box.tee;
     const indent = '  ';
@@ -286,21 +284,19 @@ export class StackTraceFormatter {
 
     // Format location
     const location = this.formatLocation(frame, opts);
-    
+
     // Format function name
     const funcName = this.formatFunctionName(frame, opts);
 
     // Build the line
     const linePrefix = `${indent}${prefix}${box.horizontal}`;
-    
+
     if (!this.useColors) {
       return `${linePrefix} ${funcName} ${location}`;
     }
 
     // Highlight application code
-    const prefixColor = frame.isApp && opts.highlightApp
-      ? FgColors.BRIGHT_CYAN
-      : FgColors.GRAY;
+    const prefixColor = frame.isApp && opts.highlightApp ? FgColors.BRIGHT_CYAN : FgColors.GRAY;
 
     return `${prefixColor}${linePrefix}${RESET} ${funcName} ${location}`;
   }
@@ -315,7 +311,7 @@ export class StackTraceFormatter {
   formatNativeFrame(frame, prefix, indent) {
     const box = BoxChars.single;
     const linePrefix = `${indent}${prefix}${box.horizontal}`;
-    
+
     if (!this.useColors) {
       return `${linePrefix} ${frame.functionName} (native)`;
     }
@@ -331,7 +327,7 @@ export class StackTraceFormatter {
    */
   formatFunctionName(frame, opts) {
     const name = frame.functionName || '<anonymous>';
-    
+
     if (!this.useColors) {
       return name;
     }
@@ -340,7 +336,7 @@ export class StackTraceFormatter {
     if (frame.isApp && opts.highlightApp) {
       return `${FgColors.BRIGHT_WHITE}${Styles.BOLD}${name}${RESET}`;
     }
-    
+
     if (frame.isNodeModule) {
       return `${FgColors.GRAY}${name}${RESET}`;
     }
@@ -375,13 +371,9 @@ export class StackTraceFormatter {
     }
 
     // Color the different parts
-    const pathColor = frame.isApp && opts.highlightApp
-      ? FgColors.CYAN
-      : FgColors.GRAY;
-    
-    const lineColor = frame.isApp && opts.highlightApp
-      ? FgColors.YELLOW
-      : FgColors.GRAY;
+    const pathColor = frame.isApp && opts.highlightApp ? FgColors.CYAN : FgColors.GRAY;
+
+    const lineColor = frame.isApp && opts.highlightApp ? FgColors.YELLOW : FgColors.GRAY;
 
     if (frame.lineNumber) {
       return `${FgColors.GRAY}(${RESET}${pathColor}${displayPath}${RESET}${FgColors.GRAY}:${RESET}${lineColor}${frame.lineNumber}${frame.columnNumber ? `:${frame.columnNumber}` : ''}${RESET}${FgColors.GRAY})${RESET}`;
@@ -398,7 +390,7 @@ export class StackTraceFormatter {
   formatHiddenNotice(count) {
     const box = BoxChars.single;
     const message = `... ${count} more frame${count > 1 ? 's' : ''} hidden`;
-    
+
     if (!this.useColors) {
       return `  ${box.corner}${box.horizontal} ${message}`;
     }
@@ -414,10 +406,10 @@ export class StackTraceFormatter {
   getErrorLocation(error) {
     const stack = error instanceof Error ? error.stack : error;
     const frames = parseStackTrace(stack);
-    
+
     // Find first app frame
-    const appFrame = frames.find(f => f.isApp) || frames[0];
-    
+    const appFrame = frames.find((f) => f.isApp) || frames[0];
+
     if (!appFrame || !appFrame.filePath) {
       return '';
     }
@@ -427,7 +419,7 @@ export class StackTraceFormatter {
       : appFrame.fileName || appFrame.filePath;
 
     const location = `${relativePath}:${appFrame.lineNumber || '?'}`;
-    
+
     if (!this.useColors) {
       return location;
     }
@@ -492,5 +484,5 @@ export default {
   getStackFormatter,
   resetStackFormatter,
   formatStackTrace,
-  getErrorLocation
+  getErrorLocation,
 };

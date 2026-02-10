@@ -7,7 +7,7 @@
  * @module src/mcp/transports/http
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 // ============================================================================
 // Constants
@@ -21,7 +21,7 @@ export const TransportState = {
   IDLE: 'idle',
   READY: 'ready',
   CLOSED: 'closed',
-  ERROR: 'error'
+  ERROR: 'error',
 };
 
 // ============================================================================
@@ -54,15 +54,15 @@ export class HttpTransport extends EventEmitter {
       url: config.url,
       headers: {
         'Content-Type': 'application/json',
-        ...config.headers
+        ...config.headers,
       },
       timeout: config.timeout || 30000,
       retry: {
         maxRetries: config.retry?.maxRetries ?? 3,
         baseDelay: config.retry?.baseDelay ?? 1000,
         maxDelay: config.retry?.maxDelay ?? 10000,
-        backoffMultiplier: config.retry?.backoffMultiplier ?? 2
-      }
+        backoffMultiplier: config.retry?.backoffMultiplier ?? 2,
+      },
     };
 
     /** @type {TransportState} */
@@ -92,7 +92,7 @@ export class HttpTransport extends EventEmitter {
       const response = await fetch(this.config.url, {
         method: 'HEAD',
         headers: this.config.headers,
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(5000),
       });
 
       if (!response.ok && response.status !== 404) {
@@ -101,7 +101,7 @@ export class HttpTransport extends EventEmitter {
 
       this.state = TransportState.READY;
       this.emit('ready');
-    } catch (error) {
+    } catch (_error) {
       // Even if HEAD fails, server might still work for POST
       // Mark as ready and let actual requests determine availability
       this.state = TransportState.READY;
@@ -129,7 +129,7 @@ export class HttpTransport extends EventEmitter {
       jsonrpc: '2.0',
       method,
       params,
-      id
+      id,
     };
 
     return this.sendWithRetry(message, requestTimeout);
@@ -149,7 +149,7 @@ export class HttpTransport extends EventEmitter {
         method: 'POST',
         headers: this.config.headers,
         body: JSON.stringify(message),
-        signal: AbortSignal.timeout(timeout)
+        signal: AbortSignal.timeout(timeout),
       });
 
       if (!response.ok) {
@@ -167,8 +167,8 @@ export class HttpTransport extends EventEmitter {
       // Check if we should retry
       if (attempt < this.config.retry.maxRetries && this.isRetryableError(error)) {
         const delay = Math.min(
-          this.config.retry.baseDelay * Math.pow(this.config.retry.backoffMultiplier, attempt),
-          this.config.retry.maxDelay
+          this.config.retry.baseDelay * this.config.retry.backoffMultiplier ** attempt,
+          this.config.retry.maxDelay,
         );
 
         await this.sleep(delay);
@@ -194,7 +194,7 @@ export class HttpTransport extends EventEmitter {
     const message = {
       jsonrpc: '2.0',
       method,
-      params
+      params,
     };
 
     // Fire and forget - don't await response
@@ -202,7 +202,7 @@ export class HttpTransport extends EventEmitter {
       method: 'POST',
       headers: this.config.headers,
       body: JSON.stringify(message),
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(5000),
     }).catch((error) => {
       this.emit('error', error);
     });
@@ -289,7 +289,7 @@ export class HttpTransport extends EventEmitter {
       type: 'http',
       url: this.config.url,
       state: this.state,
-      requestCount: this.requestId
+      requestCount: this.requestId,
     };
   }
 }
@@ -325,7 +325,7 @@ export function createHttpTransport(config) {
     url: config.url,
     headers: config.headers,
     timeout: config.timeout,
-    retry: config.retry
+    retry: config.retry,
   });
 }
 

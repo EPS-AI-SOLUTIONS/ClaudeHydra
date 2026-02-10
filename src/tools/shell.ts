@@ -4,13 +4,13 @@
  * @module tools/shell
  */
 
-import { spawn } from 'child_process';
-import path from 'path';
-import { BaseTool, ToolResult } from './base-tool.js';
-import { shellCommandSchema, assessCommandRisk, DANGEROUS_PATTERNS, BLOCKED_COMMANDS } from '../schemas/tools.js';
-import { ValidationError, SecurityError, TimeoutError } from '../errors/AppError.js';
+import { spawn } from 'node:child_process';
+import path from 'node:path';
+import { SecurityError, ValidationError } from '../errors/AppError.js';
+import { assessCommandRisk, shellCommandSchema } from '../schemas/tools.js';
 import AuditLogger from '../security/audit-logger.js';
 import { sanitize as sanitizeString } from '../utils/string.js';
+import { BaseTool } from './base-tool.js';
 
 /**
  * Command sanitizer - validates and sanitizes shell commands
@@ -18,10 +18,19 @@ import { sanitize as sanitizeString } from '../utils/string.js';
 class CommandSanitizer {
   constructor(options = {}) {
     this.maxCommandLength = options.maxCommandLength || 10000;
-    this.allowedEnvVars = options.allowedEnvVars || new Set([
-      'PATH', 'HOME', 'USER', 'SHELL', 'TERM', 'LANG', 'NODE_ENV',
-      'npm_config_registry', 'npm_lifecycle_event'
-    ]);
+    this.allowedEnvVars =
+      options.allowedEnvVars ||
+      new Set([
+        'PATH',
+        'HOME',
+        'USER',
+        'SHELL',
+        'TERM',
+        'LANG',
+        'NODE_ENV',
+        'npm_config_registry',
+        'npm_lifecycle_event',
+      ]);
   }
 
   /**
@@ -32,7 +41,9 @@ class CommandSanitizer {
   sanitize(command) {
     // Check length
     if (command.length > this.maxCommandLength) {
-      throw new ValidationError(`Command exceeds maximum length of ${this.maxCommandLength} characters`);
+      throw new ValidationError(
+        `Command exceeds maximum length of ${this.maxCommandLength} characters`,
+      );
     }
 
     // Assess risk
@@ -40,7 +51,7 @@ class CommandSanitizer {
 
     if (!riskAssessment.safe && riskAssessment.severity === 'critical') {
       throw new SecurityError(
-        `Command blocked for security reasons: ${riskAssessment.risks.join(', ')}`
+        `Command blocked for security reasons: ${riskAssessment.risks.join(', ')}`,
       );
     }
 
@@ -50,7 +61,7 @@ class CommandSanitizer {
     return {
       command: sanitized,
       risks: riskAssessment.risks,
-      severity: riskAssessment.severity
+      severity: riskAssessment.severity,
     };
   }
 
@@ -86,17 +97,17 @@ class CommandSanitizer {
    */
   isDangerousEnvVar(key, value) {
     const dangerousPatterns = [
-      /^LD_/i,           // Library loading
-      /^DYLD_/i,         // macOS library loading
-      /^PATH$/i,         // Don't allow PATH override from user
-      /PRELOAD/i,        // Preloading
-      /^IFS$/i,          // Input field separator
-      /^CDPATH$/i,       // CD path manipulation
-      /^BASH_ENV$/i,     // Bash startup
-      /^ENV$/i,          // Shell startup
+      /^LD_/i, // Library loading
+      /^DYLD_/i, // macOS library loading
+      /^PATH$/i, // Don't allow PATH override from user
+      /PRELOAD/i, // Preloading
+      /^IFS$/i, // Input field separator
+      /^CDPATH$/i, // CD path manipulation
+      /^BASH_ENV$/i, // Bash startup
+      /^ENV$/i, // Shell startup
     ];
 
-    if (dangerousPatterns.some(p => p.test(key))) {
+    if (dangerousPatterns.some((p) => p.test(key))) {
       return true;
     }
 
@@ -118,7 +129,7 @@ class RunShellTool extends BaseTool {
       name: 'run_shell_command',
       description: 'Execute a shell command with security controls and timeout',
       inputSchema: shellCommandSchema,
-      timeoutMs: 60000
+      timeoutMs: 60000,
     });
 
     this.sanitizer = new CommandSanitizer();
@@ -134,7 +145,7 @@ class RunShellTool extends BaseTool {
       cwd,
       risks,
       severity,
-      requestedTimeout: timeout
+      requestedTimeout: timeout,
     });
 
     // Warn about risky commands but allow them (except critical)
@@ -143,9 +154,7 @@ class RunShellTool extends BaseTool {
     }
 
     // Resolve working directory safely
-    const workingDir = cwd
-      ? path.resolve(process.cwd(), cwd)
-      : process.cwd();
+    const workingDir = cwd ? path.resolve(process.cwd(), cwd) : process.cwd();
 
     // Verify working directory is within project
     if (!workingDir.startsWith(process.cwd())) {
@@ -164,14 +173,14 @@ class RunShellTool extends BaseTool {
       timeout: timeout || this.timeoutMs,
       env: filteredEnv,
       shell: shellConfig,
-      captureStderr
+      captureStderr,
     });
 
     return {
       ...result,
       command: sanitizedCommand,
       risks: risks.length > 0 ? risks : undefined,
-      severity: severity !== 'low' ? severity : undefined
+      severity: severity !== 'low' ? severity : undefined,
     };
   }
 
@@ -216,7 +225,7 @@ class RunShellTool extends BaseTool {
         env: { ...process.env, ...env },
         shell,
         windowsHide: true,
-        timeout: 0 // We handle timeout ourselves
+        timeout: 0, // We handle timeout ourselves
       });
 
       // Store reference for potential cleanup
@@ -240,8 +249,9 @@ class RunShellTool extends BaseTool {
       child.stdout.on('data', (data) => {
         stdout += data.toString();
         // Prevent memory issues with very large output
-        if (stdout.length > 5 * 1024 * 1024) { // 5MB limit
-          stdout = stdout.substring(0, 5 * 1024 * 1024) + '\n...[OUTPUT TRUNCATED]';
+        if (stdout.length > 5 * 1024 * 1024) {
+          // 5MB limit
+          stdout = `${stdout.substring(0, 5 * 1024 * 1024)}\n...[OUTPUT TRUNCATED]`;
           child.stdout.removeAllListeners('data');
         }
       });
@@ -249,8 +259,9 @@ class RunShellTool extends BaseTool {
       if (captureStderr) {
         child.stderr.on('data', (data) => {
           stderr += data.toString();
-          if (stderr.length > 1024 * 1024) { // 1MB limit for stderr
-            stderr = stderr.substring(0, 1024 * 1024) + '\n...[STDERR TRUNCATED]';
+          if (stderr.length > 1024 * 1024) {
+            // 1MB limit for stderr
+            stderr = `${stderr.substring(0, 1024 * 1024)}\n...[STDERR TRUNCATED]`;
             child.stderr.removeAllListeners('data');
           }
         });
@@ -278,7 +289,7 @@ class RunShellTool extends BaseTool {
             stderr: stderr.trim(),
             signal: signal || 'SIGTERM',
             timedOut: true,
-            durationMs: duration
+            durationMs: duration,
           });
         } else {
           resolve({
@@ -287,7 +298,7 @@ class RunShellTool extends BaseTool {
             stderr: stderr.trim(),
             signal: signal || null,
             timedOut: false,
-            durationMs: duration
+            durationMs: duration,
           });
         }
       });
@@ -298,7 +309,7 @@ class RunShellTool extends BaseTool {
    * Cleanup any active processes (called on shutdown)
    */
   cleanup() {
-    for (const [id, child] of this.activeProcesses) {
+    for (const [_id, child] of this.activeProcesses) {
       try {
         child.kill('SIGTERM');
       } catch {
@@ -318,13 +329,13 @@ class ShellSessionTool extends BaseTool {
       name: 'shell_session',
       description: 'Manage interactive shell sessions',
       inputSchema: shellCommandSchema,
-      timeoutMs: 120000
+      timeoutMs: 120000,
     });
 
     this.sessions = new Map();
   }
 
-  async run(input) {
+  async run(_input) {
     // Placeholder for interactive session support
     // This would maintain persistent shell sessions
     throw new Error('Interactive shell sessions not yet implemented');
@@ -338,7 +349,7 @@ const runShellTool = new RunShellTool();
  * Export tools in legacy format for backward compatibility
  */
 export const tools = {
-  runShell: runShellTool
+  runShell: runShellTool,
 };
 
 // Legacy export format for existing tool registry
@@ -347,8 +358,8 @@ export default [
     name: runShellTool.name,
     description: runShellTool.description,
     inputSchema: runShellTool.getJsonSchema(),
-    execute: (input) => runShellTool.execute(input)
-  }
+    execute: (input) => runShellTool.execute(input),
+  },
 ];
 
 // Named exports

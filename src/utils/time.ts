@@ -92,7 +92,7 @@ export function formatDuration(ms, long = false) {
  * @returns {Promise<void>}
  */
 export function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -116,10 +116,7 @@ export function timeout(ms, message = 'Operation timed out') {
  * @template T
  */
 export function withTimeout(promise, ms, message) {
-  return Promise.race([
-    promise,
-    timeout(ms, message)
-  ]);
+  return Promise.race([promise, timeout(ms, message)]);
 }
 
 /**
@@ -193,7 +190,7 @@ export function parseDuration(duration) {
     s: 1000,
     m: 60 * 1000,
     h: 60 * 60 * 1000,
-    d: 24 * 60 * 60 * 1000
+    d: 24 * 60 * 60 * 1000,
   };
 
   return value * multipliers[unit];
@@ -211,5 +208,5 @@ export default {
   throttle,
   now,
   nowSeconds,
-  parseDuration
+  parseDuration,
 };

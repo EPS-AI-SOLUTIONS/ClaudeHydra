@@ -22,21 +22,19 @@ const SUGGESTIONS_BY_CODE = {
       'Verify your API key is correct and not expired',
       'Check if your API key has the necessary permissions',
       'Regenerate your API key from the provider dashboard',
-      'Ensure the API key environment variable is properly set'
+      'Ensure the API key environment variable is properly set',
     ],
-    links: [
-      'https://ai.google.dev/docs/setup - Google AI Setup Guide'
-    ]
+    links: ['https://ai.google.dev/docs/setup - Google AI Setup Guide'],
   },
 
   [ErrorCode.INVALID_API_KEY]: {
     title: 'Invalid API Key',
     suggestions: [
       'Double-check the API key format (should start with correct prefix)',
-      'Verify you\'re using the key for the correct service',
+      "Verify you're using the key for the correct service",
       'Check if there are any extra spaces or characters',
-      'Try copying the API key again from the provider dashboard'
-    ]
+      'Try copying the API key again from the provider dashboard',
+    ],
   },
 
   [ErrorCode.TOKEN_EXPIRED]: {
@@ -45,8 +43,8 @@ const SUGGESTIONS_BY_CODE = {
       'Refresh your authentication token',
       'Re-authenticate with the service',
       'Check if your session has timed out',
-      'Generate a new access token'
-    ]
+      'Generate a new access token',
+    ],
   },
 
   // Authorization errors
@@ -56,8 +54,8 @@ const SUGGESTIONS_BY_CODE = {
       'Verify you have the required permissions',
       'Check if the resource requires elevated access',
       'Contact your administrator for access',
-      'Review the API\'s permission requirements'
-    ]
+      "Review the API's permission requirements",
+    ],
   },
 
   // Rate limiting
@@ -67,8 +65,8 @@ const SUGGESTIONS_BY_CODE = {
       'Wait before making more requests (check retry-after header)',
       'Implement exponential backoff in your requests',
       'Consider upgrading your API plan for higher limits',
-      'Batch multiple operations into fewer requests'
-    ]
+      'Batch multiple operations into fewer requests',
+    ],
   },
 
   [ErrorCode.QUOTA_EXCEEDED]: {
@@ -77,8 +75,8 @@ const SUGGESTIONS_BY_CODE = {
       'Check your current quota usage in the provider dashboard',
       'Wait for the quota reset period',
       'Request a quota increase from the provider',
-      'Optimize your usage to stay within limits'
-    ]
+      'Optimize your usage to stay within limits',
+    ],
   },
 
   // Network errors
@@ -88,8 +86,8 @@ const SUGGESTIONS_BY_CODE = {
       'Check your internet connection',
       'Verify the service endpoint is correct',
       'Try using a VPN if the service might be blocked',
-      'Check if a proxy is required for your network'
-    ]
+      'Check if a proxy is required for your network',
+    ],
   },
 
   [ErrorCode.TIMEOUT_ERROR]: {
@@ -98,8 +96,8 @@ const SUGGESTIONS_BY_CODE = {
       'Increase the timeout duration for slower operations',
       'Check if the service is experiencing high load',
       'Try breaking large requests into smaller chunks',
-      'Verify network stability and latency'
-    ]
+      'Verify network stability and latency',
+    ],
   },
 
   [ErrorCode.CONNECTION_REFUSED]: {
@@ -108,8 +106,8 @@ const SUGGESTIONS_BY_CODE = {
       'Verify the service URL and port are correct',
       'Check if the service is running and accessible',
       'Ensure no firewall is blocking the connection',
-      'Try pinging the server to verify connectivity'
-    ]
+      'Try pinging the server to verify connectivity',
+    ],
   },
 
   // Configuration errors
@@ -119,8 +117,8 @@ const SUGGESTIONS_BY_CODE = {
       'Check your configuration file for syntax errors',
       'Verify all required configuration values are set',
       'Compare with the example configuration',
-      'Run the configuration validator if available'
-    ]
+      'Run the configuration validator if available',
+    ],
   },
 
   [ErrorCode.MISSING_CONFIG]: {
@@ -129,8 +127,8 @@ const SUGGESTIONS_BY_CODE = {
       'Create the required configuration file',
       'Set the missing environment variables',
       'Run the setup wizard to generate configuration',
-      'Check the documentation for required settings'
-    ]
+      'Check the documentation for required settings',
+    ],
   },
 
   [ErrorCode.INVALID_CONFIG]: {
@@ -139,8 +137,8 @@ const SUGGESTIONS_BY_CODE = {
       'Validate the configuration value format',
       'Check for typos in configuration keys',
       'Ensure values match expected types (string, number, boolean)',
-      'Review the configuration schema documentation'
-    ]
+      'Review the configuration schema documentation',
+    ],
   },
 
   // File system errors
@@ -150,8 +148,8 @@ const SUGGESTIONS_BY_CODE = {
       'Verify the file path is correct (check for typos)',
       'Ensure the file exists at the specified location',
       'Check if the path is relative vs absolute',
-      'Verify you have read permissions for the directory'
-    ]
+      'Verify you have read permissions for the directory',
+    ],
   },
 
   [ErrorCode.FILE_READ_ERROR]: {
@@ -160,8 +158,8 @@ const SUGGESTIONS_BY_CODE = {
       'Check file permissions (run chmod if needed)',
       'Verify the file is not corrupted',
       'Ensure the file is not locked by another process',
-      'Check available disk space'
-    ]
+      'Check available disk space',
+    ],
   },
 
   [ErrorCode.FILE_WRITE_ERROR]: {
@@ -170,8 +168,8 @@ const SUGGESTIONS_BY_CODE = {
       'Check write permissions for the directory',
       'Ensure there is sufficient disk space',
       'Verify the file is not read-only',
-      'Check if the file is locked by another process'
-    ]
+      'Check if the file is locked by another process',
+    ],
   },
 
   [ErrorCode.PERMISSION_DENIED]: {
@@ -180,8 +178,8 @@ const SUGGESTIONS_BY_CODE = {
       'Check file/directory permissions (ls -la)',
       'Try running with elevated privileges if appropriate',
       'Verify ownership of the file/directory',
-      'Check if SELinux or AppArmor is blocking access'
-    ]
+      'Check if SELinux or AppArmor is blocking access',
+    ],
   },
 
   // Validation errors
@@ -191,8 +189,8 @@ const SUGGESTIONS_BY_CODE = {
       'Review the input data format and types',
       'Check for required fields that may be missing',
       'Verify string lengths and numeric ranges',
-      'Look at the specific validation error messages'
-    ]
+      'Look at the specific validation error messages',
+    ],
   },
 
   [ErrorCode.SCHEMA_VALIDATION_FAILED]: {
@@ -201,8 +199,8 @@ const SUGGESTIONS_BY_CODE = {
       'Compare your input against the expected schema',
       'Check for extra or misspelled field names',
       'Ensure all required fields are present',
-      'Verify data types match the schema definition'
-    ]
+      'Verify data types match the schema definition',
+    ],
   },
 
   [ErrorCode.INVALID_INPUT]: {
@@ -210,9 +208,9 @@ const SUGGESTIONS_BY_CODE = {
     suggestions: [
       'Check the input format requirements',
       'Verify special characters are properly escaped',
-      'Ensure input doesn\'t exceed size limits',
-      'Review the API documentation for input specs'
-    ]
+      "Ensure input doesn't exceed size limits",
+      'Review the API documentation for input specs',
+    ],
   },
 
   // API errors
@@ -220,10 +218,10 @@ const SUGGESTIONS_BY_CODE = {
     title: 'API Error',
     suggestions: [
       'Check the API response for detailed error message',
-      'Verify you\'re using the correct API version',
+      "Verify you're using the correct API version",
       'Review the API documentation for the endpoint',
-      'Check the API status page for outages'
-    ]
+      'Check the API status page for outages',
+    ],
   },
 
   [ErrorCode.SERVICE_UNAVAILABLE]: {
@@ -232,8 +230,8 @@ const SUGGESTIONS_BY_CODE = {
       'Wait and retry after a short delay',
       'Check the service status page',
       'Try an alternative endpoint if available',
-      'Implement retry logic with exponential backoff'
-    ]
+      'Implement retry logic with exponential backoff',
+    ],
   },
 
   // Tool errors
@@ -243,18 +241,18 @@ const SUGGESTIONS_BY_CODE = {
       'Check the tool name for typos',
       'Verify the tool is registered in the tool registry',
       'Ensure the tool module is properly loaded',
-      'List available tools to see what\'s registered'
-    ]
+      "List available tools to see what's registered",
+    ],
   },
 
   [ErrorCode.TOOL_EXECUTION_FAILED]: {
     title: 'Tool Execution Failed',
     suggestions: [
       'Check the tool input parameters',
-      'Review the tool\'s error message for details',
+      "Review the tool's error message for details",
       'Verify external dependencies are available',
-      'Check logs for more detailed error information'
-    ]
+      'Check logs for more detailed error information',
+    ],
   },
 
   // Swarm errors
@@ -264,19 +262,19 @@ const SUGGESTIONS_BY_CODE = {
       'Check individual agent status and logs',
       'Verify communication between agents',
       'Review the swarm configuration',
-      'Check for resource constraints (memory, connections)'
-    ]
+      'Check for resource constraints (memory, connections)',
+    ],
   },
 
   [ErrorCode.AGENT_ERROR]: {
     title: 'Agent Error',
     suggestions: [
-      'Review the agent\'s configuration',
-      'Check if the agent\'s dependencies are available',
+      "Review the agent's configuration",
+      "Check if the agent's dependencies are available",
       'Verify the agent has necessary permissions',
-      'Look at the agent\'s specific error details'
-    ]
-  }
+      "Look at the agent's specific error details",
+    ],
+  },
 };
 
 /**
@@ -289,105 +287,105 @@ const PATTERN_SUGGESTIONS = [
     suggestions: [
       'The server is not accepting connections',
       'Check if the server process is running',
-      'Verify the port number is correct'
-    ]
+      'Verify the port number is correct',
+    ],
   },
   {
     pattern: /ENOTFOUND|getaddrinfo/i,
     suggestions: [
       'The hostname could not be resolved',
       'Check your DNS settings',
-      'Verify the hostname is spelled correctly'
-    ]
+      'Verify the hostname is spelled correctly',
+    ],
   },
   {
     pattern: /ETIMEDOUT/i,
     suggestions: [
       'The connection attempt timed out',
       'Check network connectivity',
-      'The server might be overloaded or unreachable'
-    ]
+      'The server might be overloaded or unreachable',
+    ],
   },
   {
     pattern: /ENOENT/i,
     suggestions: [
       'The file or directory does not exist',
       'Check if the path is correct',
-      'Verify the working directory'
-    ]
+      'Verify the working directory',
+    ],
   },
   {
     pattern: /EACCES|EPERM/i,
     suggestions: [
       'Permission denied for this operation',
       'Check file/directory permissions',
-      'You may need elevated privileges'
-    ]
+      'You may need elevated privileges',
+    ],
   },
   {
     pattern: /ENOMEM|out of memory/i,
     suggestions: [
       'The system is running low on memory',
       'Close other applications to free memory',
-      'Consider processing data in smaller batches'
-    ]
+      'Consider processing data in smaller batches',
+    ],
   },
   {
     pattern: /EMFILE|too many open files/i,
     suggestions: [
       'Too many file descriptors are open',
       'Increase the ulimit for open files',
-      'Close file handles when done'
-    ]
+      'Close file handles when done',
+    ],
   },
   {
     pattern: /JSON.*parse|Unexpected token/i,
     suggestions: [
       'The JSON data is malformed',
       'Check for trailing commas or missing brackets',
-      'Validate the JSON using a linter'
-    ]
+      'Validate the JSON using a linter',
+    ],
   },
   {
     pattern: /undefined is not a function|is not a function/i,
     suggestions: [
-      'Calling a function that doesn\'t exist',
+      "Calling a function that doesn't exist",
       'Check if the module is properly imported',
-      'Verify the object has the expected method'
-    ]
+      'Verify the object has the expected method',
+    ],
   },
   {
     pattern: /Cannot read propert|undefined|null/i,
     suggestions: [
       'Accessing a property on undefined/null',
       'Add null checks before accessing properties',
-      'Verify the data structure is as expected'
-    ]
+      'Verify the data structure is as expected',
+    ],
   },
   {
     pattern: /Module not found|Cannot find module/i,
     suggestions: [
       'The required module is not installed',
       'Run npm install to install dependencies',
-      'Check the import path is correct'
-    ]
+      'Check the import path is correct',
+    ],
   },
   {
     pattern: /CORS|Access-Control-Allow/i,
     suggestions: [
       'Cross-Origin Request blocked by browser',
       'Configure CORS on the server',
-      'Use a proxy for development'
-    ]
+      'Use a proxy for development',
+    ],
   },
   {
     pattern: /SSL|certificate|TLS/i,
     suggestions: [
       'SSL/TLS certificate issue',
       'Check if the certificate is valid and not expired',
-      'Verify the certificate chain is complete'
-    ]
-  }
+      'Verify the certificate chain is complete',
+    ],
+  },
 ];
 
 // ============================================================================
@@ -418,21 +416,17 @@ const PATTERN_SUGGESTIONS = [
  * @returns {SuggestionResult} Suggestions result
  */
 export function generateSuggestions(error, options = {}) {
-  const {
-    includeLinks = true,
-    maxSuggestions = 5,
-    includeGeneric = true
-  } = options;
+  const { includeLinks = true, maxSuggestions = 5, includeGeneric = true } = options;
 
   // Try to get error code
-  const errorCode = error.code || (error.context && error.context.code);
+  const errorCode = error.code || error.context?.code;
   const errorMessage = error.message || String(error);
 
   let result = {
     title: 'Possible Solutions',
     suggestions: [],
     links: [],
-    source: 'generic'
+    source: 'generic',
   };
 
   // 1. Try code-based suggestions first
@@ -441,8 +435,8 @@ export function generateSuggestions(error, options = {}) {
     result = {
       title: codeSuggestions.title || 'Possible Solutions',
       suggestions: [...codeSuggestions.suggestions],
-      links: includeLinks ? (codeSuggestions.links || []) : [],
-      source: 'code'
+      links: includeLinks ? codeSuggestions.links || [] : [],
+      source: 'code',
     };
   }
 
@@ -501,7 +495,7 @@ function getGenericSuggestions(error) {
     'Check the error message for specific details',
     'Review the stack trace to identify the error location',
     'Search for the error message online for solutions',
-    'Check the application logs for more context'
+    'Check the application logs for more context',
   ];
 
   // Add context-specific generic suggestions
@@ -589,8 +583,8 @@ export function generateDiagnostics(error) {
       code: errorCode,
       statusCode,
       timestamp: error.timestamp || new Date().toISOString(),
-      isOperational: error.isOperational !== false
-    }
+      isOperational: error.isOperational !== false,
+    },
   };
 }
 
@@ -606,7 +600,7 @@ export function getTroubleshootingSteps(error) {
 
   // Step 1: Understand the error
   steps.push(`1. Error Type: ${diagnostics.errorType}`);
-  
+
   // Step 2: Check affected systems
   if (diagnostics.affectedSystems.length > 0) {
     steps.push(`2. Affected Systems: ${diagnostics.affectedSystems.join(', ')}`);
@@ -654,7 +648,7 @@ export function getTitleForCode(code) {
  */
 export function getLinksForCode(code) {
   const entry = SUGGESTIONS_BY_CODE[code];
-  return entry ? (entry.links || []) : [];
+  return entry ? entry.links || [] : [];
 }
 
 // ============================================================================
@@ -669,5 +663,5 @@ export default {
   getTitleForCode,
   getLinksForCode,
   SUGGESTIONS_BY_CODE,
-  PATTERN_SUGGESTIONS
+  PATTERN_SUGGESTIONS,
 };

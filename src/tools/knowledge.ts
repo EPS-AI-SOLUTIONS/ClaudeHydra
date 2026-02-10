@@ -5,9 +5,13 @@
  */
 
 import { z } from 'zod';
-import { BaseTool, ToolResult } from './base-tool.js';
-import { knowledgeAddSchema, knowledgeSearchSchema, knowledgeDeleteSchema } from '../schemas/tools.js';
-import { ValidationError, NotFoundError } from '../errors/AppError.js';
+import { NotFoundError } from '../errors/AppError.js';
+import {
+  knowledgeAddSchema,
+  knowledgeDeleteSchema,
+  knowledgeSearchSchema,
+} from '../schemas/tools.js';
+import { BaseTool } from './base-tool.js';
 
 /**
  * @typedef {Object} VectorStoreInterface
@@ -86,17 +90,18 @@ class SearchResultFormatter {
       const formatted = {
         rank: index + 1,
         score: Math.round(result.score * 1000) / 1000,
-        content: result.content.length > truncateContent
-          ? result.content.substring(0, truncateContent) + '...'
-          : result.content,
-        id: result.id
+        content:
+          result.content.length > truncateContent
+            ? `${result.content.substring(0, truncateContent)}...`
+            : result.content,
+        id: result.id,
       };
 
       if (includeMetadata && result.metadata) {
         formatted.metadata = {
           tags: result.metadata.tags,
           createdAt: result.metadata.createdAt,
-          ...result.metadata
+          ...result.metadata,
         };
       }
 
@@ -110,9 +115,9 @@ class SearchResultFormatter {
    * @returns {string} Plain text representation
    */
   static toText(results) {
-    return results.map(r =>
-      `[#${r.rank} Score: ${r.score.toFixed(3)}]\n${r.content}`
-    ).join('\n\n---\n\n');
+    return results
+      .map((r) => `[#${r.rank} Score: ${r.score.toFixed(3)}]\n${r.content}`)
+      .join('\n\n---\n\n');
   }
 }
 
@@ -127,7 +132,7 @@ class KnowledgeAddTool extends BaseTool {
       name: 'knowledge_add',
       description: 'Add a text document to the semantic vector memory for later retrieval',
       inputSchema: knowledgeAddSchema,
-      timeoutMs: 30000
+      timeoutMs: 30000,
     });
   }
 
@@ -148,7 +153,7 @@ class KnowledgeAddTool extends BaseTool {
       createdAt: new Date().toISOString(),
       contentLength: content.length,
       wordCount: content.split(/\s+/).length,
-      ...metadata
+      ...metadata,
     };
 
     // Add to vector store
@@ -159,7 +164,7 @@ class KnowledgeAddTool extends BaseTool {
       stored: true,
       contentLength: content.length,
       tags: docMetadata.tags,
-      createdAt: docMetadata.createdAt
+      createdAt: docMetadata.createdAt,
     };
   }
 }
@@ -175,7 +180,7 @@ class KnowledgeSearchTool extends BaseTool {
       name: 'knowledge_search',
       description: 'Semantically search the vector memory using natural language queries',
       inputSchema: knowledgeSearchSchema,
-      timeoutMs: 30000
+      timeoutMs: 30000,
     });
 
     // Simple in-memory cache for recent searches
@@ -206,7 +211,7 @@ class KnowledgeSearchTool extends BaseTool {
       this.logger.debug('Returning cached search results', { query });
       return {
         ...cached,
-        fromCache: true
+        fromCache: true,
       };
     }
 
@@ -214,13 +219,13 @@ class KnowledgeSearchTool extends BaseTool {
     const rawResults = await store.search(query, limit);
 
     // Filter by threshold
-    let filteredResults = rawResults.filter(r => r.score >= threshold);
+    let filteredResults = rawResults.filter((r) => r.score >= threshold);
 
     // Filter by tags if provided
     if (tags && tags.length > 0) {
-      filteredResults = filteredResults.filter(r => {
+      filteredResults = filteredResults.filter((r) => {
         const docTags = r.metadata?.tags || [];
-        return tags.some(tag => docTags.includes(tag));
+        return tags.some((tag) => docTags.includes(tag));
       });
     }
 
@@ -231,7 +236,7 @@ class KnowledgeSearchTool extends BaseTool {
       query,
       resultCount: formattedResults.length,
       results: formattedResults,
-      searchParams: { limit, threshold, tags }
+      searchParams: { limit, threshold, tags },
     };
 
     // Cache results
@@ -287,7 +292,7 @@ class KnowledgeSearchTool extends BaseTool {
 
     this.cache.set(key, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -311,7 +316,7 @@ class KnowledgeDeleteTool extends BaseTool {
       name: 'knowledge_delete',
       description: 'Delete a document from vector memory by ID',
       inputSchema: knowledgeDeleteSchema,
-      timeoutMs: 10000
+      timeoutMs: 10000,
     });
   }
 
@@ -332,12 +337,12 @@ class KnowledgeDeleteTool extends BaseTool {
     }
 
     // Delete document
-    await store.deleteDocument?.(id) || await store.delete?.(id);
+    (await store.deleteDocument?.(id)) || (await store.delete?.(id));
 
     return {
       id,
       deleted: true,
-      deletedAt: new Date().toISOString()
+      deletedAt: new Date().toISOString(),
     };
   }
 }
@@ -353,7 +358,7 @@ class KnowledgeStatsTool extends BaseTool {
       name: 'knowledge_stats',
       description: 'Get statistics about the vector memory store',
       inputSchema: z.object({}), // No input needed
-      timeoutMs: 10000
+      timeoutMs: 10000,
     });
   }
 
@@ -365,13 +370,13 @@ class KnowledgeStatsTool extends BaseTool {
     const store = await getVectorStore();
 
     // Get stats if available
-    const stats = await store.getStats?.() || {};
+    const stats = (await store.getStats?.()) || {};
 
     return {
       documentCount: stats.documentCount || 'unknown',
       totalSize: stats.totalSize || 'unknown',
       lastUpdated: stats.lastUpdated || 'unknown',
-      indexStatus: stats.indexStatus || 'unknown'
+      indexStatus: stats.indexStatus || 'unknown',
     };
   }
 }
@@ -387,7 +392,7 @@ const knowledgeDeleteTool = new KnowledgeDeleteTool();
 export const tools = {
   knowledgeAdd: knowledgeAddTool,
   knowledgeSearch: knowledgeSearchTool,
-  knowledgeDelete: knowledgeDeleteTool
+  knowledgeDelete: knowledgeDeleteTool,
 };
 
 // Legacy export format for existing tool registry
@@ -396,20 +401,15 @@ export default [
     name: knowledgeAddTool.name,
     description: knowledgeAddTool.description,
     inputSchema: knowledgeAddTool.getJsonSchema(),
-    execute: (input) => knowledgeAddTool.execute(input)
+    execute: (input) => knowledgeAddTool.execute(input),
   },
   {
     name: knowledgeSearchTool.name,
     description: knowledgeSearchTool.description,
     inputSchema: knowledgeSearchTool.getJsonSchema(),
-    execute: (input) => knowledgeSearchTool.execute(input)
-  }
+    execute: (input) => knowledgeSearchTool.execute(input),
+  },
 ];
 
 // Named exports
-export {
-  KnowledgeAddTool,
-  KnowledgeSearchTool,
-  KnowledgeDeleteTool,
-  SearchResultFormatter
-};
+export { KnowledgeAddTool, KnowledgeSearchTool, KnowledgeDeleteTool, SearchResultFormatter };

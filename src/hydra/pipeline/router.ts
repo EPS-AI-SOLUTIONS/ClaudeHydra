@@ -4,7 +4,7 @@
  */
 
 import { getLlamaCppBridge } from '../providers/llamacpp-bridge.js';
-import { getModelForTask, TASK_MODEL_MAP } from '../providers/llamacpp-models.js';
+import { getModelForTask } from '../providers/llamacpp-models.js';
 
 // Task categories and their optimal providers
 const TASK_CATEGORIES = {
@@ -14,7 +14,7 @@ const TASK_CATEGORIES = {
     provider: 'llamacpp',
     model: 'draft',
     tool: 'llama_generate_fast',
-    maxComplexity: 1
+    maxComplexity: 1,
   },
 
   // Code generation → LlamaCpp for simple, Gemini for complex
@@ -23,7 +23,7 @@ const TASK_CATEGORIES = {
     provider: 'auto', // Decides based on complexity
     llamacppModel: 'main',
     llamacppTool: 'llama_code',
-    maxComplexity: 3
+    maxComplexity: 3,
   },
 
   // Research & analysis → LlamaCpp for gathering, Gemini for synthesis
@@ -32,21 +32,21 @@ const TASK_CATEGORIES = {
     provider: 'auto',
     llamacppModel: 'main',
     llamacppTool: 'llama_generate',
-    maxComplexity: 2
+    maxComplexity: 2,
   },
 
   // Complex reasoning → Gemini (best quality)
   complex: {
     patterns: ['architecture', 'design', 'optimize', 'refactor', 'debug', 'plan', 'strategy'],
     provider: 'gemini',
-    maxComplexity: 5
+    maxComplexity: 5,
   },
 
   // Creative tasks → Gemini
   creative: {
     patterns: ['write', 'story', 'poem', 'creative', 'imagine', 'generate'],
     provider: 'gemini',
-    maxComplexity: 4
+    maxComplexity: 4,
   },
 
   // JSON structured output → LlamaCpp
@@ -55,7 +55,7 @@ const TASK_CATEGORIES = {
     provider: 'llamacpp',
     llamacppModel: 'main',
     llamacppTool: 'llama_json',
-    maxComplexity: 2
+    maxComplexity: 2,
   },
 
   // Analysis tasks → LlamaCpp
@@ -64,8 +64,8 @@ const TASK_CATEGORIES = {
     provider: 'llamacpp',
     llamacppModel: 'main',
     llamacppTool: 'llama_analyze',
-    maxComplexity: 2
-  }
+    maxComplexity: 2,
+  },
 };
 
 /**
@@ -86,9 +86,18 @@ function analyzeComplexity(prompt) {
 
   // High complexity keywords - immediate bump to 4+
   const highComplexityKeywords = [
-    'architecture', 'microservices', 'comprehensive', 'design',
-    'deployment', 'strategy', 'production', 'scalable',
-    'distributed', 'enterprise', 'full-stack', 'end-to-end'
+    'architecture',
+    'microservices',
+    'comprehensive',
+    'design',
+    'deployment',
+    'strategy',
+    'production',
+    'scalable',
+    'distributed',
+    'enterprise',
+    'full-stack',
+    'end-to-end',
   ];
 
   for (const keyword of highComplexityKeywords) {
@@ -100,10 +109,20 @@ function analyzeComplexity(prompt) {
 
   // Medium complexity indicators
   const complexIndicators = [
-    'multiple', 'several', 'all', 'detailed',
-    'step by step', 'system', 'integration',
-    'performance', 'security', 'authentication',
-    'database', 'api', 'contracts', 'include'
+    'multiple',
+    'several',
+    'all',
+    'detailed',
+    'step by step',
+    'system',
+    'integration',
+    'performance',
+    'security',
+    'authentication',
+    'database',
+    'api',
+    'contracts',
+    'include',
   ];
 
   for (const indicator of complexIndicators) {
@@ -171,7 +190,7 @@ export async function route(prompt) {
       tool: taskConfig.tool,
       complexity,
       reasoning: 'Heuristic: simple short prompt',
-      duration_ms: Date.now() - startTime
+      duration_ms: Date.now() - startTime,
     };
   }
 
@@ -184,7 +203,7 @@ Respond with ONLY the category name, nothing else.`;
 
     const result = await bridge.generateFast(routingPrompt, {
       maxTokens: 10,
-      temperature: 0.1
+      temperature: 0.1,
     });
 
     const llmCategory = result.content.trim().toLowerCase();
@@ -217,7 +236,7 @@ Respond with ONLY the category name, nothing else.`;
       tool,
       complexity,
       reasoning: `LLM: ${llmCategory}, Heuristic: ${heuristicCategory}, Complexity: ${complexity}`,
-      duration_ms: Date.now() - startTime
+      duration_ms: Date.now() - startTime,
     };
   } catch (error) {
     // Fallback to heuristic on LlamaCpp failure
@@ -227,11 +246,11 @@ Respond with ONLY the category name, nothing else.`;
     return {
       category: heuristicCategory,
       provider: complexity > 2 ? 'gemini' : 'llamacpp',
-      model: complexity > 2 ? null : (config.llamacppModel || taskConfig.model),
-      tool: complexity > 2 ? null : (config.llamacppTool || taskConfig.tool),
+      model: complexity > 2 ? null : config.llamacppModel || taskConfig.model,
+      tool: complexity > 2 ? null : config.llamacppTool || taskConfig.tool,
       complexity,
       reasoning: `Fallback heuristic (LlamaCpp error: ${error.message})`,
-      duration_ms: Date.now() - startTime
+      duration_ms: Date.now() - startTime,
     };
   }
 }
@@ -247,19 +266,21 @@ export async function routeWithCost(prompt) {
   // Cost estimation
   const costs = {
     llamacpp: { perToken: 0, fixedCost: 0 }, // Local = free
-    gemini: { perToken: 0.000001, fixedCost: 0.001 } // Approximate
+    gemini: { perToken: 0.000001, fixedCost: 0.001 }, // Approximate
   };
 
   const estimatedTokens = Math.ceil(prompt.length / 4) * 2; // Input + output estimate
   const providerCost = costs[decision.provider] || costs.llamacpp;
 
-  decision.estimatedCost = decision.provider === 'llamacpp'
-    ? 0
-    : (providerCost.fixedCost + estimatedTokens * providerCost.perToken);
+  decision.estimatedCost =
+    decision.provider === 'llamacpp'
+      ? 0
+      : providerCost.fixedCost + estimatedTokens * providerCost.perToken;
 
-  decision.costSavings = decision.provider === 'llamacpp'
-    ? costs.gemini.fixedCost + estimatedTokens * costs.gemini.perToken
-    : 0;
+  decision.costSavings =
+    decision.provider === 'llamacpp'
+      ? costs.gemini.fixedCost + estimatedTokens * costs.gemini.perToken
+      : 0;
 
   return decision;
 }
@@ -292,7 +313,7 @@ export async function routeWithThinking(prompt, options = {}) {
         complexity,
         reasoning: 'Fast path: simple short prompt',
         duration_ms: Date.now() - startTime,
-        usedThinkingModel: false
+        usedThinkingModel: false,
       };
     }
   }
@@ -340,7 +361,7 @@ Respond with ONLY the JSON:`;
     const result = await gemini.generate(routingPrompt, {
       model: thinkingModel,
       maxTokens: 512,
-      temperature: 0.1
+      temperature: 0.1,
     });
 
     // Parse JSON response
@@ -349,22 +370,30 @@ Respond with ONLY the JSON:`;
       const routing = JSON.parse(jsonMatch[0]);
 
       // Validate and normalize response
-      const validCategories = ['simple', 'code', 'research', 'complex', 'creative', 'json', 'analyze'];
+      const validCategories = [
+        'simple',
+        'code',
+        'research',
+        'complex',
+        'creative',
+        'json',
+        'analyze',
+      ];
       const category = validCategories.includes(routing.category) ? routing.category : 'research';
       const complexity = Math.min(5, Math.max(1, routing.complexity || analyzeComplexity(prompt)));
 
       // Cost estimation
       const costs = {
         llamacpp: { perToken: 0, fixedCost: 0 },
-        gemini: { perToken: 0.000001, fixedCost: 0.001 }
+        gemini: { perToken: 0.000001, fixedCost: 0.001 },
       };
       const estimatedTokens = Math.ceil(prompt.length / 4) * 2;
       const provider = routing.provider === 'gemini' ? 'gemini' : 'llamacpp';
 
       // Get default tool for category if not specified
       const taskConfig = getModelForTask(category);
-      const model = provider === 'llamacpp' ? (routing.model || taskConfig.model) : null;
-      const tool = provider === 'llamacpp' ? (routing.tool || taskConfig.tool) : null;
+      const model = provider === 'llamacpp' ? routing.model || taskConfig.model : null;
+      const tool = provider === 'llamacpp' ? routing.tool || taskConfig.tool : null;
 
       return {
         category,
@@ -374,21 +403,22 @@ Respond with ONLY the JSON:`;
         complexity,
         reasoning: routing.reasoning || 'Gemini Thinking analysis',
         improvements: routing.improvements || [],
-        estimatedCost: provider === 'gemini'
-          ? costs.gemini.fixedCost + estimatedTokens * costs.gemini.perToken
-          : 0,
-        costSavings: provider === 'llamacpp'
-          ? costs.gemini.fixedCost + estimatedTokens * costs.gemini.perToken
-          : 0,
+        estimatedCost:
+          provider === 'gemini'
+            ? costs.gemini.fixedCost + estimatedTokens * costs.gemini.perToken
+            : 0,
+        costSavings:
+          provider === 'llamacpp'
+            ? costs.gemini.fixedCost + estimatedTokens * costs.gemini.perToken
+            : 0,
         duration_ms: Date.now() - startTime,
         usedThinkingModel: true,
-        iteration
+        iteration,
       };
     }
 
     // Fallback to heuristic if JSON parsing fails
     return await routeWithCost(prompt);
-
   } catch (error) {
     console.warn('[Router] Gemini Thinking failed, falling back to heuristic:', error.message);
     return await routeWithCost(prompt);

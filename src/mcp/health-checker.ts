@@ -7,7 +7,7 @@
  * @module src/mcp/health-checker
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 // ============================================================================
 // Constants
@@ -21,7 +21,7 @@ export const HealthStatus = {
   HEALTHY: 'healthy',
   DEGRADED: 'degraded',
   UNHEALTHY: 'unhealthy',
-  UNKNOWN: 'unknown'
+  UNKNOWN: 'unknown',
 };
 
 // ============================================================================
@@ -83,7 +83,7 @@ export class TTLCache {
 
     this.cache.set(key, {
       value,
-      expires: Date.now() + (ttl || this.defaultTTL)
+      expires: Date.now() + (ttl || this.defaultTTL),
     });
   }
 
@@ -148,7 +148,7 @@ export class TTLCache {
       valid,
       expired,
       maxSize: this.maxSize,
-      defaultTTL: this.defaultTTL
+      defaultTTL: this.defaultTTL,
     };
   }
 
@@ -263,7 +263,7 @@ export class HealthChecker extends EventEmitter {
           available: false,
           latency: 0,
           timestamp: new Date(),
-          error: new Error('Transport not ready')
+          error: new Error('Transport not ready'),
         };
       } else {
         // Perform actual health check
@@ -284,8 +284,8 @@ export class HealthChecker extends EventEmitter {
           timestamp: new Date(),
           details: {
             responseTime: latency,
-            transportInfo: transport.getInfo?.() || transport.getProcessInfo?.()
-          }
+            transportInfo: transport.getInfo?.() || transport.getProcessInfo?.(),
+          },
         };
       }
     } catch (error) {
@@ -295,7 +295,7 @@ export class HealthChecker extends EventEmitter {
         available: false,
         latency: Date.now() - startTime,
         timestamp: new Date(),
-        error
+        error,
       };
     }
 
@@ -308,7 +308,7 @@ export class HealthChecker extends EventEmitter {
       this.emit('healthChanged', {
         serverId,
         previous: previousResult,
-        current: result
+        current: result,
       });
     }
 
@@ -442,7 +442,7 @@ export class HealthChecker extends EventEmitter {
       degraded: 0,
       unhealthy: 0,
       unknown: 0,
-      averageLatency: 0
+      averageLatency: 0,
     };
 
     let totalLatency = 0;

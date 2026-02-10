@@ -3,7 +3,7 @@
  * Simple HTTP server that serves static responses for Playwright tests
  */
 
-import { createServer } from 'http';
+import { createServer } from 'node:http';
 
 const PORT = 8080;
 
@@ -34,12 +34,12 @@ const mockResponses = {
     </div>
   </div>
 </body>
-</html>`
+</html>`,
   },
   '/api/health': {
     status: 200,
     contentType: 'application/json',
-    body: JSON.stringify({ status: 'ok', version: '2.0.0', uptime: 1000 })
+    body: JSON.stringify({ status: 'ok', version: '2.0.0', uptime: 1000 }),
   },
   '/api/status': {
     status: 200,
@@ -47,9 +47,9 @@ const mockResponses = {
     body: JSON.stringify({
       providers: ['ollama', 'gemini'],
       activeProvider: 'ollama',
-      models: ['llama3.2:3b', 'qwen2.5-coder:1.5b']
-    })
-  }
+      models: ['llama3.2:3b', 'qwen2.5-coder:1.5b'],
+    }),
+  },
 };
 
 const server = createServer((req, res) => {

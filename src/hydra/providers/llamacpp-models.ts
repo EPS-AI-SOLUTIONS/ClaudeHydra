@@ -15,34 +15,34 @@
  * @type {Object<string, Object>}
  */
 export const GGUF_MODELS = {
-  main: {
-    name: 'main',
-    description: 'Primary model for general generation',
-    contextSize: 4096,
-    capabilities: ['generate', 'chat', 'code', 'json'],
-    speed: 'medium'
+  'qwen3:8b': {
+    name: 'qwen3:8b',
+    description: 'Heavy model for reasoning, architecture and code (8B)',
+    contextSize: 8192,
+    capabilities: ['generate', 'chat', 'code', 'json', 'function_call'],
+    speed: 'medium',
   },
-  draft: {
-    name: 'draft',
-    description: 'Fast model for routing and simple tasks',
-    contextSize: 2048,
-    capabilities: ['generate', 'generate_fast'],
-    speed: 'fastest'
+  'qwen3:4b': {
+    name: 'qwen3:4b',
+    description: 'Balanced model for general tasks (4B)',
+    contextSize: 8192,
+    capabilities: ['generate', 'chat', 'code', 'json', 'function_call'],
+    speed: 'fast',
+  },
+  'qwen3:1.7b': {
+    name: 'qwen3:1.7b',
+    description: 'Fast scout model for routing and simple tasks (1.7B)',
+    contextSize: 4096,
+    capabilities: ['generate', 'chat', 'generate_fast'],
+    speed: 'fastest',
   },
   vision: {
     name: 'vision',
     description: 'Multimodal model for image analysis',
     contextSize: 4096,
     capabilities: ['vision'],
-    speed: 'slow'
+    speed: 'slow',
   },
-  functionary: {
-    name: 'functionary',
-    description: 'Model specialized for function calling',
-    contextSize: 4096,
-    capabilities: ['function_call'],
-    speed: 'medium'
-  }
 };
 
 // =============================================================================
@@ -55,10 +55,10 @@ export const GGUF_MODELS = {
  * @type {Object<string, Object>}
  */
 export const MODEL_ROLES = {
-  'draft': { role: 'router', maxTokens: 512, speed: 'fastest' },
-  'main': { role: 'researcher', maxTokens: 2048, speed: 'fast' },
-  'main:coder': { role: 'coder', maxTokens: 4096, speed: 'fast' },
-  'main:reasoner': { role: 'reasoner', maxTokens: 2048, speed: 'medium' }
+  'qwen3:1.7b': { role: 'router', maxTokens: 512, speed: 'fastest' },
+  'qwen3:4b': { role: 'researcher', maxTokens: 2048, speed: 'fast' },
+  'qwen3:8b': { role: 'coder', maxTokens: 4096, speed: 'medium' },
+  'qwen3:8b:reasoner': { role: 'reasoner', maxTokens: 4096, speed: 'medium' },
 };
 
 // =============================================================================
@@ -72,91 +72,91 @@ export const MODEL_ROLES = {
 export const TASK_MODEL_MAP = {
   // Routing - fastest response needed
   route: {
-    model: 'draft',
-    tool: 'llama_generate_fast',
+    model: 'qwen3:1.7b',
+    tool: 'ollama_generate',
     maxTokens: 512,
-    temperature: 0.3
+    temperature: 0.3,
   },
 
   // Research - balanced speed and quality
   research: {
-    model: 'main',
-    tool: 'llama_generate',
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
     maxTokens: 2048,
-    temperature: 0.7
+    temperature: 0.7,
   },
 
   // Code generation and analysis
   code: {
-    model: 'main',
-    tool: 'llama_code',
+    model: 'qwen3:8b',
+    tool: 'ollama_generate',
     maxTokens: 4096,
-    temperature: 0.4
+    temperature: 0.4,
   },
 
   // Structured JSON output
   json: {
-    model: 'main',
-    tool: 'llama_json',
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
     maxTokens: 2048,
-    temperature: 0.3
+    temperature: 0.3,
   },
 
   // Reasoning and analysis
   reason: {
-    model: 'main',
-    tool: 'llama_json',
-    maxTokens: 2048,
-    temperature: 0.5
+    model: 'qwen3:8b',
+    tool: 'ollama_generate',
+    maxTokens: 4096,
+    temperature: 0.5,
   },
 
-  // Text analysis (sentiment, summary, etc.)
+  // Text analysis
   analyze: {
-    model: 'main',
-    tool: 'llama_analyze',
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
     maxTokens: 1024,
-    temperature: 0.3
+    temperature: 0.3,
   },
 
   // Embeddings for semantic search
   embed: {
-    model: 'main',
-    tool: 'llama_embed',
+    model: 'qwen3:4b',
+    tool: 'ollama_embed',
     maxTokens: 0,
-    temperature: 0
+    temperature: 0,
   },
 
-  // Image analysis
+  // Image analysis (not available in ollama-mcp)
   vision: {
     model: 'vision',
-    tool: 'llama_vision',
+    tool: 'ollama_generate',
     maxTokens: 1024,
-    temperature: 0.5
+    temperature: 0.5,
   },
 
-  // Function calling
+  // Function calling (Qwen3 supports tool use natively)
   function_call: {
-    model: 'functionary',
-    tool: 'llama_function_call',
+    model: 'qwen3:8b',
+    tool: 'ollama_chat',
     maxTokens: 2048,
-    temperature: 0.3
+    temperature: 0.3,
   },
 
   // Chat/conversation
   chat: {
-    model: 'main',
-    tool: 'llama_chat',
+    model: 'qwen3:4b',
+    tool: 'ollama_chat',
     maxTokens: 2048,
-    temperature: 0.7
+    temperature: 0.7,
   },
 
   // Default fallback
   default: {
-    model: 'main',
-    tool: 'llama_generate',
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
     maxTokens: 2048,
-    temperature: 0.7
-  }
+    temperature: 0.7,
+  },
 };
 
 // =============================================================================
@@ -169,69 +169,77 @@ export const TASK_MODEL_MAP = {
  * @type {Object<string, Object>}
  */
 export const EXECUTOR_AGENT_MODELS = {
-  // Speed specialist - fastest responses
+  // Speed specialist - fastest responses (scout)
   Ciri: {
-    model: 'draft',
-    tool: 'llama_generate_fast',
+    model: 'qwen3:1.7b',
+    tool: 'ollama_generate',
     maxTokens: 512,
-    description: 'Fastest executor for simple tasks'
+    description: 'Fastest executor for simple tasks',
+  },
+
+  // Documentation & Logging
+  Jaskier: {
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
+    maxTokens: 2048,
+    description: 'Documentation and logging',
   },
 
   // Security specialist
   Geralt: {
-    model: 'main',
-    tool: 'llama_generate',
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
     maxTokens: 2048,
-    description: 'Security analysis and operations'
+    description: 'Security analysis and operations',
   },
 
-  // Testing specialist - code focused
+  // Data & Integration specialist
   Triss: {
-    model: 'main',
-    tool: 'llama_code',
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
     maxTokens: 4096,
-    description: 'QA and testing code generation'
+    description: 'Data integration and transformation',
   },
 
   // Mentor/reviewer
   Vesemir: {
-    model: 'main',
-    tool: 'llama_generate',
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
     maxTokens: 2048,
-    description: 'Code review and mentoring'
+    description: 'Code review and mentoring',
   },
 
-  // DevOps/infrastructure
+  // Testing & Stability
   Eskel: {
-    model: 'main',
-    tool: 'llama_generate',
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
     maxTokens: 2048,
-    description: 'DevOps and infrastructure'
+    description: 'Testing and stability',
   },
 
-  // Debug specialist - code focused
+  // Refactoring & Cleanup
   Lambert: {
-    model: 'main',
-    tool: 'llama_code',
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
     maxTokens: 4096,
-    description: 'Debugging and code analysis'
+    description: 'Refactoring and code cleanup',
   },
 
-  // Data/database specialist - structured output
+  // Infrastructure & DevOps
   Zoltan: {
-    model: 'main',
-    tool: 'llama_json',
+    model: 'qwen3:4b',
+    tool: 'ollama_generate',
     maxTokens: 2048,
-    description: 'Data processing and SQL'
+    description: 'Infrastructure and DevOps',
   },
 
-  // API/integrations - function calling
+  // UI/UX & Frontend
   Philippa: {
-    model: 'functionary',
-    tool: 'llama_function_call',
+    model: 'qwen3:4b',
+    tool: 'ollama_chat',
     maxTokens: 2048,
-    description: 'API integrations and function calls'
-  }
+    description: 'UI/UX and frontend development',
+  },
 };
 
 // =============================================================================
@@ -297,5 +305,5 @@ export default {
   getModelForAgent,
   modelSupportsCapability,
   getAvailableModels,
-  getModelRole
+  getModelRole,
 };

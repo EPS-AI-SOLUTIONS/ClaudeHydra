@@ -3,7 +3,7 @@
  * @module cli-unified/core/EventBus
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 import { EVENT_TYPES } from './constants.js';
 
 /**
@@ -26,7 +26,7 @@ export class EventBus extends EventEmitter {
     const eventData = {
       type: event,
       payload,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     // Run middlewares
@@ -65,7 +65,7 @@ export class EventBus extends EventEmitter {
    */
   getHistory(eventType) {
     if (eventType) {
-      return this.history.filter(e => e.type === eventType);
+      return this.history.filter((e) => e.type === eventType);
     }
     return [...this.history];
   }
@@ -85,10 +85,13 @@ export class EventBus extends EventEmitter {
    */
   waitFor(event, timeout = 30000) {
     return new Promise((resolve, reject) => {
-      const timer = timeout > 0 ? setTimeout(() => {
-        this.off(event, handler);
-        reject(new Error(`Timeout waiting for event: ${event}`));
-      }, timeout) : null;
+      const timer =
+        timeout > 0
+          ? setTimeout(() => {
+              this.off(event, handler);
+              reject(new Error(`Timeout waiting for event: ${event}`));
+            }, timeout)
+          : null;
 
       const handler = (payload) => {
         if (timer) clearTimeout(timer);

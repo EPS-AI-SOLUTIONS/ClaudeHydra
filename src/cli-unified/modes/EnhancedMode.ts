@@ -3,7 +3,7 @@
  * @module cli-unified/modes/EnhancedMode
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 import { BasicMode } from './BasicMode.js';
 
 /**
@@ -42,14 +42,12 @@ export class EnhancedMode extends EventEmitter {
       description: 'Add file to context',
       usage: '/file <path> [--watch]',
       category: 'context',
-      flags: [
-        { name: 'watch', short: 'w', type: 'boolean', description: 'Watch for changes' }
-      ],
+      flags: [{ name: 'watch', short: 'w', type: 'boolean', description: 'Watch for changes' }],
       handler: async (args, ctx) => {
         if (!args[0]) return 'Usage: /file <path>';
         const file = this.cli.context.addFile(args[0], { watch: ctx.flags.watch });
         return `Added: ${file.name} (${file.language}, ${Math.round(file.size / 1024)}KB)`;
-      }
+      },
     });
 
     parser.register({
@@ -62,7 +60,7 @@ export class EnhancedMode extends EventEmitter {
         if (!args[0]) return 'Usage: /url <url>';
         const url = await this.cli.context.addUrl(args[0]);
         return `Added: ${args[0]} (${Math.round(url.size / 1024)}KB)`;
-      }
+      },
     });
 
     parser.register({
@@ -88,9 +86,11 @@ export class EnhancedMode extends EventEmitter {
         for (const u of summary.urls) {
           lines.push(`  ${u.url}`);
         }
-        lines.push(`Total: ${Math.round(summary.totalSize / 1024)}KB / ${Math.round(summary.maxSize / 1024)}KB`);
+        lines.push(
+          `Total: ${Math.round(summary.totalSize / 1024)}KB / ${Math.round(summary.maxSize / 1024)}KB`,
+        );
         return lines.join('\n');
-      }
+      },
     });
 
     // Cache commands
@@ -101,15 +101,16 @@ export class EnhancedMode extends EventEmitter {
       category: 'performance',
       handler: async (args) => {
         switch (args[0]) {
-          case 'stats':
+          case 'stats': {
             const stats = this.cli.cache.getStats();
             return [
               `Hits: ${stats.hits}`,
               `Misses: ${stats.misses}`,
               `Hit Rate: ${stats.hitRate}`,
               `Size: ${stats.size}/${stats.maxSize}`,
-              `Tokens Saved: ${stats.totalTokensSaved}`
+              `Tokens Saved: ${stats.totalTokensSaved}`,
             ].join('\n');
+          }
           case 'clear':
             this.cli.cache.clear();
             return 'Cache cleared';
@@ -122,7 +123,7 @@ export class EnhancedMode extends EventEmitter {
           default:
             return `Cache: ${this.cli.cache.isEnabled ? 'ON' : 'OFF'} (${this.cli.cache.size} entries)`;
         }
-      }
+      },
     });
 
     // Template commands
@@ -135,9 +136,9 @@ export class EnhancedMode extends EventEmitter {
       handler: async (args, ctx) => {
         if (!args[0]) {
           const templates = this.cli.input.templates.list();
-          return 'Templates:\n' + templates
-            .map(t => `  ${t.key}: ${t.name} (${t.variables.join(', ')})`)
-            .join('\n');
+          return `Templates:\n${templates
+            .map((t) => `  ${t.key}: ${t.name} (${t.variables.join(', ')})`)
+            .join('\n')}`;
         }
 
         const name = args[0];
@@ -157,7 +158,7 @@ export class EnhancedMode extends EventEmitter {
         ctx.templatePrompt = result.prompt;
         ctx.templateAgent = result.agent;
         return null;
-      }
+      },
     });
 
     // Vim mode toggle
@@ -168,7 +169,7 @@ export class EnhancedMode extends EventEmitter {
       handler: async () => {
         const enabled = this.cli.input.toggleVimMode();
         return `Vim mode: ${enabled ? 'ON' : 'OFF'}`;
-      }
+      },
     });
 
     // Variable commands
@@ -190,7 +191,7 @@ export class EnhancedMode extends EventEmitter {
         }
         this.cli.input.templates.setVariable(args[0], args.slice(1).join(' '));
         return `Set: ${args[0]}`;
-      }
+      },
     });
 
     // Bookmark commands
@@ -202,22 +203,24 @@ export class EnhancedMode extends EventEmitter {
       category: 'history',
       handler: async (args) => {
         switch (args[0]) {
-          case 'add':
+          case 'add': {
             if (!args[1]) return 'Usage: /bookmark add <name>';
             const recent = this.cli.history.getRecent(1)[0];
             if (!recent) return 'No history to bookmark';
             this.cli.history.addBookmark(recent.id, args[1]);
             return `Bookmarked as: ${args[1]}`;
-          case 'get':
+          }
+          case 'get': {
             const bm = this.cli.history.getBookmark(args[1]);
             return bm ? bm.text : 'Bookmark not found';
-          case 'list':
-          default:
+          }
+          default: {
             const bookmarks = this.cli.history.listBookmarks();
             if (bookmarks.length === 0) return 'No bookmarks';
-            return bookmarks.map(b => `${b.name}: ${b.text.slice(0, 40)}...`).join('\n');
+            return bookmarks.map((b) => `${b.name}: ${b.text.slice(0, 40)}...`).join('\n');
+          }
         }
-      }
+      },
     });
 
     // Session commands
@@ -255,15 +258,16 @@ export class EnhancedMode extends EventEmitter {
               return `Error: ${e.message}`;
             }
 
-          case 'list':
+          case 'list': {
             const sessions = session.list();
             if (sessions.length === 0) return 'No saved sessions';
             return sessions
               .slice(0, 10)
-              .map(s => `${s.id.slice(0, 12)}... | ${s.name} | ${s.messageCount} msgs`)
+              .map((s) => `${s.id.slice(0, 12)}... | ${s.name} | ${s.messageCount} msgs`)
               .join('\n');
+          }
 
-          case 'export':
+          case 'export': {
             const format = args[1] || 'md';
             try {
               const exported = session.export(format);
@@ -271,6 +275,7 @@ export class EnhancedMode extends EventEmitter {
             } catch (e) {
               return `Error: ${e.message}`;
             }
+          }
 
           case 'delete':
             if (!args[1]) return 'Usage: /session delete <id>';
@@ -284,7 +289,7 @@ export class EnhancedMode extends EventEmitter {
             session.rename(args.slice(1).join(' '));
             return `Renamed to: ${session.getCurrent().name}`;
 
-          default:
+          default: {
             const current = session.getCurrent();
             if (!current) return 'No active session. Use /session new';
             return [
@@ -292,10 +297,11 @@ export class EnhancedMode extends EventEmitter {
               `ID: ${current.id}`,
               `Messages: ${current.messages.length}`,
               `Tokens: ${current.metadata.totalTokens}`,
-              `Created: ${new Date(current.created).toLocaleString()}`
+              `Created: ${new Date(current.created).toLocaleString()}`,
             ].join('\n');
+          }
         }
-      }
+      },
     });
 
     // Shortcuts help
@@ -317,9 +323,9 @@ export class EnhancedMode extends EventEmitter {
           '  Alt+Enter  Multiline mode',
           '  F1         Show this help',
           '',
-          'Type /help for all commands'
+          'Type /help for all commands',
         ].join('\n');
-      }
+      },
     });
 
     // Tokens/context status
@@ -338,9 +344,9 @@ export class EnhancedMode extends EventEmitter {
         return [
           'Token Usage:',
           `[${bar}] ${percent}%`,
-          `${tokens.toLocaleString()} / ${maxTokens.toLocaleString()} tokens`
+          `${tokens.toLocaleString()} / ${maxTokens.toLocaleString()} tokens`,
         ].join('\n');
-      }
+      },
     });
   }
 
@@ -373,22 +379,130 @@ export class EnhancedMode extends EventEmitter {
     const { cli, ...safeOptions } = options;
 
     try {
+      let spinnerStopped = false;
+
+      // Listen for agentic loop iteration events
+      const onIteration = (event) => {
+        if (!spinnerStopped) {
+          this.cli.output.stopSpinner();
+          spinnerStopped = true;
+        }
+        this.cli.output.dim(
+          `  \u21BB Iteracja ${event.iteration}: score ${event.score}/10 \u2014 ${event.reason}`,
+        );
+        // Only start next spinner if loop will actually continue
+        if (event.willContinue) {
+          this.cli.output.startSpinner(`Iterating (${event.iteration + 1})...`);
+        }
+      };
+      this.cli.queryProcessor.on('agentic:iteration', onIteration);
+
+      // Listen for live SDK messages — show real-time subprocess activity
+      let sdkTurnCount = 0;
+      const onSdkMessage = (msg) => {
+        try {
+          if (msg.type === 'assistant' && msg.message?.content) {
+            for (const block of msg.message.content) {
+              if (block.type === 'text' && block.text) {
+                const preview =
+                  block.text.length > 120 ? `${block.text.substring(0, 120)}\u2026` : block.text;
+                if (!spinnerStopped) {
+                  this.cli.output.stopSpinner();
+                  spinnerStopped = true;
+                }
+                this.cli.output.dim(`  \uD83D\uDCAC ${preview}`);
+                this.cli.output.startSpinner('Working...');
+              } else if (block.type === 'tool_use') {
+                sdkTurnCount++;
+                const toolName = block.name || '?';
+                const inputPreview =
+                  block.input?.command ||
+                  block.input?.pattern ||
+                  block.input?.file_path ||
+                  block.input?.description ||
+                  '';
+                const shortInput =
+                  inputPreview.length > 80
+                    ? `${inputPreview.substring(0, 80)}\u2026`
+                    : inputPreview;
+                if (!spinnerStopped) {
+                  this.cli.output.stopSpinner();
+                  spinnerStopped = true;
+                }
+                this.cli.output.dim(
+                  `  \uD83D\uDD27 [${sdkTurnCount}] ${toolName}${shortInput ? `: ${shortInput}` : ''}`,
+                );
+                this.cli.output.startSpinner(`Executing ${toolName}...`);
+              }
+            }
+          } else if (msg.type === 'user' && msg.tool_use_result) {
+            const resultText = String(msg.tool_use_result || '');
+            const isError = resultText.startsWith('Error:') || msg.message?.content?.[0]?.is_error;
+            if (isError) {
+              const shortResult =
+                resultText.length > 100 ? `${resultText.substring(0, 100)}\u2026` : resultText;
+              this.cli.output.dim(`  \u26A0\uFE0F  ${shortResult}`);
+            }
+          }
+        } catch {
+          // Never crash on preview display errors
+        }
+      };
+      this.cli.queryProcessor.on('sdk:message', onSdkMessage);
+
       const result = await this.cli.queryProcessor.process(input, {
         autoAgent: true,
         ...safeOptions,
-        onToken: this.cli.streaming ? (token) => {
-          this.cli.output.streamWrite(token);
-        } : null
+        onToken: this.cli.streaming
+          ? (token) => {
+              // Stop spinner before first token to avoid stdout collision
+              if (!spinnerStopped) {
+                this.cli.output.stopSpinner();
+                spinnerStopped = true;
+              }
+              this.cli.output.streamWrite(token);
+            }
+          : null,
       });
+
+      // Clean up listeners
+      this.cli.queryProcessor.off('agentic:iteration', onIteration);
+      this.cli.queryProcessor.off('sdk:message', onSdkMessage);
 
       if (this.cli.streaming) {
         this.cli.output.streamFlush();
       }
 
+      // Always stop spinner — the agentic:iteration handler may have started one
       this.cli.output.stopSpinner();
+
+      // Show iteration summary if multiple iterations occurred
+      if (result.iterations > 1) {
+        this.cli.output.dim(
+          `  \u2713 ${result.iterations} iteracji, score: ${result.finalScore}/10`,
+        );
+      }
+
       return { type: 'query', result };
     } catch (error) {
       this.cli.output.stopSpinnerFail(error.message);
+
+      // Show actionable suggestions for Claude SDK errors
+      if (error.suggestions?.length) {
+        this.cli.output.newline?.();
+        this.cli.output.warn?.('Sugestie:');
+        for (const s of error.suggestions) {
+          this.cli.output.dim?.(`  → ${s}`);
+        }
+      }
+
+      // Show stderr when available (always on crash, or in debug mode)
+      if (error.stderrOutput) {
+        this.cli.output.newline?.();
+        this.cli.output.dim?.('[SDK stderr]:');
+        this.cli.output.dim?.(error.stderrOutput);
+      }
+
       throw error;
     }
   }
@@ -400,7 +514,7 @@ export class EnhancedMode extends EventEmitter {
     return {
       name: this.name,
       description: 'Extended CLI with context, caching, templates',
-      features: ['Context Management', 'Caching', 'Templates', 'Vim Mode', 'Bookmarks']
+      features: ['Context Management', 'Caching', 'Templates', 'Vim Mode', 'Bookmarks'],
     };
   }
 }

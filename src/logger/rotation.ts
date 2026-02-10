@@ -4,12 +4,12 @@
  * @module logger/rotation
  */
 
+import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
-import { createGzip } from 'node:zlib';
 import { pipeline } from 'node:stream/promises';
-import { EventEmitter } from 'node:events';
+import { createGzip } from 'node:zlib';
 
 // ============================================================================
 // Type Definitions
@@ -70,7 +70,7 @@ export class LogRotation extends EventEmitter {
       maxAge = 7 * 24 * 60 * 60 * 1000, // 7 days
       compress = false,
       dateFormat = 'YYYY-MM-DD',
-      createDir = true
+      createDir = true,
     } = options;
 
     /** @type {string} */
@@ -156,7 +156,7 @@ export class LogRotation extends EventEmitter {
         return {
           success: false,
           originalFile: absolutePath,
-          error: 'File does not exist'
+          error: 'File does not exist',
         };
       }
 
@@ -174,20 +174,20 @@ export class LogRotation extends EventEmitter {
 
       this.emit('rotated', {
         originalFile: absolutePath,
-        rotatedFile: finalPath
+        rotatedFile: finalPath,
       });
 
       return {
         success: true,
         originalFile: absolutePath,
-        rotatedFile: finalPath
+        rotatedFile: finalPath,
       };
     } catch (error) {
       this.emit('error', error);
       return {
         success: false,
         originalFile: filePath,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -206,7 +206,7 @@ export class LogRotation extends EventEmitter {
         return {
           success: false,
           originalFile: absolutePath,
-          error: 'File does not exist'
+          error: 'File does not exist',
         };
       }
 
@@ -218,20 +218,20 @@ export class LogRotation extends EventEmitter {
 
       this.emit('rotated', {
         originalFile: absolutePath,
-        rotatedFile: rotatedPath
+        rotatedFile: rotatedPath,
       });
 
       return {
         success: true,
         originalFile: absolutePath,
-        rotatedFile: rotatedPath
+        rotatedFile: rotatedPath,
       };
     } catch (error) {
       this.emit('error', error);
       return {
         success: false,
         originalFile: filePath,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -284,8 +284,8 @@ export class LogRotation extends EventEmitter {
       files.sort((a, b) => a.modified.getTime() - b.modified.getTime());
 
       // Separate current and rotated files
-      const currentFiles = files.filter(f => !f.isRotated);
-      const rotatedFiles = files.filter(f => f.isRotated);
+      const currentFiles = files.filter((f) => !f.isRotated);
+      const rotatedFiles = files.filter((f) => f.isRotated);
 
       // Delete files exceeding maxFiles
       while (rotatedFiles.length > this.maxFiles) {
@@ -336,7 +336,7 @@ export class LogRotation extends EventEmitter {
       files.sort((a, b) => a.modified.getTime() - b.modified.getTime());
 
       // Separate current and rotated files
-      const rotatedFiles = files.filter(f => f.isRotated);
+      const rotatedFiles = files.filter((f) => f.isRotated);
 
       // Delete files exceeding maxFiles
       while (rotatedFiles.length > this.maxFiles) {
@@ -396,7 +396,7 @@ export class LogRotation extends EventEmitter {
           created: stats.birthtime,
           modified: stats.mtime,
           isRotated: this._isRotatedFile(entry.name),
-          isCompressed: entry.name.endsWith('.gz')
+          isCompressed: entry.name.endsWith('.gz'),
         });
       }
     } catch (error) {
@@ -434,7 +434,7 @@ export class LogRotation extends EventEmitter {
           created: stats.birthtime,
           modified: stats.mtime,
           isRotated: this._isRotatedFile(entry.name),
-          isCompressed: entry.name.endsWith('.gz')
+          isCompressed: entry.name.endsWith('.gz'),
         });
       }
     } catch (error) {
@@ -460,8 +460,8 @@ export class LogRotation extends EventEmitter {
   async getStats() {
     const files = await this.getLogFiles();
     const totalSize = files.reduce((sum, f) => sum + f.size, 0);
-    const rotatedCount = files.filter(f => f.isRotated).length;
-    const compressedCount = files.filter(f => f.isCompressed).length;
+    const rotatedCount = files.filter((f) => f.isRotated).length;
+    const compressedCount = files.filter((f) => f.isCompressed).length;
 
     return {
       totalFiles: files.length,
@@ -470,16 +470,14 @@ export class LogRotation extends EventEmitter {
       rotatedFiles: rotatedCount,
       compressedFiles: compressedCount,
       currentFiles: files.length - rotatedCount,
-      oldestFile: files.length > 0
-        ? files.reduce((oldest, f) =>
-            f.modified < oldest.modified ? f : oldest
-          )
-        : null,
-      newestFile: files.length > 0
-        ? files.reduce((newest, f) =>
-            f.modified > newest.modified ? f : newest
-          )
-        : null
+      oldestFile:
+        files.length > 0
+          ? files.reduce((oldest, f) => (f.modified < oldest.modified ? f : oldest))
+          : null,
+      newestFile:
+        files.length > 0
+          ? files.reduce((newest, f) => (f.modified > newest.modified ? f : newest))
+          : null,
     };
   }
 
@@ -529,7 +527,7 @@ export class LogRotation extends EventEmitter {
       maxAge: this.maxAge,
       compress: this.compress,
       dateFormat: this.dateFormat,
-      createDir: this.createDir
+      createDir: this.createDir,
     };
   }
 
@@ -551,9 +549,8 @@ export class LogRotation extends EventEmitter {
     const timestamp = this._formatDate(new Date());
     const counter = this._getRotationCounter(dir, baseName, timestamp);
 
-    const rotatedName = counter > 0
-      ? `${baseName}.${timestamp}.${counter}${ext}`
-      : `${baseName}.${timestamp}${ext}`;
+    const rotatedName =
+      counter > 0 ? `${baseName}.${timestamp}.${counter}${ext}` : `${baseName}.${timestamp}${ext}`;
 
     return path.join(dir, rotatedName);
   }
@@ -570,11 +567,11 @@ export class LogRotation extends EventEmitter {
     try {
       const files = fs.readdirSync(dir);
       const pattern = new RegExp(`^${baseName}\\.${timestamp}(\\.\\d+)?\\.`);
-      const matches = files.filter(f => pattern.test(f));
+      const matches = files.filter((f) => pattern.test(f));
 
       if (matches.length === 0) return 0;
 
-      const counters = matches.map(f => {
+      const counters = matches.map((f) => {
         const match = f.match(/\.(\d+)\.[^.]+$/);
         return match ? parseInt(match[1], 10) : 0;
       });
@@ -670,7 +667,7 @@ export class LogRotation extends EventEmitter {
     const k = 1024;
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${units[i]}`;
+    return `${parseFloat((bytes / k ** i).toFixed(2))} ${units[i]}`;
   }
 }
 

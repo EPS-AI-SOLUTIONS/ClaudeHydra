@@ -6,9 +6,9 @@
  * @module src/planning/plan-storage
  */
 
-import fs from 'fs/promises';
-import path from 'path';
-import { PhaseName, PhaseStatus, createInitialPhaseStatuses } from './phases.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { PhaseName, PhaseStatus } from './phases.js';
 
 // ============================================================================
 // Constants
@@ -32,6 +32,24 @@ export class PlanStorage {
    */
   constructor(options = {}) {
     this.storageDir = options.storageDir || path.join(process.cwd(), DEFAULT_STORAGE_DIR);
+    this._writeLock = Promise.resolve();
+  }
+
+  /**
+   * Serialize writes to prevent load-modify-save race
+   */
+  async _withWriteLock(fn) {
+    const release = this._writeLock;
+    let resolve;
+    this._writeLock = new Promise((r) => {
+      resolve = r;
+    });
+    await release;
+    try {
+      return await fn();
+    } finally {
+      resolve();
+    }
   }
 
   /**
@@ -90,8 +108,8 @@ export class PlanStorage {
       metadata: {
         ...metadata,
         estimatedTokens: 0,
-        actualTokens: 0
-      }
+        actualTokens: 0,
+      },
     };
 
     await this.save(plan);
@@ -114,7 +132,7 @@ export class PlanStorage {
         startedAt: null,
         completedAt: null,
         output: null,
-        error: null
+        error: null,
       };
     }
 
@@ -229,24 +247,26 @@ export class PlanStorage {
    * @returns {Promise<Object>}
    */
   async updatePhase(planId, phaseName, updates) {
-    const plan = await this.load(planId);
+    return this._withWriteLock(async () => {
+      const plan = await this.load(planId);
 
-    if (!plan) {
-      throw new Error(`Plan not found: ${planId}`);
-    }
+      if (!plan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
 
-    if (!plan.phases[phaseName]) {
-      throw new Error(`Invalid phase: ${phaseName}`);
-    }
+      if (!plan.phases[phaseName]) {
+        throw new Error(`Invalid phase: ${phaseName}`);
+      }
 
-    plan.phases[phaseName] = {
-      ...plan.phases[phaseName],
-      ...updates
-    };
+      plan.phases[phaseName] = {
+        ...plan.phases[phaseName],
+        ...updates,
+      };
 
-    await this.save(plan);
+      await this.save(plan);
 
-    return plan;
+      return plan;
+    });
   }
 
   /**
@@ -257,17 +277,19 @@ export class PlanStorage {
    * @returns {Promise<Object>}
    */
   async updateStatus(planId, status) {
-    const plan = await this.load(planId);
+    return this._withWriteLock(async () => {
+      const plan = await this.load(planId);
 
-    if (!plan) {
-      throw new Error(`Plan not found: ${planId}`);
-    }
+      if (!plan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
 
-    plan.status = status;
+      plan.status = status;
 
-    await this.save(plan);
+      await this.save(plan);
 
-    return plan;
+      return plan;
+    });
   }
 
   /**
@@ -278,25 +300,27 @@ export class PlanStorage {
    * @returns {Promise<Object>}
    */
   async addTask(planId, task) {
-    const plan = await this.load(planId);
+    return this._withWriteLock(async () => {
+      const plan = await this.load(planId);
 
-    if (!plan) {
-      throw new Error(`Plan not found: ${planId}`);
-    }
+      if (!plan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
 
-    // Generate task ID if not provided
-    if (!task.id) {
-      task.id = `task-${plan.tasks.length + 1}`;
-    }
+      // Generate task ID if not provided
+      if (!task.id) {
+        task.id = `task-${plan.tasks.length + 1}`;
+      }
 
-    task.createdAt = new Date().toISOString();
-    task.status = task.status || 'pending';
+      task.createdAt = new Date().toISOString();
+      task.status = task.status || 'pending';
 
-    plan.tasks.push(task);
+      plan.tasks.push(task);
 
-    await this.save(plan);
+      await this.save(plan);
 
-    return plan;
+      return plan;
+    });
   }
 
   /**
@@ -308,27 +332,29 @@ export class PlanStorage {
    * @returns {Promise<Object>}
    */
   async updateTask(planId, taskId, updates) {
-    const plan = await this.load(planId);
+    return this._withWriteLock(async () => {
+      const plan = await this.load(planId);
 
-    if (!plan) {
-      throw new Error(`Plan not found: ${planId}`);
-    }
+      if (!plan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
 
-    const taskIndex = plan.tasks.findIndex((t) => t.id === taskId);
+      const taskIndex = plan.tasks.findIndex((t) => t.id === taskId);
 
-    if (taskIndex === -1) {
-      throw new Error(`Task not found: ${taskId}`);
-    }
+      if (taskIndex === -1) {
+        throw new Error(`Task not found: ${taskId}`);
+      }
 
-    plan.tasks[taskIndex] = {
-      ...plan.tasks[taskIndex],
-      ...updates,
-      updatedAt: new Date().toISOString()
-    };
+      plan.tasks[taskIndex] = {
+        ...plan.tasks[taskIndex],
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
 
-    await this.save(plan);
+      await this.save(plan);
 
-    return plan;
+      return plan;
+    });
   }
 
   /**
@@ -340,17 +366,19 @@ export class PlanStorage {
    * @returns {Promise<Object>}
    */
   async addOutput(planId, key, value) {
-    const plan = await this.load(planId);
+    return this._withWriteLock(async () => {
+      const plan = await this.load(planId);
 
-    if (!plan) {
-      throw new Error(`Plan not found: ${planId}`);
-    }
+      if (!plan) {
+        throw new Error(`Plan not found: ${planId}`);
+      }
 
-    plan.outputs[key] = value;
+      plan.outputs[key] = value;
 
-    await this.save(plan);
+      await this.save(plan);
 
-    return plan;
+      return plan;
+    });
   }
 
   /**

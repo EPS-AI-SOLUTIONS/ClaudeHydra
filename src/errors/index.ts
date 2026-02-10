@@ -1,65 +1,85 @@
 /**
  * @fileoverview Central errors module export
- * Provides unified access to all error classes, codes, and formatting utilities.
+ *
+ * Provides unified access to ALL error classes across ClaudeHydra.
+ *
+ * Error architecture (consolidated):
+ * - AppError (base for application-level errors) — src/errors/AppError.ts
+ *   - ValidationError, APIError, NetworkError, TimeoutError, ConfigError, etc.
+ *   - ToolError, ToolNotFoundError, ToolExecutionError, etc.
+ * - HydraError (base for Hydra AI pipeline errors) — src/hydra/core/errors.ts
+ *   - ProviderError → OllamaError, GeminiError
+ *   - RoutingError, PipelineError, CircuitOpenError, etc.
+ * - CommandSecurityError — src/security/safe-command.ts (isolated, intentional)
+ *
+ * ToolErrors.ts is DEPRECATED (was 100% duplicate of AppError.ts tool classes).
+ * src/errors.ts (HydraError) is DEPRECATED — use src/hydra/core/errors.ts instead.
+ *
  * @module errors
  */
 
 // ============================================================================
-// AppError Exports
+// AppError Exports (Application-Level Errors)
 // ============================================================================
 
 export {
+  APIError,
+  // Base and specialized error classes
+  AppError,
+  AuthenticationError,
+  AuthorizationError,
+  // Claude SDK error class
+  ClaudeSDKError,
+  ConfigError,
+  ConfigurationError,
+  ConnectionError,
   // Error codes and severity
   ErrorCode,
   ErrorSeverity,
-  
-  // Base and specialized error classes
-  AppError,
-  ValidationError,
-  APIError,
-  NetworkError,
-  TimeoutError,
-  ConfigError,
-  FileSystemError,
-  RateLimitError,
-  AuthenticationError,
-  AuthorizationError,
   FileNotFoundError,
-  PermissionError,
-  SecurityError,
-  NotFoundError,
-  ConnectionError,
-  ConfigurationError,
-  SwarmError,
-  
-  // Tool error classes
-  ToolError,
-  ToolNotFoundError,
-  ToolLoadError,
-  ToolValidationError,
-  ToolExecutionError,
-  ToolTimeoutError,
-  ToolRegistrationError,
-  ToolHookError,
-  
+  FileSystemError,
   // Utility functions
   isOperationalError,
-  wrapAsync
+  NetworkError,
+  NotFoundError,
+  PermissionError,
+  RateLimitError,
+  SecurityError,
+  SwarmError,
+  TimeoutError,
+  // Tool error classes (canonical source — NOT ToolErrors.ts)
+  ToolError,
+  ToolExecutionError,
+  ToolHookError,
+  ToolLoadError,
+  ToolNotFoundError,
+  ToolRegistrationError,
+  ToolTimeoutError,
+  ToolValidationError,
+  ValidationError,
+  wrapAsync,
 } from './AppError.js';
+
+// ============================================================================
+// Hydra Core Error Re-exports
+// NOTE: hydra/core/errors.ts has been removed as dead code.
+// HydraError hierarchy was only used by dead pipeline modules.
+// If needed in the future, recreate from AppError hierarchy.
+// ============================================================================
 
 // ============================================================================
 // Error Formatter Exports
 // ============================================================================
 
 export {
+  default as errorFormatter,
   ErrorFormatter,
-  getErrorFormatter,
-  resetErrorFormatter,
   formatError,
   formatErrorInline,
-  printError,
+  getErrorFormatter,
   printDiagnostic,
-  default as errorFormatter
+  printError,
+  resetErrorFormatter,
 } from './error-formatter.js';
 
 // ============================================================================
@@ -67,25 +87,25 @@ export {
 // ============================================================================
 
 import {
+  APIError,
+  AppError,
+  ConfigError,
   ErrorCode,
   ErrorSeverity,
-  AppError,
-  ValidationError,
-  APIError,
-  NetworkError,
-  TimeoutError,
-  ConfigError,
   FileSystemError,
   isOperationalError,
-  wrapAsync
+  NetworkError,
+  TimeoutError,
+  ValidationError,
+  wrapAsync,
 } from './AppError.js';
 
 import {
   ErrorFormatter,
-  getErrorFormatter,
   formatError,
+  getErrorFormatter,
+  printDiagnostic,
   printError,
-  printDiagnostic
 } from './error-formatter.js';
 
 /**
@@ -106,7 +126,7 @@ export default {
     NetworkError,
     TimeoutError,
     ConfigError,
-    FileSystemError
+    FileSystemError,
   },
 
   // Formatting
@@ -115,12 +135,12 @@ export default {
     getErrorFormatter,
     formatError,
     printError,
-    printDiagnostic
+    printDiagnostic,
   },
 
   // Utilities
   utils: {
     isOperationalError,
-    wrapAsync
-  }
+    wrapAsync,
+  },
 };

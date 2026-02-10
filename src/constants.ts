@@ -25,7 +25,7 @@ export const Models = Object.freeze({
   /** Analysis and reasoning model */
   ANALYSIS: 'phi3:mini',
   /** Text embedding model */
-  EMBEDDING: 'nomic-embed-text'
+  EMBEDDING: 'nomic-embed-text',
 });
 
 /**
@@ -38,7 +38,7 @@ export const ModelCapabilities = Object.freeze({
   CODE_ANALYSIS: [Models.CODE, Models.ANALYSIS],
   EMBEDDING: [Models.EMBEDDING],
   SUMMARIZATION: [Models.CORE, Models.ANALYSIS],
-  CHAT: [Models.CORE, Models.FAST]
+  CHAT: [Models.CORE, Models.FAST],
 });
 
 /**
@@ -50,7 +50,7 @@ export const ModelDefaults = Object.freeze({
   TOP_P: 0.9,
   TOP_K: 40,
   MAX_TOKENS: 4096,
-  CONTEXT_WINDOW: 4096
+  CONTEXT_WINDOW: 4096,
 });
 
 // ============================================================================
@@ -74,7 +74,7 @@ export const Agents = Object.freeze({
   ZOLTAN: 'Zoltan',
   REGIS: 'Regis',
   DIJKSTRA: 'Dijkstra',
-  PHILIPPA: 'Philippa'
+  PHILIPPA: 'Philippa',
 });
 
 /**
@@ -82,18 +82,54 @@ export const Agents = Object.freeze({
  * @readonly
  */
 export const AgentRoles = Object.freeze({
-  [Agents.GERALT]: { role: 'coordinator', model: Models.CORE, description: 'Main coordinator and decision maker' },
-  [Agents.YENNEFER]: { role: 'analyst', model: Models.ANALYSIS, description: 'Deep analysis and reasoning' },
+  [Agents.GERALT]: {
+    role: 'coordinator',
+    model: Models.CORE,
+    description: 'Main coordinator and decision maker',
+  },
+  [Agents.YENNEFER]: {
+    role: 'analyst',
+    model: Models.ANALYSIS,
+    description: 'Deep analysis and reasoning',
+  },
   [Agents.TRISS]: { role: 'coder', model: Models.CODE, description: 'Code generation and review' },
-  [Agents.JASKIER]: { role: 'writer', model: Models.CORE, description: 'Documentation and creative writing' },
-  [Agents.VESEMIR]: { role: 'reviewer', model: Models.ANALYSIS, description: 'Quality review and validation' },
-  [Agents.CIRI]: { role: 'fast', model: Models.FAST, description: 'Quick responses and simple tasks' },
-  [Agents.ESKEL]: { role: 'tester', model: Models.CODE, description: 'Test generation and validation' },
-  [Agents.LAMBERT]: { role: 'debugger', model: Models.CODE, description: 'Debugging and error analysis' },
-  [Agents.ZOLTAN]: { role: 'optimizer', model: Models.ANALYSIS, description: 'Performance optimization' },
+  [Agents.JASKIER]: {
+    role: 'writer',
+    model: Models.CORE,
+    description: 'Documentation and creative writing',
+  },
+  [Agents.VESEMIR]: {
+    role: 'reviewer',
+    model: Models.ANALYSIS,
+    description: 'Quality review and validation',
+  },
+  [Agents.CIRI]: {
+    role: 'fast',
+    model: Models.FAST,
+    description: 'Quick responses and simple tasks',
+  },
+  [Agents.ESKEL]: {
+    role: 'tester',
+    model: Models.CODE,
+    description: 'Test generation and validation',
+  },
+  [Agents.LAMBERT]: {
+    role: 'debugger',
+    model: Models.CODE,
+    description: 'Debugging and error analysis',
+  },
+  [Agents.ZOLTAN]: {
+    role: 'optimizer',
+    model: Models.ANALYSIS,
+    description: 'Performance optimization',
+  },
   [Agents.REGIS]: { role: 'security', model: Models.ANALYSIS, description: 'Security analysis' },
   [Agents.DIJKSTRA]: { role: 'architect', model: Models.CORE, description: 'System architecture' },
-  [Agents.PHILIPPA]: { role: 'researcher', model: Models.ANALYSIS, description: 'Research and information gathering' }
+  [Agents.PHILIPPA]: {
+    role: 'researcher',
+    model: Models.ANALYSIS,
+    description: 'Research and information gathering',
+  },
 });
 
 // ============================================================================
@@ -116,7 +152,7 @@ export const Paths = Object.freeze({
   /** Cache directory */
   CACHE_DIR: 'cache',
   /** Audit log directory */
-  AUDIT_DIR: '.hydra-data/audit'
+  AUDIT_DIR: '.hydra-data/audit',
 });
 
 /**
@@ -151,7 +187,7 @@ export const Timeouts = Object.freeze({
   /** Shell command timeout */
   SHELL: 30_000,
   /** File operation timeout */
-  FILE: 10_000
+  FILE: 10_000,
 });
 
 /**
@@ -166,7 +202,7 @@ export const Retry = Object.freeze({
   /** Maximum delay between retries (ms) */
   MAX_DELAY: 30_000,
   /** Backoff multiplier */
-  BACKOFF_FACTOR: 2
+  BACKOFF_FACTOR: 2,
 });
 
 /**
@@ -181,7 +217,7 @@ export const RateLimits = Object.freeze({
   /** Token bucket size */
   BUCKET_SIZE: 10,
   /** Token refill rate per second */
-  REFILL_RATE: 2
+  REFILL_RATE: 2,
 });
 
 /**
@@ -198,7 +234,7 @@ export const SizeLimits = Object.freeze({
   /** Maximum memory entries */
   MAX_MEMORY_ENTRIES: 1000,
   /** Maximum context window tokens */
-  MAX_CONTEXT_TOKENS: 128_000
+  MAX_CONTEXT_TOKENS: 128_000,
 });
 
 // ============================================================================
@@ -217,7 +253,7 @@ export const CacheTTL = Object.freeze({
   /** Configuration cache */
   CONFIG: 60_000, // 1 minute
   /** Health status cache */
-  HEALTH: 30_000 // 30 seconds
+  HEALTH: 30_000, // 30 seconds
 });
 
 // ============================================================================
@@ -244,7 +280,7 @@ export const Security = Object.freeze({
     INFO: 'INFO',
     WARN: 'WARN',
     ERROR: 'ERROR',
-    CRITICAL: 'CRITICAL'
+    CRITICAL: 'CRITICAL',
   }),
 
   /** Audit event types */
@@ -255,7 +291,7 @@ export const Security = Object.freeze({
     AUTH_EVENT: 'AUTH_EVENT',
     CONFIG_CHANGE: 'CONFIG_CHANGE',
     SECURITY_EVENT: 'SECURITY_EVENT',
-    TOOL_EXECUTION: 'TOOL_EXECUTION'
+    TOOL_EXECUTION: 'TOOL_EXECUTION',
   }),
 
   /**
@@ -263,15 +299,15 @@ export const Security = Object.freeze({
    * @deprecated Use DANGEROUS_PATTERNS from './security/patterns.js' instead
    */
   DANGEROUS_PATTERNS: Object.freeze([
-    /rm\s+-rf?\s+[\/~]/i,
-    /:\s*\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;/,  // Fork bomb
+    /rm\s+-rf?\s+[/~]/i,
+    /:\s*\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;/, // Fork bomb
     />\s*\/dev\/sd[a-z]/i,
     /mkfs/i,
     /dd\s+if=/i,
     /chmod\s+777/i,
     /curl.*\|\s*(?:ba)?sh/i,
-    /wget.*\|\s*(?:ba)?sh/i
-  ])
+    /wget.*\|\s*(?:ba)?sh/i,
+  ]),
 });
 
 // ============================================================================
@@ -296,7 +332,7 @@ export const HttpStatus = Object.freeze({
   INTERNAL_SERVER_ERROR: 500,
   BAD_GATEWAY: 502,
   SERVICE_UNAVAILABLE: 503,
-  GATEWAY_TIMEOUT: 504
+  GATEWAY_TIMEOUT: 504,
 });
 
 // ============================================================================
@@ -314,7 +350,7 @@ export const EnvVars = Object.freeze({
   LOG_LEVEL: 'LOG_LEVEL',
   YOLO_MODE: 'HYDRA_YOLO',
   CACHE_DIR: 'CACHE_DIR',
-  CONFIG_PATH: 'GEMINI_CONFIG_PATH'
+  CONFIG_PATH: 'GEMINI_CONFIG_PATH',
 });
 
 // ============================================================================
@@ -342,5 +378,5 @@ export const PATHS = Paths;
 export const DEFAULTS = Object.freeze({
   TIMEOUT_MS: Timeouts.DEFAULT,
   MAX_RETRIES: Retry.MAX_RETRIES,
-  CONTEXT_WINDOW: ModelDefaults.CONTEXT_WINDOW
+  CONTEXT_WINDOW: ModelDefaults.CONTEXT_WINDOW,
 });

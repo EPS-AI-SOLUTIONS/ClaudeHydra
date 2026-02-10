@@ -7,10 +7,10 @@
  * @module src/mcp/config-loader
  */
 
+import { EventEmitter } from 'node:events';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { z } from 'zod';
-import fs from 'fs/promises';
-import path from 'path';
-import { EventEmitter } from 'events';
 
 // ============================================================================
 // Zod Schemas
@@ -19,70 +19,81 @@ import { EventEmitter } from 'events';
 /**
  * Health check configuration schema
  */
-export const HealthCheckConfigSchema = z.object({
-  enabled: z.boolean().default(true),
-  interval: z.number().positive().default(60000),
-  timeout: z.number().positive().default(5000),
-  cacheTTL: z.number().positive().default(30000)
-}).strict();
+export const HealthCheckConfigSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    interval: z.number().positive().default(60000),
+    timeout: z.number().positive().default(5000),
+    cacheTTL: z.number().positive().default(30000),
+  })
+  .strict();
 
 /**
  * Retry configuration schema
  */
-export const RetryConfigSchema = z.object({
-  maxRetries: z.number().min(0).max(10).default(3),
-  baseDelay: z.number().positive().default(1000),
-  maxDelay: z.number().positive().default(30000),
-  backoffMultiplier: z.number().positive().default(2)
-}).strict();
+export const RetryConfigSchema = z
+  .object({
+    maxRetries: z.number().min(0).max(10).default(3),
+    baseDelay: z.number().positive().default(1000),
+    maxDelay: z.number().positive().default(30000),
+    backoffMultiplier: z.number().positive().default(2),
+  })
+  .strict();
 
 /**
  * MCP Server configuration schema
  */
-export const MCPServerConfigSchema = z.object({
-  type: z.enum(['stdio', 'sse', 'http']),
-  command: z.string().optional(),
-  args: z.array(z.string()).optional().default([]),
-  url: z.string().url().optional(),
-  headers: z.record(z.string(), z.string()).optional(),
-  env: z.record(z.string(), z.string()).optional().default({}),
-  timeout: z.number().positive().default(30000),
-  healthCheck: HealthCheckConfigSchema.optional(),
-  retry: RetryConfigSchema.optional(),
-  tags: z.array(z.string()).optional().default([]),
-  enabled: z.boolean().default(true),
-  description: z.string().optional()
-}).strict().refine(
-  (data) => {
-    // stdio requires command
-    if (data.type === 'stdio' && !data.command) {
-      return false;
-    }
-    // http/sse requires url
-    if ((data.type === 'http' || data.type === 'sse') && !data.url) {
-      return false;
-    }
-    return true;
-  },
-  {
-    message: 'stdio type requires command, http/sse types require url'
-  }
-);
+export const MCPServerConfigSchema = z
+  .object({
+    type: z.enum(['stdio', 'sse', 'http']),
+    command: z.string().optional(),
+    args: z.array(z.string()).optional().default([]),
+    url: z.string().url().optional(),
+    headers: z.record(z.string(), z.string()).optional(),
+    env: z.record(z.string(), z.string()).optional().default({}),
+    timeout: z.number().positive().default(30000),
+    healthCheck: HealthCheckConfigSchema.optional(),
+    retry: RetryConfigSchema.optional(),
+    tags: z.array(z.string()).optional().default([]),
+    enabled: z.boolean().default(true),
+    description: z.string().optional(),
+  })
+  .strict()
+  .refine(
+    (data) => {
+      // stdio requires command
+      if (data.type === 'stdio' && !data.command) {
+        return false;
+      }
+      // http/sse requires url
+      if ((data.type === 'http' || data.type === 'sse') && !data.url) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'stdio type requires command, http/sse types require url',
+    },
+  );
 
 /**
  * Full MCP configuration schema
  */
-export const MCPConfigSchema = z.object({
-  $schema: z.string().optional(),
-  version: z.string().default('1.0.0'),
-  servers: z.record(z.string(), MCPServerConfigSchema),
-  defaults: z.object({
-    timeout: z.number().positive().optional(),
-    healthCheck: HealthCheckConfigSchema.partial().optional(),
-    retry: RetryConfigSchema.partial().optional()
-  }).optional(),
-  groups: z.record(z.string(), z.array(z.string())).optional().default({})
-}).strict();
+export const MCPConfigSchema = z
+  .object({
+    $schema: z.string().optional(),
+    version: z.string().default('1.0.0'),
+    servers: z.record(z.string(), MCPServerConfigSchema),
+    defaults: z
+      .object({
+        timeout: z.number().positive().optional(),
+        healthCheck: HealthCheckConfigSchema.partial().optional(),
+        retry: RetryConfigSchema.partial().optional(),
+      })
+      .optional(),
+    groups: z.record(z.string(), z.array(z.string())).optional().default({}),
+  })
+  .strict();
 
 // ============================================================================
 // Types
@@ -188,7 +199,7 @@ export class MCPConfigLoader extends EventEmitter {
       await this.load();
       this.emit('configReloaded', {
         previous: previousConfig,
-        current: this.config
+        current: this.config,
       });
       return this.config;
     } catch (error) {
@@ -332,7 +343,7 @@ export class MCPConfigLoader extends EventEmitter {
           timeout: 5000,
           cacheTTL: 30000,
           ...defaults.healthCheck,
-          ...server.healthCheck
+          ...server.healthCheck,
         },
         retry: {
           maxRetries: 3,
@@ -340,14 +351,14 @@ export class MCPConfigLoader extends EventEmitter {
           maxDelay: 30000,
           backoffMultiplier: 2,
           ...defaults.retry,
-          ...server.retry
-        }
+          ...server.retry,
+        },
       };
     }
 
     return {
       ...config,
-      servers
+      servers,
     };
   }
 
@@ -421,16 +432,16 @@ export class MCPConfigLoader extends EventEmitter {
           command: 'npx',
           args: ['-y', 'ollama-mcp'],
           env: {
-            OLLAMA_HOST: 'http://localhost:11434'
+            OLLAMA_HOST: 'http://localhost:11434',
           },
           timeout: 120000,
           healthCheck: {
             enabled: true,
-            interval: 60000
+            interval: 60000,
           },
           tags: ['ai', 'local'],
-          enabled: true
-        }
+          enabled: true,
+        },
       },
       defaults: {
         timeout: 30000,
@@ -438,18 +449,18 @@ export class MCPConfigLoader extends EventEmitter {
           enabled: true,
           interval: 60000,
           timeout: 5000,
-          cacheTTL: 30000
+          cacheTTL: 30000,
         },
         retry: {
           maxRetries: 3,
           baseDelay: 1000,
           maxDelay: 30000,
-          backoffMultiplier: 2
-        }
+          backoffMultiplier: 2,
+        },
       },
       groups: {
-        ai: ['ollama']
-      }
+        ai: ['ollama'],
+      },
     };
 
     await fs.mkdir(path.dirname(configPath), { recursive: true });

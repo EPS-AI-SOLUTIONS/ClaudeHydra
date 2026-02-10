@@ -69,13 +69,13 @@ describe('Swarm Agents', () => {
       it('should define coordinator tier', () => {
         expect(agents.MODEL_TIERS.coordinator).toBeDefined();
         expect(agents.MODEL_TIERS.coordinator.provider).toBe('claude');
-        expect(agents.MODEL_TIERS.coordinator.displayName).toContain('Sonnet');
+        expect(agents.MODEL_TIERS.coordinator.displayName).toContain('Opus');
       });
 
       it('should define executor tier', () => {
         expect(agents.MODEL_TIERS.executor).toBeDefined();
-        expect(agents.MODEL_TIERS.executor.provider).toBe('llamacpp');
-        expect(agents.MODEL_TIERS.executor.tool).toBeDefined();
+        expect(agents.MODEL_TIERS.executor.provider).toBe('claude');
+        expect(agents.MODEL_TIERS.executor.model).toBe('claude-opus-4-20250514');
       });
     });
 
@@ -87,7 +87,6 @@ describe('Swarm Agents', () => {
       it('should assign coordinators correctly', () => {
         expect(agents.AGENT_TIERS.Regis).toBe('coordinator');
         expect(agents.AGENT_TIERS.Yennefer).toBe('coordinator');
-        expect(agents.AGENT_TIERS.Jaskier).toBe('coordinator');
       });
 
       it('should assign executors correctly', () => {
@@ -147,29 +146,30 @@ describe('Swarm Agents', () => {
     });
 
     describe('EXECUTOR_MODELS', () => {
-      it('should define model configs for executors', () => {
+      it('should define model configs for all executors', () => {
         expect(agents.EXECUTOR_MODELS.Geralt).toBeDefined();
-        expect(agents.EXECUTOR_MODELS.Geralt.model).toBe('main');
-        expect(agents.EXECUTOR_MODELS.Geralt.tool).toBeDefined();
+        expect(agents.EXECUTOR_MODELS.Geralt.model).toBe('claude-opus-4-20250514');
+        expect(agents.EXECUTOR_MODELS.Geralt.provider).toBe('claude');
       });
 
-      it('should use fast model for Ciri', () => {
-        expect(agents.EXECUTOR_MODELS.Ciri.model).toBe('draft');
-        expect(agents.EXECUTOR_MODELS.Ciri.tool).toContain('fast');
+      it('should use Claude for Ciri', () => {
+        expect(agents.EXECUTOR_MODELS.Ciri.model).toBe('claude-opus-4-20250514');
+        expect(agents.EXECUTOR_MODELS.Ciri.provider).toBe('claude');
       });
 
-      it('should use code tool for Triss and Lambert', () => {
-        expect(agents.EXECUTOR_MODELS.Triss.tool).toBe('llama_code');
-        expect(agents.EXECUTOR_MODELS.Lambert.tool).toBe('llama_code');
+      it('should use Claude for Triss and Lambert', () => {
+        expect(agents.EXECUTOR_MODELS.Triss.model).toBe('claude-opus-4-20250514');
+        expect(agents.EXECUTOR_MODELS.Lambert.model).toBe('claude-opus-4-20250514');
       });
 
-      it('should use json tool for Zoltan', () => {
-        expect(agents.EXECUTOR_MODELS.Zoltan.tool).toBe('llama_json');
+      it('should use Claude for Zoltan', () => {
+        expect(agents.EXECUTOR_MODELS.Zoltan.model).toBe('claude-opus-4-20250514');
+        expect(agents.EXECUTOR_MODELS.Zoltan.provider).toBe('claude');
       });
 
-      it('should use function_call for Philippa', () => {
-        expect(agents.EXECUTOR_MODELS.Philippa.tool).toBe('llama_function_call');
-        expect(agents.EXECUTOR_MODELS.Philippa.model).toBe('functionary');
+      it('should use Claude for Philippa', () => {
+        expect(agents.EXECUTOR_MODELS.Philippa.model).toBe('claude-opus-4-20250514');
+        expect(agents.EXECUTOR_MODELS.Philippa.provider).toBe('claude');
       });
     });
   });
@@ -208,9 +208,9 @@ describe('Swarm Agents', () => {
         expect(config.provider).toBe('claude');
       });
 
-      it('should return llamacpp config for executor', () => {
+      it('should return claude config for executor', () => {
         const config = agents.getAgentModel('Geralt');
-        expect(config.provider).toBe('llamacpp');
+        expect(config.provider).toBe('claude');
       });
     });
 
@@ -232,7 +232,7 @@ describe('Swarm Agents', () => {
         // Use "document" keyword without "write" to ensure Jaskier matches
         const result = agents.classifyPrompt('Document the API endpoints');
         expect(result.agent).toBe('Jaskier');
-        expect(result.tier).toBe('coordinator');
+        expect(result.tier).toBe('executor');
       });
 
       it('should classify research prompts to Regis', () => {

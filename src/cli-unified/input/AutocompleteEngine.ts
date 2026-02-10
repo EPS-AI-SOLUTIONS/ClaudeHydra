@@ -4,8 +4,8 @@
  * @module cli-unified/input/AutocompleteEngine
  */
 
-import { promises as fs } from 'fs';
-import { resolve, dirname, basename, join } from 'path';
+import { promises as fs } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
 import { AGENT_NAMES } from '../core/constants.js';
 
 /**
@@ -24,7 +24,7 @@ export class AutocompleteEngine {
 
     this.#providers.push({
       ...provider,
-      priority: provider.priority || 0
+      priority: provider.priority || 0,
     });
 
     this.#providers.sort((a, b) => b.priority - a.priority);
@@ -35,7 +35,7 @@ export class AutocompleteEngine {
    * Remove a provider by name
    */
   removeProvider(name) {
-    const index = this.#providers.findIndex(p => p.name === name);
+    const index = this.#providers.findIndex((p) => p.name === name);
     if (index !== -1) {
       this.#providers.splice(index, 1);
       return true;
@@ -55,7 +55,7 @@ export class AutocompleteEngine {
         if (result && result.suggestions.length > 0) {
           return result;
         }
-      } catch (error) {
+      } catch (_error) {
         // Provider failed, try next
       }
     }
@@ -64,7 +64,7 @@ export class AutocompleteEngine {
       suggestions: [],
       startIndex: pos,
       endIndex: pos,
-      prefix: ''
+      prefix: '',
     };
   }
 
@@ -99,7 +99,7 @@ export class AutocompleteEngine {
 
     return {
       text,
-      cursorPos: before.length + suggestion.length
+      cursorPos: before.length + suggestion.length,
     };
   }
 
@@ -124,9 +124,9 @@ export class AutocompleteEngine {
           suggestions,
           startIndex: 0,
           endIndex: cursorPos,
-          prefix: AutocompleteEngine.getCommonPrefix(suggestions)
+          prefix: AutocompleteEngine.getCommonPrefix(suggestions),
         };
-      }
+      },
     };
   }
 
@@ -149,9 +149,9 @@ export class AutocompleteEngine {
           suggestions: matches.slice(0, 10),
           startIndex: 0,
           endIndex: cursorPos,
-          prefix: AutocompleteEngine.getCommonPrefix(matches)
+          prefix: AutocompleteEngine.getCommonPrefix(matches),
         };
-      }
+      },
     };
   }
 
@@ -172,7 +172,10 @@ export class AutocompleteEngine {
         const startIndex = cursorPos - pathPart.length;
 
         try {
-          let expandedPath = pathPart.replace(/^~/, process.env.HOME || process.env.USERPROFILE || '');
+          const expandedPath = pathPart.replace(
+            /^~/,
+            process.env.HOME || process.env.USERPROFILE || '',
+          );
 
           const dir = dirname(expandedPath);
           const partial = basename(expandedPath);
@@ -181,8 +184,8 @@ export class AutocompleteEngine {
           const entries = await fs.readdir(resolvedDir, { withFileTypes: true });
 
           const suggestions = entries
-            .filter(entry => entry.name.startsWith(partial) || !partial)
-            .map(entry => {
+            .filter((entry) => entry.name.startsWith(partial) || !partial)
+            .map((entry) => {
               const suffix = entry.isDirectory() ? '/' : '';
               return join(dir, entry.name) + suffix;
             })
@@ -194,12 +197,12 @@ export class AutocompleteEngine {
             suggestions,
             startIndex,
             endIndex: cursorPos,
-            prefix: AutocompleteEngine.getCommonPrefix(suggestions)
+            prefix: AutocompleteEngine.getCommonPrefix(suggestions),
           };
         } catch {
           return null;
         }
-      }
+      },
     };
   }
 
@@ -219,9 +222,9 @@ export class AutocompleteEngine {
         const partial = match[1].toLowerCase();
         const startIndex = cursorPos - partial.length;
 
-        const suggestions = AGENT_NAMES
-          .filter(name => name.toLowerCase().startsWith(partial))
-          .slice(0, 10);
+        const suggestions = AGENT_NAMES.filter((name) =>
+          name.toLowerCase().startsWith(partial),
+        ).slice(0, 10);
 
         if (suggestions.length === 0) return null;
 
@@ -229,9 +232,9 @@ export class AutocompleteEngine {
           suggestions,
           startIndex,
           endIndex: cursorPos,
-          prefix: AutocompleteEngine.getCommonPrefix(suggestions)
+          prefix: AutocompleteEngine.getCommonPrefix(suggestions),
         };
-      }
+      },
     };
   }
 
@@ -247,7 +250,7 @@ export class AutocompleteEngine {
 
     async function fetchModels() {
       const now = Date.now();
-      if (cachedModels.length > 0 && (now - lastFetch) < cacheTimeout) {
+      if (cachedModels.length > 0 && now - lastFetch < cacheTimeout) {
         return cachedModels;
       }
 
@@ -257,7 +260,7 @@ export class AutocompleteEngine {
         const data = await response.json();
 
         if (data.models && Array.isArray(data.models)) {
-          cachedModels = data.models.map(m => m.name);
+          cachedModels = data.models.map((m) => m.name);
           lastFetch = now;
         }
 
@@ -283,7 +286,7 @@ export class AutocompleteEngine {
         if (models.length === 0) return null;
 
         const suggestions = models
-          .filter(model => model.toLowerCase().startsWith(partial))
+          .filter((model) => model.toLowerCase().startsWith(partial))
           .slice(0, 10);
 
         if (suggestions.length === 0) return null;
@@ -292,14 +295,14 @@ export class AutocompleteEngine {
           suggestions,
           startIndex,
           endIndex: cursorPos,
-          prefix: AutocompleteEngine.getCommonPrefix(suggestions)
+          prefix: AutocompleteEngine.getCommonPrefix(suggestions),
         };
       },
       refreshCache: async () => {
         lastFetch = 0;
         return await fetchModels();
       },
-      getCachedModels: () => [...cachedModels]
+      getCachedModels: () => [...cachedModels],
     };
   }
 
@@ -321,7 +324,7 @@ export class AutocompleteEngine {
 
         const templateNames = Object.keys(templates);
         const suggestions = templateNames
-          .filter(name => name.toLowerCase().startsWith(partial))
+          .filter((name) => name.toLowerCase().startsWith(partial))
           .slice(0, 10);
 
         if (suggestions.length === 0) return null;
@@ -330,9 +333,9 @@ export class AutocompleteEngine {
           suggestions,
           startIndex,
           endIndex: cursorPos,
-          prefix: AutocompleteEngine.getCommonPrefix(suggestions)
+          prefix: AutocompleteEngine.getCommonPrefix(suggestions),
         };
-      }
+      },
     };
   }
 
@@ -354,7 +357,7 @@ export class AutocompleteEngine {
           const startIndex = cursorPos - partial.length;
 
           const suggestions = items
-            .filter(item => item.toLowerCase().startsWith(partial.toLowerCase()))
+            .filter((item) => item.toLowerCase().startsWith(partial.toLowerCase()))
             .slice(0, 10);
 
           if (suggestions.length === 0) return null;
@@ -363,7 +366,7 @@ export class AutocompleteEngine {
             suggestions,
             startIndex,
             endIndex: cursorPos,
-            prefix: AutocompleteEngine.getCommonPrefix(suggestions)
+            prefix: AutocompleteEngine.getCommonPrefix(suggestions),
           };
         }
 
@@ -372,7 +375,7 @@ export class AutocompleteEngine {
         const startIndex = cursorPos - partial.length;
 
         const suggestions = items
-          .filter(item => item.toLowerCase().startsWith(partial))
+          .filter((item) => item.toLowerCase().startsWith(partial))
           .slice(0, 10);
 
         if (suggestions.length === 0) return null;
@@ -381,9 +384,9 @@ export class AutocompleteEngine {
           suggestions,
           startIndex,
           endIndex: cursorPos,
-          prefix: AutocompleteEngine.getCommonPrefix(suggestions)
+          prefix: AutocompleteEngine.getCommonPrefix(suggestions),
         };
-      }
+      },
     };
   }
 }

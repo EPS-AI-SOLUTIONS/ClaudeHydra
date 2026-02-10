@@ -4,7 +4,7 @@
  * @module cli-unified/output/TableRenderer
  */
 
-import { BORDER_STYLES, BOX_SINGLE, BOX_DOUBLE, BOX_ROUNDED, BOX_ASCII } from '../core/constants.js';
+import { BOX_DOUBLE, BOX_ROUNDED, BOX_SINGLE } from '../core/constants.js';
 import { themeRegistry } from '../core/ThemeRegistry.js';
 
 /** Table styles using border characters */
@@ -16,7 +16,7 @@ export const TABLE_STYLES = {
   rounded: { ...BOX_ROUNDED, showBorders: true },
   compact: { showBorders: false, padding: 1 },
   minimal: { showBorders: false, padding: 0, separator: ' ' },
-  thick: { ...BOX_SINGLE, showBorders: true, thick: true }
+  thick: { ...BOX_SINGLE, showBorders: true, thick: true },
 };
 
 /** List styles */
@@ -27,14 +27,14 @@ export const LIST_STYLES = {
   star: { marker: '\u2605', indent: 2 },
   check: { marker: '\u2714', indent: 2 },
   number: { marker: null, indent: 3 },
-  letter: { marker: null, indent: 3 }
+  letter: { marker: null, indent: 3 },
 };
 
 /** Alignment options */
 export const ALIGNMENT = {
   LEFT: 'left',
   CENTER: 'center',
-  RIGHT: 'right'
+  RIGHT: 'right',
 };
 
 /**
@@ -53,9 +53,10 @@ function padString(str, width, align = 'left') {
   if (needed <= 0) return str;
 
   switch (align) {
-    case 'center':
+    case 'center': {
       const left = Math.floor(needed / 2);
       return ' '.repeat(left) + str + ' '.repeat(needed - left);
+    }
     case 'right':
       return ' '.repeat(needed) + str;
     default:
@@ -111,7 +112,9 @@ export class TableRenderer {
     if (config.showBorders) {
       output.push(this.renderBorderLine(colWidths, config, 'middle'));
     } else {
-      const separator = colWidths.map(w => '-'.repeat(w + this.padding * 2)).join(config.separator || ' ');
+      const separator = colWidths
+        .map((w) => '-'.repeat(w + this.padding * 2))
+        .join(config.separator || ' ');
       output.push(colors.dim(separator));
     }
 
@@ -153,7 +156,11 @@ export class TableRenderer {
   renderRow(cells, config) {
     if (config.showBorders) {
       const vertical = config.vertical || '\u2502';
-      return this.theme.colors.border(vertical) + cells.join(this.theme.colors.border(vertical)) + this.theme.colors.border(vertical);
+      return (
+        this.theme.colors.border(vertical) +
+        cells.join(this.theme.colors.border(vertical)) +
+        this.theme.colors.border(vertical)
+      );
     }
     return cells.join(config.separator || '  ');
   }
@@ -184,7 +191,7 @@ export class TableRenderer {
         break;
     }
 
-    const segments = widths.map(w => horizontal.repeat(w + paddedWidth));
+    const segments = widths.map((w) => horizontal.repeat(w + paddedWidth));
     return this.theme.colors.border(left + segments.join(middle) + right);
   }
 
@@ -241,9 +248,9 @@ export class ListRenderer {
 
       // Handle nested items
       if (item.children && item.children.length > 0) {
-        const nestedItems = item.children.map(child => ({
+        const nestedItems = item.children.map((child) => ({
           ...(typeof child === 'string' ? { text: child } : child),
-          level: (item.level || 0) + 1
+          level: (item.level || 0) + 1,
         }));
         output.push(this.render(nestedItems, options));
       }
@@ -255,13 +262,13 @@ export class ListRenderer {
   /**
    * Render a definition list
    */
-  renderDefinitions(definitions, options = {}) {
+  renderDefinitions(definitions, _options = {}) {
     const colors = this.theme.colors;
     const output = [];
 
     for (const [term, definition] of Object.entries(definitions)) {
       output.push(colors.highlight(term));
-      output.push('  ' + colors.dim(definition));
+      output.push(`  ${colors.dim(definition)}`);
       output.push('');
     }
 

@@ -4,12 +4,19 @@
  * @module cli-unified/history/UnifiedHistoryManager
  */
 
-import { EventEmitter } from 'events';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, readdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { homedir } from 'os';
-import { eventBus, EVENT_TYPES } from '../core/EventBus.js';
+import { EventEmitter } from 'node:events';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { DATA_DIR, MAX_HISTORY_SIZE } from '../core/constants.js';
+import { EVENT_TYPES, eventBus } from '../core/EventBus.js';
 import { FuzzySearchEngine } from './FuzzySearchEngine.js';
 
 const HISTORY_DIR = join(homedir(), DATA_DIR, 'history');
@@ -47,7 +54,7 @@ export class UnifiedHistoryManager extends EventEmitter {
       { pattern: /\b(doc|readme|comment)\b/i, tag: 'docs' },
       { pattern: /\b(security|auth|permission)\b/i, tag: 'security' },
       { pattern: /\b(api|endpoint|rest|graphql)\b/i, tag: 'api' },
-      { pattern: /\b(database|sql|query|mongo)\b/i, tag: 'database' }
+      { pattern: /\b(database|sql|query|mongo)\b/i, tag: 'database' },
     ];
 
     this._ensureDir();
@@ -85,14 +92,14 @@ export class UnifiedHistoryManager extends EventEmitter {
   _loadHistory() {
     try {
       const files = readdirSync(this.historyDir)
-        .filter(f => f.endsWith('.jsonl'))
+        .filter((f) => f.endsWith('.jsonl'))
         .sort()
         .slice(-7); // Load last 7 days
 
       for (const file of files) {
         const filePath = join(this.historyDir, file);
         const content = readFileSync(filePath, 'utf-8');
-        const lines = content.split('\n').filter(l => l.trim());
+        const lines = content.split('\n').filter((l) => l.trim());
 
         for (const line of lines) {
           try {
@@ -152,7 +159,7 @@ export class UnifiedHistoryManager extends EventEmitter {
       this.searchEngine.addDocument(entry.id, entry.text, {
         timestamp: entry.timestamp,
         agent: entry.agent,
-        tags: entry.tags
+        tags: entry.tags,
       });
     }
 
@@ -194,7 +201,7 @@ export class UnifiedHistoryManager extends EventEmitter {
       agent: options.agent || null,
       tags: options.tags || this._autoTag(text),
       response: options.response || null,
-      metadata: options.metadata || {}
+      metadata: options.metadata || {},
     };
 
     this._addToMemory(entry);
@@ -202,7 +209,7 @@ export class UnifiedHistoryManager extends EventEmitter {
     // Persist to file
     try {
       const filePath = this._getTodayFile();
-      appendFileSync(filePath, JSON.stringify(entry) + '\n');
+      appendFileSync(filePath, `${JSON.stringify(entry)}\n`);
     } catch (error) {
       console.error('Failed to save history:', error.message);
     }
@@ -273,8 +280,8 @@ export class UnifiedHistoryManager extends EventEmitter {
    */
   searchPrefix(prefix) {
     return this.entries
-      .filter(e => e.text.toLowerCase().startsWith(prefix.toLowerCase()))
-      .map(e => e.text)
+      .filter((e) => e.text.toLowerCase().startsWith(prefix.toLowerCase()))
+      .map((e) => e.text)
       .slice(-10);
   }
 
@@ -283,7 +290,7 @@ export class UnifiedHistoryManager extends EventEmitter {
    */
   getByTag(tag) {
     const ids = this.tags.get(tag) || [];
-    return this.entries.filter(e => ids.includes(e.id));
+    return this.entries.filter((e) => ids.includes(e.id));
   }
 
   /**
@@ -297,14 +304,14 @@ export class UnifiedHistoryManager extends EventEmitter {
    * Add bookmark
    */
   addBookmark(entryId, name) {
-    const entry = this.entries.find(e => e.id === entryId);
+    const entry = this.entries.find((e) => e.id === entryId);
     if (!entry) return false;
 
     this.bookmarks.set(name, {
       entryId,
       text: entry.text,
       timestamp: entry.timestamp,
-      bookmarkedAt: Date.now()
+      bookmarkedAt: Date.now(),
     });
 
     this._saveBookmarks();
@@ -337,7 +344,7 @@ export class UnifiedHistoryManager extends EventEmitter {
   listBookmarks() {
     return Array.from(this.bookmarks.entries()).map(([name, data]) => ({
       name,
-      ...data
+      ...data,
     }));
   }
 
@@ -352,7 +359,7 @@ export class UnifiedHistoryManager extends EventEmitter {
    * Get entries by session
    */
   getBySession(sessionId) {
-    return this.entries.filter(e => e.sessionId === sessionId);
+    return this.entries.filter((e) => e.sessionId === sessionId);
   }
 
   /**
@@ -384,7 +391,7 @@ export class UnifiedHistoryManager extends EventEmitter {
 
       case 'md':
         return this.entries
-          .map(e => {
+          .map((e) => {
             const date = new Date(e.timestamp).toLocaleString();
             const tags = e.tags?.length ? ` [${e.tags.join(', ')}]` : '';
             return `## ${date}${tags}\n\n${e.text}\n`;
@@ -397,14 +404,16 @@ export class UnifiedHistoryManager extends EventEmitter {
 <head><title>ClaudeHydra History</title></head>
 <body>
 <h1>ClaudeHydra History</h1>
-${this.entries.map(e => {
-  const date = new Date(e.timestamp).toLocaleString();
-  const tags = e.tags?.length ? `<small>[${e.tags.join(', ')}]</small>` : '';
-  return `<div class="entry">
+${this.entries
+  .map((e) => {
+    const date = new Date(e.timestamp).toLocaleString();
+    const tags = e.tags?.length ? `<small>[${e.tags.join(', ')}]</small>` : '';
+    return `<div class="entry">
     <h3>${date} ${tags}</h3>
     <pre>${e.text}</pre>
   </div>`;
-}).join('\n')}
+  })
+  .join('\n')}
 </body>
 </html>`;
 
@@ -422,8 +431,8 @@ ${this.entries.map(e => {
 
     return {
       total: this.entries.length,
-      today: this.entries.filter(e => now - e.timestamp < dayMs).length,
-      thisWeek: this.entries.filter(e => now - e.timestamp < 7 * dayMs).length,
+      today: this.entries.filter((e) => now - e.timestamp < dayMs).length,
+      thisWeek: this.entries.filter((e) => now - e.timestamp < 7 * dayMs).length,
       byAgent: this.entries.reduce((acc, e) => {
         if (e.agent) {
           acc[e.agent] = (acc[e.agent] || 0) + 1;
@@ -431,9 +440,9 @@ ${this.entries.map(e => {
         return acc;
       }, {}),
       byTag: Object.fromEntries(
-        Array.from(this.tags.entries()).map(([tag, ids]) => [tag, ids.length])
+        Array.from(this.tags.entries()).map(([tag, ids]) => [tag, ids.length]),
       ),
-      bookmarks: this.bookmarks.size
+      bookmarks: this.bookmarks.size,
     };
   }
 

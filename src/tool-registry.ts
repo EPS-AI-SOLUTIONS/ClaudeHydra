@@ -11,24 +11,21 @@
  * - Performance: caching of tool instances and results
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
-import Logger from './logger.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  ToolNotFoundError,
-  ToolLoadError,
-  ToolValidationError,
   ToolExecutionError,
-  ToolTimeoutError,
+  ToolHookError,
+  ToolLoadError,
+  ToolNotFoundError,
   ToolRegistrationError,
-  ToolHookError
+  ToolTimeoutError,
+  ToolValidationError,
 } from './errors/AppError.js';
-import {
-  ToolCategory,
-  validateToolDefinition,
-  validateToolInput
-} from './schemas/tool-schema.js';
+import { getStatsCollector } from './hydra/core/stats.js';
+import Logger from './logger.js';
+import { ToolCategory, validateToolDefinition, validateToolInput } from './schemas/tool-schema.js';
 import { generateId } from './utils/string.js';
 import { formatDate, now } from './utils/time.js';
 
@@ -159,10 +156,11 @@ class ToolRegistry {
       return;
     }
 
-    // Exclude index.js and base-tool.js - they don't export tools directly
-    const excludeFiles = ['index.js', 'base-tool.js'];
-    const files = fs.readdirSync(this.toolsPath)
-      .filter(f => f.endsWith('.js') && !excludeFiles.includes(f));
+    // Exclude index and base-tool — they don't export tools directly
+    const excludeFiles = ['index.js', 'base-tool.js', 'index.ts', 'base-tool.ts'];
+    const files = fs
+      .readdirSync(this.toolsPath)
+      .filter((f) => (f.endsWith('.js') || f.endsWith('.ts')) && !excludeFiles.includes(f));
 
     for (const file of files) {
       const fullPath = path.join(this.toolsPath, file);
@@ -204,7 +202,8 @@ class ToolRegistry {
 
     // Fallback: derive from filename if no names found
     if (names.length === 0) {
-      const baseName = path.basename(filename, '.js').replace(/-/g, '_');
+      const ext = path.extname(filename);
+      const baseName = path.basename(filename, ext).replace(/-/g, '_');
       names.push(baseName);
     }
 
@@ -223,10 +222,11 @@ class ToolRegistry {
       return;
     }
 
-    // Exclude index.js and base-tool.js - they don't export tools directly
-    const excludeFiles = ['index.js', 'base-tool.js'];
-    const files = fs.readdirSync(this.toolsPath)
-      .filter(f => f.endsWith('.js') && !excludeFiles.includes(f));
+    // Exclude index and base-tool — they don't export tools directly
+    const excludeFiles = ['index.js', 'base-tool.js', 'index.ts', 'base-tool.ts'];
+    const files = fs
+      .readdirSync(this.toolsPath)
+      .filter((f) => (f.endsWith('.js') || f.endsWith('.ts')) && !excludeFiles.includes(f));
 
     for (const file of files) {
       await this._loadToolFile(path.join(this.toolsPath, file));
@@ -252,7 +252,7 @@ class ToolRegistry {
       const tools = Array.isArray(toolModule.default) ? toolModule.default : [toolModule.default];
 
       for (const tool of tools) {
-        if (tool && tool.name && tool.execute) {
+        if (tool?.name && tool.execute) {
           await this.registerTool(tool, { source: file });
           loadedTools.push(tool);
         }
@@ -316,7 +316,10 @@ class ToolRegistry {
 
     // Check for duplicates
     if (this.tools.has(tool.name) && !override) {
-      throw new ToolRegistrationError(tool.name, 'Tool already registered. Use override option to replace.');
+      throw new ToolRegistrationError(
+        tool.name,
+        'Tool already registered. Use override option to replace.',
+      );
     }
 
     // Apply defaults
@@ -329,20 +332,14 @@ class ToolRegistry {
       cacheTTL: 0,
       requiresConfirmation: false,
       dangerous: false,
-      metadata: {
-        version: '1.0.0',
-        author: 'unknown',
-        registeredAt: formatDate(),
-        source
-      },
       ...tool,
       metadata: {
         version: '1.0.0',
         author: 'unknown',
         registeredAt: formatDate(),
         source,
-        ...tool.metadata
-      }
+        ...tool.metadata,
+      },
     };
 
     // Register the tool
@@ -362,7 +359,7 @@ class ToolRegistry {
       totalDuration: 0,
       avgDuration: 0,
       lastInvoked: null,
-      cacheHits: 0
+      cacheHits: 0,
     });
 
     Logger.debug(`Registered tool: ${normalizedTool.name} [${normalizedTool.category}]`);
@@ -435,14 +432,14 @@ class ToolRegistry {
    * @returns {object[]}
    */
   getAllTools() {
-    return Array.from(this.tools.values()).map(t => ({
+    return Array.from(this.tools.values()).map((t) => ({
       name: t.name,
       description: t.description,
       category: t.category,
       inputSchema: t.inputSchema,
       metadata: t.metadata,
       dangerous: t.dangerous,
-      requiresConfirmation: t.requiresConfirmation
+      requiresConfirmation: t.requiresConfirmation,
     }));
   }
 
@@ -456,7 +453,7 @@ class ToolRegistry {
     if (!toolNames) return [];
 
     return Array.from(toolNames)
-      .map(name => this.tools.get(name))
+      .map((name) => this.tools.get(name))
       .filter(Boolean);
   }
 
@@ -558,10 +555,7 @@ class ToolRegistry {
    * @returns {Promise<HookResult>}
    */
   async _runBeforeHooks(context) {
-    const allHooks = [
-      ...this.beforeHooks,
-      ...(this.toolBeforeHooks.get(context.toolName) || [])
-    ];
+    const allHooks = [...this.beforeHooks, ...(this.toolBeforeHooks.get(context.toolName) || [])];
 
     let currentInput = context.input;
 
@@ -595,10 +589,7 @@ class ToolRegistry {
    * @param {Error|null} error - Execution error if any
    */
   async _runAfterHooks(context, result, error) {
-    const allHooks = [
-      ...this.afterHooks,
-      ...(this.toolAfterHooks.get(context.toolName) || [])
-    ];
+    const allHooks = [...this.afterHooks, ...(this.toolAfterHooks.get(context.toolName) || [])];
 
     for (const hook of allHooks) {
       try {
@@ -607,6 +598,76 @@ class ToolRegistry {
         Logger.warn(`After-hook failed for ${context.toolName}`, { error: hookError.message });
       }
     }
+  }
+
+  // ============================================
+  // Tool Execution - Helper Methods
+  // ============================================
+
+  /**
+   * Check result cache for a tool execution
+   * @param {object} tool - Tool definition
+   * @param {any} input - Tool input
+   * @returns {{ hit: boolean, result?: any }}
+   */
+  _checkCache(tool, input) {
+    if (!tool.cacheable || tool.cacheTTL <= 0) return { hit: false };
+
+    const cacheKey = `${tool.name}:${this._hashInput(input)}`;
+    const cached = this.resultCache.get(cacheKey);
+
+    if (cached && now() - cached.timestamp < cached.ttl) {
+      const stats = this.stats.get(tool.name);
+      if (stats) stats.cacheHits++;
+      Logger.debug(`Cache hit for ${tool.name}`);
+      return { hit: true, result: cached.result };
+    }
+
+    return { hit: false };
+  }
+
+  /**
+   * Store result in cache if tool is cacheable
+   * @param {object} tool - Tool definition
+   * @param {any} input - Tool input
+   * @param {any} result - Execution result
+   */
+  _storeInCache(tool, input, result) {
+    if (!tool.cacheable || tool.cacheTTL <= 0) return;
+
+    const cacheKey = `${tool.name}:${this._hashInput(input)}`;
+    this.resultCache.set(cacheKey, {
+      result,
+      timestamp: now(),
+      ttl: tool.cacheTTL,
+      inputHash: this._hashInput(input),
+    });
+    this._startCacheCleanup();
+  }
+
+  /**
+   * Record execution stats for a tool
+   * @param {string} toolName - Tool name
+   * @param {string} category - Tool category
+   * @param {number} startTime - Execution start timestamp
+   * @param {boolean} success - Whether execution succeeded
+   * @param {Error} [error] - Error if execution failed
+   */
+  _recordExecutionStats(toolName, category, startTime, success, error = null) {
+    const stats = this.stats.get(toolName);
+    const duration = now() - startTime;
+
+    if (stats) {
+      if (success) {
+        stats.successes++;
+        stats.totalDuration += duration;
+        stats.avgDuration = stats.totalDuration / stats.successes;
+      } else {
+        stats.failures++;
+      }
+    }
+
+    this._reportToStatsCollector(toolName, category, duration, success, error);
   }
 
   // ============================================
@@ -632,7 +693,7 @@ class ToolRegistry {
       input,
       startTime: now(),
       executionId: this._generateExecutionId(),
-      metadata: new Map(Object.entries(options.metadata || {}))
+      metadata: new Map(Object.entries(options.metadata || {})),
     };
 
     const stats = this.stats.get(toolName);
@@ -658,59 +719,36 @@ class ToolRegistry {
         throw new ToolExecutionError(toolName, hookResult.abortReason || 'Aborted by hook');
       }
 
-      // Check if hook provided a result (short-circuit)
       if (hookResult.result !== undefined) {
         result = hookResult.result;
         return result;
       }
 
-      // Use potentially modified input
       const finalInput = hookResult.modifiedInput !== undefined ? hookResult.modifiedInput : input;
 
       // Check cache
-      if (tool.cacheable && tool.cacheTTL > 0) {
-        const cacheKey = `${toolName}:${this._hashInput(finalInput)}`;
-        const cached = this.resultCache.get(cacheKey);
-
-        if (cached && now() - cached.timestamp < cached.ttl) {
-          if (stats) stats.cacheHits++;
-          Logger.debug(`Cache hit for ${toolName}`);
-          result = cached.result;
-          return result;
-        }
+      const cacheResult = this._checkCache(tool, finalInput);
+      if (cacheResult.hit) {
+        result = cacheResult.result;
+        return result;
       }
 
       // Execute with timeout
       const timeout = options.timeout || tool.timeout || 30000;
       result = await this._executeWithTimeout(tool, finalInput, timeout);
 
-      // Cache result if cacheable
-      if (tool.cacheable && tool.cacheTTL > 0) {
-        const cacheKey = `${toolName}:${this._hashInput(finalInput)}`;
-        this.resultCache.set(cacheKey, {
-          result,
-          timestamp: now(),
-          ttl: tool.cacheTTL,
-          inputHash: this._hashInput(finalInput)
-        });
-        this._startCacheCleanup();
-      }
+      // Cache result
+      this._storeInCache(tool, finalInput, result);
 
-      if (stats) {
-        stats.successes++;
-        const duration = now() - context.startTime;
-        stats.totalDuration += duration;
-        stats.avgDuration = stats.totalDuration / stats.successes;
-      }
+      // Record success stats
+      this._recordExecutionStats(toolName, tool.category, context.startTime, true);
 
       return result;
-
     } catch (error) {
       executionError = error;
 
-      if (stats) {
-        stats.failures++;
-      }
+      // Record failure stats
+      this._recordExecutionStats(toolName, tool.category, context.startTime, false, error);
 
       // Retry logic
       if (tool.retryable && tool.maxRetries > 0 && !options._retryCount) {
@@ -719,15 +757,13 @@ class ToolRegistry {
           Logger.warn(`Retrying tool ${toolName} (attempt ${retryCount + 1}/${tool.maxRetries})`);
           return this.executeTool(toolName, input, {
             ...options,
-            _retryCount: retryCount + 1
+            _retryCount: retryCount + 1,
           });
         }
       }
 
       throw error;
-
     } finally {
-      // Run after hooks
       await this._runAfterHooks(context, result, executionError);
     }
   }
@@ -746,11 +782,11 @@ class ToolRegistry {
       }, timeout);
 
       Promise.resolve(tool.execute(input))
-        .then(result => {
+        .then((result) => {
           clearTimeout(timeoutId);
           resolve(result);
         })
-        .catch(error => {
+        .catch((error) => {
           clearTimeout(timeoutId);
           if (error instanceof ToolExecutionError) {
             reject(error);
@@ -759,6 +795,44 @@ class ToolRegistry {
           }
         });
     });
+  }
+
+  // ============================================
+  // Central Metrics Integration
+  // ============================================
+
+  /**
+   * Report tool execution to the central StatsCollector.
+   * This bridges ToolRegistry's per-tool stats into the Prometheus pipeline,
+   * making tool execution metrics visible in exportPrometheus() output.
+   *
+   * @param {string} toolName - Name of the executed tool
+   * @param {string} category - Tool category
+   * @param {number} duration - Execution duration in ms
+   * @param {boolean} success - Whether execution succeeded
+   * @param {Error} [error] - Error if execution failed
+   * @private
+   */
+  _reportToStatsCollector(toolName, category, duration, success, error = null) {
+    try {
+      const collector = getStatsCollector();
+      collector.recordRequest({
+        provider: 'tool',
+        category: category || 'custom',
+        latency: duration,
+        success,
+        error: error ? { type: error.constructor?.name || 'Error' } : null,
+      });
+
+      // Also record in the tool-specific counter for granular tool metrics
+      collector.requests.inc(1, {
+        type: 'tool_execution',
+        tool: toolName,
+        status: success ? 'success' : 'failure',
+      });
+    } catch {
+      // Silently ignore — stats collection should never break tool execution
+    }
   }
 
   // ============================================
@@ -799,7 +873,7 @@ class ToolRegistry {
         totalDuration: 0,
         avgDuration: 0,
         lastInvoked: null,
-        cacheHits: 0
+        cacheHits: 0,
       });
     };
 
@@ -841,8 +915,8 @@ class ToolRegistry {
         key,
         age: currentTime - entry.timestamp,
         ttl: entry.ttl,
-        expiresIn: entry.ttl - (currentTime - entry.timestamp)
-      }))
+        expiresIn: entry.ttl - (currentTime - entry.timestamp),
+      })),
     };
   }
 

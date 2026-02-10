@@ -9,47 +9,47 @@
 // ============================================================================
 
 export {
-  COLORS,
-  RESET,
-  Styles,
-  FgColors,
   BgColors,
-  supportsColors,
-  getColorDepth,
+  bg256,
+  bgHex,
+  bgRGB,
+  blue,
+  bold,
+  COLORS,
   colorize,
   createColorFormatter,
-  stripAnsi,
-  visibleLength,
-  // Convenience colors
-  red,
-  green,
-  yellow,
-  blue,
-  magenta,
   cyan,
-  white,
-  gray,
-  grey,
-  bold,
+  debug,
+  default as colors,
   dim,
-  italic,
-  underline,
-  inverse,
-  strikethrough,
   // Semantic colors
   error,
-  warning,
-  success,
-  info,
-  debug,
+  FgColors,
   // Extended colors
   fg256,
-  bg256,
-  fgRGB,
-  bgRGB,
   fgHex,
-  bgHex,
-  default as colors
+  fgRGB,
+  getColorDepth,
+  gray,
+  green,
+  grey,
+  info,
+  inverse,
+  italic,
+  magenta,
+  RESET,
+  // Convenience colors
+  red,
+  Styles,
+  strikethrough,
+  stripAnsi,
+  success,
+  supportsColors,
+  underline,
+  visibleLength,
+  warning,
+  white,
+  yellow,
 } from './colors.js';
 
 // ============================================================================
@@ -57,10 +57,10 @@ export {
 // ============================================================================
 
 export {
-  LogRotation,
+  default as rotation,
   getLogRotation,
+  LogRotation,
   resetLogRotation,
-  default as rotation
 } from './rotation.js';
 
 // ============================================================================
@@ -68,20 +68,20 @@ export {
 // ============================================================================
 
 export {
-  MessageFormatter,
-  Icons,
   BoxChars,
-  MessageThemes,
-  getFormatter,
-  resetFormatter,
-  formatError as formatErrorBox,
-  formatWarning as formatWarningBox,
-  formatSuccess as formatSuccessBox,
-  formatInfo as formatInfoBox,
+  default as messageFormatter,
   formatDebug as formatDebugBox,
+  formatError as formatErrorBox,
   formatHint,
+  formatInfo as formatInfoBox,
   formatInline,
-  default as messageFormatter
+  formatSuccess as formatSuccessBox,
+  formatWarning as formatWarningBox,
+  getFormatter,
+  Icons,
+  MessageFormatter,
+  MessageThemes,
+  resetFormatter,
 } from './message-formatter.js';
 
 // ============================================================================
@@ -89,14 +89,14 @@ export {
 // ============================================================================
 
 export {
-  StackTraceFormatter,
-  parseStackTrace,
-  parseStackFrame,
-  getStackFormatter,
-  resetStackFormatter,
+  default as stackTraceFormatter,
   formatStackTrace,
   getErrorLocation,
-  default as stackTraceFormatter
+  getStackFormatter,
+  parseStackFrame,
+  parseStackTrace,
+  resetStackFormatter,
+  StackTraceFormatter,
 } from './stack-trace-formatter.js';
 
 // ============================================================================
@@ -104,24 +104,32 @@ export {
 // ============================================================================
 
 export {
-  generateSuggestions,
+  default as fixSuggestions,
   generateDiagnostics,
-  getTroubleshootingSteps,
+  generateSuggestions,
+  getLinksForCode,
   getSuggestionsForCode,
   getTitleForCode,
-  getLinksForCode,
-  default as fixSuggestions
+  getTroubleshootingSteps,
 } from './fix-suggestions.js';
 
 // ============================================================================
 // Default Export
 // ============================================================================
 
-import { COLORS, supportsColors, colorize, stripAnsi } from './colors.js';
-import { LogRotation, getLogRotation } from './rotation.js';
-import { MessageFormatter, getFormatter, Icons, BoxChars } from './message-formatter.js';
-import { StackTraceFormatter, formatStackTrace, getErrorLocation } from './stack-trace-formatter.js';
-import { generateSuggestions, generateDiagnostics, getTroubleshootingSteps } from './fix-suggestions.js';
+import { COLORS, colorize, stripAnsi, supportsColors } from './colors.js';
+import {
+  generateDiagnostics,
+  generateSuggestions,
+  getTroubleshootingSteps,
+} from './fix-suggestions.js';
+import { BoxChars, getFormatter, Icons, MessageFormatter } from './message-formatter.js';
+import { getLogRotation, LogRotation } from './rotation.js';
+import {
+  formatStackTrace,
+  getErrorLocation,
+  StackTraceFormatter,
+} from './stack-trace-formatter.js';
 
 /**
  * Logger utilities facade
@@ -132,13 +140,13 @@ export default {
     COLORS,
     supportsColors,
     colorize,
-    stripAnsi
+    stripAnsi,
   },
 
   // Rotation utilities
   rotation: {
     LogRotation,
-    getLogRotation
+    getLogRotation,
   },
 
   // Message formatting utilities
@@ -146,20 +154,20 @@ export default {
     MessageFormatter,
     getFormatter,
     Icons,
-    BoxChars
+    BoxChars,
   },
 
   // Stack trace formatting
   stackTrace: {
     StackTraceFormatter,
     formatStackTrace,
-    getErrorLocation
+    getErrorLocation,
   },
 
   // Fix suggestions
   suggestions: {
     generateSuggestions,
     generateDiagnostics,
-    getTroubleshootingSteps
-  }
+    getTroubleshootingSteps,
+  },
 };

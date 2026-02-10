@@ -7,10 +7,7 @@
  * @module src/git/commit-workflow
  */
 
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { safeGit } from '../security/safe-command.js';
 
 // ============================================================================
 // Constants
@@ -35,7 +32,7 @@ const SENSITIVE_PATTERNS = [
   /\.key$/,
   /id_rsa/,
   /\.ssh\//,
-  /password/i
+  /password/i,
 ];
 
 // ============================================================================
@@ -43,7 +40,11 @@ const SENSITIVE_PATTERNS = [
 // ============================================================================
 
 /**
- * Execute git command
+ * Execute git command (delegated to safeGit for security validation).
+ *
+ * SECURITY FIX: Replaced raw `execAsync(\`git ${command}\`)` with safeGit()
+ * which validates the git subcommand against injection patterns, dangerous
+ * subcommands, and command chaining before execution.
  *
  * @param {string} command - Git command (without 'git' prefix)
  * @param {Object} [options] - Execution options
@@ -51,26 +52,7 @@ const SENSITIVE_PATTERNS = [
  */
 async function git(command, options = {}) {
   const { cwd = process.cwd() } = options;
-
-  try {
-    const { stdout, stderr } = await execAsync(`git ${command}`, {
-      cwd,
-      maxBuffer: 10 * 1024 * 1024
-    });
-
-    return {
-      success: true,
-      stdout: stdout.trim(),
-      stderr: stderr.trim()
-    };
-  } catch (error) {
-    return {
-      success: false,
-      stdout: error.stdout?.trim() || '',
-      stderr: error.stderr?.trim() || error.message,
-      error
-    };
-  }
+  return safeGit(command, { cwd, maxBuffer: 10 * 1024 * 1024 });
 }
 
 // ============================================================================
@@ -109,7 +91,7 @@ export class CommitWorkflow {
     const files = {
       staged: [],
       unstaged: [],
-      untracked: []
+      untracked: [],
     };
 
     for (const line of lines) {
@@ -140,19 +122,19 @@ export class CommitWorkflow {
    * @returns {Promise<Object[]>}
    */
   async getRecentCommits(count = 5) {
-    const result = await git(
-      `log --oneline -${count} --format="%h|%s|%an"`,
-      { cwd: this.cwd }
-    );
+    const result = await git(`log --oneline -${count} --format="%h|%s|%an"`, { cwd: this.cwd });
 
     if (!result.success) {
       return [];
     }
 
-    return result.stdout.split('\n').filter((l) => l.trim()).map((line) => {
-      const [hash, subject, author] = line.split('|');
-      return { hash, subject, author };
-    });
+    return result.stdout
+      .split('\n')
+      .filter((l) => l.trim())
+      .map((line) => {
+        const [hash, subject, author] = line.split('|');
+        return { hash, subject, author };
+      });
   }
 
   /**
@@ -188,7 +170,7 @@ export class CommitWorkflow {
 
     return {
       hasSensitive: sensitive.length > 0,
-      files: sensitive
+      files: sensitive,
     };
   }
 
@@ -202,9 +184,7 @@ export class CommitWorkflow {
     // Check for sensitive files
     const sensitiveCheck = this.checkSensitiveFiles(files);
     if (sensitiveCheck.hasSensitive) {
-      throw new Error(
-        `Refusing to stage sensitive files: ${sensitiveCheck.files.join(', ')}`
-      );
+      throw new Error(`Refusing to stage sensitive files: ${sensitiveCheck.files.join(', ')}`);
     }
 
     // Stage each file individually (safer than git add -A)
@@ -216,7 +196,7 @@ export class CommitWorkflow {
 
     return {
       success: results.every((r) => r.success),
-      results
+      results,
     };
   }
 
@@ -241,15 +221,14 @@ export class CommitWorkflow {
     const escapedMessage = fullMessage.replace(/"/g, '\\"');
     const flags = allowEmpty ? '--allow-empty' : '';
 
-    const result = await git(
-      `commit ${flags} -m "${escapedMessage}"`,
-      { cwd: this.cwd }
-    );
+    const result = await git(`commit ${flags} -m "${escapedMessage}"`, { cwd: this.cwd });
 
     if (!result.success) {
       // Check if it's a pre-commit hook failure
       if (result.stderr.includes('pre-commit')) {
-        throw new Error(`Pre-commit hook failed. Fix the issues and create a NEW commit (do not amend).`);
+        throw new Error(
+          `Pre-commit hook failed. Fix the issues and create a NEW commit (do not amend).`,
+        );
       }
       throw new Error(`Commit failed: ${result.stderr}`);
     }
@@ -260,7 +239,7 @@ export class CommitWorkflow {
     return {
       success: true,
       hash: hashResult.stdout,
-      message: fullMessage
+      message: fullMessage,
     };
   }
 
@@ -276,7 +255,7 @@ export class CommitWorkflow {
     const { files, message } = options;
 
     // Step 1: Get current status
-    const status = await this.getStatus();
+    const _status = await this.getStatus();
 
     // Step 2: Stage files if provided
     if (files && files.length > 0) {
@@ -288,7 +267,7 @@ export class CommitWorkflow {
     if (updatedStatus.staged.length === 0) {
       return {
         success: false,
-        error: 'No changes staged for commit'
+        error: 'No changes staged for commit',
       };
     }
 
@@ -306,7 +285,7 @@ export class CommitWorkflow {
 
     return {
       ...result,
-      status: finalStatus
+      status: finalStatus,
     };
   }
 
@@ -322,7 +301,7 @@ export class CommitWorkflow {
       add: 0,
       modify: 0,
       delete: 0,
-      rename: 0
+      rename: 0,
     };
 
     const affectedAreas = new Set();
@@ -361,9 +340,7 @@ export class CommitWorkflow {
     }
 
     // Build message
-    const scope = affectedAreas.size <= 2
-      ? Array.from(affectedAreas).join(', ')
-      : 'multiple areas';
+    const scope = affectedAreas.size <= 2 ? Array.from(affectedAreas).join(', ') : 'multiple areas';
 
     const fileCount = stagedFiles.length;
     const fileWord = fileCount === 1 ? 'file' : 'files';
@@ -378,7 +355,9 @@ export class CommitWorkflow {
    * @returns {Promise<Object>}
    */
   async amend(message) {
-    console.warn('[CommitWorkflow] WARNING: Amending commit. Only do this if explicitly requested.');
+    console.warn(
+      '[CommitWorkflow] WARNING: Amending commit. Only do this if explicitly requested.',
+    );
 
     let command = 'commit --amend';
 
@@ -397,7 +376,7 @@ export class CommitWorkflow {
 
     return {
       success: true,
-      stdout: result.stdout
+      stdout: result.stdout,
     };
   }
 
@@ -419,9 +398,7 @@ export class CommitWorkflow {
   async isClean() {
     const status = await this.getStatus();
     return (
-      status.staged.length === 0 &&
-      status.unstaged.length === 0 &&
-      status.untracked.length === 0
+      status.staged.length === 0 && status.unstaged.length === 0 && status.untracked.length === 0
     );
   }
 }

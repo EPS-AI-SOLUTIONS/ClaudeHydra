@@ -4,13 +4,12 @@
  * @module cli-unified/input/InputEnhancements
  */
 
-import { EventEmitter } from 'events';
-import { spawn } from 'child_process';
-import { writeFileSync, readFileSync, unlinkSync, existsSync, statSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
+import { EventEmitter } from 'node:events';
+import { existsSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { safeSpawn, safeWhich } from '../../security/safe-command.js';
 import { themeRegistry } from '../core/ThemeRegistry.js';
-import { ANSI } from '../core/constants.js';
 
 /**
  * Ghost Text Preview - shows predicted completion
@@ -112,21 +111,20 @@ export class GhostTextPreview {
  */
 export class ExternalEditor {
   constructor(options = {}) {
-    this.editor = options.editor || process.env.EDITOR || process.env.VISUAL || this._detectEditor();
+    this.editor =
+      options.editor || process.env.EDITOR || process.env.VISUAL || this._detectEditor();
     this.tempDir = options.tempDir || tmpdir();
     this.extension = options.extension || '.md';
   }
 
   _detectEditor() {
+    // SECURITY FIX: Use safeWhich() instead of unsanitized execSync.
+    // Each editor name is validated against a strict alphanumeric pattern
+    // before being passed to which/where.
     const editors = ['code', 'vim', 'nano', 'notepad', 'notepad++'];
     for (const editor of editors) {
-      try {
-        const which = process.platform === 'win32' ? 'where' : 'which';
-        const result = require('child_process').execSync(`${which} ${editor}`, { encoding: 'utf-8' });
-        if (result.trim()) return editor;
-      } catch {
-        continue;
-      }
+      const found = safeWhich(editor);
+      if (found) return editor;
     }
     return process.platform === 'win32' ? 'notepad' : 'nano';
   }
@@ -134,16 +132,19 @@ export class ExternalEditor {
   /**
    * Open editor with initial content
    */
-  async edit(initialContent = '', options = {}) {
+  async edit(initialContent = '', _options = {}) {
     const tempFile = join(this.tempDir, `claude-input-${Date.now()}${this.extension}`);
 
     // Write initial content
     writeFileSync(tempFile, initialContent, 'utf-8');
 
     return new Promise((resolve, reject) => {
-      const editorProcess = spawn(this.editor, [tempFile], {
-        stdio: 'inherit',
-        shell: true
+      // SECURITY FIX: Use safeSpawn() with shell: false (enforced internally).
+      // The editor name was validated during construction or _detectEditor().
+      // Arguments are passed as array, preventing shell injection.
+      const editorProcess = safeSpawn(this.editor, [tempFile], {
+        inheritStdio: true,
+        spawnOptions: {},
       });
 
       editorProcess.on('close', (code) => {
@@ -187,7 +188,7 @@ export class ExternalEditor {
  * Enhanced Keyboard Shortcuts Manager
  */
 export class KeyboardShortcuts extends EventEmitter {
-  constructor(options = {}) {
+  constructor(_options = {}) {
     super();
     this.shortcuts = new Map();
     this.enabled = true;
@@ -288,11 +289,9 @@ export class KeyboardShortcuts extends EventEmitter {
    */
   getHelp() {
     const shortcuts = this.list();
-    const maxKey = Math.max(...shortcuts.map(s => s.key.length));
+    const maxKey = Math.max(...shortcuts.map((s) => s.key.length));
 
-    return shortcuts
-      .map(s => `  ${s.key.padEnd(maxKey + 2)} ${s.description}`)
-      .join('\n');
+    return shortcuts.map((s) => `  ${s.key.padEnd(maxKey + 2)} ${s.description}`).join('\n');
   }
 }
 
@@ -315,15 +314,15 @@ export class FilePreview {
 
     // Match file path patterns
     const patterns = [
-      /([a-zA-Z]:\\[^\s"'<>|]*)/,  // Windows absolute
-      /(\/[^\s"'<>|]+)/,           // Unix absolute
-      /(\.[^\s"'<>|]+)/,           // Relative
-      /([^\s"'<>|]+\.[a-zA-Z0-9]+)/ // File with extension
+      /([a-zA-Z]:\\[^\s"'<>|]*)/, // Windows absolute
+      /(\/[^\s"'<>|]+)/, // Unix absolute
+      /(\.[^\s"'<>|]+)/, // Relative
+      /([^\s"'<>|]+\.[a-zA-Z0-9]+)/, // File with extension
     ];
 
     for (const pattern of patterns) {
-      const matchBefore = beforeCursor.match(new RegExp(pattern.source + '$'));
-      const matchAfter = afterCursor.match(new RegExp('^' + pattern.source));
+      const matchBefore = beforeCursor.match(new RegExp(`${pattern.source}$`));
+      const matchAfter = afterCursor.match(new RegExp(`^${pattern.source}`));
 
       if (matchBefore || matchAfter) {
         const pathBefore = matchBefore ? matchBefore[1] : '';
@@ -350,7 +349,7 @@ export class FilePreview {
         return {
           type: 'directory',
           path: filePath,
-          size: 'directory'
+          size: 'directory',
         };
       }
 
@@ -359,7 +358,7 @@ export class FilePreview {
           type: 'file',
           path: filePath,
           size: this._formatSize(stats.size),
-          preview: '[File too large to preview]'
+          preview: '[File too large to preview]',
         };
       }
 
@@ -374,9 +373,9 @@ export class FilePreview {
         modified: stats.mtime,
         lines: lines.length,
         totalLines: content.split('\n').length,
-        preview: lines.map(l => l.slice(0, this.maxWidth)).join('\n'),
+        preview: lines.map((l) => l.slice(0, this.maxWidth)).join('\n'),
         truncated,
-        extension: filePath.split('.').pop()
+        extension: filePath.split('.').pop(),
       };
     } catch (error) {
       return { error: error.message, path: filePath };
@@ -408,7 +407,7 @@ export class FilePreview {
     // Header
     lines.push(colors.primary(`┌─ ${previewData.path} ─┐`));
     lines.push(colors.dim(`│ Size: ${previewData.size} | Lines: ${previewData.totalLines || '?'}`));
-    lines.push(colors.primary('├' + '─'.repeat(this.maxWidth) + '┤'));
+    lines.push(colors.primary(`├${'─'.repeat(this.maxWidth)}┤`));
 
     // Content
     if (previewData.preview) {
@@ -421,7 +420,7 @@ export class FilePreview {
       lines.push(colors.dim('│ ...'));
     }
 
-    lines.push(colors.primary('└' + '─'.repeat(this.maxWidth) + '┘'));
+    lines.push(colors.primary(`└${'─'.repeat(this.maxWidth)}┘`));
 
     return lines.join('\n');
   }
@@ -557,5 +556,5 @@ export default {
   ExternalEditor,
   KeyboardShortcuts,
   FilePreview,
-  ContextProgress
+  ContextProgress,
 };

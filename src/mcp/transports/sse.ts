@@ -7,7 +7,7 @@
  * @module src/mcp/transports/sse
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 
 // ============================================================================
 // Constants
@@ -23,7 +23,7 @@ export const TransportState = {
   READY: 'ready',
   RECONNECTING: 'reconnecting',
   CLOSED: 'closed',
-  ERROR: 'error'
+  ERROR: 'error',
 };
 
 /**
@@ -35,7 +35,7 @@ export const SSEEventType = {
   RESULT: 'result',
   ERROR: 'error',
   PING: 'ping',
-  NOTIFICATION: 'notification'
+  NOTIFICATION: 'notification',
 };
 
 // ============================================================================
@@ -73,8 +73,8 @@ export class SseTransport extends EventEmitter {
         maxAttempts: config.reconnect?.maxAttempts ?? 5,
         delay: config.reconnect?.delay ?? 2000,
         maxDelay: config.reconnect?.maxDelay ?? 30000,
-        backoffMultiplier: config.reconnect?.backoffMultiplier ?? 1.5
-      }
+        backoffMultiplier: config.reconnect?.backoffMultiplier ?? 1.5,
+      },
     };
 
     /** @type {TransportState} */
@@ -133,9 +133,9 @@ export class SseTransport extends EventEmitter {
         method: 'GET',
         headers: {
           Accept: 'text/event-stream',
-          ...this.config.headers
+          ...this.config.headers,
         },
-        signal: this.abortController.signal
+        signal: this.abortController.signal,
       });
 
       if (!response.ok) {
@@ -206,7 +206,7 @@ export class SseTransport extends EventEmitter {
 
     let currentEvent = {
       type: 'message',
-      data: ''
+      data: '',
     };
 
     for (const line of lines) {
@@ -252,10 +252,10 @@ export class SseTransport extends EventEmitter {
         // Notification or other message
         this.emit('message', {
           type: event.type,
-          data
+          data,
         });
       }
-    } catch (error) {
+    } catch (_error) {
       // Not JSON, emit as raw
       this.emit('output', event.data);
     }
@@ -287,8 +287,8 @@ export class SseTransport extends EventEmitter {
 
     const delay = Math.min(
       this.config.reconnect.delay *
-        Math.pow(this.config.reconnect.backoffMultiplier, this.reconnectAttempts),
-      this.config.reconnect.maxDelay
+        this.config.reconnect.backoffMultiplier ** this.reconnectAttempts,
+      this.config.reconnect.maxDelay,
     );
 
     this.reconnectTimer = setTimeout(async () => {
@@ -296,7 +296,7 @@ export class SseTransport extends EventEmitter {
 
       try {
         await this.connect();
-      } catch (error) {
+      } catch (_error) {
         // Error handling is done in connect()
       }
     }, delay);
@@ -322,7 +322,7 @@ export class SseTransport extends EventEmitter {
       jsonrpc: '2.0',
       method,
       params,
-      id
+      id,
     };
 
     return new Promise((resolve, reject) => {
@@ -357,9 +357,9 @@ export class SseTransport extends EventEmitter {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...this.config.headers
+        ...this.config.headers,
       },
-      body: JSON.stringify(message)
+      body: JSON.stringify(message),
     });
 
     if (!response.ok) {
@@ -377,7 +377,7 @@ export class SseTransport extends EventEmitter {
     const message = {
       jsonrpc: '2.0',
       method,
-      params
+      params,
     };
 
     await this.sendRequest(message);
@@ -415,7 +415,7 @@ export class SseTransport extends EventEmitter {
     }
 
     // Reject pending requests
-    for (const [id, pending] of this.pendingRequests) {
+    for (const [_id, pending] of this.pendingRequests) {
       clearTimeout(pending.timer);
       pending.reject(new Error('Transport closed'));
     }
@@ -446,7 +446,7 @@ export class SseTransport extends EventEmitter {
       state: this.state,
       sessionId: this.sessionId,
       reconnectAttempts: this.reconnectAttempts,
-      requestCount: this.requestId
+      requestCount: this.requestId,
     };
   }
 }
@@ -482,7 +482,7 @@ export function createSseTransport(config) {
     url: config.url,
     headers: config.headers,
     timeout: config.timeout,
-    reconnect: config.reconnect
+    reconnect: config.reconnect,
   });
 }
 

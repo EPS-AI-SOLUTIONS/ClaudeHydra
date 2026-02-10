@@ -7,7 +7,7 @@
  * @module src/agents/bash-agent
  */
 
-import { BaseAgent, AgentState } from './base-agent.js';
+import { BaseAgent } from './base-agent.js';
 
 // ============================================================================
 // Constants
@@ -28,9 +28,9 @@ Handles CI/CD, deployment, and infrastructure operations.`,
     'deploy',
     'ci_cd',
     'infrastructure',
-    'build'
+    'build',
   ],
-  timeout: 120000
+  timeout: 120000,
 };
 
 /**
@@ -38,20 +38,20 @@ Handles CI/CD, deployment, and infrastructure operations.`,
  * @constant {RegExp[]}
  */
 const DANGEROUS_PATTERNS = [
-  /rm\s+-rf\s+\/(?!\w)/,        // rm -rf /
-  /rm\s+-rf\s+~\//,             // rm -rf ~/
-  /sudo\s+rm/,                   // sudo rm
-  /chmod\s+777/,                 // insecure permissions
-  /\|\s*bash$/,                  // piped bash
-  /curl.*\|\s*sh/,               // remote script execution
-  /wget.*\|\s*sh/,               // remote script execution
-  /mkfs\./,                      // format filesystem
-  /dd\s+if=/,                    // disk destroyer
-  /:\s*\(\s*\)\s*\{.*\}/,        // fork bomb
-  />\/dev\/sd[a-z]/,             // write to disk
-  /shutdown/,                    // shutdown command
-  /reboot/,                      // reboot command
-  /init\s+[0-6]/                 // init level change
+  /rm\s+-rf\s+\/(?!\w)/, // rm -rf /
+  /rm\s+-rf\s+~\//, // rm -rf ~/
+  /sudo\s+rm/, // sudo rm
+  /chmod\s+777/, // insecure permissions
+  /\|\s*bash$/, // piped bash
+  /curl.*\|\s*sh/, // remote script execution
+  /wget.*\|\s*sh/, // remote script execution
+  /mkfs\./, // format filesystem
+  /dd\s+if=/, // disk destroyer
+  /:\s*\(\s*\)\s*\{.*\}/, // fork bomb
+  />\/dev\/sd[a-z]/, // write to disk
+  /shutdown/, // shutdown command
+  /reboot/, // reboot command
+  /init\s+[0-6]/, // init level change
 ];
 
 /**
@@ -59,18 +59,49 @@ const DANGEROUS_PATTERNS = [
  * @constant {string[]}
  */
 const SAFE_COMMANDS = [
-  'git', 'npm', 'yarn', 'pnpm', 'node', 'npx',
-  'ls', 'pwd', 'cd', 'echo', 'cat', 'head', 'tail', 'grep',
-  'find', 'which', 'whereis', 'env', 'printenv',
-  'docker', 'docker-compose', 'kubectl',
-  'python', 'python3', 'pip', 'pip3',
-  'cargo', 'rustc',
-  'go', 'gofmt',
-  'make', 'cmake',
-  'curl', 'wget',
-  'tar', 'unzip', 'zip',
-  'mkdir', 'touch', 'cp', 'mv',
-  'chmod', 'chown'
+  'git',
+  'npm',
+  'yarn',
+  'pnpm',
+  'node',
+  'npx',
+  'ls',
+  'pwd',
+  'cd',
+  'echo',
+  'cat',
+  'head',
+  'tail',
+  'grep',
+  'find',
+  'which',
+  'whereis',
+  'env',
+  'printenv',
+  'docker',
+  'docker-compose',
+  'kubectl',
+  'python',
+  'python3',
+  'pip',
+  'pip3',
+  'cargo',
+  'rustc',
+  'go',
+  'gofmt',
+  'make',
+  'cmake',
+  'curl',
+  'wget',
+  'tar',
+  'unzip',
+  'zip',
+  'mkdir',
+  'touch',
+  'cp',
+  'mv',
+  'chmod',
+  'chown',
 ];
 
 // ============================================================================
@@ -93,7 +124,7 @@ export class BashAgent extends BaseAgent {
   constructor(options = {}) {
     super({
       ...AGENT_CONFIG,
-      ...options
+      ...options,
     });
 
     this.strictMode = options.strictMode !== false;
@@ -132,7 +163,7 @@ export class BashAgent extends BaseAgent {
       stdout: '',
       stderr: '',
       exitCode: null,
-      duration: 0
+      duration: 0,
     };
 
     try {
@@ -144,7 +175,7 @@ export class BashAgent extends BaseAgent {
         cwd,
         env: { ...process.env, ...env },
         timeout,
-        signal: params.signal
+        signal: params.signal,
       });
 
       result.stdout = execResult.stdout;
@@ -157,7 +188,7 @@ export class BashAgent extends BaseAgent {
         command,
         timestamp: new Date().toISOString(),
         exitCode: result.exitCode,
-        duration: result.duration
+        duration: result.duration,
       });
 
       this.reportProgress(100, 'Command completed');
@@ -184,7 +215,7 @@ export class BashAgent extends BaseAgent {
       if (pattern.test(command)) {
         return {
           safe: false,
-          reason: `Matches dangerous pattern: ${pattern.toString()}`
+          reason: `Matches dangerous pattern: ${pattern.toString()}`,
         };
       }
     }
@@ -199,7 +230,7 @@ export class BashAgent extends BaseAgent {
       if (!this.allowedCommands.includes(commandName)) {
         return {
           safe: false,
-          reason: `Command not in whitelist: ${commandName}`
+          reason: `Command not in whitelist: ${commandName}`,
         };
       }
     }
@@ -208,7 +239,7 @@ export class BashAgent extends BaseAgent {
     const checks = [
       this.checkNoSecretExposure(command),
       this.checkNoDestructiveGit(command),
-      this.checkNoSystemModification(command)
+      this.checkNoSystemModification(command),
     ];
 
     for (const check of checks) {
@@ -231,14 +262,14 @@ export class BashAgent extends BaseAgent {
       /password\s*=\s*['"][^'"]+['"]/i,
       /api[_-]?key\s*=\s*['"][^'"]+['"]/i,
       /secret\s*=\s*['"][^'"]+['"]/i,
-      /token\s*=\s*['"][^'"]+['"]/i
+      /token\s*=\s*['"][^'"]+['"]/i,
     ];
 
     for (const pattern of secretPatterns) {
       if (pattern.test(command)) {
         return {
           safe: false,
-          reason: 'Command appears to contain secrets'
+          reason: 'Command appears to contain secrets',
         };
       }
     }
@@ -258,14 +289,14 @@ export class BashAgent extends BaseAgent {
       /git\s+push\s+--force(?:-with-lease)?\s+(?:origin\s+)?master/,
       /git\s+reset\s+--hard\s+origin/,
       /git\s+clean\s+-fd?x?f/,
-      /git\s+checkout\s+\.\s*$/
+      /git\s+checkout\s+\.\s*$/,
     ];
 
     for (const pattern of destructiveGitPatterns) {
       if (pattern.test(command)) {
         return {
           safe: false,
-          reason: 'Destructive git operation detected'
+          reason: 'Destructive git operation detected',
         };
       }
     }
@@ -286,14 +317,14 @@ export class BashAgent extends BaseAgent {
       /apt(-get)?\s+(install|remove|purge)/,
       /yum\s+(install|remove)/,
       /pacman\s+-[SR]/,
-      /brew\s+(install|uninstall)/
+      /brew\s+(install|uninstall)/,
     ];
 
     for (const pattern of systemPatterns) {
       if (pattern.test(command)) {
         return {
           safe: false,
-          reason: 'System modification command detected'
+          reason: 'System modification command detected',
         };
       }
     }
@@ -309,8 +340,8 @@ export class BashAgent extends BaseAgent {
    * @returns {Promise<Object>}
    */
   async executeCommand(command, options) {
-    const { exec } = await import('child_process');
-    const { promisify } = await import('util');
+    const { exec } = await import('node:child_process');
+    const { promisify } = await import('node:util');
     const execAsync = promisify(exec);
 
     try {
@@ -319,19 +350,19 @@ export class BashAgent extends BaseAgent {
         env: options.env,
         timeout: options.timeout,
         maxBuffer: 10 * 1024 * 1024, // 10MB
-        shell: process.platform === 'win32' ? 'powershell.exe' : '/bin/bash'
+        shell: process.platform === 'win32' ? 'powershell.exe' : '/bin/bash',
       });
 
       return {
         stdout: stdout.trim(),
         stderr: stderr.trim(),
-        exitCode: 0
+        exitCode: 0,
       };
     } catch (error) {
       return {
         stdout: error.stdout?.trim() || '',
         stderr: error.stderr?.trim() || error.message,
-        exitCode: error.code || 1
+        exitCode: error.code || 1,
       };
     }
   }

@@ -17,6 +17,18 @@ vi.mock('../../../../src/hydra/providers/llamacpp-bridge.js', () => ({
   getLlamaCppBridge: vi.fn(() => mockBridge)
 }));
 
+// Mock llamacpp-models for agent maxTokens resolution
+vi.mock('../../../../src/hydra/providers/llamacpp-models.js', () => ({
+  getModelForAgent: vi.fn((name) => {
+    const configs = {
+      Geralt: { model: 'qwen3:4b', maxTokens: 2048 },
+      Triss: { model: 'qwen3:4b', maxTokens: 4096 },
+      Ciri: { model: 'qwen3:1.7b', maxTokens: 512 },
+    };
+    return configs[name] || null;
+  })
+}));
+
 describe('QueryProcessor', () => {
   let QueryProcessor;
   let createQueryProcessor;
@@ -47,7 +59,7 @@ describe('QueryProcessor', () => {
       expect(processor.llamacppEnabled).toBe(true);
       expect(processor.defaultModel).toBe('main');
       expect(processor.streaming).toBe(true);
-      expect(processor.timeout).toBe(60000);
+      expect(processor.timeout).toBe(300000);
       expect(processor.concurrency).toBe(1);
     });
 
@@ -195,6 +207,49 @@ describe('QueryProcessor', () => {
       expect(errorSpy).toHaveBeenCalled();
     });
 
+    it('should propagate agent maxTokens from EXECUTOR_AGENT_MODELS', async () => {
+      const mockRouter = {
+        select: vi.fn().mockReturnValue({
+          name: 'Triss',
+          model: 'qwen3:4b',
+          temperature: 0.5
+        }),
+        buildPrompt: vi.fn((agent, prompt) => `wrapped: ${prompt}`),
+        recordExecution: vi.fn()
+      };
+      processor.agentRouter = mockRouter;
+      mockBridge.generate.mockResolvedValue({ success: true, content: 'Response' });
+
+      await processor.process('Test prompt');
+
+      // Triss has maxTokens: 4096 in EXECUTOR_AGENT_MODELS
+      expect(mockBridge.generate).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ maxTokens: 4096 })
+      );
+    });
+
+    it('should use 1024 default maxTokens when agent has no config', async () => {
+      const mockRouter = {
+        select: vi.fn().mockReturnValue({
+          name: 'UnknownAgent',
+          model: 'qwen3:4b',
+          temperature: 0.5
+        }),
+        buildPrompt: vi.fn((agent, prompt) => `wrapped: ${prompt}`),
+        recordExecution: vi.fn()
+      };
+      processor.agentRouter = mockRouter;
+      mockBridge.generate.mockResolvedValue({ success: true, content: 'Response' });
+
+      await processor.process('Test prompt');
+
+      expect(mockBridge.generate).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ maxTokens: 1024 })
+      );
+    });
+
     it('should cache response after successful generation', async () => {
       const mockCache = {
         isEnabled: true,
@@ -235,10 +290,11 @@ describe('QueryProcessor', () => {
         temperature: 0.5
       });
 
-      expect(mockBridge.generate).toHaveBeenCalledWith('Test prompt', {
+      expect(mockBridge.generate).toHaveBeenCalledWith('Test prompt', expect.objectContaining({
         maxTokens: 1024,
-        temperature: 0.5
-      });
+        temperature: 0.5,
+        stop: expect.any(Array)
+      }));
       expect(result).toBe('Generated content');
     });
 
@@ -250,10 +306,11 @@ describe('QueryProcessor', () => {
 
       await processor.executeQuery('Test prompt');
 
-      expect(mockBridge.generate).toHaveBeenCalledWith('Test prompt', {
-        maxTokens: 2048,
-        temperature: 0.7
-      });
+      expect(mockBridge.generate).toHaveBeenCalledWith('Test prompt', expect.objectContaining({
+        maxTokens: 1024,
+        temperature: 0.7,
+        stop: expect.any(Array)
+      }));
     });
 
     it('should throw error when generation fails', async () => {
@@ -283,20 +340,23 @@ describe('QueryProcessor', () => {
       processor = new QueryProcessor();
     });
 
-    it('should call bridge.generateFast', async () => {
-      mockBridge.generateFast.mockResolvedValue({
+    it('should call bridge.generate with stop tokens', async () => {
+      mockBridge.generate.mockResolvedValue({
         success: true,
         content: 'Streamed content'
       });
 
       const result = await processor.streamQuery('Test prompt');
 
-      expect(mockBridge.generateFast).toHaveBeenCalled();
+      expect(mockBridge.generate).toHaveBeenCalledWith('Test prompt', expect.objectContaining({
+        maxTokens: 1024,
+        stop: expect.any(Array)
+      }));
       expect(result).toBe('Streamed content');
     });
 
-    it('should call onToken callback for each word', async () => {
-      mockBridge.generateFast.mockResolvedValue({
+    it('should call onToken callback with line-based chunks', async () => {
+      mockBridge.generate.mockResolvedValue({
         success: true,
         content: 'Hello World'
       });
@@ -304,12 +364,13 @@ describe('QueryProcessor', () => {
       const onToken = vi.fn();
       await processor.streamQuery('Test', { onToken });
 
-      expect(onToken).toHaveBeenCalledWith('Hello ');
-      expect(onToken).toHaveBeenCalledWith('World ');
+      // Line-based 80-char chunking: 'Hello World' (11 chars < 80) = single chunk
+      expect(onToken).toHaveBeenCalledWith('Hello World');
+      expect(onToken).toHaveBeenCalledTimes(1);
     });
 
     it('should handle onToken callback errors gracefully', async () => {
-      mockBridge.generateFast.mockResolvedValue({
+      mockBridge.generate.mockResolvedValue({
         success: true,
         content: 'Test content'
       });
@@ -323,7 +384,7 @@ describe('QueryProcessor', () => {
     });
 
     it('should provide user-friendly error for MCP invoker not set', async () => {
-      mockBridge.generateFast.mockRejectedValue(
+      mockBridge.generate.mockRejectedValue(
         new Error('MCP invoker not set. Call setMcpInvoker() first.')
       );
 

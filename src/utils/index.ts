@@ -3,25 +3,25 @@
  * @module utils
  */
 
-// Export all named exports from each module
-export * from './string.js';
-export * from './fs.js';
-export * from './time.js';
-export * from './object.js';
 export * from './array.js';
-export * from './validation.js';
 export * from './crypto.js';
 export * from './env.js';
+export * from './fs.js';
+export * from './object.js';
+// Export all named exports from each module
+export * from './string.js';
+export * from './time.js';
+export * from './validation.js';
 
-// Re-export default objects for convenience
-import stringUtils from './string.js';
-import fsUtils from './fs.js';
-import timeUtils from './time.js';
-import objectUtils from './object.js';
 import arrayUtils from './array.js';
-import validationUtils from './validation.js';
 import cryptoUtils from './crypto.js';
 import envUtils from './env.js';
+import fsUtils from './fs.js';
+import objectUtils from './object.js';
+// Re-export default objects for convenience
+import stringUtils from './string.js';
+import timeUtils from './time.js';
+import validationUtils from './validation.js';
 
 export {
   stringUtils,
@@ -31,7 +31,7 @@ export {
   arrayUtils,
   validationUtils,
   cryptoUtils,
-  envUtils
+  envUtils,
 };
 
 export default {
@@ -42,5 +42,15 @@ export default {
   ...arrayUtils,
   ...validationUtils,
   ...cryptoUtils,
-  ...envUtils
+  ...envUtils,
 };
+
+// Zod helpers
+export {
+  envBoolean,
+  envNumber,
+  envNumberInRange,
+  envString,
+  formatZodErrors,
+  parseZodErrors,
+} from './zod-helpers.js';

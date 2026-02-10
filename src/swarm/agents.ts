@@ -2,17 +2,19 @@
  * ClaudeHydra - The 12 Witcher Agents
  * School of the Wolf - Agent Definitions and Management
  *
- * 3-Tier Model Hierarchy:
- * - COMMANDER (Claude Opus): Strategic planning and coordination
- * - COORDINATOR (Claude Sonnet): Research, synthesis, communication
- * - EXECUTOR (llama-cpp): Task execution via local inference (MCP tools)
+ * 3-Tier Model Hierarchy (all Claude Opus 4):
+ * - COMMANDER: Strategic planning and coordination
+ * - COORDINATOR: Research, synthesis, communication
+ * - EXECUTOR: Task execution
  *
  * @module swarm/agents
  */
 
+import {
+  generate as claudeGenerate,
+  healthCheck as claudeHealthCheck,
+} from '../hydra/providers/claude-client.js';
 import { getLlamaCppBridge } from '../hydra/providers/llamacpp-bridge.js';
-import { EXECUTOR_AGENT_MODELS, getModelForAgent } from '../hydra/providers/llamacpp-models.js';
-import { generate as claudeGenerate, healthCheck as claudeHealthCheck, selectModel as claudeSelectModel } from '../hydra/providers/claude-client.js';
 
 // =============================================================================
 // MODEL TIER HIERARCHY
@@ -23,30 +25,29 @@ import { generate as claudeGenerate, healthCheck as claudeHealthCheck, selectMod
  * Maps tier names to model configurations
  */
 export const MODEL_TIERS = {
-  // TIER 1: COMMANDER - Claude Opus (highest capability)
+  // TIER 1: COMMANDER - Claude Opus 4
   commander: {
     provider: 'claude',
-    model: 'claude-opus',
-    displayName: 'Claude Opus',
-    description: 'Strategic planning, task allocation, complex reasoning'
+    model: 'claude-opus-4-20250514',
+    displayName: 'Claude Opus 4',
+    description: 'Strategic planning, task allocation, complex reasoning',
   },
 
-  // TIER 2: COORDINATOR - Claude Sonnet (balanced)
+  // TIER 2: COORDINATOR - Claude Opus 4
   coordinator: {
     provider: 'claude',
-    model: 'claude-sonnet',
-    displayName: 'Claude Sonnet',
-    description: 'Research, synthesis, summarization, communication'
+    model: 'claude-opus-4-20250514',
+    displayName: 'Claude Opus 4',
+    description: 'Research, synthesis, summarization, communication',
   },
 
-  // TIER 3: EXECUTOR - llama-cpp (local inference via MCP)
+  // TIER 3: EXECUTOR - Claude Opus 4
   executor: {
-    provider: 'llamacpp',
-    model: 'main',  // Default executor model
-    tool: 'llama_generate',
-    displayName: 'llama-cpp Local',
-    description: 'Task execution, code generation, focused work'
-  }
+    provider: 'claude',
+    model: 'claude-opus-4-20250514',
+    displayName: 'Claude Opus 4',
+    description: 'Task execution, code generation, focused work',
+  },
 };
 
 /**
@@ -54,15 +55,15 @@ export const MODEL_TIERS = {
  * Maps each agent to their operational tier
  */
 export const AGENT_TIERS = {
-  // COMMANDER (1 agent) - Claude Opus
+  // COMMANDER (1 agent) - Claude Opus 4
   Dijkstra: 'commander',
 
-  // COORDINATORS (3 agents) - Claude Sonnet
+  // COORDINATORS (2 agents) - Claude Opus 4
   Regis: 'coordinator',
   Yennefer: 'coordinator',
-  Jaskier: 'coordinator',
 
-  // EXECUTORS (8 agents) - llama.cpp
+  // EXECUTORS (9 agents) - Claude Opus 4
+  Jaskier: 'executor',
   Geralt: 'executor',
   Triss: 'executor',
   Vesemir: 'executor',
@@ -70,23 +71,23 @@ export const AGENT_TIERS = {
   Eskel: 'executor',
   Lambert: 'executor',
   Zoltan: 'executor',
-  Philippa: 'executor'
+  Philippa: 'executor',
 };
 
 /**
  * Executor model specializations
- * LlamaCpp models and tools for different executor tasks
- * Uses EXECUTOR_AGENT_MODELS from llamacpp-models.js
+ * All agents now use Claude Opus 4 via Anthropic API
  */
 export const EXECUTOR_MODELS = {
-  Ciri: { model: 'draft', tool: 'llama_generate_fast' },     // Fastest - simple tasks
-  Geralt: { model: 'main', tool: 'llama_generate' },         // General - security/ops
-  Triss: { model: 'main', tool: 'llama_code' },              // Code - testing
-  Vesemir: { model: 'main', tool: 'llama_generate' },        // General - mentoring/review
-  Eskel: { model: 'main', tool: 'llama_generate' },          // General - devops/infra
-  Lambert: { model: 'main', tool: 'llama_code' },            // Code - debug
-  Zoltan: { model: 'main', tool: 'llama_json' },             // Data/database - JSON output
-  Philippa: { model: 'functionary', tool: 'llama_function_call' } // API integrations
+  Ciri: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Fast execution & portals
+  Jaskier: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Documentation/logging
+  Geralt: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Security/ops
+  Triss: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Data/integration
+  Vesemir: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Mentoring/review
+  Eskel: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Testing/stability
+  Lambert: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Refactoring/cleanup
+  Zoltan: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Infra/DevOps
+  Philippa: { model: 'claude-opus-4-20250514', provider: 'claude' }, // UI/UX/frontend
 };
 
 // =============================================================================
@@ -102,7 +103,7 @@ export const AGENT_SPECS = {
     persona: 'Spymaster',
     focus: 'Planning/Strategy',
     tier: 'commander',
-    skills: ['strategic planning', 'coordination', 'resource allocation', 'task decomposition']
+    skills: ['strategic planning', 'coordination', 'resource allocation', 'task decomposition'],
   },
 
   // COORDINATORS
@@ -110,70 +111,69 @@ export const AGENT_SPECS = {
     persona: 'Sage',
     focus: 'Research/Analysis',
     tier: 'coordinator',
-    skills: ['deep analysis', 'research', 'complex reasoning', 'knowledge synthesis']
+    skills: ['deep analysis', 'research', 'complex reasoning', 'knowledge synthesis'],
   },
   Yennefer: {
     persona: 'Sorceress',
     focus: 'Synthesis/Architecture',
     tier: 'coordinator',
-    skills: ['result synthesis', 'architecture design', 'integration', 'quality assurance']
+    skills: ['result synthesis', 'architecture design', 'integration', 'quality assurance'],
   },
+  // EXECUTORS
   Jaskier: {
     persona: 'Bard',
-    focus: 'Communication/Summary',
-    tier: 'coordinator',
-    skills: ['documentation', 'summarization', 'reports', 'user communication']
+    focus: 'Documentation/Logging',
+    tier: 'executor',
+    skills: ['documentation', 'summarization', 'reports', 'user communication'],
   },
-
-  // EXECUTORS
   Geralt: {
     persona: 'White Wolf',
     focus: 'Security/Ops',
     tier: 'executor',
-    skills: ['system commands', 'security checks', 'threat analysis', 'operations']
+    skills: ['system commands', 'security checks', 'threat analysis', 'operations'],
   },
   Triss: {
     persona: 'Healer',
     focus: 'QA/Testing',
     tier: 'executor',
-    skills: ['tests', 'validation', 'bug fixes', 'quality assurance']
+    skills: ['tests', 'validation', 'bug fixes', 'quality assurance'],
   },
   Vesemir: {
     persona: 'Mentor',
     focus: 'Mentoring/Review',
     tier: 'executor',
-    skills: ['code review', 'best practices', 'teaching', 'guidance']
+    skills: ['code review', 'best practices', 'teaching', 'guidance'],
   },
   Ciri: {
     persona: 'Prodigy',
     focus: 'Speed/Quick',
     tier: 'executor',
-    skills: ['fast tasks', 'simple operations', 'quick responses']
+    skills: ['fast tasks', 'simple operations', 'quick responses'],
   },
   Eskel: {
     persona: 'Pragmatist',
     focus: 'DevOps/Infrastructure',
     tier: 'executor',
-    skills: ['CI/CD', 'deployment', 'infrastructure', 'automation']
+    skills: ['CI/CD', 'deployment', 'infrastructure', 'automation'],
   },
   Lambert: {
     persona: 'Skeptic',
     focus: 'Debugging/Profiling',
     tier: 'executor',
-    skills: ['debugging', 'performance optimization', 'profiling', 'troubleshooting']
+    skills: ['debugging', 'performance optimization', 'profiling', 'troubleshooting'],
   },
   Zoltan: {
     persona: 'Craftsman',
     focus: 'Data/Database',
     tier: 'executor',
-    skills: ['data operations', 'DB migrations', 'data modeling', 'SQL']
+    skills: ['data operations', 'DB migrations', 'data modeling', 'SQL'],
   },
   Philippa: {
     persona: 'Strategist',
     focus: 'Integration/API',
     tier: 'executor',
-    skills: ['external APIs', 'integrations', 'third-party services', 'webhooks']
-  }
+    skills: ['external APIs', 'integrations', 'third-party services', 'webhooks'],
+  },
 };
 
 /**
@@ -194,24 +194,24 @@ export function getAgentModel(agent) {
   const tier = AGENT_TIERS[agent];
 
   if (!tier) {
-    // Fallback to executor tier
+    // Fallback to executor tier (all Claude now)
     return {
-      provider: 'llamacpp',
-      model: 'main',
-      tool: 'llama_generate'
+      provider: 'claude',
+      model: 'claude-opus-4-20250514',
+      tool: null,
     };
   }
 
   const tierConfig = MODEL_TIERS[tier];
 
-  // For executors, use specialized model/tool if available
+  // For executors, use specialized config if available
   if (tier === 'executor') {
-    const executorConfig = EXECUTOR_MODELS[agent] || getModelForAgent(agent);
+    const executorConfig = EXECUTOR_MODELS[agent];
     if (executorConfig) {
       return {
-        provider: 'llamacpp',
+        provider: executorConfig.provider || tierConfig.provider,
         model: executorConfig.model,
-        tool: executorConfig.tool
+        tool: executorConfig.tool || null,
       };
     }
   }
@@ -219,7 +219,7 @@ export function getAgentModel(agent) {
   return {
     provider: tierConfig.provider,
     model: tierConfig.model,
-    tool: tierConfig.tool || null
+    tool: tierConfig.tool || null,
   };
 }
 
@@ -318,7 +318,7 @@ export async function invokeAgent(agent, prompt, options = {}) {
         model: modelConfig.model,
         system: systemPrompt,
         timeout,
-        temperature: 0.7
+        temperature: 0.7,
       });
     } else {
       // Use LlamaCpp (via MCP bridge) for executor tier
@@ -326,33 +326,19 @@ export async function invokeAgent(agent, prompt, options = {}) {
 
       // Select appropriate bridge method based on tool
       switch (modelConfig.tool) {
-        case 'llama_generate_fast':
-          result = await bridge.generateFast(fullPrompt, {
-            maxTokens: 512,
-            temperature: 0.7
-          });
-          break;
-        case 'llama_code':
-          result = await bridge.code('generate', {
-            description: prompt,
-            language: 'javascript'
-          });
-          break;
-        case 'llama_json':
-          result = await bridge.json(fullPrompt, {}, {
-            maxTokens: 2048
-          });
-          break;
-        case 'llama_function_call':
-          result = await bridge.functionCall([
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ], [], { maxTokens: 2048 });
+        case 'ollama_chat':
+          result = await bridge.chat(
+            [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt },
+            ],
+            { maxTokens: 2048, temperature: 0.7 },
+          );
           break;
         default:
           result = await bridge.generate(fullPrompt, {
             maxTokens: 2048,
-            temperature: 0.7
+            temperature: 0.7,
           });
       }
     }
@@ -367,7 +353,7 @@ export async function invokeAgent(agent, prompt, options = {}) {
         tool: modelConfig.tool,
         response: result.content,
         duration: Date.now() - startTime,
-        tokens: result.tokens
+        tokens: result.tokens,
       };
     } else {
       return {
@@ -378,7 +364,7 @@ export async function invokeAgent(agent, prompt, options = {}) {
         model: modelConfig.model,
         tool: modelConfig.tool,
         error: result.error,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       };
     }
   } catch (error) {
@@ -390,7 +376,7 @@ export async function invokeAgent(agent, prompt, options = {}) {
       model: modelConfig.model,
       tool: modelConfig.tool,
       error: error.message,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     };
   }
 }
@@ -446,7 +432,7 @@ export function classifyPrompt(prompt) {
     agent,
     tier: getAgentTier(agent),
     provider: modelConfig.provider,
-    model: modelConfig.model
+    model: modelConfig.model,
   };
 }
 
@@ -456,7 +442,7 @@ export function classifyPrompt(prompt) {
  * @returns {Object[]} Classifications
  */
 export function classifyPrompts(prompts) {
-  return prompts.map(prompt => classifyPrompt(prompt));
+  return prompts.map((prompt) => classifyPrompt(prompt));
 }
 
 // =============================================================================
@@ -473,7 +459,9 @@ export function analyzeComplexity(prompt) {
   const wordCount = words.length;
   const hasCode = /```|function|class|def |const |let |var |import |export /.test(prompt);
   const hasMultipleTasks = /\d\.\s|•|\*\s|-\s/.test(prompt);
-  const technicalTerms = (prompt.match(/api|database|async|parallel|thread|memory|performance|cache|queue|stream/gi) || []).length;
+  const technicalTerms = (
+    prompt.match(/api|database|async|parallel|thread|memory|performance|cache|queue|stream/gi) || []
+  ).length;
 
   let score = 0;
   score += Math.min(wordCount / 10, 5);
@@ -492,14 +480,14 @@ export function analyzeComplexity(prompt) {
     Simple: 'executor',
     Moderate: 'executor',
     Complex: 'coordinator',
-    Advanced: 'commander'
+    Advanced: 'commander',
   }[level];
 
   const recommendedAgent = {
     Simple: 'Ciri',
     Moderate: 'Yennefer',
     Complex: 'Regis',
-    Advanced: 'Dijkstra'
+    Advanced: 'Dijkstra',
   }[level];
 
   return {
@@ -510,7 +498,7 @@ export function analyzeComplexity(prompt) {
     hasMultipleTasks,
     technicalTerms,
     recommendedTier,
-    recommendedAgent
+    recommendedAgent,
   };
 }
 
@@ -525,7 +513,7 @@ export function analyzeComplexity(prompt) {
 export async function checkProviders() {
   const results = {
     claude: { available: false, models: [] },
-    llamacpp: { available: false, models: [] }
+    llamacpp: { available: false, models: [] },
   };
 
   // Check Claude
@@ -534,7 +522,7 @@ export async function checkProviders() {
     results.claude = {
       available: claudeHealth.available,
       models: claudeHealth.models || [],
-      latency: claudeHealth.latency_ms
+      latency: claudeHealth.latency_ms,
     };
   } catch (error) {
     results.claude.error = error.message;
@@ -546,8 +534,8 @@ export async function checkProviders() {
     const llamacppHealth = await bridge.healthCheck(true);
     results.llamacpp = {
       available: llamacppHealth.available,
-      models: llamacppHealth.models || ['main', 'draft', 'vision', 'functionary'],
-      latency: llamacppHealth.duration_ms
+      models: llamacppHealth.models || ['qwen3:8b', 'qwen3:4b', 'qwen3:1.7b'],
+      latency: llamacppHealth.duration_ms,
     };
   } catch (error) {
     results.llamacpp.error = error.message;
@@ -563,10 +551,10 @@ export async function checkProviders() {
     tiers: {
       commander: commanderReady,
       coordinator: coordinatorReady,
-      executor: executorReady
+      executor: executorReady,
     },
     allReady: commanderReady && coordinatorReady && executorReady,
-    partialReady: commanderReady || coordinatorReady || executorReady
+    partialReady: commanderReady || coordinatorReady || executorReady,
   };
 }
 
@@ -576,7 +564,7 @@ export async function checkProviders() {
  * @returns {Promise<Object>} Status with available models
  */
 export async function checkRequiredModels() {
-  const required = ['main', 'draft']; // Core models for executor tier
+  const required = ['qwen3:4b', 'qwen3:1.7b']; // Core models for executor tier
 
   try {
     const bridge = getLlamaCppBridge();
@@ -587,19 +575,19 @@ export async function checkRequiredModels() {
         available: false,
         installed: [],
         missing: required,
-        allPresent: false
+        allPresent: false,
       };
     }
 
-    // LlamaCpp MCP manages its own models
-    const installed = health.models || ['main', 'draft', 'vision', 'functionary'];
-    const missing = required.filter(m => !installed.includes(m));
+    // Ollama manages its own models
+    const installed = health.models || ['qwen3:8b', 'qwen3:4b', 'qwen3:1.7b'];
+    const missing = required.filter((m) => !installed.includes(m));
 
     return {
       available: true,
       installed,
       missing,
-      allPresent: missing.length === 0
+      allPresent: missing.length === 0,
     };
   } catch (error) {
     return {
@@ -607,7 +595,7 @@ export async function checkRequiredModels() {
       installed: [],
       missing: required,
       allPresent: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -645,5 +633,5 @@ export default {
 
   // Health checks
   checkProviders,
-  checkRequiredModels
+  checkRequiredModels,
 };

@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import "./App.css";
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import './App.css';
 
 interface AiResponse {
   success: boolean;
@@ -17,7 +17,7 @@ interface AiResponse {
 interface SwarmTask {
   id: string;
   prompt: string;
-  status: "Pending" | "Running" | "Completed" | "Failed";
+  status: 'Pending' | 'Running' | 'Completed' | 'Failed';
   provider: string | null;
 }
 
@@ -37,18 +37,18 @@ interface StreamEvent {
   progress: number | null;
 }
 
-type Mode = "hydra" | "ollama" | "gemini" | "swarm";
+type Mode = 'hydra' | 'ollama' | 'gemini' | 'swarm';
 
 function App() {
-  const [prompt, setPrompt] = useState("");
-  const [response, setResponse] = useState("");
+  const [prompt, setPrompt] = useState('');
+  const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
   const [health, setHealth] = useState<ProviderHealth | null>(null);
   const [swarmTasks, setSwarmTasks] = useState<SwarmTask[]>([]);
-  const [mode, setMode] = useState<Mode>("hydra");
+  const [mode, setMode] = useState<Mode>('hydra');
   const [lastProvider, setLastProvider] = useState<string | null>(null);
   const [lastModel, setLastModel] = useState<string | null>(null);
   const [complexity, setComplexity] = useState<number | null>(null);
@@ -61,32 +61,32 @@ function App() {
 
   // Health check on mount
   useEffect(() => {
-    invoke<ProviderHealth>("health_check")
+    invoke<ProviderHealth>('health_check')
       .then(setHealth)
       .catch(() => setHealth(null));
   }, []);
 
   // Listen for stream events
   useEffect(() => {
-    const unlisten = listen<StreamEvent>("stream", (event) => {
+    const unlisten = listen<StreamEvent>('stream', (event) => {
       const data = event.payload;
 
       switch (data.event_type) {
-        case "start":
+        case 'start':
           setStreaming(true);
-          setResponse("");
+          setResponse('');
           setCurrentStep(data.step);
           setProgress(data.progress || 0);
           break;
 
-        case "step":
+        case 'step':
           setCurrentStep(data.step);
           setProgress(data.progress || 0);
           if (data.provider) setLastProvider(data.provider);
           if (data.model) setLastModel(data.model);
           break;
 
-        case "chunk":
+        case 'chunk':
           setResponse((prev) => prev + data.content);
           // Auto-scroll to bottom
           if (responseRef.current) {
@@ -94,13 +94,13 @@ function App() {
           }
           break;
 
-        case "complete":
+        case 'complete':
           setStreaming(false);
           setCurrentStep(null);
           setProgress(100);
           break;
 
-        case "error":
+        case 'error':
           setStreaming(false);
           setError(data.content);
           setCurrentStep(null);
@@ -115,19 +115,16 @@ function App() {
 
   // Listen for swarm task completion
   useEffect(() => {
-    const unlisten = listen<[string, AiResponse]>(
-      "swarm-task-complete",
-      (event) => {
-        const [id, result] = event.payload;
-        setSwarmTasks((prev) =>
-          prev.map((t) =>
-            t.id === id
-              ? { ...t, status: result.success ? "Completed" : "Failed", provider: result.provider }
-              : t
-          )
-        );
-      }
-    );
+    const unlisten = listen<[string, AiResponse]>('swarm-task-complete', (event) => {
+      const [id, result] = event.payload;
+      setSwarmTasks((prev) =>
+        prev.map((t) =>
+          t.id === id
+            ? { ...t, status: result.success ? 'Completed' : 'Failed', provider: result.provider }
+            : t,
+        ),
+      );
+    });
 
     return () => {
       unlisten.then((fn) => fn());
@@ -139,7 +136,7 @@ function App() {
 
     setLoading(true);
     setError(null);
-    setResponse("");
+    setResponse('');
     setDuration(null);
     setLastProvider(null);
     setLastModel(null);
@@ -151,13 +148,13 @@ function App() {
     try {
       let result: AiResponse;
 
-      if (mode === "hydra") {
+      if (mode === 'hydra') {
         // Use streaming version
-        result = await invoke<AiResponse>("hydra_query_stream", { prompt });
-      } else if (mode === "ollama") {
-        result = await invoke<AiResponse>("ollama_query", { prompt });
+        result = await invoke<AiResponse>('hydra_query_stream', { prompt });
+      } else if (mode === 'ollama') {
+        result = await invoke<AiResponse>('ollama_query', { prompt });
       } else {
-        result = await invoke<AiResponse>("gemini_query", { prompt });
+        result = await invoke<AiResponse>('gemini_query', { prompt });
       }
 
       if (result.success) {
@@ -174,11 +171,11 @@ function App() {
           setTotalSaved((prev) => prev + result.cost_saved!);
         }
       } else {
-        setError(result.error || "Unknown error");
+        setError(result.error || 'Unknown error');
       }
 
       if (result.error && result.success) {
-        console.warn("Fallback used:", result.error);
+        console.warn('Fallback used:', result.error);
       }
     } catch (e) {
       setError(String(e));
@@ -193,12 +190,12 @@ function App() {
 
     const id = `task-${Date.now()}`;
     try {
-      await invoke("swarm_add_task", { id, prompt });
+      await invoke('swarm_add_task', { id, prompt });
       setSwarmTasks((prev) => [
         ...prev,
-        { id, prompt, status: "Pending" as const, provider: null },
+        { id, prompt, status: 'Pending' as const, provider: null },
       ]);
-      setPrompt("");
+      setPrompt('');
     } catch (e) {
       setError(String(e));
     }
@@ -211,11 +208,9 @@ function App() {
     setError(null);
 
     try {
-      const results = await invoke<AiResponse[]>("swarm_execute");
+      const results = await invoke<AiResponse[]>('swarm_execute');
       setResponse(
-        results
-          .map((r, i) => `--- Task ${i + 1} [${r.provider}] ---\n${r.content}`)
-          .join("\n\n")
+        results.map((r, i) => `--- Task ${i + 1} [${r.provider}] ---\n${r.content}`).join('\n\n'),
       );
 
       const saved = results.reduce((acc, r) => acc + (r.cost_saved || 0), 0);
@@ -230,39 +225,47 @@ function App() {
   }, [swarmTasks]);
 
   const handleSwarmClear = useCallback(async () => {
-    await invoke("swarm_clear");
+    await invoke('swarm_clear');
     setSwarmTasks([]);
   }, []);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        if (mode === "swarm") {
+        if (mode === 'swarm') {
           handleSwarmAdd();
         } else {
           handleSubmit();
         }
       }
     },
-    [mode, handleSwarmAdd, handleSubmit]
+    [mode, handleSwarmAdd, handleSubmit],
   );
 
   const getModeIcon = (m: Mode) => {
     switch (m) {
-      case "hydra": return "🐙";
-      case "ollama": return "🦙";
-      case "gemini": return "💎";
-      case "swarm": return "🐝";
+      case 'hydra':
+        return '🐙';
+      case 'ollama':
+        return '🦙';
+      case 'gemini':
+        return '💎';
+      case 'swarm':
+        return '🐝';
     }
   };
 
   const getModeLabel = (m: Mode) => {
     switch (m) {
-      case "hydra": return "HYDRA (Auto)";
-      case "ollama": return "Ollama (Local)";
-      case "gemini": return "Gemini (Cloud)";
-      case "swarm": return "Swarm (Parallel)";
+      case 'hydra':
+        return 'HYDRA (Auto)';
+      case 'ollama':
+        return 'Ollama (Local)';
+      case 'gemini':
+        return 'Gemini (Cloud)';
+      case 'swarm':
+        return 'Swarm (Parallel)';
     }
   };
 
@@ -271,8 +274,12 @@ function App() {
       <header className="header">
         <h1>🐙 HYDRA</h1>
         <div className="status">
-          <span className={`health-dot ${health?.ollama ? "ok" : "err"}`} title="Ollama">🦙</span>
-          <span className={`health-dot ${health?.gemini ? "ok" : "err"}`} title="Gemini">💎</span>
+          <span className={`health-dot ${health?.ollama ? 'ok' : 'err'}`} title="Ollama">
+            🦙
+          </span>
+          <span className={`health-dot ${health?.gemini ? 'ok' : 'err'}`} title="Gemini">
+            💎
+          </span>
           {totalSaved > 0 && (
             <span className="savings" title="Total cost saved">
               💰 ${totalSaved.toFixed(4)}
@@ -282,12 +289,12 @@ function App() {
       </header>
 
       <div className="mode-selector">
-        {(["hydra", "ollama", "gemini", "swarm"] as Mode[]).map((m) => (
+        {(['hydra', 'ollama', 'gemini', 'swarm'] as Mode[]).map((m) => (
           <button
             key={m}
-            className={`mode-btn ${mode === m ? "active" : ""}`}
+            className={`mode-btn ${mode === m ? 'active' : ''}`}
             onClick={() => setMode(m)}
-            disabled={m === "ollama" && !health?.ollama}
+            disabled={m === 'ollama' && !health?.ollama}
           >
             {getModeIcon(m)} {getModeLabel(m)}
           </button>
@@ -301,15 +308,15 @@ function App() {
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={
-            mode === "swarm"
-              ? "Enter prompt and press Enter to add to swarm..."
-              : `Ask ${mode === "hydra" ? "HYDRA" : mode}...`
+            mode === 'swarm'
+              ? 'Enter prompt and press Enter to add to swarm...'
+              : `Ask ${mode === 'hydra' ? 'HYDRA' : mode}...`
           }
           disabled={loading || streaming}
           rows={3}
         />
         <div className="actions">
-          {mode === "swarm" ? (
+          {mode === 'swarm' ? (
             <>
               <button onClick={handleSwarmAdd} disabled={!prompt.trim()}>
                 + Add
@@ -319,7 +326,7 @@ function App() {
                 disabled={swarmTasks.length === 0 || loading}
                 className="primary"
               >
-                {loading ? "Running..." : `Execute (${swarmTasks.length})`}
+                {loading ? 'Running...' : `Execute (${swarmTasks.length})`}
               </button>
               <button onClick={handleSwarmClear} disabled={loading}>
                 Clear
@@ -331,7 +338,7 @@ function App() {
               disabled={!prompt.trim() || loading || streaming}
               className="primary"
             >
-              {streaming ? "Streaming..." : loading ? "Thinking..." : "Send"}
+              {streaming ? 'Streaming...' : loading ? 'Thinking...' : 'Send'}
             </button>
           )}
         </div>
@@ -347,28 +354,26 @@ function App() {
             {currentStep && <span className="step">{currentStep}</span>}
             {lastProvider && (
               <span className={`provider-badge ${lastProvider}`}>
-                {lastProvider === "ollama" ? "🦙" : "💎"} {lastProvider}
+                {lastProvider === 'ollama' ? '🦙' : '💎'} {lastProvider}
               </span>
             )}
           </div>
         </div>
       )}
 
-      {mode === "swarm" && swarmTasks.length > 0 && (
+      {mode === 'swarm' && swarmTasks.length > 0 && (
         <div className="swarm-queue">
           <h3>Swarm Queue</h3>
           {swarmTasks.map((task) => (
             <div key={task.id} className={`task ${task.status.toLowerCase()}`}>
               <span className="status-icon">
-                {task.status === "Pending" && "⏳"}
-                {task.status === "Running" && "🔄"}
-                {task.status === "Completed" && "✅"}
-                {task.status === "Failed" && "❌"}
+                {task.status === 'Pending' && '⏳'}
+                {task.status === 'Running' && '🔄'}
+                {task.status === 'Completed' && '✅'}
+                {task.status === 'Failed' && '❌'}
               </span>
               <span className="prompt">{task.prompt.slice(0, 50)}...</span>
-              {task.provider && (
-                <span className="provider-tag">{task.provider}</span>
-              )}
+              {task.provider && <span className="provider-tag">{task.provider}</span>}
             </div>
           ))}
         </div>
@@ -383,13 +388,13 @@ function App() {
             <div className="response-meta">
               {lastProvider && (
                 <span className={`provider-badge ${lastProvider}`}>
-                  {lastProvider === "ollama" ? "🦙" : "💎"} {lastProvider}
+                  {lastProvider === 'ollama' ? '🦙' : '💎'} {lastProvider}
                 </span>
               )}
               {lastModel && <span className="model">{lastModel}</span>}
               {complexity && (
                 <span className="complexity" title="Complexity">
-                  {"⭐".repeat(complexity)}
+                  {'⭐'.repeat(complexity)}
                 </span>
               )}
               {duration && <span className="duration">{duration}ms</span>}
@@ -398,16 +403,17 @@ function App() {
               )}
             </div>
           </div>
-          <pre ref={responseRef}>{response}{streaming && <span className="cursor">▌</span>}</pre>
+          <pre ref={responseRef}>
+            {response}
+            {streaming && <span className="cursor">▌</span>}
+          </pre>
         </div>
       )}
 
       {health && (
         <footer className="footer">
-          <span>
-            Ollama: {health.ollama ? `✓ (${health.ollama_models.length} models)` : "✗"}
-          </span>
-          <span>Gemini: {health.gemini ? "✓" : "✗"}</span>
+          <span>Ollama: {health.ollama ? `✓ (${health.ollama_models.length} models)` : '✗'}</span>
+          <span>Gemini: {health.gemini ? '✓' : '✗'}</span>
         </footer>
       )}
     </main>

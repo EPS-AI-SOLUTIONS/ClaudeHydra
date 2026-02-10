@@ -1,4 +1,5 @@
 mod agentic;
+mod anthropic;
 mod bridge;
 mod chat_history;
 mod claude;
@@ -74,6 +75,8 @@ pub fn run() {
             commands::get_session_status,
             commands::get_approval_history,
             commands::clear_approval_history,
+            // Anthropic commands
+            anthropic::anthropic_list_models,
             // Ollama commands
             ollama_commands::ollama_list_models,
             ollama_commands::ollama_health_check,

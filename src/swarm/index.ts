@@ -12,45 +12,39 @@
 
 // Re-export agents
 export {
-  // Tier configuration
-  MODEL_TIERS,
-  AGENT_TIERS,
-  EXECUTOR_MODELS,
-
+  AGENT_NAMES,
   // Agent definitions
   AGENT_SPECS,
-  AGENT_NAMES,
-
-  // Model resolution
-  getAgentModel,
-  getAgentSpec,
-  getAgentTier,
-  getAgentsByTier,
-
+  AGENT_TIERS,
+  analyzeComplexity,
   // Prompts
   buildAgentPrompt,
-
-  // Invocation
-  invokeAgent,
-
+  // Health checks
+  checkProviders,
+  checkRequiredModels,
   // Classification
   classifyPrompt,
   classifyPrompts,
-  analyzeComplexity,
-
-  // Health checks
-  checkProviders,
-  checkRequiredModels
+  EXECUTOR_MODELS,
+  // Model resolution
+  getAgentModel,
+  getAgentSpec,
+  getAgentsByTier,
+  getAgentTier,
+  // Invocation
+  invokeAgent,
+  // Tier configuration
+  MODEL_TIERS,
 } from './agents.js';
 
 // Re-export protocol
 export {
-  SWARM_VERSION,
   invokeSwarm,
   quickSwarm,
-  yoloSwarm,
   STANDARD_MODE,
-  YOLO_MODE
+  SWARM_VERSION,
+  YOLO_MODE,
+  yoloSwarm,
 } from './protocol.js';
 
 // Default export
@@ -59,5 +53,5 @@ import protocol from './protocol.js';
 
 export default {
   ...agents,
-  ...protocol
+  ...protocol,
 };

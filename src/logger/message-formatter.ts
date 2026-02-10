@@ -5,14 +5,13 @@
  */
 
 import {
-  colorize,
-  stripAnsi,
-  visibleLength,
-  supportsColors,
-  FgColors,
   BgColors,
+  colorize,
+  FgColors,
+  RESET,
   Styles,
-  RESET
+  supportsColors,
+  visibleLength,
 } from './colors.js';
 
 // ============================================================================
@@ -27,32 +26,32 @@ const isWindows = process.platform === 'win32';
  */
 export const Icons = Object.freeze({
   // Status icons
-  ERROR: isWindows ? '[X]' : '\u2718',      // ✘
-  WARNING: isWindows ? '[!]' : '\u26A0',    // ⚠
-  SUCCESS: isWindows ? '[v]' : '\u2714',    // ✔
-  INFO: isWindows ? '[i]' : '\u2139',       // ℹ
-  DEBUG: isWindows ? '[D]' : '\u2699',      // ⚙
-  HINT: isWindows ? '[?]' : '\u2728',       // ✨
-  
+  ERROR: isWindows ? '[X]' : '\u2718', // ✘
+  WARNING: isWindows ? '[!]' : '\u26A0', // ⚠
+  SUCCESS: isWindows ? '[v]' : '\u2714', // ✔
+  INFO: isWindows ? '[i]' : '\u2139', // ℹ
+  DEBUG: isWindows ? '[D]' : '\u2699', // ⚙
+  HINT: isWindows ? '[?]' : '\u2728', // ✨
+
   // Arrow icons
   ARROW_RIGHT: isWindows ? '->' : '\u2192', // →
-  ARROW_DOWN: isWindows ? 'v' : '\u2193',   // ↓
-  BULLET: isWindows ? '*' : '\u2022',       // •
-  
+  ARROW_DOWN: isWindows ? 'v' : '\u2193', // ↓
+  BULLET: isWindows ? '*' : '\u2022', // •
+
   // Box drawing for stack trace
-  PIPE: isWindows ? '|' : '\u2502',         // │
-  CORNER: isWindows ? '+' : '\u2514',       // └
-  TEE: isWindows ? '+' : '\u251C',          // ├
-  
+  PIPE: isWindows ? '|' : '\u2502', // │
+  CORNER: isWindows ? '+' : '\u2514', // └
+  TEE: isWindows ? '+' : '\u251C', // ├
+
   // Additional icons
-  FOLDER: isWindows ? '[D]' : '\u{1F4C1}',  // 📁
-  FILE: isWindows ? '[F]' : '\u{1F4C4}',    // 📄
-  CLOCK: isWindows ? '[T]' : '\u{1F550}',   // 🕐
+  FOLDER: isWindows ? '[D]' : '\u{1F4C1}', // 📁
+  FILE: isWindows ? '[F]' : '\u{1F4C4}', // 📄
+  CLOCK: isWindows ? '[T]' : '\u{1F550}', // 🕐
   MAGNIFY: isWindows ? '[S]' : '\u{1F50D}', // 🔍
-  WRENCH: isWindows ? '[W]' : '\u{1F527}',  // 🔧
-  LIGHTNING: isWindows ? '[!]' : '\u26A1',  // ⚡
-  LOCK: isWindows ? '[L]' : '\u{1F512}',    // 🔒
-  KEY: isWindows ? '[K]' : '\u{1F511}'      // 🔑
+  WRENCH: isWindows ? '[W]' : '\u{1F527}', // 🔧
+  LIGHTNING: isWindows ? '[!]' : '\u26A1', // ⚡
+  LOCK: isWindows ? '[L]' : '\u{1F512}', // 🔒
+  KEY: isWindows ? '[K]' : '\u{1F511}', // 🔑
 });
 
 // ============================================================================
@@ -66,48 +65,48 @@ export const Icons = Object.freeze({
 export const BoxChars = Object.freeze({
   // Single line (default)
   single: {
-    topLeft: isWindows ? '+' : '\u250C',     // ┌
-    topRight: isWindows ? '+' : '\u2510',    // ┐
-    bottomLeft: isWindows ? '+' : '\u2514',  // └
+    topLeft: isWindows ? '+' : '\u250C', // ┌
+    topRight: isWindows ? '+' : '\u2510', // ┐
+    bottomLeft: isWindows ? '+' : '\u2514', // └
     bottomRight: isWindows ? '+' : '\u2518', // ┘
-    horizontal: isWindows ? '-' : '\u2500',  // ─
-    vertical: isWindows ? '|' : '\u2502',    // │
-    leftTee: isWindows ? '+' : '\u251C',     // ├
-    rightTee: isWindows ? '+' : '\u2524',    // ┤
-    topTee: isWindows ? '+' : '\u252C',      // ┬
-    bottomTee: isWindows ? '+' : '\u2534',   // ┴
-    cross: isWindows ? '+' : '\u253C'        // ┼
+    horizontal: isWindows ? '-' : '\u2500', // ─
+    vertical: isWindows ? '|' : '\u2502', // │
+    leftTee: isWindows ? '+' : '\u251C', // ├
+    rightTee: isWindows ? '+' : '\u2524', // ┤
+    topTee: isWindows ? '+' : '\u252C', // ┬
+    bottomTee: isWindows ? '+' : '\u2534', // ┴
+    cross: isWindows ? '+' : '\u253C', // ┼
   },
-  
+
   // Double line (for emphasis)
   double: {
-    topLeft: isWindows ? '+' : '\u2554',     // ╔
-    topRight: isWindows ? '+' : '\u2557',    // ╗
-    bottomLeft: isWindows ? '+' : '\u255A',  // ╚
+    topLeft: isWindows ? '+' : '\u2554', // ╔
+    topRight: isWindows ? '+' : '\u2557', // ╗
+    bottomLeft: isWindows ? '+' : '\u255A', // ╚
     bottomRight: isWindows ? '+' : '\u255D', // ╝
-    horizontal: isWindows ? '=' : '\u2550',  // ═
-    vertical: isWindows ? '|' : '\u2551',    // ║
-    leftTee: isWindows ? '+' : '\u2560',     // ╠
-    rightTee: isWindows ? '+' : '\u2563',    // ╣
-    topTee: isWindows ? '+' : '\u2566',      // ╦
-    bottomTee: isWindows ? '+' : '\u2569',   // ╩
-    cross: isWindows ? '+' : '\u256C'        // ╬
+    horizontal: isWindows ? '=' : '\u2550', // ═
+    vertical: isWindows ? '|' : '\u2551', // ║
+    leftTee: isWindows ? '+' : '\u2560', // ╠
+    rightTee: isWindows ? '+' : '\u2563', // ╣
+    topTee: isWindows ? '+' : '\u2566', // ╦
+    bottomTee: isWindows ? '+' : '\u2569', // ╩
+    cross: isWindows ? '+' : '\u256C', // ╬
   },
-  
+
   // Rounded corners (for softer look)
   rounded: {
-    topLeft: isWindows ? '+' : '\u256D',     // ╭
-    topRight: isWindows ? '+' : '\u256E',    // ╮
-    bottomLeft: isWindows ? '+' : '\u2570',  // ╰
+    topLeft: isWindows ? '+' : '\u256D', // ╭
+    topRight: isWindows ? '+' : '\u256E', // ╮
+    bottomLeft: isWindows ? '+' : '\u2570', // ╰
     bottomRight: isWindows ? '+' : '\u256F', // ╯
-    horizontal: isWindows ? '-' : '\u2500',  // ─
-    vertical: isWindows ? '|' : '\u2502',    // │
-    leftTee: isWindows ? '+' : '\u251C',     // ├
-    rightTee: isWindows ? '+' : '\u2524',    // ┤
-    topTee: isWindows ? '+' : '\u252C',      // ┬
-    bottomTee: isWindows ? '+' : '\u2534',   // ┴
-    cross: isWindows ? '+' : '\u253C'        // ┼
-  }
+    horizontal: isWindows ? '-' : '\u2500', // ─
+    vertical: isWindows ? '|' : '\u2502', // │
+    leftTee: isWindows ? '+' : '\u251C', // ├
+    rightTee: isWindows ? '+' : '\u2524', // ┤
+    topTee: isWindows ? '+' : '\u252C', // ┬
+    bottomTee: isWindows ? '+' : '\u2534', // ┴
+    cross: isWindows ? '+' : '\u253C', // ┼
+  },
 });
 
 // ============================================================================
@@ -127,7 +126,7 @@ export const MessageThemes = Object.freeze({
     titleColor: FgColors.BRIGHT_RED,
     textColor: FgColors.WHITE,
     boxStyle: 'double',
-    label: 'ERROR'
+    label: 'ERROR',
   },
   warning: {
     icon: Icons.WARNING,
@@ -137,7 +136,7 @@ export const MessageThemes = Object.freeze({
     titleColor: FgColors.BRIGHT_YELLOW,
     textColor: FgColors.WHITE,
     boxStyle: 'single',
-    label: 'WARNING'
+    label: 'WARNING',
   },
   success: {
     icon: Icons.SUCCESS,
@@ -147,7 +146,7 @@ export const MessageThemes = Object.freeze({
     titleColor: FgColors.BRIGHT_GREEN,
     textColor: FgColors.WHITE,
     boxStyle: 'rounded',
-    label: 'SUCCESS'
+    label: 'SUCCESS',
   },
   info: {
     icon: Icons.INFO,
@@ -157,7 +156,7 @@ export const MessageThemes = Object.freeze({
     titleColor: FgColors.BRIGHT_CYAN,
     textColor: FgColors.WHITE,
     boxStyle: 'single',
-    label: 'INFO'
+    label: 'INFO',
   },
   debug: {
     icon: Icons.DEBUG,
@@ -167,7 +166,7 @@ export const MessageThemes = Object.freeze({
     titleColor: FgColors.GRAY,
     textColor: FgColors.GRAY,
     boxStyle: 'single',
-    label: 'DEBUG'
+    label: 'DEBUG',
   },
   hint: {
     icon: Icons.HINT,
@@ -177,8 +176,8 @@ export const MessageThemes = Object.freeze({
     titleColor: FgColors.BRIGHT_CYAN,
     textColor: FgColors.WHITE,
     boxStyle: 'rounded',
-    label: 'HINT'
-  }
+    label: 'HINT',
+  },
 });
 
 // ============================================================================
@@ -202,7 +201,7 @@ export class MessageFormatter {
       maxWidth = 80,
       useColors = supportsColors(),
       useIcons = true,
-      defaultBoxStyle = 'single'
+      defaultBoxStyle = 'single',
     } = options;
 
     /** @type {number} */
@@ -312,11 +311,11 @@ export class MessageFormatter {
     // Calculate content width
     const padding = 2;
     const borderWidth = 2;
-    const contentWidth = this.maxWidth - borderWidth - (padding * 2);
+    const contentWidth = this.maxWidth - borderWidth - padding * 2;
 
     // Process content into lines
     const contentLines = Array.isArray(content) ? content : [content];
-    const wrappedLines = contentLines.flatMap(line => this.wrapText(String(line), contentWidth));
+    const wrappedLines = contentLines.flatMap((line) => this.wrapText(String(line), contentWidth));
 
     // Build the box
     const lines = [];
@@ -493,7 +492,7 @@ export class MessageFormatter {
   inline(type, message) {
     const theme = MessageThemes[type] || MessageThemes.info;
     const icon = this.useIcons ? `${theme.icon} ` : '';
-    
+
     if (!this.useColors) {
       return `${icon}[${theme.label}] ${message}`;
     }
@@ -529,11 +528,15 @@ export function resetFormatter() {
 }
 
 // Convenience functions using default formatter
-export const formatError = (title, content, options) => getFormatter().error(title, content, options);
-export const formatWarning = (title, content, options) => getFormatter().warning(title, content, options);
-export const formatSuccess = (title, content, options) => getFormatter().success(title, content, options);
+export const formatError = (title, content, options) =>
+  getFormatter().error(title, content, options);
+export const formatWarning = (title, content, options) =>
+  getFormatter().warning(title, content, options);
+export const formatSuccess = (title, content, options) =>
+  getFormatter().success(title, content, options);
 export const formatInfo = (title, content, options) => getFormatter().info(title, content, options);
-export const formatDebug = (title, content, options) => getFormatter().debug(title, content, options);
+export const formatDebug = (title, content, options) =>
+  getFormatter().debug(title, content, options);
 export const formatHint = (title, content, options) => getFormatter().hint(title, content, options);
 export const formatInline = (type, message) => getFormatter().inline(type, message);
 
@@ -554,5 +557,5 @@ export default {
   formatInfo,
   formatDebug,
   formatHint,
-  formatInline
+  formatInline,
 };

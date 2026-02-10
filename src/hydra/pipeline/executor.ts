@@ -17,16 +17,15 @@
  * @module hydra/pipeline/executor
  */
 
-import { getLlamaCppProvider } from '../providers/llamacpp-provider.js';
-import { getGeminiProvider } from '../providers/gemini-provider.js';
-import { route, routeWithCost, routeWithThinking } from './router.js';
-import { PipelineError, AggregateError, normalizeError, isRecoverable } from '../core/errors.js';
 import { getConfigManager } from '../core/config.js';
+import { isRecoverable, normalizeError, PipelineError } from '../core/errors.js';
 import { getStatsCollector } from '../core/stats.js';
-
+import * as geminiClient from '../providers/gemini-client.js';
+import { getGeminiProvider } from '../providers/gemini-provider.js';
 // Fallback imports for backward compatibility
 import * as llamacppBridge from '../providers/llamacpp-bridge.js';
-import * as geminiClient from '../providers/gemini-client.js';
+import { getLlamaCppProvider } from '../providers/llamacpp-provider.js';
+import { route, routeWithCost, routeWithThinking } from './router.js';
 
 /**
  * @typedef {Object} StageResult
@@ -87,7 +86,7 @@ class ExecutionContext {
       iteration: 1,
       previousResults: [],
       learnings: [],
-      lastQualityScore: 0
+      lastQualityScore: 0,
     };
   }
 
@@ -101,7 +100,7 @@ class ExecutionContext {
       ...data,
       duration_ms: Date.now() - (data.startTime || this.startTime),
       completedAt: Date.now(),
-      iteration: this.feedback.iteration
+      iteration: this.feedback.iteration,
     };
   }
 
@@ -115,7 +114,7 @@ class ExecutionContext {
       stage,
       error: normalizeError(error),
       timestamp: Date.now(),
-      iteration: this.feedback.iteration
+      iteration: this.feedback.iteration,
     });
   }
 
@@ -140,7 +139,7 @@ class ExecutionContext {
    * @returns {Array<Object>}
    */
   getRecoverableErrors() {
-    return this.errors.filter(e => isRecoverable(e.error));
+    return this.errors.filter((e) => isRecoverable(e.error));
   }
 
   /**
@@ -161,7 +160,7 @@ class ExecutionContext {
       iteration: this.feedback.iteration,
       result,
       qualityScore,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
     this.feedback.lastQualityScore = qualityScore;
     this.feedback.iteration++;
@@ -178,7 +177,10 @@ class ExecutionContext {
 
     const learnings = this.feedback.learnings.join('\n- ');
     const previousAttempts = this.feedback.previousResults
-      .map(r => `Iteration ${r.iteration} (score: ${r.qualityScore}/10): ${r.result?.content?.slice(0, 200)}...`)
+      .map(
+        (r) =>
+          `Iteration ${r.iteration} (score: ${r.qualityScore}/10): ${r.result?.content?.slice(0, 200)}...`,
+      )
       .join('\n');
 
     return `
@@ -242,7 +244,7 @@ class PipelineStage {
    */
   async execute(context, input) {
     // Check skip condition
-    if (this.skipCondition && this.skipCondition(context, input)) {
+    if (this.skipCondition?.(context, input)) {
       return { skipped: true, reason: 'skip condition met' };
     }
 
@@ -250,14 +252,10 @@ class PipelineStage {
 
     try {
       // Execute with timeout
-      const result = await Promise.race([
-        this.executor(context, input),
-        this._timeoutPromise()
-      ]);
+      const result = await Promise.race([this.executor(context, input), this._timeoutPromise()]);
 
       context.recordStage(this.name, { ...result, startTime });
       return result;
-
     } catch (error) {
       context.addError(this.name, error);
 
@@ -289,7 +287,10 @@ class PipelineStage {
    */
   _timeoutPromise() {
     return new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(`Stage '${this.name}' timed out after ${this.timeout}ms`)), this.timeout);
+      setTimeout(
+        () => reject(new Error(`Stage '${this.name}' timed out after ${this.timeout}ms`)),
+        this.timeout,
+      );
     });
   }
 }
@@ -376,13 +377,15 @@ class Pipeline {
       let currentInput = {
         prompt,
         accumulatedKnowledge: context.getAccumulatedKnowledge(),
-        iteration: context.feedback.iteration
+        iteration: context.feedback.iteration,
       };
 
       // Execute all stages
       for (const stage of this.stages) {
         if (options.verbose) {
-          console.log(`[HYDRA] Executing stage: ${stage.name} (iteration ${context.feedback.iteration})`);
+          console.log(
+            `[HYDRA] Executing stage: ${stage.name} (iteration ${context.feedback.iteration})`,
+          );
         }
 
         const result = await stage.execute(context, currentInput);
@@ -392,7 +395,8 @@ class Pipeline {
       // Get quality evaluation from evaluate stage
       const evaluateResult = currentInput.evaluate;
       const qualityScore = evaluateResult?.qualityScore || 0;
-      const content = currentInput.synthesize?.content || currentInput.execute?.results?.[0]?.content;
+      const content =
+        currentInput.synthesize?.content || currentInput.execute?.results?.[0]?.content;
 
       if (options.verbose) {
         console.log(`[HYDRA] Iteration ${context.feedback.iteration} quality: ${qualityScore}/10`);
@@ -433,19 +437,20 @@ class Pipeline {
    */
   _buildResult(context, stageResults, metQuality) {
     return {
-      success: !context.hasErrors() || context.getRecoverableErrors().length === context.errors.length,
+      success:
+        !context.hasErrors() || context.getRecoverableErrors().length === context.errors.length,
       content: stageResults.synthesize?.content || stageResults.execute?.results?.[0]?.content,
       metadata: {
         duration_ms: context.getDuration(),
         stages: context.stages,
-        errors: context.errors.map(e => ({ stage: e.stage, message: e.error.message })),
+        errors: context.errors.map((e) => ({ stage: e.stage, message: e.error.message })),
         feedbackLoop: {
           iterations: context.feedback.iteration,
           metQualityThreshold: metQuality,
           finalQualityScore: context.feedback.lastQualityScore,
-          learnings: context.feedback.learnings
-        }
-      }
+          learnings: context.feedback.learnings,
+        },
+      },
     };
   }
 }
@@ -466,11 +471,11 @@ export function createDefaultPipeline() {
     llamacpp = {
       generate: (prompt, opts) => bridge.generate(prompt, opts),
       selectModel: () => 'main',
-      selectTool: () => 'llama_generate'
+      selectTool: () => 'llama_generate',
     };
     gemini = {
       generate: geminiClient.generate,
-      generateWithThinking: geminiClient.generateWithThinking || geminiClient.generate
+      generateWithThinking: geminiClient.generateWithThinking || geminiClient.generate,
     };
   }
 
@@ -478,158 +483,183 @@ export function createDefaultPipeline() {
   const geminiConfig = getConfigManager().getValue('providers.gemini', {});
   const thinkingModel = geminiConfig.thinkingModel || 'gemini-2.0-flash-thinking-exp';
 
-  return new PipelineBuilder()
-    // STAGE 1: ROUTE (using Gemini Thinking for deep analysis)
-    .addStage('route', async (ctx, input) => {
-      const knowledge = input.accumulatedKnowledge || '';
+  return (
+    new PipelineBuilder()
+      // STAGE 1: ROUTE (using Gemini Thinking for deep analysis)
+      .addStage(
+        'route',
+        async (ctx, input) => {
+          const knowledge = input.accumulatedKnowledge || '';
 
-      // Use Gemini Thinking for routing with accumulated knowledge
-      const result = await routeWithThinking(ctx.prompt, {
-        gemini,
-        thinkingModel,
-        accumulatedKnowledge: knowledge,
-        iteration: input.iteration || 1
-      });
+          // Use Gemini Thinking for routing with accumulated knowledge
+          const result = await routeWithThinking(ctx.prompt, {
+            gemini,
+            thinkingModel,
+            accumulatedKnowledge: knowledge,
+            iteration: input.iteration || 1,
+          });
 
-      return result;
-    }, {
-      timeout: 30000,
-      fallback: async (ctx) => {
-        // Fallback to heuristic routing
-        return routeWithCost(ctx.prompt);
-      }
-    })
+          return result;
+        },
+        {
+          timeout: 30000,
+          fallback: async (ctx) => {
+            // Fallback to heuristic routing
+            return routeWithCost(ctx.prompt);
+          },
+        },
+      )
 
-    // STAGE 2: SPECULATE (optional, for context gathering)
-    .addStage('speculate', async (ctx, input) => {
-      const routing = input.route;
+      // STAGE 2: SPECULATE (optional, for context gathering)
+      .addStage(
+        'speculate',
+        async (ctx, input) => {
+          const routing = input.route;
 
-      if (routing.complexity <= 1) {
-        return { context: null, skipped: true };
-      }
+          if (routing.complexity <= 1) {
+            return { context: null, skipped: true };
+          }
 
-      const contextPrompt = `Analyze this task and extract key requirements in bullet points (max 5):
+          const contextPrompt = `Analyze this task and extract key requirements in bullet points (max 5):
 "${ctx.prompt.slice(0, 500)}"
 Be concise.`;
 
-      const result = await llamacpp.generate(contextPrompt, {
-        model: llamacpp.selectModel ? llamacpp.selectModel('research') : 'main',
-        taskType: 'research',
-        maxTokens: 256
-      });
+          const result = await llamacpp.generate(contextPrompt, {
+            model: llamacpp.selectModel ? llamacpp.selectModel('research') : 'main',
+            taskType: 'research',
+            maxTokens: 256,
+          });
 
-      return {
-        context: result.content,
-        duration_ms: result.duration_ms,
-        skipped: false
-      };
-    }, {
-      optional: true,
-      skipCondition: () => !config.enableSpeculation,
-      timeout: 30000
-    })
+          return {
+            context: result.content,
+            duration_ms: result.duration_ms,
+            skipped: false,
+          };
+        },
+        {
+          optional: true,
+          skipCondition: () => !config.enableSpeculation,
+          timeout: 30000,
+        },
+      )
 
-    // STAGE 3: PLAN (optional, for complex tasks)
-    .addStage('plan', async (ctx, input) => {
-      const routing = input.route;
-      const speculation = input.speculate;
-      const knowledge = input.accumulatedKnowledge || '';
+      // STAGE 3: PLAN (optional, for complex tasks)
+      .addStage(
+        'plan',
+        async (ctx, input) => {
+          const routing = input.route;
+          const speculation = input.speculate;
+          const knowledge = input.accumulatedKnowledge || '';
 
-      if (routing.complexity <= 2) {
-        return {
-          plan: [{ task: 'direct_execution', provider: routing.provider }],
-          skipped: true
-        };
-      }
+          if (routing.complexity <= 2) {
+            return {
+              plan: [{ task: 'direct_execution', provider: routing.provider }],
+              skipped: true,
+            };
+          }
 
-      const planPrompt = `Create a brief execution plan for this task (max 5 steps):
+          const planPrompt = `Create a brief execution plan for this task (max 5 steps):
 Task: "${ctx.prompt.slice(0, 300)}"
 ${speculation?.context ? `Context: ${speculation.context}` : ''}
 ${knowledge ? `\nPrevious learnings:\n${knowledge}` : ''}
 Format: numbered list, one line per step.`;
 
-      // Use appropriate provider based on complexity
-      const provider = routing.complexity >= 4 ? gemini : llamacpp;
-      const result = await provider.generate(planPrompt, {
-        model: routing.complexity >= 4 ? undefined : (llamacpp.selectModel ? llamacpp.selectModel('research') : 'main'),
-        taskType: 'research',
-        maxTokens: 512
-      });
-
-      return {
-        plan: parsePlan(result.content),
-        duration_ms: result.duration_ms
-      };
-    }, {
-      optional: true,
-      skipCondition: () => !config.enablePlanning,
-      timeout: 45000,
-      fallback: async (ctx, input) => ({
-        plan: [{ task: 'direct_execution', provider: input.route.provider }],
-        fallback: true
-      })
-    })
-
-    // STAGE 4: EXECUTE
-    .addStage('execute', async (ctx, input) => {
-      const routing = input.route;
-      const plan = input.plan;
-      const results = [];
-
-      // Direct execution for simple plans
-      if (plan.skipped || plan.plan.length <= 1) {
-        const result = await executeTask(ctx.prompt, routing, { llamacpp, gemini });
-        results.push({ step: 'main', ...result });
-        return { results, parallel: false };
-      }
-
-      // Multi-step execution
-      for (const step of plan.plan) {
-        const stepPrompt = `${step.task}\n\nOriginal request: ${ctx.prompt.slice(0, 200)}`;
-        const stepRouting = step.provider === 'auto'
-          ? await route(step.task)
-          : { provider: step.provider, model: routing.model, tool: routing.tool };
-
-        try {
-          const result = await executeTask(stepPrompt, stepRouting, { llamacpp, gemini });
-          results.push({
-            step: step.step,
-            task: step.task,
-            provider: stepRouting.provider,
-            ...result
+          // Use appropriate provider based on complexity
+          const provider = routing.complexity >= 4 ? gemini : llamacpp;
+          const result = await provider.generate(planPrompt, {
+            model:
+              routing.complexity >= 4
+                ? undefined
+                : llamacpp.selectModel
+                  ? llamacpp.selectModel('research')
+                  : 'main',
+            taskType: 'research',
+            maxTokens: 512,
           });
-        } catch (error) {
-          results.push({
-            step: step.step,
-            task: step.task,
-            error: error.message
-          });
-        }
-      }
 
-      return { results, parallel: false };
-    }, {
-      timeout: 120000
-    })
+          return {
+            plan: parsePlan(result.content),
+            duration_ms: result.duration_ms,
+          };
+        },
+        {
+          optional: true,
+          skipCondition: () => !config.enablePlanning,
+          timeout: 45000,
+          fallback: async (_ctx, input) => ({
+            plan: [{ task: 'direct_execution', provider: input.route.provider }],
+            fallback: true,
+          }),
+        },
+      )
 
-    // STAGE 5: SYNTHESIZE (using Gemini Thinking for deep synthesis)
-    .addStage('synthesize', async (ctx, input) => {
-      const execution = input.execute;
-      const knowledge = input.accumulatedKnowledge || '';
+      // STAGE 4: EXECUTE
+      .addStage(
+        'execute',
+        async (ctx, input) => {
+          const routing = input.route;
+          const plan = input.plan;
+          const results = [];
 
-      // Single result doesn't need synthesis
-      if (execution.results.length === 1 && !knowledge) {
-        return {
-          content: execution.results[0].content,
-          skipped: true
-        };
-      }
+          // Direct execution for simple plans
+          if (plan.skipped || plan.plan.length <= 1) {
+            const result = await executeTask(ctx.prompt, routing, { llamacpp, gemini });
+            results.push({ step: 'main', ...result });
+            return { results, parallel: false };
+          }
 
-      const combinedResults = execution.results
-        .map(r => `[Step ${r.step}]: ${r.content || r.error}`)
-        .join('\n\n');
+          // Multi-step execution
+          for (const step of plan.plan) {
+            const stepPrompt = `${step.task}\n\nOriginal request: ${ctx.prompt.slice(0, 200)}`;
+            const stepRouting =
+              step.provider === 'auto'
+                ? await route(step.task)
+                : { provider: step.provider, model: routing.model, tool: routing.tool };
 
-      const synthPrompt = `You are synthesizing results into a comprehensive, high-quality response.
+            try {
+              const result = await executeTask(stepPrompt, stepRouting, { llamacpp, gemini });
+              results.push({
+                step: step.step,
+                task: step.task,
+                provider: stepRouting.provider,
+                ...result,
+              });
+            } catch (error) {
+              results.push({
+                step: step.step,
+                task: step.task,
+                error: error.message,
+              });
+            }
+          }
+
+          return { results, parallel: false };
+        },
+        {
+          timeout: 120000,
+        },
+      )
+
+      // STAGE 5: SYNTHESIZE (using Gemini Thinking for deep synthesis)
+      .addStage(
+        'synthesize',
+        async (ctx, input) => {
+          const execution = input.execute;
+          const knowledge = input.accumulatedKnowledge || '';
+
+          // Single result doesn't need synthesis
+          if (execution.results.length === 1 && !knowledge) {
+            return {
+              content: execution.results[0].content,
+              skipped: true,
+            };
+          }
+
+          const combinedResults = execution.results
+            .map((r) => `[Step ${r.step}]: ${r.content || r.error}`)
+            .join('\n\n');
+
+          const synthPrompt = `You are synthesizing results into a comprehensive, high-quality response.
 
 ## Original Task:
 ${ctx.prompt}
@@ -648,38 +678,45 @@ ${knowledge ? `## Previous Iterations & Learnings:\n${knowledge}` : ''}
 
 Provide the unified response:`;
 
-      // Use Gemini Thinking for synthesis
-      const result = await gemini.generate(synthPrompt, {
-        model: thinkingModel,
-        maxTokens: 4096
-      });
+          // Use Gemini Thinking for synthesis
+          const result = await gemini.generate(synthPrompt, {
+            model: thinkingModel,
+            maxTokens: 4096,
+          });
 
-      return {
-        content: result.content,
-        duration_ms: result.duration_ms,
-        skipped: false,
-        usedThinkingModel: true
-      };
-    }, {
-      optional: true,
-      skipCondition: () => !config.enableSynthesis,
-      timeout: 90000,
-      fallback: async (ctx, input) => ({
-        content: input.execute.results.map(r => r.content).filter(Boolean).join('\n\n'),
-        fallback: true
-      })
-    })
+          return {
+            content: result.content,
+            duration_ms: result.duration_ms,
+            skipped: false,
+            usedThinkingModel: true,
+          };
+        },
+        {
+          optional: true,
+          skipCondition: () => !config.enableSynthesis,
+          timeout: 90000,
+          fallback: async (_ctx, input) => ({
+            content: input.execute.results
+              .map((r) => r.content)
+              .filter(Boolean)
+              .join('\n\n'),
+            fallback: true,
+          }),
+        },
+      )
 
-    // STAGE 6: EVALUATE (quality assessment for feedback loop)
-    .addStage('evaluate', async (ctx, input) => {
-      const synthesis = input.synthesize;
-      const content = synthesis?.content || input.execute?.results?.[0]?.content || '';
+      // STAGE 6: EVALUATE (quality assessment for feedback loop)
+      .addStage(
+        'evaluate',
+        async (ctx, input) => {
+          const synthesis = input.synthesize;
+          const content = synthesis?.content || input.execute?.results?.[0]?.content || '';
 
-      if (!config.enableFeedbackLoop) {
-        return { qualityScore: 10, skipped: true };
-      }
+          if (!config.enableFeedbackLoop) {
+            return { qualityScore: 10, skipped: true };
+          }
 
-      const evalPrompt = `You are evaluating the quality of an AI response.
+          const evalPrompt = `You are evaluating the quality of an AI response.
 
 ## Original Task:
 ${ctx.prompt}
@@ -705,43 +742,45 @@ ${content.slice(0, 3000)}
 
 Respond with ONLY the JSON, no other text:`;
 
-      try {
-        // Use Gemini Thinking for evaluation
-        const result = await gemini.generate(evalPrompt, {
-          model: thinkingModel,
-          maxTokens: 512,
-          temperature: 0.1
-        });
+          try {
+            // Use Gemini Thinking for evaluation
+            const result = await gemini.generate(evalPrompt, {
+              model: thinkingModel,
+              maxTokens: 512,
+              temperature: 0.1,
+            });
 
-        // Parse JSON response
-        const jsonMatch = result.content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const evaluation = JSON.parse(jsonMatch[0]);
-          return {
-            qualityScore: evaluation.overall || 5,
-            completeness: evaluation.completeness,
-            accuracy: evaluation.accuracy,
-            clarity: evaluation.clarity,
-            usefulness: evaluation.usefulness,
-            improvements: evaluation.improvements || [],
-            duration_ms: result.duration_ms
-          };
-        }
+            // Parse JSON response
+            const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const evaluation = JSON.parse(jsonMatch[0]);
+              return {
+                qualityScore: evaluation.overall || 5,
+                completeness: evaluation.completeness,
+                accuracy: evaluation.accuracy,
+                clarity: evaluation.clarity,
+                usefulness: evaluation.usefulness,
+                improvements: evaluation.improvements || [],
+                duration_ms: result.duration_ms,
+              };
+            }
 
-        return { qualityScore: 7, improvements: [], duration_ms: result.duration_ms };
+            return { qualityScore: 7, improvements: [], duration_ms: result.duration_ms };
+          } catch (error) {
+            // If evaluation fails, assume quality is acceptable
+            return { qualityScore: 7, improvements: [], error: error.message };
+          }
+        },
+        {
+          optional: true,
+          skipCondition: () => !config.enableFeedbackLoop,
+          timeout: 30000,
+          fallback: async () => ({ qualityScore: 7, improvements: [], fallback: true }),
+        },
+      )
 
-      } catch (error) {
-        // If evaluation fails, assume quality is acceptable
-        return { qualityScore: 7, improvements: [], error: error.message };
-      }
-    }, {
-      optional: true,
-      skipCondition: () => !config.enableFeedbackLoop,
-      timeout: 30000,
-      fallback: async () => ({ qualityScore: 7, improvements: [], fallback: true })
-    })
-
-    .build();
+      .build()
+  );
 }
 
 /**
@@ -768,11 +807,11 @@ async function executeTask(prompt, routing, providers) {
  * @returns {Array<Object>} Parsed plan steps
  */
 function parsePlan(planText) {
-  const lines = planText.split('\n').filter(line => /^\d+[\.\)]/.test(line.trim()));
+  const lines = planText.split('\n').filter((line) => /^\d+[.)]/.test(line.trim()));
   return lines.map((line, idx) => ({
     step: idx + 1,
-    task: line.replace(/^\d+[\.\)]\s*/, '').trim(),
-    provider: 'auto'
+    task: line.replace(/^\d+[.)]\s*/, '').trim(),
+    provider: 'auto',
   }));
 }
 
@@ -801,7 +840,6 @@ export async function execute(prompt, options = {}) {
     }
 
     return result;
-
   } catch (error) {
     const config = getConfigManager().getValue('pipeline', {});
 
@@ -825,14 +863,14 @@ export async function execute(prompt, options = {}) {
             error: error.message,
             provider: 'gemini',
             duration_ms: fallbackResult.duration_ms,
-            totalDuration_ms: fallbackResult.duration_ms
-          }
+            totalDuration_ms: fallbackResult.duration_ms,
+          },
         };
       } catch (fallbackError) {
         return {
           success: false,
           content: null,
-          error: `Pipeline failed: ${error.message}. Fallback failed: ${fallbackError.message}`
+          error: `Pipeline failed: ${error.message}. Fallback failed: ${fallbackError.message}`,
         };
       }
     }
@@ -840,7 +878,7 @@ export async function execute(prompt, options = {}) {
     return {
       success: false,
       content: null,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -866,7 +904,7 @@ export async function quickExecute(prompt) {
   if (routing.provider === 'llamacpp') {
     const result = await llamacpp.generate(prompt, {
       model: routing.model,
-      tool: routing.tool
+      tool: routing.tool,
     });
     return { ...result, provider: 'llamacpp', model: routing.model, tool: routing.tool };
   }

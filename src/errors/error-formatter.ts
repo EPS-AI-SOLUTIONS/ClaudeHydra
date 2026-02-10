@@ -4,9 +4,13 @@
  * @module errors/error-formatter
  */
 
+import {
+  generateDiagnostics,
+  generateSuggestions,
+  getTroubleshootingSteps,
+} from '../logger/fix-suggestions.js';
 import { getFormatter } from '../logger/message-formatter.js';
 import { formatStackTrace, getErrorLocation } from '../logger/stack-trace-formatter.js';
-import { generateSuggestions, generateDiagnostics, getTroubleshootingSteps } from '../logger/fix-suggestions.js';
 import { AppError } from './AppError.js';
 
 // ============================================================================
@@ -32,7 +36,7 @@ export class ErrorFormatter {
       useColors = true,
       showSuggestions = true,
       showStack = false,
-      showDetails = true
+      showDetails = true,
     } = options;
 
     /** @type {number} */
@@ -71,27 +75,25 @@ export class ErrorFormatter {
     const details = this.buildDetails(error, opts);
 
     // Get suggestions
-    const suggestions = opts.showSuggestions
-      ? generateSuggestions(error).suggestions
-      : [];
+    const suggestions = opts.showSuggestions ? generateSuggestions(error).suggestions : [];
 
     // Determine error type and title
-    const errorName = isAppError ? error.name : (error.name || 'Error');
-    
+    const errorName = isAppError ? error.name : error.name || 'Error';
+
     // Format main box
     let output = this.messageFormatter.error(errorName, content, {
       details: opts.showDetails ? details : {},
-      suggestions
+      suggestions,
     });
 
     // Add stack trace
     if (opts.showStack && error.stack) {
-      output += '\n' + formatStackTrace(error);
+      output += `\n${formatStackTrace(error)}`;
     }
 
     // Add cause chain
     if (isAppError && error.cause) {
-      output += '\n' + this.formatCause(error.cause, opts);
+      output += `\n${this.formatCause(error.cause, opts)}`;
     }
 
     return output;
@@ -103,7 +105,7 @@ export class ErrorFormatter {
    * @param {Object} opts - Options
    * @returns {Object} Details object
    */
-  buildDetails(error, opts) {
+  buildDetails(error, _opts) {
     const details = {};
     const isAppError = error instanceof AppError;
 
@@ -114,7 +116,7 @@ export class ErrorFormatter {
 
     // Add status code for AppError
     if (isAppError && error.statusCode) {
-      details['Status'] = error.statusCode;
+      details.Status = error.statusCode;
     }
 
     // Add timestamp
@@ -153,17 +155,20 @@ export class ErrorFormatter {
    * @param {Object} opts - Options
    * @returns {string} Formatted cause
    */
-  formatCause(cause, opts) {
-    const causeName = cause instanceof AppError ? cause.name : (cause.name || 'Cause');
+  formatCause(cause, _opts) {
+    const causeName = cause instanceof AppError ? cause.name : cause.name || 'Cause';
     const causeDetails = {};
 
     if (cause.code) {
       causeDetails.Code = cause.code;
     }
 
-    return this.messageFormatter.formatBox('warning', `Caused by: ${causeName}`, [
-      cause.message || String(cause)
-    ], { details: causeDetails });
+    return this.messageFormatter.formatBox(
+      'warning',
+      `Caused by: ${causeName}`,
+      [cause.message || String(cause)],
+      { details: causeDetails },
+    );
   }
 
   /**
@@ -224,14 +229,16 @@ export class ErrorFormatter {
    */
   printDiagnostic(error) {
     console.error(this.format(error, { showStack: true, showSuggestions: true }));
-    
+
     const diagnostics = generateDiagnostics(error);
-    console.error('\n' + this.info('Diagnostics', [
-      `Error Type: ${diagnostics.errorType}`,
-      `Severity: ${diagnostics.severity}`,
-      `Recoverable: ${diagnostics.isRecoverable ? 'Yes' : 'No'}`,
-      `Affected: ${diagnostics.affectedSystems.join(', ') || 'Unknown'}`
-    ]));
+    console.error(
+      `\n${this.info('Diagnostics', [
+        `Error Type: ${diagnostics.errorType}`,
+        `Severity: ${diagnostics.severity}`,
+        `Recoverable: ${diagnostics.isRecoverable ? 'Yes' : 'No'}`,
+        `Affected: ${diagnostics.affectedSystems.join(', ') || 'Unknown'}`,
+      ])}`,
+    );
   }
 }
 
@@ -246,7 +253,7 @@ if (!AppError.prototype.format) {
    * @param {Object} [options={}] - Formatting options
    * @returns {string} Formatted error
    */
-  AppError.prototype.format = function(options = {}) {
+  AppError.prototype.format = function (options = {}) {
     const formatter = new ErrorFormatter(options);
     return formatter.format(this, options);
   };
@@ -255,7 +262,7 @@ if (!AppError.prototype.format) {
    * Formats the error as a compact inline message
    * @returns {string} Inline formatted error
    */
-  AppError.prototype.formatInline = function() {
+  AppError.prototype.formatInline = function () {
     const formatter = new ErrorFormatter();
     return formatter.formatInline(this);
   };
@@ -264,7 +271,7 @@ if (!AppError.prototype.format) {
    * Prints the formatted error to console
    * @param {Object} [options={}] - Formatting options
    */
-  AppError.prototype.print = function(options = {}) {
+  AppError.prototype.print = function (options = {}) {
     const formatter = new ErrorFormatter(options);
     formatter.print(this, options);
   };
@@ -272,7 +279,7 @@ if (!AppError.prototype.format) {
   /**
    * Prints full diagnostic output
    */
-  AppError.prototype.printDiagnostic = function() {
+  AppError.prototype.printDiagnostic = function () {
     const formatter = new ErrorFormatter();
     formatter.printDiagnostic(this);
   };
@@ -281,7 +288,7 @@ if (!AppError.prototype.format) {
    * Gets diagnostic information
    * @returns {Object} Diagnostics
    */
-  AppError.prototype.getDiagnostics = function() {
+  AppError.prototype.getDiagnostics = function () {
     return generateDiagnostics(this);
   };
 
@@ -289,7 +296,7 @@ if (!AppError.prototype.format) {
    * Gets troubleshooting steps
    * @returns {string[]} Steps
    */
-  AppError.prototype.getTroubleshootingSteps = function() {
+  AppError.prototype.getTroubleshootingSteps = function () {
     return getTroubleshootingSteps(this);
   };
 
@@ -298,7 +305,7 @@ if (!AppError.prototype.format) {
    * @param {Object} [options={}] - Options
    * @returns {string} Formatted stack
    */
-  AppError.prototype.formatStackTrace = function(options = {}) {
+  AppError.prototype.formatStackTrace = function (options = {}) {
     return formatStackTrace(this, options);
   };
 }
@@ -376,5 +383,5 @@ export default {
   formatError,
   formatErrorInline,
   printError,
-  printDiagnostic
+  printDiagnostic,
 };

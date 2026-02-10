@@ -7,23 +7,40 @@
  */
 
 // Commit Workflow
-export {
-  CommitWorkflow,
-  DEFAULT_CO_AUTHOR,
-  getCommitWorkflow,
-  resetCommitWorkflow,
-  commitFiles,
-  getGitStatus
+import {
+  CommitWorkflow as _CommitWorkflow,
+  commitFiles as _commitFiles,
+  DEFAULT_CO_AUTHOR as _DEFAULT_CO_AUTHOR,
+  getCommitWorkflow as _getCommitWorkflow,
+  getGitStatus as _getGitStatus,
+  resetCommitWorkflow as _resetCommitWorkflow,
 } from './commit-workflow.js';
 
-// PR Workflow
 export {
-  PRWorkflow,
-  getPRWorkflow,
-  resetPRWorkflow,
-  createPR,
-  listPRs
+  _CommitWorkflow as CommitWorkflow,
+  _DEFAULT_CO_AUTHOR as DEFAULT_CO_AUTHOR,
+  _getCommitWorkflow as getCommitWorkflow,
+  _resetCommitWorkflow as resetCommitWorkflow,
+  _commitFiles as commitFiles,
+  _getGitStatus as getGitStatus,
+};
+
+// PR Workflow
+import {
+  createPR as _createPR,
+  getPRWorkflow as _getPRWorkflow,
+  listPRs as _listPRs,
+  PRWorkflow as _PRWorkflow,
+  resetPRWorkflow as _resetPRWorkflow,
 } from './pr-workflow.js';
+
+export {
+  _PRWorkflow as PRWorkflow,
+  _getPRWorkflow as getPRWorkflow,
+  _resetPRWorkflow as resetPRWorkflow,
+  _createPR as createPR,
+  _listPRs as listPRs,
+};
 
 // ============================================================================
 // Convenience Functions
@@ -33,14 +50,11 @@ export {
  * Initialize git module
  *
  * @param {Object} [options] - Options
- * @returns {Object}
+ * @returns {Promise<Object>}
  */
-export function initGit(options = {}) {
-  const { getCommitWorkflow } = require('./commit-workflow.js');
-  const { getPRWorkflow } = require('./pr-workflow.js');
-
-  const commitWorkflow = getCommitWorkflow(options);
-  const prWorkflow = getPRWorkflow(options);
+export async function initGit(options = {}) {
+  const commitWorkflow = _getCommitWorkflow(options);
+  const prWorkflow = _getPRWorkflow(options);
 
   return { commitWorkflow, prWorkflow };
 }
@@ -49,11 +63,8 @@ export function initGit(options = {}) {
  * Shutdown git module
  */
 export function shutdownGit() {
-  const { resetCommitWorkflow } = require('./commit-workflow.js');
-  const { resetPRWorkflow } = require('./pr-workflow.js');
-
-  resetCommitWorkflow();
-  resetPRWorkflow();
+  _resetCommitWorkflow();
+  _resetPRWorkflow();
 }
 
 // ============================================================================
@@ -62,21 +73,21 @@ export function shutdownGit() {
 
 export default {
   // Commit
-  CommitWorkflow,
-  DEFAULT_CO_AUTHOR,
-  getCommitWorkflow,
-  resetCommitWorkflow,
-  commitFiles,
-  getGitStatus,
+  CommitWorkflow: _CommitWorkflow,
+  DEFAULT_CO_AUTHOR: _DEFAULT_CO_AUTHOR,
+  getCommitWorkflow: _getCommitWorkflow,
+  resetCommitWorkflow: _resetCommitWorkflow,
+  commitFiles: _commitFiles,
+  getGitStatus: _getGitStatus,
 
   // PR
-  PRWorkflow,
-  getPRWorkflow,
-  resetPRWorkflow,
-  createPR,
-  listPRs,
+  PRWorkflow: _PRWorkflow,
+  getPRWorkflow: _getPRWorkflow,
+  resetPRWorkflow: _resetPRWorkflow,
+  createPR: _createPR,
+  listPRs: _listPRs,
 
   // System
   initGit,
-  shutdownGit
+  shutdownGit,
 };

@@ -4,11 +4,10 @@
  * @module swarm/cli/ClaudeHydraCLI
  */
 
-import * as readline from 'readline/promises';
-import { EventEmitter } from 'events';
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { EventEmitter } from 'node:events';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { healthCheck } from '../../hydra/providers/llamacpp-provider.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,7 +53,7 @@ const c = {
   bgBlue: '\x1b[44m',
   bgMagenta: '\x1b[45m',
   bgCyan: '\x1b[46m',
-  bgWhite: '\x1b[47m'
+  bgWhite: '\x1b[47m',
 };
 
 // Agent Avatars (Feature #37)
@@ -70,11 +69,11 @@ const AGENT_AVATARS = {
   Regis: { icon: '🧛', color: c.blue, title: 'Sage' },
   Dijkstra: { icon: '🕵️', color: c.gray, title: 'Spymaster' },
   Philippa: { icon: '🦉', color: c.magenta, title: 'Owl' },
-  Zoltan: { icon: '⛏️', color: c.yellow, title: 'Dwarf' }
+  Zoltan: { icon: '⛏️', color: c.yellow, title: 'Dwarf' },
 };
 
 // Syntax Themes (Feature #36)
-const SYNTAX_THEMES = {
+const _SYNTAX_THEMES = {
   monokai: {
     keyword: c.brightMagenta,
     string: c.yellow,
@@ -82,7 +81,7 @@ const SYNTAX_THEMES = {
     comment: c.gray,
     function: c.brightGreen,
     variable: c.white,
-    operator: c.red
+    operator: c.red,
   },
   dracula: {
     keyword: c.brightMagenta,
@@ -91,7 +90,7 @@ const SYNTAX_THEMES = {
     comment: c.gray,
     function: c.brightGreen,
     variable: c.brightWhite,
-    operator: c.brightRed
+    operator: c.brightRed,
   },
   nord: {
     keyword: c.blue,
@@ -100,17 +99,15 @@ const SYNTAX_THEMES = {
     comment: c.gray,
     function: c.cyan,
     variable: c.white,
-    operator: c.cyan
-  }
+    operator: c.cyan,
+  },
 };
 
 /**
  * ClaudeHydra CLI - Enhanced Chat Interface
  */
 export class ClaudeHydraCLI extends EventEmitter {
-  #rl = null;
   #running = false;
-  #config = {};
 
   // State
   #state = {
@@ -119,15 +116,13 @@ export class ClaudeHydraCLI extends EventEmitter {
     currentTheme: 'monokai',
     streamingEnabled: true,
     timestampsEnabled: false,
-    notificationsEnabled: true
+    notificationsEnabled: true,
   };
 
   // History & Session (Features #11-20)
   #history = [];
-  #historyIndex = -1;
   #historyFile = '';
   #sessionId = '';
-  #sessionFile = '';
   #conversationBranches = new Map();
   #currentBranch = 'main';
   #historyTags = new Map();
@@ -139,10 +134,6 @@ export class ClaudeHydraCLI extends EventEmitter {
   #macros = new Map();
   #recordingMacro = null;
   #macroBuffer = [];
-
-  // Undo/Redo (Feature #4)
-  #undoStack = [];
-  #redoStack = [];
 
   // Plugins (Feature #50)
   #plugins = new Map();
@@ -182,7 +173,7 @@ export class ClaudeHydraCLI extends EventEmitter {
       join(this.#dataDir, 'sessions'),
       join(this.#dataDir, 'exports'),
       join(this.#dataDir, 'plugins'),
-      join(this.#dataDir, 'macros')
+      join(this.#dataDir, 'macros'),
     ];
     for (const dir of dirs) {
       if (!existsSync(dir)) {
@@ -201,17 +192,17 @@ export class ClaudeHydraCLI extends EventEmitter {
 
   #setupDefaultAliases() {
     const defaults = {
-      'q': '/quick',
-      's': '/status',
-      'm': '/models',
-      'h': '/help',
-      'c': '/clear',
-      'x': '/exit',
-      'y': '/yolo',
-      'n': '/safe',
-      'hist': '/history',
-      'exp': '/export',
-      'fav': '/favorites'
+      q: '/quick',
+      s: '/status',
+      m: '/models',
+      h: '/help',
+      c: '/clear',
+      x: '/exit',
+      y: '/yolo',
+      n: '/safe',
+      hist: '/history',
+      exp: '/export',
+      fav: '/favorites',
     };
     for (const [alias, cmd] of Object.entries(defaults)) {
       if (!this.#aliases.has(alias)) {
@@ -222,13 +213,14 @@ export class ClaudeHydraCLI extends EventEmitter {
 
   #setupDefaultSnippets() {
     const defaults = {
-      'code-review': 'Review this code for bugs, security issues, and improvements:\n```\n{code}\n```',
-      'explain': 'Explain this code step by step:\n```\n{code}\n```',
-      'refactor': 'Refactor this code to be more clean and efficient:\n```\n{code}\n```',
-      'test': 'Write unit tests for this code:\n```\n{code}\n```',
-      'doc': 'Write documentation for this code:\n```\n{code}\n```',
-      'debug': 'Help me debug this error:\n```\n{error}\n```',
-      'optimize': 'Optimize this code for performance:\n```\n{code}\n```'
+      'code-review':
+        'Review this code for bugs, security issues, and improvements:\n```\n{code}\n```',
+      explain: 'Explain this code step by step:\n```\n{code}\n```',
+      refactor: 'Refactor this code to be more clean and efficient:\n```\n{code}\n```',
+      test: 'Write unit tests for this code:\n```\n{code}\n```',
+      doc: 'Write documentation for this code:\n```\n{code}\n```',
+      debug: 'Help me debug this error:\n```\n{error}\n```',
+      optimize: 'Optimize this code for performance:\n```\n{code}\n```',
     };
     for (const [name, template] of Object.entries(defaults)) {
       if (!this.#snippets.has(name)) {
@@ -249,7 +241,7 @@ export class ClaudeHydraCLI extends EventEmitter {
         this.#historyTags = new Map(Object.entries(data.tags || {}));
         this.#favorites = new Set(data.favorites || []);
       }
-    } catch (e) {
+    } catch (_e) {
       this.#history = [];
     }
   }
@@ -259,20 +251,20 @@ export class ClaudeHydraCLI extends EventEmitter {
       const data = {
         history: this.#history.slice(-1000), // Keep last 1000
         tags: Object.fromEntries(this.#historyTags),
-        favorites: [...this.#favorites]
+        favorites: [...this.#favorites],
       };
       writeFileSync(this.#historyFile, JSON.stringify(data, null, 2));
-    } catch (e) {
+    } catch (_e) {
       // Ignore
     }
   }
 
   #addToHistory(entry) {
     const item = {
-      id: Date.now(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       query: entry,
       timestamp: new Date().toISOString(),
-      branch: this.#currentBranch
+      branch: this.#currentBranch,
     };
     this.#history.push(item);
     this.#historyIndex = this.#history.length;
@@ -287,7 +279,7 @@ export class ClaudeHydraCLI extends EventEmitter {
   #fuzzySearch(query, items) {
     const lowerQuery = query.toLowerCase();
     return items
-      .filter(item => {
+      .filter((item) => {
         const text = typeof item === 'string' ? item : item.query;
         return text.toLowerCase().includes(lowerQuery);
       })
@@ -308,7 +300,7 @@ export class ClaudeHydraCLI extends EventEmitter {
     this.#conversationBranches.set(name, {
       parent: this.#currentBranch,
       createdAt: new Date().toISOString(),
-      history: []
+      history: [],
     });
     this.#currentBranch = name;
     return true;
@@ -329,9 +321,11 @@ export class ClaudeHydraCLI extends EventEmitter {
     const filepath = join(this.#dataDir, 'exports', filename);
 
     if (format === 'markdown') {
-      const content = this.#history.map(h =>
-        `## ${new Date(h.timestamp).toLocaleString()}\n\n**Query:** ${h.query}\n\n---\n`
-      ).join('\n');
+      const content = this.#history
+        .map(
+          (h) => `## ${new Date(h.timestamp).toLocaleString()}\n\n**Query:** ${h.query}\n\n---\n`,
+        )
+        .join('\n');
       writeFileSync(filepath, `# ClaudeHydra Chat Export\n\n${content}`);
     } else {
       writeFileSync(filepath, JSON.stringify(this.#history, null, 2));
@@ -347,7 +341,7 @@ export class ClaudeHydraCLI extends EventEmitter {
       favorites: this.#favorites.size,
       tags: this.#historyTags.size,
       branches: this.#conversationBranches.size,
-      byDate: {}
+      byDate: {},
     };
 
     for (const item of this.#history) {
@@ -369,7 +363,7 @@ export class ClaudeHydraCLI extends EventEmitter {
         const data = JSON.parse(readFileSync(file, 'utf-8'));
         this.#aliases = new Map(Object.entries(data));
       }
-    } catch (e) {
+    } catch (_e) {
       // Use defaults
     }
   }
@@ -386,7 +380,7 @@ export class ClaudeHydraCLI extends EventEmitter {
         const data = JSON.parse(readFileSync(file, 'utf-8'));
         this.#snippets = new Map(Object.entries(data));
       }
-    } catch (e) {
+    } catch (_e) {
       // Use defaults
     }
   }
@@ -398,7 +392,10 @@ export class ClaudeHydraCLI extends EventEmitter {
 
   // Feature #22: Command Chaining
   #parseChainedCommands(input) {
-    return input.split(/\s*&&\s*/).map(cmd => cmd.trim()).filter(Boolean);
+    return input
+      .split(/\s*&&\s*/)
+      .map((cmd) => cmd.trim())
+      .filter(Boolean);
   }
 
   // Feature #24: Bang Commands
@@ -416,18 +413,6 @@ export class ClaudeHydraCLI extends EventEmitter {
     }
 
     return input;
-  }
-
-  // Feature #25: Snippets
-  #expandSnippet(name, params = {}) {
-    const template = this.#snippets.get(name);
-    if (!template) return null;
-
-    let result = template;
-    for (const [key, value] of Object.entries(params)) {
-      result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
-    }
-    return result;
   }
 
   // Feature #26: Macros
@@ -450,163 +435,28 @@ export class ClaudeHydraCLI extends EventEmitter {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SYNTAX HIGHLIGHTING (Feature #1)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  #highlightSyntax(code, language = 'javascript') {
-    const theme = SYNTAX_THEMES[this.#state.currentTheme];
-
-    // Keywords
-    const keywords = ['const', 'let', 'var', 'function', 'class', 'if', 'else', 'for', 'while',
-                      'return', 'import', 'export', 'from', 'async', 'await', 'try', 'catch',
-                      'throw', 'new', 'this', 'super', 'extends', 'static', 'get', 'set'];
-
-    let result = code;
-
-    // Highlight strings
-    result = result.replace(/(["'`])(?:(?!\1)[^\\]|\\.)*\1/g,
-      match => `${theme.string}${match}${c.reset}`);
-
-    // Highlight numbers
-    result = result.replace(/\b(\d+\.?\d*)\b/g,
-      match => `${theme.number}${match}${c.reset}`);
-
-    // Highlight keywords
-    for (const kw of keywords) {
-      const regex = new RegExp(`\\b(${kw})\\b`, 'g');
-      result = result.replace(regex, `${theme.keyword}$1${c.reset}`);
-    }
-
-    // Highlight comments
-    result = result.replace(/(\/\/.*$)/gm,
-      match => `${theme.comment}${match}${c.reset}`);
-    result = result.replace(/(\/\*[\s\S]*?\*\/)/g,
-      match => `${theme.comment}${match}${c.reset}`);
-
-    return result;
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // STREAMING OUTPUT (Feature #31)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  async #streamOutput(text, delay = 10) {
-    if (!this.#state.streamingEnabled) {
-      console.log(text);
-      return;
-    }
-
-    for (const char of text) {
-      process.stdout.write(char);
-      await this.#sleep(delay);
-    }
-    console.log();
-  }
-
-  #sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PROGRESS INDICATORS (Feature #32)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  #createProgressBar(current, total, width = 30) {
-    const percentage = Math.round((current / total) * 100);
-    const filled = Math.round((current / total) * width);
-    const empty = width - filled;
-
-    const bar = `${c.green}${'█'.repeat(filled)}${c.gray}${'░'.repeat(empty)}${c.reset}`;
-    return `${bar} ${percentage}%`;
-  }
-
-  #createSpinner() {
-    const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-    let i = 0;
-
-    return {
-      frame: () => `${c.cyan}${frames[i++ % frames.length]}${c.reset}`,
-      interval: 80
-    };
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // MARKDOWN TABLE RENDERER (Feature #40)
   // ═══════════════════════════════════════════════════════════════════════════
 
   #renderTable(headers, rows) {
     const colWidths = headers.map((h, i) => {
-      const maxRow = Math.max(...rows.map(r => String(r[i] || '').length));
+      const maxRow = Math.max(...rows.map((r) => String(r[i] || '').length));
       return Math.max(h.length, maxRow);
     });
 
-    const separator = '┼' + colWidths.map(w => '─'.repeat(w + 2)).join('┼') + '┼';
-    const headerRow = '│' + headers.map((h, i) => ` ${c.bold}${h.padEnd(colWidths[i])}${c.reset} `).join('│') + '│';
+    const separator = `┼${colWidths.map((w) => '─'.repeat(w + 2)).join('┼')}┼`;
+    const headerRow = `│${headers.map((h, i) => ` ${c.bold}${h.padEnd(colWidths[i])}${c.reset} `).join('│')}│`;
 
-    console.log('┌' + colWidths.map(w => '─'.repeat(w + 2)).join('┬') + '┐');
+    console.log(`┌${colWidths.map((w) => '─'.repeat(w + 2)).join('┬')}┐`);
     console.log(headerRow);
     console.log(separator);
 
     for (const row of rows) {
-      const rowStr = '│' + row.map((cell, i) => ` ${String(cell || '').padEnd(colWidths[i])} `).join('│') + '│';
+      const rowStr = `│${row.map((cell, i) => ` ${String(cell || '').padEnd(colWidths[i])} `).join('│')}│`;
       console.log(rowStr);
     }
 
-    console.log('└' + colWidths.map(w => '─'.repeat(w + 2)).join('┴') + '┘');
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // DIFF VIEWER (Feature #45)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  #renderDiff(oldText, newText) {
-    const oldLines = oldText.split('\n');
-    const newLines = newText.split('\n');
-
-    console.log(`${c.bold}--- OLD${c.reset}`);
-    console.log(`${c.bold}+++ NEW${c.reset}`);
-    console.log('');
-
-    const maxLen = Math.max(oldLines.length, newLines.length);
-
-    for (let i = 0; i < maxLen; i++) {
-      const oldLine = oldLines[i];
-      const newLine = newLines[i];
-
-      if (oldLine === newLine) {
-        console.log(`  ${oldLine || ''}`);
-      } else if (oldLine && !newLine) {
-        console.log(`${c.red}- ${oldLine}${c.reset}`);
-      } else if (!oldLine && newLine) {
-        console.log(`${c.green}+ ${newLine}${c.reset}`);
-      } else {
-        console.log(`${c.red}- ${oldLine}${c.reset}`);
-        console.log(`${c.green}+ ${newLine}${c.reset}`);
-      }
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NOTIFICATIONS (Feature #48)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  async #sendNotification(title, message) {
-    if (!this.#state.notificationsEnabled) return;
-
-    try {
-      // Try node-notifier if available
-      const notifier = await import('node-notifier').catch(() => null);
-      if (notifier) {
-        notifier.default.notify({
-          title: `ClaudeHydra: ${title}`,
-          message: message,
-          sound: true
-        });
-      }
-    } catch (e) {
-      // Fallback: bell character
-      process.stdout.write('\x07');
-    }
+    console.log(`└${colWidths.map((w) => '─'.repeat(w + 2)).join('┴')}┘`);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -616,8 +466,11 @@ export class ClaudeHydraCLI extends EventEmitter {
   #loadPlugins() {
     const pluginDir = join(this.#dataDir, 'plugins');
     try {
-      const files = existsSync(pluginDir) ?
-        require('fs').readdirSync(pluginDir).filter(f => f.endsWith('.js')) : [];
+      const files = existsSync(pluginDir)
+        ? require('node:fs')
+            .readdirSync(pluginDir)
+            .filter((f) => f.endsWith('.js'))
+        : [];
 
       for (const file of files) {
         try {
@@ -626,11 +479,11 @@ export class ClaudeHydraCLI extends EventEmitter {
             this.#plugins.set(plugin.name, plugin);
             plugin.init(this);
           }
-        } catch (e) {
+        } catch (_e) {
           // Skip invalid plugins
         }
       }
-    } catch (e) {
+    } catch (_e) {
       // Ignore
     }
   }
@@ -680,7 +533,7 @@ export class ClaudeHydraCLI extends EventEmitter {
     '/run': (args) => this.#runCode(args),
     '/diff': (args) => this.#showDiff(args),
     '/git': (args) => this.#gitCommand(args),
-    '/plugin': (args) => this.#managePlugin(args)
+    '/plugin': (args) => this.#managePlugin(args),
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -775,7 +628,7 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
       const health = await healthCheck();
       if (health.available) {
         console.log(`\n${c.cyan}${c.bold}Available Models (${health.models.length}):${c.reset}\n`);
-        health.models.forEach(model => {
+        health.models.forEach((model) => {
           console.log(`  ${c.green}✓${c.reset} ${model}`);
         });
         console.log();
@@ -813,11 +666,13 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
 
   #toggleNotifications() {
     this.#state.notificationsEnabled = !this.#state.notificationsEnabled;
-    console.log(`${c.cyan}Notifications: ${this.#state.notificationsEnabled ? 'ON' : 'OFF'}${c.reset}`);
+    console.log(
+      `${c.cyan}Notifications: ${this.#state.notificationsEnabled ? 'ON' : 'OFF'}${c.reset}`,
+    );
   }
 
   #showHistory(args) {
-    const count = parseInt(args) || 10;
+    const count = parseInt(args, 10) || 10;
     const items = this.#history.slice(-count);
 
     console.log(`\n${c.cyan}${c.bold}History (last ${count}):${c.reset}\n`);
@@ -825,9 +680,12 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
     items.forEach((item, i) => {
       const num = this.#history.length - count + i + 1;
       const fav = this.#favorites.has(item.id) ? '⭐' : '  ';
-      const time = this.#state.timestampsEnabled ?
-        `${c.gray}[${new Date(item.timestamp).toLocaleTimeString()}]${c.reset} ` : '';
-      console.log(`${fav} ${c.yellow}${num}.${c.reset} ${time}${item.query.substring(0, 60)}${item.query.length > 60 ? '...' : ''}`);
+      const time = this.#state.timestampsEnabled
+        ? `${c.gray}[${new Date(item.timestamp).toLocaleTimeString()}]${c.reset} `
+        : '';
+      console.log(
+        `${fav} ${c.yellow}${num}.${c.reset} ${time}${item.query.substring(0, 60)}${item.query.length > 60 ? '...' : ''}`,
+      );
     });
     console.log();
   }
@@ -855,7 +713,9 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
   #manageBranch(args) {
     if (!args) {
       console.log(`\n${c.cyan}Current branch: ${c.bold}${this.#currentBranch}${c.reset}`);
-      console.log(`${c.gray}Branches: ${[...this.#conversationBranches.keys()].join(', ') || 'none'}${c.reset}\n`);
+      console.log(
+        `${c.gray}Branches: ${[...this.#conversationBranches.keys()].join(', ') || 'none'}${c.reset}\n`,
+      );
       return;
     }
 
@@ -869,7 +729,7 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
 
   #manageTag(args) {
     const [idStr, ...tagParts] = (args || '').split(' ');
-    const id = parseInt(idStr);
+    const id = parseInt(idStr, 10);
     const tag = tagParts.join(' ');
 
     if (!id || !tag) {
@@ -888,7 +748,7 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
   }
 
   #showFavorites() {
-    const favItems = this.#history.filter(h => this.#favorites.has(h.id));
+    const favItems = this.#history.filter((h) => this.#favorites.has(h.id));
 
     console.log(`\n${c.cyan}${c.bold}Favorites (${favItems.length}):${c.reset}\n`);
 
@@ -903,7 +763,7 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
   }
 
   #toggleFavorite(args) {
-    const id = parseInt(args);
+    const id = parseInt(args, 10);
     if (!id) {
       console.log(`${c.yellow}Usage: /fav <history_id>${c.reset}`);
       return;
@@ -928,8 +788,8 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
         ['Total Queries', stats.total],
         ['Favorites', stats.favorites],
         ['Tags', stats.tags],
-        ['Branches', stats.branches]
-      ]
+        ['Branches', stats.branches],
+      ],
     );
     console.log();
   }
@@ -985,7 +845,7 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
         console.log(`${c.red}⏺ Recording macro: ${name}${c.reset}`);
         break;
 
-      case 'stop':
+      case 'stop': {
         const recorded = this.#stopMacroRecording();
         if (recorded) {
           console.log(`${c.green}⏹ Macro saved: ${recorded}${c.reset}`);
@@ -993,8 +853,9 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
           console.log(`${c.yellow}No macro recording in progress${c.reset}`);
         }
         break;
+      }
 
-      case 'play':
+      case 'play': {
         if (!name) {
           console.log(`${c.yellow}Usage: /macro play <name>${c.reset}`);
           return;
@@ -1011,6 +872,7 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
           console.log(`${c.yellow}Macro not found: ${name}${c.reset}`);
         }
         break;
+      }
 
       default:
         console.log(`\n${c.cyan}${c.bold}Macros:${c.reset}\n`);
@@ -1079,11 +941,11 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
     }
   }
 
-  #runCode(args) {
+  #runCode(_args) {
     console.log(`${c.yellow}Code execution not implemented in sandbox mode${c.reset}`);
   }
 
-  #showDiff(args) {
+  #showDiff(_args) {
     console.log(`${c.yellow}Diff viewer: provide two texts to compare${c.reset}`);
   }
 
@@ -1094,16 +956,22 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
     }
 
     try {
-      const { execSync } = await import('child_process');
-      const result = execSync(`git ${args}`, { encoding: 'utf-8' });
-      console.log(result);
+      // SECURITY FIX: Use safeGit() instead of raw execSync with string interpolation.
+      // Validates git subcommand against injection patterns before execution.
+      const { safeGit } = await import('../../security/safe-command.js');
+      const result = await safeGit(args);
+      if (result.success) {
+        console.log(result.stdout);
+      } else {
+        console.log(`${c.red}Git error: ${result.stderr}${c.reset}`);
+      }
     } catch (e) {
       console.log(`${c.red}Git error: ${e.message}${c.reset}`);
     }
   }
 
   #managePlugin(args) {
-    const [action, name] = (args || '').split(' ');
+    const [action, _name] = (args || '').split(' ');
 
     if (action === 'list' || !action) {
       console.log(`\n${c.cyan}${c.bold}Plugins:${c.reset}\n`);
@@ -1128,7 +996,7 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
 
     // Expand aliases
     for (const [alias, cmd] of this.#aliases) {
-      if (input === alias || input.startsWith(alias + ' ')) {
+      if (input === alias || input.startsWith(`${alias} `)) {
         input = input.replace(alias, cmd);
         break;
       }
@@ -1167,19 +1035,29 @@ ${c.yellow}${c.bold}AGENT SHORTCUTS${c.reset}
 
   getPrompt() {
     const mode = this.#state.yoloMode ? `${c.red}[YOLO]${c.reset}` : `${c.green}[SAFE]${c.reset}`;
-    const branch = this.#currentBranch !== 'main' ? `${c.magenta}(${this.#currentBranch})${c.reset}` : '';
+    const branch =
+      this.#currentBranch !== 'main' ? `${c.magenta}(${this.#currentBranch})${c.reset}` : '';
     const recording = this.#recordingMacro ? `${c.red}⏺${c.reset}` : '';
-    const timestamp = this.#state.timestampsEnabled ?
-      `${c.gray}[${new Date().toLocaleTimeString()}]${c.reset} ` : '';
+    const timestamp = this.#state.timestampsEnabled
+      ? `${c.gray}[${new Date().toLocaleTimeString()}]${c.reset} `
+      : '';
 
     return `${timestamp}${mode}${branch}${recording} Query> `;
   }
 
   // Public API
-  get state() { return { ...this.#state }; }
-  get history() { return [...this.#history]; }
-  get sessionId() { return this.#sessionId; }
-  get isRunning() { return this.#running; }
+  get state() {
+    return { ...this.#state };
+  }
+  get history() {
+    return [...this.#history];
+  }
+  get sessionId() {
+    return this.#sessionId;
+  }
+  get isRunning() {
+    return this.#running;
+  }
 
   async processCommand(input) {
     return this.#processInput(input);

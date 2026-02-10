@@ -2,11 +2,11 @@
 // ES Module - Singleton Pattern
 // ClaudeHYDRA Correlation ID Support via AsyncLocalStorage
 
-import fs from 'fs';
-import fsPromises from 'fs/promises';
-import path from 'path';
-import { AsyncLocalStorage } from 'async_hooks';
-import crypto from 'crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import fsPromises from 'node:fs/promises';
+import path from 'node:path';
 import { PATHS } from './constants.js';
 
 // ==================== Correlation ID Support ====================
@@ -58,9 +58,8 @@ export function withCorrelationId(correlationId, fn) {
  */
 export function correlationMiddleware(req, res, next) {
   // Check for existing correlation ID in headers
-  const existingId = req.headers['x-correlation-id'] ||
-                     req.headers['x-request-id'] ||
-                     req.headers['traceparent'];
+  const existingId =
+    req.headers['x-correlation-id'] || req.headers['x-request-id'] || req.headers.traceparent;
 
   const correlationId = existingId || generateCorrelationId();
 
@@ -142,9 +141,6 @@ class Logger {
   #currentFileSize = 0;
   #writeBuffer = [];
   #flushTimer = null;
-  #isWriting = false;
-  #writeQueue = [];
-  #initialized = false;
   #currentDate = null;
 
   /**
@@ -318,18 +314,17 @@ class Logger {
       const levelStr = `${levelConfig.color}${COLORS.bright}${levelConfig.label.padEnd(5)}${COLORS.reset}`;
 
       // Module prefix if present
-      const moduleStr = meta.module || meta.context
-        ? `${COLORS.cyan}[${meta.module || meta.context}]${COLORS.reset} `
-        : '';
+      const moduleStr =
+        meta.module || meta.context
+          ? `${COLORS.cyan}[${meta.module || meta.context}]${COLORS.reset} `
+          : '';
 
       // Correlation ID prefix (shortened for dev)
       const corrStr = correlationId
         ? `${COLORS.dim}(${correlationId.slice(-8)})${COLORS.reset} `
         : '';
 
-      const messageStr = level === 'error'
-        ? `${COLORS.red}${message}${COLORS.reset}`
-        : message;
+      const messageStr = level === 'error' ? `${COLORS.red}${message}${COLORS.reset}` : message;
 
       output = `${timeStr}${levelStr} ${moduleStr}${corrStr}${messageStr}`;
 
@@ -372,8 +367,8 @@ class Logger {
 
   #addToBuffer(logEntry) {
     const logLine = this.#config.file.prettyPrint
-      ? JSON.stringify(logEntry, null, 2) + '\n'
-      : JSON.stringify(logEntry) + '\n';
+      ? `${JSON.stringify(logEntry, null, 2)}\n`
+      : `${JSON.stringify(logEntry)}\n`;
 
     this.#writeBuffer.push(logLine);
 
@@ -518,10 +513,12 @@ class Logger {
 
         if (now - stats.mtimeMs > maxAge) {
           await fsPromises.unlink(filePath);
-          this.debug(`Deleted old log file: ${file}`, { age: Math.round((now - stats.mtimeMs) / 86400000) + ' days' });
+          this.debug(`Deleted old log file: ${file}`, {
+            age: `${Math.round((now - stats.mtimeMs) / 86400000)} days`,
+          });
         }
       }
-    } catch (err) {
+    } catch (_err) {
       // Ignore cleanup errors
     }
   }
@@ -571,7 +568,7 @@ class Logger {
     }
 
     this.#flushTimer = setInterval(() => {
-      this.flush().catch(err => {
+      this.flush().catch((err) => {
         console.error('Auto-flush failed:', err.message);
       });
     }, this.#config.performance.flushInterval);
@@ -619,59 +616,66 @@ class Logger {
    * @returns {Object} Child logger instance
    */
   child(context, options = {}) {
-    const parent = this;
     const fixedCorrelationId = options.correlationId || null;
 
     const childLogger = {
-      error: (msg, meta = {}) => parent.error(msg, {
-        ...meta,
-        context,
-        ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
-      }),
-      warn: (msg, meta = {}) => parent.warn(msg, {
-        ...meta,
-        context,
-        ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
-      }),
-      info: (msg, meta = {}) => parent.info(msg, {
-        ...meta,
-        context,
-        ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
-      }),
-      http: (msg, meta = {}) => parent.http(msg, {
-        ...meta,
-        context,
-        ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
-      }),
-      debug: (msg, meta = {}) => parent.debug(msg, {
-        ...meta,
-        context,
-        ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
-      }),
-      trace: (msg, meta = {}) => parent.trace(msg, {
-        ...meta,
-        context,
-        ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
-      }),
-      log: (level, msg, meta = {}) => parent.log(level, msg, {
-        ...meta,
-        context,
-        ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
-      }),
+      error: (msg, meta = {}) =>
+        this.error(msg, {
+          ...meta,
+          context,
+          ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
+        }),
+      warn: (msg, meta = {}) =>
+        this.warn(msg, {
+          ...meta,
+          context,
+          ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
+        }),
+      info: (msg, meta = {}) =>
+        this.info(msg, {
+          ...meta,
+          context,
+          ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
+        }),
+      http: (msg, meta = {}) =>
+        this.http(msg, {
+          ...meta,
+          context,
+          ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
+        }),
+      debug: (msg, meta = {}) =>
+        this.debug(msg, {
+          ...meta,
+          context,
+          ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
+        }),
+      trace: (msg, meta = {}) =>
+        this.trace(msg, {
+          ...meta,
+          context,
+          ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
+        }),
+      log: (level, msg, meta = {}) =>
+        this.log(level, msg, {
+          ...meta,
+          context,
+          ...(fixedCorrelationId && { correlationId: fixedCorrelationId }),
+        }),
 
       /**
        * Create a nested child logger
        * @param {string} childContext - Child context name
        * @returns {Object} Nested child logger
        */
-      child: (childContext) => parent.child(`${context}:${childContext}`, { correlationId: fixedCorrelationId }),
+      child: (childContext) =>
+        this.child(`${context}:${childContext}`, { correlationId: fixedCorrelationId }),
 
       /**
        * Create a logger with a specific correlation ID
        * @param {string} correlationId - Correlation ID to use
        * @returns {Object} Logger with fixed correlation ID
        */
-      withCorrelation: (correlationId) => parent.child(context, { correlationId }),
+      withCorrelation: (correlationId) => this.child(context, { correlationId }),
 
       /**
        * Get the current context name

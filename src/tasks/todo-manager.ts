@@ -7,8 +7,8 @@
  * @module src/tasks/todo-manager
  */
 
-import { EventEmitter } from 'events';
-import { TodoStorage, TodoStatus, getTodoStorage } from './todo-storage.js';
+import { EventEmitter } from 'node:events';
+import { getTodoStorage, TodoStatus, TodoStorage } from './todo-storage.js';
 
 // ============================================================================
 // Validation Rules
@@ -82,7 +82,7 @@ export class TodoManager extends EventEmitter {
    */
   canAddInProgress(todos, excludeId = null) {
     const inProgressCount = todos.filter(
-      (t) => t.status === TodoStatus.IN_PROGRESS && t.id !== excludeId
+      (t) => t.status === TodoStatus.IN_PROGRESS && t.id !== excludeId,
     ).length;
 
     return inProgressCount < MAX_IN_PROGRESS;

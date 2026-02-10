@@ -29,7 +29,38 @@
       "Bash(taskkill:*)",
       "Bash(timeout:*)",
       "Bash(echo:*)",
-      "mcp__llama-cpp__llama_info"
+      "mcp__llama-cpp__llama_info",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:docs.claude.com)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "ollama",
+    "desktop-commander",
+    "filesystem",
+    "memory",
+    "fetch",
+    "brave-search",
+    "puppeteer",
+    "sequential-thinking",
+    "everything-search",
+    "time",
+    "git",
+    "context7",
+    "firebase",
+    "playwright",
+    "serena",
+    "github",
+    "gitlab",
+    "greptile",
+    "linear",
+    "stripe",
+    "supabase",
+    "asana",
+    "slack",
+    "kapture"
+  ],
+  "outputStyle": "default"
 }

@@ -1,81 +1,46 @@
 /**
  * HYDRA Core Module Index
- * Exports all core utilities and abstractions
+ * Exports core utilities that are still in active use
  */
-
-// Interfaces and base classes
-export {
-  BaseProvider,
-  ProviderRegistry,
-  Types
-} from './interfaces.js';
-
-// Retry logic and circuit breaker
-export {
-  withRetry,
-  createRetryable,
-  isRetryableError,
-  calculateDelay,
-  sleep,
-  CircuitBreaker,
-  CircuitState,
-  DEFAULT_RETRY_CONFIG
-} from './retry.js';
-
-// Connection pooling and rate limiting
-export {
-  ConnectionPool,
-  RateLimiter,
-  ManagedPool,
-  DEFAULT_POOL_CONFIG
-} from './pool.js';
-
-// Caching
-export {
-  TTLCache,
-  HealthCheckCache,
-  memoize,
-  DEFAULT_CACHE_CONFIG
-} from './cache.js';
-
-// Statistics and metrics
-export {
-  RollingStats,
-  TimeSeriesMetrics,
-  Counter,
-  Histogram,
-  StatsCollector,
-  getStatsCollector
-} from './stats.js';
 
 // Configuration management
 export {
   ConfigManager,
+  DEFAULT_CONFIG,
   getConfigManager,
   resetConfigManager,
   Schemas,
-  DEFAULT_CONFIG
 } from './config.js';
-
-// Error handling
+// Configuration schemas (granular access)
 export {
-  HydraError,
-  ProviderError,
-  OllamaError,
-  GeminiError,
-  NetworkError,
-  TimeoutError,
-  ConfigurationError,
-  RoutingError,
-  PipelineError,
-  RateLimitError,
+  CacheConfigSchema,
+  GeminiConfigSchema,
+  HydraConfigSchema,
+  LlamaCppConfigSchema,
+  PipelineConfigSchema,
+  ProviderConfigSchema,
+  RouterConfigSchema,
+  StatsConfigSchema,
+} from './config-schemas.js';
+// Error hierarchy (used by pipeline/executor)
+export {
   CircuitOpenError,
-  ValidationError,
+  GeminiError,
+  HydraError,
+  OllamaError,
+  PipelineError,
   PoolExhaustedError,
-  AggregateError,
-  ErrorHandler,
-  normalizeError,
-  isRetryable,
-  isRecoverable,
-  getErrorCode
+  ProviderError,
+  RoutingError,
 } from './errors.js';
+// Connection pool (used by swarm/protocol)
+export { ConnectionPool } from './pool.js';
+// Statistics and metrics
+export {
+  Counter,
+  getStatsCollector,
+  Histogram,
+  RollingStats,
+  StatsCollector,
+  TimeSeriesMetrics,
+} from './stats.js';

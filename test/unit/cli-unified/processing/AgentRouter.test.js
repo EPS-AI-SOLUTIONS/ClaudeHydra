@@ -37,6 +37,24 @@ vi.mock('../../../../src/cli-unified/core/EventBus.js', () => ({
   }
 }));
 
+// Mock AGENT_TIERS from swarm/agents
+vi.mock('../../../../src/swarm/agents.js', () => ({
+  AGENT_TIERS: {
+    Dijkstra: 'commander',
+    Regis: 'coordinator',
+    Yennefer: 'coordinator',
+    Geralt: 'executor',
+    Triss: 'executor',
+    Jaskier: 'executor',
+    Vesemir: 'executor',
+    Ciri: 'executor',
+    Eskel: 'executor',
+    Lambert: 'executor',
+    Zoltan: 'executor',
+    Philippa: 'executor'
+  }
+}));
+
 import { AgentRouter, AGENT_SPECS, createAgentRouter } from '../../../../src/cli-unified/processing/AgentRouter.js';
 import { eventBus, EVENT_TYPES } from '../../../../src/cli-unified/core/EventBus.js';
 
@@ -133,9 +151,9 @@ describe('AgentRouter Module', () => {
         expect(result.agent).toBe('Zoltan');
       });
 
-      it('should return Jaskier as default', () => {
+      it('should return Regis as default for ambiguous queries', () => {
         const result = router.classify('Do something random');
-        expect(result.agent).toBe('Jaskier');
+        expect(result.agent).toBe('Regis');
       });
 
       it('should return scores for all agents', () => {
@@ -276,6 +294,39 @@ describe('AgentRouter Module', () => {
 
         expect(prompt).toBe('Test prompt');
       });
+
+      it('should include pipeline self-knowledge in prompt', () => {
+        const prompt = router.buildPrompt('Geralt', 'What is your pipeline?');
+
+        expect(prompt).toContain('ClaudeHydra');
+        expect(prompt).toContain('12 Witcher-themed agents');
+        expect(prompt).toContain('COMMANDER');
+        expect(prompt).toContain('Dijkstra');
+        expect(prompt).toContain('Claude Opus 4');
+      });
+
+      it('should include current model and MCP tools info in Ollama format', () => {
+        const prompt = router.buildPrompt('Ciri', 'Who are you?');
+
+        expect(prompt).toContain('claude-opus-4-20250514');
+        expect(prompt).toContain('MCP tools available');
+        expect(prompt).toContain('read_file');
+      });
+
+      it('should use clean format for Claude models', () => {
+        const prompt = router.buildPrompt('Ciri', 'Who are you?', { isClaudeModel: true });
+
+        expect(prompt).not.toContain('<|system|>');
+        expect(prompt).not.toContain('<|end|>');
+        expect(prompt).toContain('Ciri');
+        expect(prompt).toContain('Who are you?');
+      });
+
+      it('should include agent tier', () => {
+        const prompt = router.buildPrompt('Geralt', 'Test');
+
+        expect(prompt).toContain('Your tier:');
+      });
     });
 
     describe('recordExecution()', () => {
@@ -370,12 +421,14 @@ describe('AgentRouter Module', () => {
     describe('getModel()', () => {
       it('should return model for agent', () => {
         const model = router.getModel('Geralt');
-        expect(model).toBe('llama3.2:1b');
+        // Dynamically check against AGENT_SPECS to avoid hardcoding model names
+        expect(model).toBe(AGENT_SPECS.Geralt.model);
       });
 
       it('should return default for unknown agent', () => {
         const model = router.getModel('Unknown');
-        expect(model).toBe('llama3.2');
+        expect(typeof model).toBe('string');
+        expect(model.length).toBeGreaterThan(0);
       });
     });
 

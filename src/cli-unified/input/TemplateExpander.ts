@@ -4,10 +4,10 @@
  * @module cli-unified/input/TemplateExpander
  */
 
-import { EventEmitter } from 'events';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
-import { join, dirname, basename } from 'path';
-import { homedir } from 'os';
+import { EventEmitter } from 'node:events';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { basename, join } from 'node:path';
 import { DATA_DIR } from '../core/constants.js';
 
 const TEMPLATES_DIR = join(homedir(), DATA_DIR, 'templates');
@@ -20,74 +20,74 @@ export const BUILTIN_TEMPLATES = {
     name: 'Code Review',
     prompt: 'Review this code for best practices, bugs, and improvements:\n\n{{code}}',
     variables: ['code'],
-    agent: 'Vesemir'
+    agent: 'Vesemir',
   },
-  'explain': {
+  explain: {
     name: 'Explain Code',
     prompt: 'Explain this {{language}} code in detail:\n\n{{code}}',
     variables: ['language', 'code'],
-    agent: 'Jaskier'
+    agent: 'Jaskier',
   },
-  'refactor': {
+  refactor: {
     name: 'Refactor',
     prompt: 'Refactor this code to improve {{aspect}}:\n\n{{code}}',
     variables: ['aspect', 'code'],
-    agent: 'Yennefer'
+    agent: 'Yennefer',
   },
-  'test': {
+  test: {
     name: 'Write Tests',
     prompt: 'Write comprehensive tests for this {{language}} code:\n\n{{code}}',
     variables: ['language', 'code'],
-    agent: 'Triss'
+    agent: 'Triss',
   },
-  'debug': {
+  debug: {
     name: 'Debug',
     prompt: 'Debug this code. The issue is: {{issue}}\n\n{{code}}',
     variables: ['issue', 'code'],
-    agent: 'Lambert'
+    agent: 'Lambert',
   },
-  'document': {
+  document: {
     name: 'Document',
     prompt: 'Write documentation for this code including JSDoc/docstrings:\n\n{{code}}',
     variables: ['code'],
-    agent: 'Jaskier'
+    agent: 'Jaskier',
   },
-  'security': {
+  security: {
     name: 'Security Audit',
     prompt: 'Perform a security audit on this code, looking for vulnerabilities:\n\n{{code}}',
     variables: ['code'],
-    agent: 'Geralt'
+    agent: 'Geralt',
   },
-  'optimize': {
+  optimize: {
     name: 'Optimize',
     prompt: 'Optimize this code for {{goal}} (performance/memory/readability):\n\n{{code}}',
     variables: ['goal', 'code'],
-    agent: 'Lambert'
+    agent: 'Lambert',
   },
-  'api': {
+  api: {
     name: 'API Integration',
     prompt: 'Create an integration with {{api}} API that {{action}}',
     variables: ['api', 'action'],
-    agent: 'Philippa'
+    agent: 'Philippa',
   },
-  'database': {
+  database: {
     name: 'Database Query',
     prompt: 'Write a {{dbType}} query to {{action}}',
     variables: ['dbType', 'action'],
-    agent: 'Zoltan'
+    agent: 'Zoltan',
   },
-  'architecture': {
+  architecture: {
     name: 'Architecture Review',
     prompt: 'Review the architecture of this {{type}} and suggest improvements:\n\n{{description}}',
     variables: ['type', 'description'],
-    agent: 'Yennefer'
+    agent: 'Yennefer',
   },
-  'convert': {
+  convert: {
     name: 'Convert Code',
     prompt: 'Convert this {{fromLang}} code to {{toLang}}:\n\n{{code}}',
     variables: ['fromLang', 'toLang', 'code'],
-    agent: 'Ciri'
-  }
+    agent: 'Ciri',
+  },
 };
 
 /**
@@ -110,7 +110,7 @@ export class TemplateExpander extends EventEmitter {
   _loadCustomTemplates() {
     try {
       if (existsSync(this.templatesDir)) {
-        const files = readdirSync(this.templatesDir).filter(f => f.endsWith('.json'));
+        const files = readdirSync(this.templatesDir).filter((f) => f.endsWith('.json'));
         for (const file of files) {
           const template = JSON.parse(readFileSync(join(this.templatesDir, file), 'utf-8'));
           const name = basename(file, '.json');
@@ -137,7 +137,7 @@ export class TemplateExpander extends EventEmitter {
       key,
       name: template.name,
       variables: template.variables,
-      agent: template.agent
+      agent: template.agent,
     }));
   }
 
@@ -163,7 +163,7 @@ export class TemplateExpander extends EventEmitter {
     return {
       prompt,
       agent: template.agent,
-      unresolvedVars: this._findUnresolvedVars(prompt)
+      unresolvedVars: this._findUnresolvedVars(prompt),
     };
   }
 
@@ -172,7 +172,7 @@ export class TemplateExpander extends EventEmitter {
    */
   _findUnresolvedVars(text) {
     const matches = text.match(/\{\{(\w+)\}\}/g) || [];
-    return matches.map(m => m.slice(2, -2));
+    return matches.map((m) => m.slice(2, -2));
   }
 
   /**
@@ -216,7 +216,7 @@ export class TemplateExpander extends EventEmitter {
 
     return {
       text: expanded,
-      unresolvedVars: this._findUnresolvedVars(expanded)
+      unresolvedVars: this._findUnresolvedVars(expanded),
     };
   }
 
@@ -237,7 +237,7 @@ export class TemplateExpander extends EventEmitter {
       template: text,
       variables: vars,
       resolved,
-      missing: vars.filter(v => !resolved.has(v))
+      missing: vars.filter((v) => !resolved.has(v)),
     };
   }
 
@@ -257,10 +257,7 @@ export class TemplateExpander extends EventEmitter {
       if (!existsSync(this.templatesDir)) {
         mkdirSync(this.templatesDir, { recursive: true });
       }
-      writeFileSync(
-        join(this.templatesDir, `${name}.json`),
-        JSON.stringify(template, null, 2)
-      );
+      writeFileSync(join(this.templatesDir, `${name}.json`), JSON.stringify(template, null, 2));
     } catch (error) {
       console.error('Failed to save template:', error.message);
     }
@@ -285,7 +282,7 @@ export class TemplateExpander extends EventEmitter {
     try {
       const filePath = join(this.templatesDir, `${name}.json`);
       if (existsSync(filePath)) {
-        require('fs').unlinkSync(filePath);
+        require('node:fs').unlinkSync(filePath);
       }
     } catch {
       // Ignore file deletion errors

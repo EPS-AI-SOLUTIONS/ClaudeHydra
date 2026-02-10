@@ -3,14 +3,37 @@
  * @module cli-unified/output/UnifiedOutputRenderer
  */
 
-import { themeRegistry } from '../core/ThemeRegistry.js';
-import { eventBus, EVENT_TYPES } from '../core/EventBus.js';
-import { Spinner, createSpinner, createTypedSpinner, createProgressBar, createMultiSpinner, SpinnerTypes, getAvailableSpinnerTypes } from './SpinnerSystem.js';
-import { BorderRenderer, quickBox, quickPanel, createBorderRenderer } from './BorderRenderer.js';
-import { MarkdownRenderer, createMarkdownRenderer } from './MarkdownRenderer.js';
-import { TableRenderer, ListRenderer, createTableRenderer, createListRenderer, renderTable, renderList, TABLE_STYLES, LIST_STYLES } from './TableRenderer.js';
-import { StreamingRenderer, ProgressIndicator, CollapsibleSection, createStreamingRenderer, createProgressIndicator } from './StreamingRenderer.js';
 import { ANSI } from '../core/constants.js';
+import { EVENT_TYPES, eventBus } from '../core/EventBus.js';
+import { themeRegistry } from '../core/ThemeRegistry.js';
+import { BorderRenderer, createBorderRenderer, quickBox, quickPanel } from './BorderRenderer.js';
+import { createMarkdownRenderer, MarkdownRenderer } from './MarkdownRenderer.js';
+import {
+  createMultiSpinner,
+  createProgressBar,
+  createSpinner,
+  createTypedSpinner,
+  getAvailableSpinnerTypes,
+  Spinner,
+  SpinnerTypes,
+} from './SpinnerSystem.js';
+import {
+  CollapsibleSection,
+  createProgressIndicator,
+  createStreamingRenderer,
+  ProgressIndicator,
+  StreamingRenderer,
+} from './StreamingRenderer.js';
+import {
+  createListRenderer,
+  createTableRenderer,
+  LIST_STYLES,
+  ListRenderer,
+  renderList,
+  renderTable,
+  TABLE_STYLES,
+  TableRenderer,
+} from './TableRenderer.js';
 
 /**
  * Unified Output Renderer - Main facade class
@@ -303,7 +326,7 @@ export class UnifiedOutputRenderer {
    * Clear current line
    */
   clearLine() {
-    process.stdout.write('\r' + ANSI.CLEAR_LINE);
+    process.stdout.write(`\r${ANSI.CLEAR_LINE}`);
   }
 
   /**
@@ -360,7 +383,7 @@ export {
   ProgressIndicator,
   CollapsibleSection,
   createStreamingRenderer,
-  createProgressIndicator
+  createProgressIndicator,
 };
 
 export default UnifiedOutputRenderer;

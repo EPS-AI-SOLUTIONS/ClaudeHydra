@@ -27,104 +27,125 @@ export function useClaude() {
     // Skip if not running in Tauri
     if (!isTauri()) return;
 
-    const unlisteners: Array<() => void> = [];
+    let cancelled = false;
+    const unlistenerPromises: Array<Promise<() => void>> = [];
 
     // Regular events
-    listen<ClaudeEvent>('claude-event', (event) => {
-      const claudeEvent = event.payload;
+    unlistenerPromises.push(
+      listen<ClaudeEvent>('claude-event', (event) => {
+        if (cancelled) return;
+        const claudeEvent = event.payload;
 
-      switch (claudeEvent.event_type) {
-        case 'assistant':
-          addOutputLine({
-            type: 'assistant',
-            content: String(claudeEvent.data.message || ''),
-            data: claudeEvent.data,
-          });
-          break;
-        case 'tool_use':
-          addOutputLine({
-            type: 'tool',
-            content: `Tool: ${claudeEvent.data.name}`,
-            data: claudeEvent.data,
-          });
-          break;
-        case 'tool_result':
-          addOutputLine({
-            type: 'output',
-            content: String(claudeEvent.data.output || ''),
-            data: claudeEvent.data,
-          });
-          break;
-        case 'output':
-          addOutputLine({
-            type: 'output',
-            content: String(claudeEvent.data.text || ''),
-            data: claudeEvent.data,
-          });
-          break;
-        case 'stderr':
-          addOutputLine({
-            type: 'error',
-            content: String(claudeEvent.data.text || ''),
-          });
-          break;
-        case 'error':
-          addOutputLine({
-            type: 'error',
-            content: String(claudeEvent.data.message || 'Unknown error'),
-          });
-          break;
-        case 'system':
-          addOutputLine({
-            type: 'system',
-            content: String(claudeEvent.data.message || ''),
-          });
-          break;
-      }
-    }).then((fn) => unlisteners.push(fn));
+        switch (claudeEvent.event_type) {
+          case 'assistant':
+            addOutputLine({
+              type: 'assistant',
+              content: String(claudeEvent.data.message || ''),
+              data: claudeEvent.data,
+            });
+            break;
+          case 'tool_use':
+            addOutputLine({
+              type: 'tool',
+              content: `Tool: ${claudeEvent.data.name}`,
+              data: claudeEvent.data,
+            });
+            break;
+          case 'tool_result':
+            addOutputLine({
+              type: 'output',
+              content: String(claudeEvent.data.output || ''),
+              data: claudeEvent.data,
+            });
+            break;
+          case 'output':
+            addOutputLine({
+              type: 'output',
+              content: String(claudeEvent.data.text || ''),
+              data: claudeEvent.data,
+            });
+            break;
+          case 'stderr':
+            addOutputLine({
+              type: 'error',
+              content: String(claudeEvent.data.text || ''),
+            });
+            break;
+          case 'error':
+            addOutputLine({
+              type: 'error',
+              content: String(claudeEvent.data.message || 'Unknown error'),
+            });
+            break;
+          case 'system':
+            addOutputLine({
+              type: 'system',
+              content: String(claudeEvent.data.message || ''),
+            });
+            break;
+        }
+      })
+    );
 
     // Approval required
-    listen<ClaudeEvent>('claude-approval-required', (event) => {
-      setPendingApproval(event.payload);
-      addOutputLine({
-        type: 'approval',
-        content: 'Approval required',
-        data: event.payload.data,
-      });
-    }).then((fn) => unlisteners.push(fn));
+    unlistenerPromises.push(
+      listen<ClaudeEvent>('claude-approval-required', (event) => {
+        if (cancelled) return;
+        setPendingApproval(event.payload);
+        addOutputLine({
+          type: 'approval',
+          content: 'Approval required',
+          data: event.payload.data,
+        });
+      })
+    );
 
     // Auto-approved
-    listen<AutoApprovedEvent>('claude-auto-approved', (event) => {
-      const { event: claudeEvent, matched_rule } = event.payload;
-      addOutputLine({
-        type: 'system',
-        content: `[AUTO-APPROVED: ${matched_rule}]`,
-        data: claudeEvent.data,
-      });
-
-      if (claudeEvent.approval_type) {
-        addHistoryEntry({
-          id: crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          approval_type: claudeEvent.approval_type,
-          action: 'approved',
-          auto_approved: true,
-          matched_rule,
+    unlistenerPromises.push(
+      listen<AutoApprovedEvent>('claude-auto-approved', (event) => {
+        if (cancelled) return;
+        const { event: claudeEvent, matched_rule } = event.payload;
+        addOutputLine({
+          type: 'system',
+          content: `[AUTO-APPROVED: ${matched_rule}]`,
+          data: claudeEvent.data,
         });
-      }
-    }).then((fn) => unlisteners.push(fn));
+
+        if (claudeEvent.approval_type) {
+          addHistoryEntry({
+            id: crypto.randomUUID(),
+            timestamp: new Date().toISOString(),
+            approval_type: claudeEvent.approval_type,
+            action: 'approved',
+            auto_approved: true,
+            matched_rule,
+          });
+        }
+      })
+    );
 
     // Session ended
-    listen('claude-session-ended', () => {
-      addOutputLine({
-        type: 'system',
-        content: 'Session ended',
-      });
-      resetSession();
-    }).then((fn) => unlisteners.push(fn));
+    unlistenerPromises.push(
+      listen('claude-session-ended', () => {
+        if (cancelled) return;
+        addOutputLine({
+          type: 'system',
+          content: 'Session ended',
+        });
+        resetSession();
+      })
+    );
 
     return () => {
-      unlisteners.forEach((fn) => fn());
+      cancelled = true;
+      // Wait for all listener registrations to complete, then unsubscribe
+      Promise.allSettled(unlistenerPromises).then((results) => {
+        for (const result of results) {
+          if (result.status === 'fulfilled') {
+            result.value();
+          }
+        }
+      });
     };
   }, [addOutputLine, setPendingApproval, addHistoryEntry, resetSession]);
 

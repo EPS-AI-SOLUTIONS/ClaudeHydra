@@ -7,7 +7,7 @@
  * @module src/agents/explore-agent
  */
 
-import { BaseAgent, AgentState } from './base-agent.js';
+import { BaseAgent } from './base-agent.js';
 
 // ============================================================================
 // Constants
@@ -26,9 +26,9 @@ Quick exploration without code modifications.`,
     'analysis',
     'find_files',
     'find_patterns',
-    'understand_architecture'
+    'understand_architecture',
   ],
-  timeout: 60000
+  timeout: 60000,
 };
 
 // ============================================================================
@@ -49,7 +49,7 @@ export class ExploreAgent extends BaseAgent {
   constructor(options = {}) {
     super({
       ...AGENT_CONFIG,
-      ...options
+      ...options,
     });
 
     /** @type {Object[]} */
@@ -80,7 +80,7 @@ export class ExploreAgent extends BaseAgent {
       findings: [],
       files: [],
       patterns: [],
-      summary: ''
+      summary: '',
     };
 
     try {
@@ -123,20 +123,20 @@ export class ExploreAgent extends BaseAgent {
         maxFiles: 10,
         maxPatterns: 5,
         depth: 2,
-        timeout: 10000
+        timeout: 10000,
       },
       medium: {
         maxFiles: 50,
         maxPatterns: 20,
         depth: 4,
-        timeout: 30000
+        timeout: 30000,
       },
       'very thorough': {
         maxFiles: 200,
         maxPatterns: 100,
         depth: 8,
-        timeout: 60000
-      }
+        timeout: 60000,
+      },
     };
 
     return strategies[thoroughness] || strategies.medium;
@@ -151,7 +151,7 @@ export class ExploreAgent extends BaseAgent {
    * @param {Object} tools - Available tools
    * @returns {Promise<Object[]>}
    */
-  async searchFiles(query, paths, strategy, tools) {
+  async searchFiles(query, _paths, strategy, tools) {
     const files = [];
 
     // Extract potential file patterns from query
@@ -174,7 +174,7 @@ export class ExploreAgent extends BaseAgent {
       files.push({
         path: '.',
         type: 'placeholder',
-        note: 'File search requires glob tool'
+        note: 'File search requires glob tool',
       });
     }
 
@@ -203,7 +203,7 @@ export class ExploreAgent extends BaseAgent {
       component: ['**/components/**', '**/*.{tsx,jsx}'],
       hook: ['**/hooks/**', '**/use*.{ts,js}'],
       util: ['**/utils/**', '**/helpers/**', '**/lib/**'],
-      service: ['**/services/**', '**/providers/**']
+      service: ['**/services/**', '**/providers/**'],
     };
 
     // Add patterns based on keywords found in query
@@ -228,7 +228,7 @@ export class ExploreAgent extends BaseAgent {
    * @param {Object} tools - Available tools
    * @returns {Promise<Object[]>}
    */
-  async searchPatterns(query, files, strategy, tools) {
+  async searchPatterns(query, _files, strategy, tools) {
     const patterns = [];
 
     // Extract search terms
@@ -241,7 +241,7 @@ export class ExploreAgent extends BaseAgent {
           const result = await tools.grep(term);
           patterns.push({
             term,
-            matches: result.matches || []
+            matches: result.matches || [],
           });
         } catch {
           // Continue with other terms
@@ -254,7 +254,7 @@ export class ExploreAgent extends BaseAgent {
       patterns.push({
         term: query,
         type: 'placeholder',
-        note: 'Pattern search requires grep tool'
+        note: 'Pattern search requires grep tool',
       });
     }
 
@@ -271,7 +271,29 @@ export class ExploreAgent extends BaseAgent {
    */
   extractSearchTerms(query) {
     // Remove common words and split
-    const stopWords = ['the', 'a', 'an', 'in', 'on', 'at', 'for', 'to', 'of', 'and', 'or', 'is', 'are', 'how', 'what', 'where', 'when', 'why', 'find', 'show', 'me'];
+    const stopWords = [
+      'the',
+      'a',
+      'an',
+      'in',
+      'on',
+      'at',
+      'for',
+      'to',
+      'of',
+      'and',
+      'or',
+      'is',
+      'are',
+      'how',
+      'what',
+      'where',
+      'when',
+      'why',
+      'find',
+      'show',
+      'me',
+    ];
 
     const words = query
       .toLowerCase()
@@ -320,7 +342,7 @@ export class ExploreAgent extends BaseAgent {
         type: 'file_group',
         location: dir,
         count: dirFiles.length,
-        files: dirFiles.slice(0, 5)
+        files: dirFiles.slice(0, 5),
       });
     }
 
@@ -331,7 +353,7 @@ export class ExploreAgent extends BaseAgent {
           type: 'pattern_match',
           term: pattern.term,
           count: pattern.matches.length,
-          samples: pattern.matches.slice(0, 3)
+          samples: pattern.matches.slice(0, 3),
         });
       }
     }

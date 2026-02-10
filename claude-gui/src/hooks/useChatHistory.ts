@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
 export interface ChatMessage {
@@ -35,6 +35,8 @@ export function useChatHistory() {
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const currentSessionRef = useRef(currentSession);
+  currentSessionRef.current = currentSession;
 
   const loadSessions = useCallback(async () => {
     setLoading(true);
@@ -93,7 +95,7 @@ export function useChatHistory() {
       });
 
       // Update current session if it matches
-      if (currentSession?.id === sessionId) {
+      if (currentSessionRef.current?.id === sessionId) {
         setCurrentSession(prev => prev ? {
           ...prev,
           messages: [...prev.messages, result],
@@ -106,26 +108,26 @@ export function useChatHistory() {
       setError(e as string);
       return null;
     }
-  }, [currentSession]);
+  }, []);
 
   const deleteSession = useCallback(async (sessionId: string) => {
     setError(null);
     try {
       await invoke('delete_chat_session', { sessionId });
-      if (currentSession?.id === sessionId) {
+      if (currentSessionRef.current?.id === sessionId) {
         setCurrentSession(null);
       }
       await loadSessions();
     } catch (e) {
       setError(e as string);
     }
-  }, [currentSession, loadSessions]);
+  }, [loadSessions]);
 
   const updateTitle = useCallback(async (sessionId: string, title: string) => {
     setError(null);
     try {
       const result = await invoke<ChatSession>('update_chat_title', { sessionId, title });
-      if (currentSession?.id === sessionId) {
+      if (currentSessionRef.current?.id === sessionId) {
         setCurrentSession(result);
       }
       await loadSessions();
@@ -134,7 +136,7 @@ export function useChatHistory() {
       setError(e as string);
       return null;
     }
-  }, [currentSession, loadSessions]);
+  }, [loadSessions]);
 
   const clearAll = useCallback(async () => {
     setError(null);

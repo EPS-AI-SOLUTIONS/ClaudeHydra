@@ -18,23 +18,17 @@
  * @module swarm/protocol
  */
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ConnectionPool } from '../hydra/core/pool.js';
-import { getLlamaCppBridge } from '../hydra/providers/llamacpp-bridge.js';
-import { healthCheck as claudeHealthCheck } from '../hydra/providers/claude-client.js';
 import {
-  invokeAgent,
-  classifyPrompt,
-  analyzeComplexity,
-  checkProviders,
-  AGENT_SPECS,
   AGENT_NAMES,
-  MODEL_TIERS,
-  AGENT_TIERS,
-  getAgentTier
+  checkProviders,
+  classifyPrompt,
+  getAgentTier,
+  invokeAgent,
 } from './agents.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -58,7 +52,7 @@ export const STANDARD_MODE = {
   maxConcurrency: 5,
   safetyBlocking: true,
   retryAttempts: 3,
-  timeoutSeconds: 60
+  timeoutSeconds: 60,
 };
 
 /**
@@ -68,7 +62,7 @@ export const YOLO_MODE = {
   maxConcurrency: 10,
   safetyBlocking: false,
   retryAttempts: 1,
-  timeoutSeconds: 15
+  timeoutSeconds: 15,
 };
 
 /**
@@ -83,7 +77,7 @@ const colors = {
   magenta: '\x1b[35m',
   gray: '\x1b[90m',
   bold: '\x1b[1m',
-  blue: '\x1b[34m'
+  blue: '\x1b[34m',
 };
 
 /**
@@ -92,7 +86,7 @@ const colors = {
 const TIER_COLORS = {
   commander: colors.magenta,
   coordinator: colors.blue,
-  executor: colors.green
+  executor: colors.green,
 };
 
 /**
@@ -109,14 +103,14 @@ function writeStatus(step, message, agent = '', type = 'Info') {
     Success: colors.green,
     Warning: colors.yellow,
     Error: colors.red,
-    Progress: colors.magenta
+    Progress: colors.magenta,
   };
   const prefixes = {
     Info: '[i]',
     Success: '[+]',
     Warning: '[!]',
     Error: '[X]',
-    Progress: '[>]'
+    Progress: '[>]',
   };
 
   const color = typeColors[type] || colors.cyan;
@@ -130,7 +124,9 @@ function writeStatus(step, message, agent = '', type = 'Info') {
     agentStr = ` [${tierColor}${tierLabel}${colors.reset}:${agent}]`;
   }
 
-  console.log(`${colors.gray}[${timestamp}]${colors.reset}${agentStr} ${color}${prefix} ${step} - ${message}${colors.reset}`);
+  console.log(
+    `${colors.gray}[${timestamp}]${colors.reset}${agentStr} ${color}${prefix} ${step} - ${message}${colors.reset}`,
+  );
 }
 
 /**
@@ -140,8 +136,12 @@ function displayTierBanner() {
   console.log('');
   console.log(`${colors.bold}  MODEL HIERARCHY:${colors.reset}`);
   console.log(`  ${TIER_COLORS.commander}● COMMANDER${colors.reset} (Claude Opus)    → Dijkstra`);
-  console.log(`  ${TIER_COLORS.coordinator}● COORDINATOR${colors.reset} (Claude Sonnet) → Regis, Yennefer, Jaskier`);
-  console.log(`  ${TIER_COLORS.executor}● EXECUTOR${colors.reset} (llama.cpp)       → Geralt, Triss, Vesemir, Ciri, Eskel, Lambert, Zoltan, Philippa`);
+  console.log(
+    `  ${TIER_COLORS.coordinator}● COORDINATOR${colors.reset} (Claude Sonnet) → Regis, Yennefer, Jaskier`,
+  );
+  console.log(
+    `  ${TIER_COLORS.executor}● EXECUTOR${colors.reset} (llama.cpp)       → Geralt, Triss, Vesemir, Ciri, Eskel, Lambert, Zoltan, Philippa`,
+  );
   console.log('');
 }
 
@@ -155,17 +155,17 @@ async function executeParallel(tasks, settings) {
   const pool = new ConnectionPool({
     maxConcurrent: settings.maxConcurrency,
     maxQueueSize: 100,
-    acquireTimeout: settings.timeoutSeconds * 1000
+    acquireTimeout: settings.timeoutSeconds * 1000,
   });
 
-  const promises = tasks.map(task =>
+  const promises = tasks.map((task) =>
     pool.execute(async () => {
       const result = await invokeAgent(task.agent, task.prompt, {
         context: task.context || '',
-        timeout: settings.timeoutSeconds * 1000
+        timeout: settings.timeoutSeconds * 1000,
       });
       return { ...result, taskId: task.id };
-    })
+    }),
   );
 
   const results = await Promise.allSettled(promises);
@@ -179,7 +179,7 @@ async function executeParallel(tasks, settings) {
       taskId: tasks[i].id,
       agent: tasks[i].agent,
       tier: getAgentTier(tasks[i].agent),
-      error: r.reason?.message || 'Unknown error'
+      error: r.reason?.message || 'Unknown error',
     };
   });
 }
@@ -201,7 +201,7 @@ function saveAgentMemory(agent, memory) {
     timestamp: new Date().toISOString(),
     agent,
     tier: getAgentTier(agent),
-    data: memory
+    data: memory,
   };
 
   let existing = [];
@@ -247,7 +247,9 @@ export async function invokeSwarm(query, options = {}) {
   if (verbose) {
     console.log('');
     console.log(`${colors.cyan}${'='.repeat(80)}${colors.reset}`);
-    console.log(`${colors.cyan}  AGENT SWARM v${SWARM_VERSION} - School of the Wolf${colors.reset}`);
+    console.log(
+      `${colors.cyan}  AGENT SWARM v${SWARM_VERSION} - School of the Wolf${colors.reset}`,
+    );
     console.log(`${colors.cyan}  Session: ${sessionId} | Mode: ${modeStr}${colors.reset}`);
     console.log(`${colors.cyan}${'='.repeat(80)}${colors.reset}`);
     displayTierBanner();
@@ -282,7 +284,7 @@ export async function invokeSwarm(query, options = {}) {
     mode: modeStr,
     startTime: new Date(startTime).toISOString(),
     providerStatus,
-    steps: {}
+    steps: {},
   };
 
   // =========================================================================
@@ -290,7 +292,9 @@ export async function invokeSwarm(query, options = {}) {
   // =========================================================================
   if (verbose) {
     console.log('');
-    console.log(`${colors.yellow}--- STEP 1: SPECULATE (Regis - The Sage) [${TIER_COLORS.coordinator}COORDINATOR${colors.reset}${colors.yellow}] ---${colors.reset}`);
+    console.log(
+      `${colors.yellow}--- STEP 1: SPECULATE (Regis - The Sage) [${TIER_COLORS.coordinator}COORDINATOR${colors.reset}${colors.yellow}] ---${colors.reset}`,
+    );
   }
 
   let step1Result = null;
@@ -306,10 +310,17 @@ Provide:
 5. Recommended agents from: ${AGENT_NAMES.join(', ')}`;
 
     writeStatus('Speculate', 'Gathering research context...', 'Regis', 'Progress');
-    step1Result = await invokeAgent('Regis', researchPrompt, { timeout: settings.timeoutSeconds * 1000 });
+    step1Result = await invokeAgent('Regis', researchPrompt, {
+      timeout: settings.timeoutSeconds * 1000,
+    });
 
     if (step1Result.success) {
-      writeStatus('Speculate', `Research complete (${(step1Result.duration / 1000).toFixed(2)}s)`, 'Regis', 'Success');
+      writeStatus(
+        'Speculate',
+        `Research complete (${(step1Result.duration / 1000).toFixed(2)}s)`,
+        'Regis',
+        'Success',
+      );
     } else {
       writeStatus('Speculate', `Research failed: ${step1Result.error}`, 'Regis', 'Warning');
     }
@@ -325,7 +336,9 @@ Provide:
   // =========================================================================
   if (verbose) {
     console.log('');
-    console.log(`${colors.yellow}--- STEP 2: PLAN (Dijkstra - The Spymaster) [${TIER_COLORS.commander}COMMANDER${colors.reset}${colors.yellow}] ---${colors.reset}`);
+    console.log(
+      `${colors.yellow}--- STEP 2: PLAN (Dijkstra - The Spymaster) [${TIER_COLORS.commander}COMMANDER${colors.reset}${colors.yellow}] ---${colors.reset}`,
+    );
   }
 
   const context = step1Result?.success ? step1Result.response : '';
@@ -363,10 +376,17 @@ Available agents by tier:
 Assign EXECUTORS for actual task work. Use COORDINATORS for synthesis and communication.`;
 
     writeStatus('Plan', 'Creating execution plan...', 'Dijkstra', 'Progress');
-    step2Result = await invokeAgent('Dijkstra', planPrompt, { timeout: settings.timeoutSeconds * 1000 });
+    step2Result = await invokeAgent('Dijkstra', planPrompt, {
+      timeout: settings.timeoutSeconds * 1000,
+    });
 
     if (step2Result.success) {
-      writeStatus('Plan', `Plan created (${(step2Result.duration / 1000).toFixed(2)}s)`, 'Dijkstra', 'Success');
+      writeStatus(
+        'Plan',
+        `Plan created (${(step2Result.duration / 1000).toFixed(2)}s)`,
+        'Dijkstra',
+        'Success',
+      );
 
       // Try to parse JSON plan
       try {
@@ -390,9 +410,9 @@ Assign EXECUTORS for actual task work. Use COORDINATORS for synthesis and commun
     plan = {
       complexity: 'Moderate',
       tasks: [
-        { id: 1, agent: classification.agent, task: query, depends_on: [], priority: 'high' }
+        { id: 1, agent: classification.agent, task: query, depends_on: [], priority: 'high' },
       ],
-      parallel_groups: [[1]]
+      parallel_groups: [[1]],
     };
   }
 
@@ -401,14 +421,16 @@ Assign EXECUTORS for actual task work. Use COORDINATORS for synthesis and commun
   // =========================================================================
   if (verbose) {
     console.log('');
-    console.log(`${colors.yellow}--- STEP 3: EXECUTE (Parallel Agents) [${TIER_COLORS.executor}EXECUTORS${colors.reset}${colors.yellow}] ---${colors.reset}`);
+    console.log(
+      `${colors.yellow}--- STEP 3: EXECUTE (Parallel Agents) [${TIER_COLORS.executor}EXECUTORS${colors.reset}${colors.yellow}] ---${colors.reset}`,
+    );
   }
 
-  const executionTasks = plan.tasks.map(task => ({
+  const executionTasks = plan.tasks.map((task) => ({
     id: task.id,
     agent: task.agent,
     prompt: task.task,
-    context: ''
+    context: '',
   }));
 
   // Group tasks by tier for display
@@ -420,22 +442,32 @@ Assign EXECUTORS for actual task work. Use COORDINATORS for synthesis and commun
   }, {});
 
   for (const [tier, agents] of Object.entries(tasksByTier)) {
-    const tierColor = TIER_COLORS[tier] || colors.cyan;
+    const _tierColor = TIER_COLORS[tier] || colors.cyan;
     writeStatus('Execute', `${tier.toUpperCase()}: ${agents.join(', ')}`, '', 'Info');
   }
 
-  writeStatus('Execute', `Launching ${executionTasks.length} agents in parallel...`, '', 'Progress');
+  writeStatus(
+    'Execute',
+    `Launching ${executionTasks.length} agents in parallel...`,
+    '',
+    'Progress',
+  );
 
   const step3Results = await executeParallel(executionTasks, settings);
 
-  const successCount = step3Results.filter(r => r.success).length;
+  const successCount = step3Results.filter((r) => r.success).length;
   writeStatus('Execute', `${successCount}/${executionTasks.length} tasks completed`, '', 'Success');
 
   // Log individual results with tier info
   for (const result of step3Results) {
     const status = result.success ? 'Success' : 'Error';
     const tierInfo = result.tier ? ` [${result.tier}]` : '';
-    writeStatus('Task', `Completed in ${((result.duration || 0) / 1000).toFixed(2)}s${tierInfo}`, result.agent, status);
+    writeStatus(
+      'Task',
+      `Completed in ${((result.duration || 0) / 1000).toFixed(2)}s${tierInfo}`,
+      result.agent,
+      status,
+    );
   }
 
   transcript.steps.execute = step3Results;
@@ -445,17 +477,17 @@ Assign EXECUTORS for actual task work. Use COORDINATORS for synthesis and commun
   // =========================================================================
   if (verbose) {
     console.log('');
-    console.log(`${colors.yellow}--- STEP 4: SYNTHESIZE (Yennefer - The Sorceress) [${TIER_COLORS.coordinator}COORDINATOR${colors.reset}${colors.yellow}] ---${colors.reset}`);
+    console.log(
+      `${colors.yellow}--- STEP 4: SYNTHESIZE (Yennefer - The Sorceress) [${TIER_COLORS.coordinator}COORDINATOR${colors.reset}${colors.yellow}] ---${colors.reset}`,
+    );
   }
 
   let step4Result = null;
 
   if (providerStatus.tiers.coordinator) {
-    const resultsText = step3Results.map(r =>
-      r.success
-        ? `[${r.agent}] ${r.response}`
-        : `[${r.agent}] ERROR: ${r.error}`
-    ).join('\n\n---\n\n');
+    const resultsText = step3Results
+      .map((r) => (r.success ? `[${r.agent}] ${r.response}` : `[${r.agent}] ERROR: ${r.error}`))
+      .join('\n\n---\n\n');
 
     const synthesizePrompt = `Synthesize these agent results into a cohesive final answer:
 
@@ -471,15 +503,22 @@ Create a unified, well-structured response that:
 4. Provides actionable conclusions`;
 
     writeStatus('Synthesize', 'Merging results...', 'Yennefer', 'Progress');
-    step4Result = await invokeAgent('Yennefer', synthesizePrompt, { timeout: settings.timeoutSeconds * 1000 });
+    step4Result = await invokeAgent('Yennefer', synthesizePrompt, {
+      timeout: settings.timeoutSeconds * 1000,
+    });
 
     if (step4Result.success) {
-      writeStatus('Synthesize', `Synthesis complete (${(step4Result.duration / 1000).toFixed(2)}s)`, 'Yennefer', 'Success');
+      writeStatus(
+        'Synthesize',
+        `Synthesis complete (${(step4Result.duration / 1000).toFixed(2)}s)`,
+        'Yennefer',
+        'Success',
+      );
     }
   } else {
     writeStatus('Synthesize', 'Claude Sonnet unavailable, using direct results', '', 'Warning');
     // Fallback: use first successful result
-    const firstSuccess = step3Results.find(r => r.success);
+    const firstSuccess = step3Results.find((r) => r.success);
     if (firstSuccess) {
       step4Result = { success: true, response: firstSuccess.response, agent: 'Fallback' };
     }
@@ -492,7 +531,9 @@ Create a unified, well-structured response that:
   // =========================================================================
   if (verbose) {
     console.log('');
-    console.log(`${colors.yellow}--- STEP 5: LOG (Jaskier - The Bard) [${TIER_COLORS.coordinator}COORDINATOR${colors.reset}${colors.yellow}] ---${colors.reset}`);
+    console.log(
+      `${colors.yellow}--- STEP 5: LOG (Jaskier - The Bard) [${TIER_COLORS.coordinator}COORDINATOR${colors.reset}${colors.yellow}] ---${colors.reset}`,
+    );
   }
 
   const endTime = Date.now();
@@ -509,7 +550,7 @@ Duration: ${totalDuration.toFixed(2)} seconds
 Model Hierarchy Used:
 - Commander (Claude Opus): ${step2Result ? 'Dijkstra' : 'N/A'}
 - Coordinators (Claude Sonnet): Regis, Yennefer, Jaskier
-- Executors (llama.cpp): ${step3Results.map(r => r.agent).join(', ')}
+- Executors (llama.cpp): ${step3Results.map((r) => r.agent).join(', ')}
 Success Rate: ${successCount}/${executionTasks.length} tasks
 
 Final Answer Preview:
@@ -518,10 +559,17 @@ ${(step4Result?.response || '').substring(0, 500)}...
 Create a brief, poetic summary in the style of a bard chronicling an adventure.`;
 
     writeStatus('Log', 'Creating session summary...', 'Jaskier', 'Progress');
-    step5Result = await invokeAgent('Jaskier', logPrompt, { timeout: settings.timeoutSeconds * 1000 });
+    step5Result = await invokeAgent('Jaskier', logPrompt, {
+      timeout: settings.timeoutSeconds * 1000,
+    });
 
     if (step5Result.success) {
-      writeStatus('Log', `Summary created (${(step5Result.duration / 1000).toFixed(2)}s)`, 'Jaskier', 'Success');
+      writeStatus(
+        'Log',
+        `Summary created (${(step5Result.duration / 1000).toFixed(2)}s)`,
+        'Jaskier',
+        'Success',
+      );
     }
   } else {
     writeStatus('Log', 'Claude Sonnet unavailable, skipping summary', '', 'Warning');
@@ -568,11 +616,13 @@ ${step2Result?.success ? step2Result.response : '_Planning failed or unavailable
 ---
 
 ## Step 3: Execute (Parallel) [EXECUTORS]
-${step3Results.map(r => {
-  const content = r.response || r.error || 'No response';
-  const tierLabel = r.tier ? ` [${r.tier.toUpperCase()}]` : '';
-  return `### Agent: ${r.agent}${tierLabel}\n${content}\n`;
-}).join('\n')}
+${step3Results
+  .map((r) => {
+    const content = r.response || r.error || 'No response';
+    const tierLabel = r.tier ? ` [${r.tier.toUpperCase()}]` : '';
+    return `### Agent: ${r.agent}${tierLabel}\n${content}\n`;
+  })
+  .join('\n')}
 
 ---
 
@@ -616,7 +666,7 @@ ${step5Result?.success ? step5Result.response : '_Logging failed or unavailable_
     taskCount: executionTasks.length,
     successRate: `${successCount}/${executionTasks.length}`,
     tiers: providerStatus.tiers,
-    archiveFile
+    archiveFile,
   });
 
   // =========================================================================
@@ -625,7 +675,9 @@ ${step5Result?.success ? step5Result.response : '_Logging failed or unavailable_
   if (verbose) {
     console.log('');
     console.log(`${colors.green}${'='.repeat(80)}${colors.reset}`);
-    console.log(`${colors.green}  THE END - School of the Wolf - ClaudeHydra v${SWARM_VERSION}${colors.reset}`);
+    console.log(
+      `${colors.green}  THE END - School of the Wolf - ClaudeHydra v${SWARM_VERSION}${colors.reset}`,
+    );
     console.log(`${colors.green}${'='.repeat(80)}${colors.reset}`);
     console.log('');
     console.log(`${colors.green}${'='.repeat(80)}${colors.reset}`);
@@ -645,7 +697,7 @@ ${step5Result?.success ? step5Result.response : '_Logging failed or unavailable_
     duration: totalDuration,
     archiveFile,
     tiers: providerStatus.tiers,
-    transcript
+    transcript,
   };
 }
 
@@ -676,5 +728,5 @@ export default {
   quickSwarm,
   yoloSwarm,
   STANDARD_MODE,
-  YOLO_MODE
+  YOLO_MODE,
 };

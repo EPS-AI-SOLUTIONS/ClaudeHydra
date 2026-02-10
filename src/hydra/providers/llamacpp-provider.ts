@@ -7,21 +7,21 @@
  * @module hydra/providers/llamacpp-provider
  */
 
-import { BaseProvider } from '../core/interfaces.js';
-import { withRetry, CircuitBreaker } from '../core/retry.js';
-import { ManagedPool } from '../core/pool.js';
 import { HealthCheckCache } from '../core/cache.js';
-import { TimeoutError, NetworkError, normalizeError } from '../core/errors.js';
 import { getConfigManager } from '../core/config.js';
+import { NetworkError, normalizeError, TimeoutError } from '../core/errors.js';
+import { BaseProvider } from '../core/interfaces.js';
+import { ManagedPool } from '../core/pool.js';
+import { CircuitBreaker, withRetry } from '../core/retry.js';
 import { getStatsCollector } from '../core/stats.js';
 
 import { getLlamaCppBridge } from './llamacpp-bridge.js';
 import {
+  GGUF_MODELS,
+  getModelForAgent,
+  getModelForTask,
   MODEL_ROLES,
   TASK_MODEL_MAP,
-  GGUF_MODELS,
-  getModelForTask,
-  getModelForAgent
 } from './llamacpp-models.js';
 
 // =============================================================================
@@ -67,7 +67,7 @@ export class LlamaCppProvider extends BaseProvider {
       researcher: 'main',
       coder: 'main',
       reasoner: 'main',
-      default: 'main'
+      default: 'main',
     };
 
     // Get bridge instance
@@ -76,21 +76,21 @@ export class LlamaCppProvider extends BaseProvider {
     // Initialize connection pool
     this.pool = new ManagedPool(
       mergedConfig.pool || { maxConcurrent: 5, maxQueueSize: 100 },
-      mergedConfig.rateLimit || { enabled: false }
+      mergedConfig.rateLimit || { enabled: false },
     );
 
     // Initialize circuit breaker
     this.circuitBreaker = new CircuitBreaker({
       failureThreshold: mergedConfig.circuitBreaker?.failureThreshold || 5,
       successThreshold: mergedConfig.circuitBreaker?.successThreshold || 2,
-      timeout: mergedConfig.circuitBreaker?.timeout || 30000
+      timeout: mergedConfig.circuitBreaker?.timeout || 30000,
     });
 
     // Initialize health check cache
     this.healthCache = new HealthCheckCache({
       ttl: 30000,
       staleTTL: 60000,
-      autoRefresh: true
+      autoRefresh: true,
     });
     this.healthCache.register('llamacpp', () => this._performHealthCheck());
 
@@ -99,7 +99,7 @@ export class LlamaCppProvider extends BaseProvider {
       maxRetries: mergedConfig.maxRetries || 3,
       baseDelay: 1000,
       maxDelay: 10000,
-      backoffMultiplier: 2
+      backoffMultiplier: 2,
     };
 
     // Stats collector
@@ -131,7 +131,7 @@ export class LlamaCppProvider extends BaseProvider {
       maxTokens = 2048,
       timeout = this.defaultTimeout,
       taskType = 'default',
-      tool = null
+      tool = null,
     } = options;
 
     const startTime = Date.now();
@@ -145,19 +145,22 @@ export class LlamaCppProvider extends BaseProvider {
       const result = await this.circuitBreaker.execute(async () => {
         return this.pool.execute(async () => {
           return withRetry(
-            () => this._doGenerate(prompt, {
-              model,
-              temperature,
-              maxTokens,
-              timeout,
-              tool: selectedTool
-            }),
+            () =>
+              this._doGenerate(prompt, {
+                model,
+                temperature,
+                maxTokens,
+                timeout,
+                tool: selectedTool,
+              }),
             {
               ...this.retryConfig,
               onRetry: ({ attempt, error, delay }) => {
-                console.warn(`[LlamaCpp] Retry ${attempt}/${this.retryConfig.maxRetries}: ${error.message}. Waiting ${delay}ms`);
-              }
-            }
+                console.warn(
+                  `[LlamaCpp] Retry ${attempt}/${this.retryConfig.maxRetries}: ${error.message}. Waiting ${delay}ms`,
+                );
+              },
+            },
           );
         });
       });
@@ -171,11 +174,10 @@ export class LlamaCppProvider extends BaseProvider {
         tokens: result.tokens,
         cost: 0, // Local = free
         savings: this._calculateSavings(result.tokens),
-        success: true
+        success: true,
       });
 
       return result;
-
     } catch (error) {
       const hydraError = this._handleError(error);
       this._updateStats({ error: hydraError.message }, false);
@@ -184,7 +186,7 @@ export class LlamaCppProvider extends BaseProvider {
         category: 'generate',
         latency: Date.now() - startTime,
         success: false,
-        error: { type: hydraError.code }
+        error: { type: hydraError.code },
       });
       throw hydraError;
     }
@@ -210,21 +212,25 @@ export class LlamaCppProvider extends BaseProvider {
       case 'llama_generate_fast':
         generationPromise = this.bridge.generateFast(prompt, {
           maxTokens,
-          temperature
+          temperature,
         });
         break;
 
       case 'llama_code':
         generationPromise = this.bridge.code('generate', {
           description: prompt,
-          language: 'javascript'
+          language: 'javascript',
         });
         break;
 
       case 'llama_json':
-        generationPromise = this.bridge.json(prompt, {}, {
-          maxTokens
-        });
+        generationPromise = this.bridge.json(
+          prompt,
+          {},
+          {
+            maxTokens,
+          },
+        );
         break;
 
       case 'llama_analyze':
@@ -234,7 +240,7 @@ export class LlamaCppProvider extends BaseProvider {
       default:
         generationPromise = this.bridge.generate(prompt, {
           maxTokens,
-          temperature
+          temperature,
         });
     }
 
@@ -247,7 +253,7 @@ export class LlamaCppProvider extends BaseProvider {
       duration_ms: Date.now() - startTime,
       tokens: result.tokens || 0,
       success: true,
-      tool
+      tool,
     };
   }
 
@@ -265,9 +271,9 @@ export class LlamaCppProvider extends BaseProvider {
     // Simulate streaming by yielding words
     const words = result.content.split(' ');
     for (const word of words) {
-      yield word + ' ';
+      yield `${word} `;
       // Small delay to simulate streaming
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
     }
   }
 
@@ -294,15 +300,14 @@ export class LlamaCppProvider extends BaseProvider {
         modelCount: Object.keys(GGUF_MODELS).length,
         provider: 'llamacpp',
         backend: 'llama-cpp-mcp',
-        ...bridgeHealth
+        ...bridgeHealth,
       };
-
     } catch (error) {
       return {
         available: false,
         models: [],
         error: error.message,
-        provider: 'llamacpp'
+        provider: 'llamacpp',
       };
     }
   }
@@ -362,7 +367,7 @@ export class LlamaCppProvider extends BaseProvider {
     // Estimate savings compared to Claude
     const claudeCostPerToken = 0.000015; // ~$15/1M tokens
     const claudeFixedCost = 0.001;
-    return claudeFixedCost + (tokens * claudeCostPerToken);
+    return claudeFixedCost + tokens * claudeCostPerToken;
   }
 
   /**
@@ -413,7 +418,7 @@ export class LlamaCppProvider extends BaseProvider {
       models: this.models,
       pool: this.getPoolStatus(),
       circuit: this.getCircuitStatus(),
-      stats: this.getStats()
+      stats: this.getStats(),
     };
   }
 
@@ -530,5 +535,5 @@ export default {
   resetLlamaCppProvider,
   MODEL_ROLES,
   GGUF_MODELS,
-  TASK_MODEL_MAP
+  TASK_MODEL_MAP,
 };

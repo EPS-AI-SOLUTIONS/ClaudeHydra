@@ -1,24 +1,24 @@
-import { execSync } from 'child_process';
-import http from 'http';
+import { execSync } from 'node:child_process';
+import http from 'node:http';
 
 const COLORS = {
   Green: '\x1b[32m',
   Red: '\x1b[31m',
   Yellow: '\x1b[33m',
-  Reset: '\x1b[0m'
+  Reset: '\x1b[0m',
 };
 
 function checkCmd(cmd) {
   try {
-    const output = execSync(cmd + ' --version', { stdio: 'pipe' }).toString().trim();
+    const output = execSync(`${cmd} --version`, { stdio: 'pipe' }).toString().trim();
     return { ok: true, msg: output };
-  } catch (e) {
+  } catch (_e) {
     return { ok: false, msg: 'Not found' };
   }
 }
 
 async function checkOllama() {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const req = http.get('http://localhost:11434/api/tags', (res) => {
       if (res.statusCode === 200) resolve({ ok: true, msg: 'Online (HTTP 200)' });
       else resolve({ ok: false, msg: `Error HTTP ${res.statusCode}` });
@@ -35,7 +35,7 @@ async function runDoctor() {
     { name: 'NPM', cmd: 'npm' },
     { name: 'Git', cmd: 'git' },
     { name: 'Rust (Cargo)', cmd: 'cargo' },
-    { name: 'Docker', cmd: 'docker' }
+    { name: 'Docker', cmd: 'docker' },
   ];
 
   for (const check of checks) {

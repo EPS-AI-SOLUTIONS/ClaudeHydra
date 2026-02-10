@@ -1,521 +1,511 @@
 /**
- * @fileoverview LlamaCpp MCP Bridge
- * Adapter layer for invoking llama-cpp MCP tools
+ * @fileoverview Ollama Bridge (formerly LlamaCpp Bridge)
  *
- * This bridge provides a clean interface for calling llama-cpp MCP tools
- * and converts responses to the standard ProviderResult format.
+ * Dual-mode adapter: MCP protocol or direct Ollama HTTP API.
+ * Automatically falls back to HTTP if MCP is unavailable.
+ *
+ * Ollama HTTP API: http://localhost:11434/api/generate, /api/chat, /api/embed
  *
  * @module hydra/providers/llamacpp-bridge
  */
 
-import { TASK_MODEL_MAP, GGUF_MODELS } from './llamacpp-models.js';
+import { getLogger } from '../../utils/logger.js';
+import { GGUF_MODELS } from './llamacpp-models.js';
+
+const logger = getLogger('LlamaCppBridge');
 
 // =============================================================================
-// MCP Tool Names
+// Configuration
 // =============================================================================
 
-/**
- * MCP tool name constants
- * @type {Object<string, string>}
- */
+export const MCP_SERVER_ID = 'ollama';
+const OLLAMA_BASE_URL = process.env.OLLAMA_HOST || 'http://localhost:11434';
+
 export const MCP_TOOLS = {
-  GENERATE: 'mcp__llama-cpp__llama_generate',
-  GENERATE_FAST: 'mcp__llama-cpp__llama_generate_fast',
-  CHAT: 'mcp__llama-cpp__llama_chat',
-  JSON: 'mcp__llama-cpp__llama_json',
-  CODE: 'mcp__llama-cpp__llama_code',
-  ANALYZE: 'mcp__llama-cpp__llama_analyze',
-  EMBED: 'mcp__llama-cpp__llama_embed',
-  VISION: 'mcp__llama-cpp__llama_vision',
-  FUNCTION_CALL: 'mcp__llama-cpp__llama_function_call',
-  TOKENIZE: 'mcp__llama-cpp__llama_tokenize',
-  DETOKENIZE: 'mcp__llama-cpp__llama_detokenize',
-  COUNT_TOKENS: 'mcp__llama-cpp__llama_count_tokens',
-  SIMILARITY: 'mcp__llama-cpp__llama_similarity',
-  GRAMMAR: 'mcp__llama-cpp__llama_grammar',
-  INFO: 'mcp__llama-cpp__llama_info',
-  RESET: 'mcp__llama-cpp__llama_reset'
+  GENERATE: `mcp__${MCP_SERVER_ID}__ollama_generate`,
+  CHAT: `mcp__${MCP_SERVER_ID}__ollama_chat`,
+  EMBED: `mcp__${MCP_SERVER_ID}__ollama_embed`,
+  LIST: `mcp__${MCP_SERVER_ID}__ollama_list`,
+  SHOW: `mcp__${MCP_SERVER_ID}__ollama_show`,
+  PS: `mcp__${MCP_SERVER_ID}__ollama_ps`,
 };
 
-/**
- * Maps short tool names to full MCP tool names
- * @type {Object<string, string>}
- */
-const TOOL_NAME_MAP = {
-  'llama_generate': MCP_TOOLS.GENERATE,
-  'llama_generate_fast': MCP_TOOLS.GENERATE_FAST,
-  'llama_chat': MCP_TOOLS.CHAT,
-  'llama_json': MCP_TOOLS.JSON,
-  'llama_code': MCP_TOOLS.CODE,
-  'llama_analyze': MCP_TOOLS.ANALYZE,
-  'llama_embed': MCP_TOOLS.EMBED,
-  'llama_vision': MCP_TOOLS.VISION,
-  'llama_function_call': MCP_TOOLS.FUNCTION_CALL,
-  'llama_tokenize': MCP_TOOLS.TOKENIZE,
-  'llama_detokenize': MCP_TOOLS.DETOKENIZE,
-  'llama_count_tokens': MCP_TOOLS.COUNT_TOKENS,
-  'llama_similarity': MCP_TOOLS.SIMILARITY,
-  'llama_grammar': MCP_TOOLS.GRAMMAR,
-  'llama_info': MCP_TOOLS.INFO,
-  'llama_reset': MCP_TOOLS.RESET
+const TOOL_NAME_MAP: Record<string, string> = {
+  ollama_generate: MCP_TOOLS.GENERATE,
+  ollama_chat: MCP_TOOLS.CHAT,
+  ollama_embed: MCP_TOOLS.EMBED,
+  ollama_list: MCP_TOOLS.LIST,
+  llama_generate: MCP_TOOLS.GENERATE,
+  llama_generate_fast: MCP_TOOLS.GENERATE,
+  llama_chat: MCP_TOOLS.CHAT,
+  llama_embed: MCP_TOOLS.EMBED,
+  llama_code: MCP_TOOLS.GENERATE,
+  llama_analyze: MCP_TOOLS.GENERATE,
+  llama_json: MCP_TOOLS.GENERATE,
 };
+
+// =============================================================================
+// Ollama HTTP Client (fallback when MCP unavailable)
+// =============================================================================
+
+async function ollamaFetch(endpoint: string, body: any, timeout = 120000): Promise<any> {
+  const url = `${OLLAMA_BASE_URL}${endpoint}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...body, stream: false }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Ollama HTTP ${res.status}: ${text}`);
+    }
+
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function ollamaGet(endpoint: string, timeout = 10000): Promise<any> {
+  const url = `${OLLAMA_BASE_URL}${endpoint}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // =============================================================================
 // LlamaCppBridge Class
 // =============================================================================
 
-/**
- * Bridge class for llama-cpp MCP tools
- * Provides unified interface for all llama-cpp operations
- */
 export class LlamaCppBridge {
-  /**
-   * Create a new LlamaCppBridge instance
-   * @param {Object} config - Configuration options
-   * @param {Function} [config.mcpInvoker] - Custom MCP tool invoker function
-   * @param {number} [config.defaultTimeout=120000] - Default timeout in ms
-   */
-  constructor(config = {}) {
+  mcpInvoker: ((toolName: string, params: any) => Promise<any>) | null;
+  defaultTimeout: number;
+  defaultModel: string;
+  _mode: 'mcp' | 'http' | 'auto';
+  _healthCheckCache: any;
+
+  constructor(config: any = {}) {
     this.mcpInvoker = config.mcpInvoker || null;
     this.defaultTimeout = config.defaultTimeout || 120000;
-    this._lastHealthCheck = null;
+    this.defaultModel = config.defaultModel || 'llama3.2:1b';
+    this._mode = 'auto'; // auto-detect: try MCP first, fallback to HTTP
     this._healthCheckCache = null;
   }
 
-  /**
-   * Set the MCP invoker function
-   * This should be called with the actual MCP tool invocation mechanism
-   * @param {Function} invoker - Function that invokes MCP tools
-   */
-  setMcpInvoker(invoker) {
+  setMcpInvoker(invoker: (toolName: string, params: any) => Promise<any>) {
     this.mcpInvoker = invoker;
   }
 
-  /**
-   * Get full MCP tool name from short name
-   * @param {string} shortName - Short tool name (e.g., 'llama_generate')
-   * @returns {string} Full MCP tool name
-   */
-  getFullToolName(shortName) {
-    return TOOL_NAME_MAP[shortName] || shortName;
+  getFullToolName(shortName: string): string {
+    return TOOL_NAME_MAP[shortName] || `mcp__${MCP_SERVER_ID}__${shortName}`;
   }
 
   /**
-   * Call an MCP tool by name
-   * @param {string} toolName - Tool name (short or full)
-   * @param {Object} params - Tool parameters
-   * @returns {Promise<Object>} Tool result
-   * @throws {Error} If MCP invoker not set or tool call fails
+   * Determine execution mode: MCP if available, else HTTP
    */
-  async callTool(toolName, params = {}) {
-    if (!this.mcpInvoker) {
-      throw new Error('MCP invoker not set. Call setMcpInvoker() first.');
+  private get useHttp(): boolean {
+    if (this._mode === 'http') return true;
+    if (this._mode === 'mcp') return false;
+    // auto: use HTTP if no MCP invoker set
+    return !this.mcpInvoker;
+  }
+
+  /**
+   * Call via MCP or HTTP depending on mode
+   */
+  async callTool(toolName: string, params: any = {}): Promise<any> {
+    if (this.useHttp) {
+      return this.callHttp(toolName, params);
     }
 
     const fullName = this.getFullToolName(toolName);
     const startTime = Date.now();
 
     try {
-      const result = await this.mcpInvoker(fullName, params);
-      return {
-        ...result,
-        duration_ms: Date.now() - startTime,
-        tool: fullName
-      };
-    } catch (error) {
+      const result = await this.mcpInvoker?.(fullName, params);
+      return { ...result, duration_ms: Date.now() - startTime, tool: fullName };
+    } catch (error: any) {
+      // On MCP failure, fallback to HTTP in auto mode
+      if (this._mode === 'auto') {
+        this._mode = 'http';
+        return this.callHttp(toolName, params);
+      }
       error.tool = fullName;
       error.duration_ms = Date.now() - startTime;
       throw error;
     }
   }
 
+  /**
+   * Direct HTTP call to Ollama API
+   */
+  private async callHttp(toolName: string, params: any): Promise<any> {
+    const startTime = Date.now();
+    const name = toolName.replace('ollama_', '').replace('llama_', '');
+
+    let result: any;
+    switch (name) {
+      case 'generate':
+      case 'generate_fast':
+        result = await ollamaFetch('/api/generate', params, this.defaultTimeout);
+        break;
+      case 'chat':
+        result = await ollamaFetch('/api/chat', params, this.defaultTimeout);
+        break;
+      case 'embed':
+        result = await ollamaFetch('/api/embed', params, this.defaultTimeout);
+        break;
+      case 'list':
+        result = await ollamaGet('/api/tags');
+        break;
+      case 'ps':
+        result = await ollamaGet('/api/ps');
+        break;
+      case 'show':
+        result = await ollamaFetch('/api/show', params, 10000);
+        break;
+      default:
+        // For code/analyze/json — route through generate
+        result = await ollamaFetch('/api/generate', params, this.defaultTimeout);
+    }
+
+    return { ...result, duration_ms: Date.now() - startTime, tool: `http:${name}` };
+  }
+
   // ===========================================================================
   // Generation Methods
   // ===========================================================================
 
-  /**
-   * Generate text using llama_generate
-   * @param {string} prompt - Input prompt
-   * @param {Object} options - Generation options
-   * @returns {Promise<Object>} Generation result
-   */
-  async generate(prompt, options = {}) {
+  async generate(prompt: string, options: any = {}): Promise<any> {
     const {
-      maxTokens = 2048,
+      maxTokens = 1024,
       temperature = 0.7,
-      topK = 40,
-      topP = 0.9,
-      stop = []
+      model = this.defaultModel,
+      stop = [],
+      num_ctx,
     } = options;
 
-    const result = await this.callTool('llama_generate', {
+    // Resolve context window: explicit option > model config > 4096 default
+    const contextSize = num_ctx || GGUF_MODELS[model]?.contextSize || 4096;
+
+    // Ollama API requires flat structure, NOT nested "options"
+    const params: any = {
       prompt,
-      max_tokens: maxTokens,
+      model,
+      stream: false,
+      // Core sampling params (directly at root level)
       temperature,
-      top_k: topK,
-      top_p: topP,
-      stop
-    });
+      num_predict: maxTokens,
+      num_ctx: contextSize,
+      repeat_penalty: 1.3,
+      frequency_penalty: 1.0,
+      top_k: 30,
+      top_p: 0.9,
+    };
+
+    // Stop sequences (MUST be at root level for Ollama)
+    if (stop.length > 0) {
+      params.stop = stop;
+    }
+
+    // Advanced logging
+    logger.ollama('/api/generate', params);
+
+    const result = await this.callTool('ollama_generate', params);
+
+    logger.ollama('/api/generate', params, result);
 
     return this._normalizeResult(result, 'generate');
   }
 
-  /**
-   * Generate text using fast speculative decoding
-   * @param {string} prompt - Input prompt
-   * @param {Object} options - Generation options
-   * @returns {Promise<Object>} Generation result
-   */
-  async generateFast(prompt, options = {}) {
-    const {
-      maxTokens = 512,
-      temperature = 0.3,
-      topP = 0.9
-    } = options;
-
-    const result = await this.callTool('llama_generate_fast', {
-      prompt,
-      max_tokens: maxTokens,
-      temperature,
-      top_p: topP
-    });
-
-    return this._normalizeResult(result, 'generate_fast');
+  async generateFast(prompt: string, options: any = {}): Promise<any> {
+    return this.generate(prompt, { ...options, maxTokens: options.maxTokens || 512 });
   }
 
-  /**
-   * Chat with history
-   * @param {Array<Object>} messages - Chat messages [{role, content}]
-   * @param {Object} options - Chat options
-   * @returns {Promise<Object>} Chat result
-   */
-  async chat(messages, options = {}) {
-    const {
-      maxTokens = 2048,
-      temperature = 0.7
-    } = options;
+  async chat(messages: Array<{ role: string; content: string }>, options: any = {}): Promise<any> {
+    const { maxTokens = 2048, temperature = 0.7, model = this.defaultModel } = options;
 
-    const result = await this.callTool('llama_chat', {
-      messages,
-      max_tokens: maxTokens,
-      temperature
-    });
+    const params: any = { messages, model };
+    const opts: any = {};
+    if (temperature !== 0.7) opts.temperature = temperature;
+    if (maxTokens !== 2048) opts.num_predict = maxTokens;
+    if (Object.keys(opts).length > 0) params.options = opts;
 
+    const result = await this.callTool('ollama_chat', params);
     return this._normalizeResult(result, 'chat');
   }
 
   // ===========================================================================
-  // Specialized Methods
+  // Specialized Methods (emulated via generate/chat)
   // ===========================================================================
 
-  /**
-   * Generate or analyze code
-   * @param {string} task - Task type (generate, explain, refactor, document, review, fix)
-   * @param {Object} params - Task parameters
-   * @returns {Promise<Object>} Code result
-   */
-  async code(task, params = {}) {
-    const {
-      code = '',
-      description = '',
-      language = 'javascript'
-    } = params;
-
-    const result = await this.callTool('llama_code', {
-      task,
-      code,
-      description,
-      language
-    });
-
-    return this._normalizeResult(result, 'code');
+  async code(task: string, params: any = {}): Promise<any> {
+    const { code = '', description = '', language = 'javascript' } = params;
+    const prompts: Record<string, string> = {
+      generate: `You are a ${language} expert. Generate code for: ${description}\nOutput only the code.`,
+      explain: `Explain this ${language} code:\n\`\`\`${language}\n${code}\n\`\`\``,
+      refactor: `Refactor this ${language} code:\n\`\`\`${language}\n${code}\n\`\`\`\nOutput only the refactored code.`,
+      review: `Review this ${language} code for bugs and improvements:\n\`\`\`${language}\n${code}\n\`\`\``,
+      fix: `Fix bugs in this ${language} code:\n\`\`\`${language}\n${code}\n\`\`\`\n${description ? `Issue: ${description}` : ''}`,
+      document: `Add documentation to this ${language} code:\n\`\`\`${language}\n${code}\n\`\`\``,
+    };
+    const prompt =
+      prompts[task] ||
+      `${task}: ${description}\n${code ? `\`\`\`${language}\n${code}\n\`\`\`` : ''}`;
+    return this.generate(prompt, { temperature: 0.4, maxTokens: 4096 });
   }
 
-  /**
-   * Generate structured JSON output
-   * @param {string} prompt - Input prompt
-   * @param {Object} schema - JSON schema for output
-   * @param {Object} options - Generation options
-   * @returns {Promise<Object>} JSON result
-   */
-  async json(prompt, schema, options = {}) {
-    const { maxTokens = 2048 } = options;
-
-    const result = await this.callTool('llama_json', {
-      prompt,
-      schema,
-      max_tokens: maxTokens
+  async json(prompt: string, schema: any, options: any = {}): Promise<any> {
+    const schemaStr = JSON.stringify(schema, null, 2);
+    const structuredPrompt = `${prompt}\n\nRespond ONLY with valid JSON matching this schema:\n${schemaStr}\n\nJSON:`;
+    const result = await this.generate(structuredPrompt, {
+      ...options,
+      temperature: options.temperature ?? 0.3,
     });
-
-    return this._normalizeResult(result, 'json');
+    try {
+      const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) result.parsed = JSON.parse(jsonMatch[0]);
+    } catch {
+      /* best effort */
+    }
+    return result;
   }
 
-  /**
-   * Analyze text (sentiment, summary, keywords, etc.)
-   * @param {string} text - Text to analyze
-   * @param {string} task - Analysis task
-   * @param {Object} options - Analysis options
-   * @returns {Promise<Object>} Analysis result
-   */
-  async analyze(text, task, options = {}) {
-    const {
-      categories = [],
-      targetLanguage = 'en'
-    } = options;
-
-    const result = await this.callTool('llama_analyze', {
-      text,
-      task,
-      categories,
-      target_language: targetLanguage
-    });
-
-    return this._normalizeResult(result, 'analyze');
+  async analyze(text: string, task: string, options: any = {}): Promise<any> {
+    const taskPrompts: Record<string, string> = {
+      sentiment: `Analyze the sentiment of this text (positive/negative/neutral):\n\n${text}`,
+      summary: `Summarize this text concisely:\n\n${text}`,
+      keywords: `Extract key topics from this text, comma-separated:\n\n${text}`,
+      translate: `Translate to ${options.targetLanguage || 'en'}:\n\n${text}`,
+    };
+    const prompt = taskPrompts[task] || `${task}:\n\n${text}`;
+    return this.generate(prompt, { temperature: 0.3, maxTokens: 1024 });
   }
 
-  /**
-   * Generate embeddings
-   * @param {string|string[]} text - Text(s) to embed
-   * @returns {Promise<Object>} Embedding result
-   */
-  async embed(text) {
-    const params = Array.isArray(text)
-      ? { texts: text }
-      : { text };
-
-    const result = await this.callTool('llama_embed', params);
+  async embed(text: string | string[]): Promise<any> {
+    const input = Array.isArray(text) ? text.join('\n') : text;
+    const result = await this.callTool('ollama_embed', { input, model: this.defaultModel });
     return this._normalizeResult(result, 'embed');
   }
 
-  /**
-   * Analyze image
-   * @param {string} image - Image path or base64
-   * @param {string} prompt - Question about the image
-   * @param {Object} options - Vision options
-   * @returns {Promise<Object>} Vision result
-   */
-  async vision(image, prompt, options = {}) {
-    const { maxTokens = 1024 } = options;
-
-    const result = await this.callTool('llama_vision', {
-      image,
-      prompt,
-      max_tokens: maxTokens
-    });
-
-    return this._normalizeResult(result, 'vision');
-  }
-
-  /**
-   * Execute function call
-   * @param {Array<Object>} messages - Conversation messages
-   * @param {Array<Object>} tools - Available tools
-   * @param {Object} options - Function call options
-   * @returns {Promise<Object>} Function call result
-   */
-  async functionCall(messages, tools, options = {}) {
-    const {
-      maxTokens = 2048,
-      toolChoice = 'auto'
-    } = options;
-
-    const result = await this.callTool('llama_function_call', {
-      messages,
-      tools,
-      max_tokens: maxTokens,
-      tool_choice: toolChoice
-    });
-
-    return this._normalizeResult(result, 'function_call');
-  }
-
-  /**
-   * Generate with grammar constraints
-   * @param {string} prompt - Input prompt
-   * @param {Object} options - Grammar options
-   * @returns {Promise<Object>} Grammar-constrained result
-   */
-  async grammar(prompt, options = {}) {
-    const {
-      grammar = null,
-      jsonSchema = null,
-      maxTokens = 2048,
-      temperature = 0.7
-    } = options;
-
-    const result = await this.callTool('llama_grammar', {
-      prompt,
-      grammar,
-      json_schema: jsonSchema,
-      max_tokens: maxTokens,
-      temperature
-    });
-
-    return this._normalizeResult(result, 'grammar');
-  }
-
-  // ===========================================================================
-  // Utility Methods
-  // ===========================================================================
-
-  /**
-   * Calculate semantic similarity
-   * @param {string} text1 - First text
-   * @param {string} text2 - Second text
-   * @returns {Promise<Object>} Similarity result
-   */
-  async similarity(text1, text2) {
-    const result = await this.callTool('llama_similarity', {
-      text1,
-      text2
-    });
-    return this._normalizeResult(result, 'similarity');
-  }
-
-  /**
-   * Tokenize text
-   * @param {string} text - Text to tokenize
-   * @param {boolean} returnTokens - Whether to return token IDs
-   * @returns {Promise<Object>} Tokenization result
-   */
-  async tokenize(text, returnTokens = false) {
-    const result = await this.callTool('llama_tokenize', {
-      text,
-      return_tokens: returnTokens
-    });
-    return this._normalizeResult(result, 'tokenize');
-  }
-
-  /**
-   * Count tokens in text
-   * @param {string} text - Text to count
-   * @returns {Promise<Object>} Token count result
-   */
-  async countTokens(text) {
-    const result = await this.callTool('llama_count_tokens', { text });
-    return this._normalizeResult(result, 'count_tokens');
-  }
-
-  /**
-   * Get model information
-   * @returns {Promise<Object>} Model info
-   */
-  async getInfo() {
-    const result = await this.callTool('llama_info', {});
-    this._healthCheckCache = {
-      ...result,
-      checkedAt: new Date()
+  async vision(_image: string, _prompt: string, _options: any = {}): Promise<any> {
+    return {
+      content: 'Vision not available via this bridge.',
+      success: false,
+      operation: 'vision',
+      raw: null,
     };
-    return this._normalizeResult(result, 'info');
   }
 
-  /**
-   * Reset model state
-   * @returns {Promise<Object>} Reset result
-   */
-  async reset() {
-    const result = await this.callTool('llama_reset', {});
-    return this._normalizeResult(result, 'reset');
+  async functionCall(messages: any[], tools: any[], options: any = {}): Promise<any> {
+    const toolDesc = tools
+      .map(
+        (t: any) => `- ${t.function?.name || t.name}: ${t.function?.description || t.description}`,
+      )
+      .join('\n');
+    const systemMsg = {
+      role: 'system',
+      content: `Tools:\n${toolDesc}\n\nTo use a tool, respond: {"tool": "name", "arguments": {...}}`,
+    };
+    return this.chat([systemMsg, ...messages], options);
+  }
+
+  async grammar(prompt: string, options: any = {}): Promise<any> {
+    const hint = options.jsonSchema
+      ? `\nRespond ONLY with JSON: ${JSON.stringify(options.jsonSchema)}`
+      : '';
+    return this.generate(prompt + hint, {
+      temperature: options.temperature ?? 0.7,
+      maxTokens: options.maxTokens ?? 2048,
+    });
   }
 
   // ===========================================================================
-  // Health Check
+  // Utility
   // ===========================================================================
 
-  /**
-   * Check if llama-cpp MCP is available
-   * @param {boolean} forceRefresh - Force fresh check
-   * @returns {Promise<Object>} Health check result
-   */
-  async healthCheck(forceRefresh = false) {
-    // Return cached result if available and not forcing refresh
-    if (!forceRefresh && this._healthCheckCache) {
-      const cacheAge = Date.now() - this._healthCheckCache.checkedAt.getTime();
-      if (cacheAge < 30000) { // 30 second cache
+  async similarity(text1: string, text2: string): Promise<any> {
+    try {
+      const [e1, e2] = await Promise.all([this.embed(text1), this.embed(text2)]);
+      if (e1.raw?.embedding && e2.raw?.embedding) {
+        const score = cosineSimilarity(e1.raw.embedding, e2.raw.embedding);
         return {
-          available: true,
-          ...this._healthCheckCache
+          content: String(score),
+          similarity: score,
+          success: true,
+          operation: 'similarity',
         };
+      }
+      return { content: 'Embeddings not available', success: false, operation: 'similarity' };
+    } catch (err: any) {
+      return { content: err.message, success: false, operation: 'similarity' };
+    }
+  }
+
+  async countTokens(text: string): Promise<any> {
+    const approx = Math.ceil(text.length / 4);
+    return {
+      content: String(approx),
+      tokens: approx,
+      success: true,
+      operation: 'count_tokens',
+      approximate: true,
+    };
+  }
+
+  async getInfo(): Promise<any> {
+    try {
+      const result = await this.callTool('ollama_list', {});
+      this._healthCheckCache = { ...result, checkedAt: new Date() };
+      return this._normalizeResult(result, 'info');
+    } catch (err: any) {
+      return { content: err.message, success: false, operation: 'info', error: err.message };
+    }
+  }
+
+  async healthCheck(forceRefresh = false): Promise<any> {
+    if (!forceRefresh && this._healthCheckCache) {
+      const age = Date.now() - this._healthCheckCache.checkedAt.getTime();
+      if (age < 30000) return { available: true, ...this._healthCheckCache };
+    }
+    try {
+      const info = await this.getInfo();
+      return { available: info.success !== false, ...info, checkedAt: new Date() };
+    } catch (err: any) {
+      return { available: false, error: err.message, checkedAt: new Date() };
+    }
+  }
+
+  // ===========================================================================
+  // Private
+  // ===========================================================================
+
+  _normalizeResult(result: any, operation: string): any {
+    // Ollama API returns: { response, model, total_duration, eval_count, ... }
+    let content =
+      result.response ||
+      result.message?.content ||
+      result.content ||
+      result.text ||
+      result.result ||
+      '';
+
+    // ⚠️ CRITICAL: Manual stop token enforcement (fallback if Ollama ignores them)
+    const stopTokens = [
+      '<|end|>',
+      '<|user|>',
+      '<|system|>',
+      '<|im_end|>',
+      '<|im_start|>', // ChatML (Qwen3 native format)
+      '### System',
+      '### User Request',
+    ];
+    if (typeof content === 'string') {
+      for (const stopToken of stopTokens) {
+        const idx = content.indexOf(stopToken);
+        if (idx !== -1) {
+          content = content.substring(0, idx).trim();
+          break;
+        }
+      }
+
+      // ⚠️ EMERGENCY: Remove exact repetitions (hallucination loop detector)
+      // Split on sentence boundaries (.!?) AND newlines
+      const sentences = content.split(/(?<=[.!?])\s+|\n+/).filter((s) => s.trim());
+      const seen = new Map();
+      const deduped = [];
+
+      for (const sentence of sentences) {
+        const normalized = sentence.trim().toLowerCase();
+        if (!normalized) continue;
+
+        const count = seen.get(normalized) || 0;
+        if (count < 1) {
+          // Allow only 1 occurrence (no repeats)
+          deduped.push(sentence);
+          seen.set(normalized, count + 1);
+        }
+      }
+
+      content = deduped.join(' ').trim();
+
+      // Secondary pass: detect repeated phrases within unsplit text
+      // Catches "I don't know X I don't know X I don't know X" (no punctuation)
+      if (content.length > 100) {
+        // Short phrases (20+ chars repeating 3+ times)
+        const phraseMatch = content.match(/(.{20,}?)\1{2,}/);
+        if (phraseMatch) {
+          const escaped = phraseMatch[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          content = content.replace(new RegExp(`(${escaped}){2,}`, 'g'), phraseMatch[1]);
+        }
+
+        // Longer blocks (50+ chars repeating 2+ times) — catches paragraph-level loops
+        const blockMatch = content.match(/(.{50,}?)\1+/);
+        if (blockMatch) {
+          const escaped = blockMatch[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          content = content.replace(new RegExp(`(${escaped})+`, 'g'), blockMatch[1]);
+        }
       }
     }
 
-    try {
-      const info = await this.getInfo();
-      return {
-        available: true,
-        models: Object.keys(GGUF_MODELS),
-        ...info,
-        checkedAt: new Date()
-      };
-    } catch (error) {
-      return {
-        available: false,
-        error: error.message,
-        checkedAt: new Date()
-      };
-    }
-  }
-
-  // ===========================================================================
-  // Private Methods
-  // ===========================================================================
-
-  /**
-   * Normalize tool result to ProviderResult format
-   * @param {Object} result - Raw tool result
-   * @param {string} operation - Operation name
-   * @returns {Object} Normalized result
-   * @private
-   */
-  _normalizeResult(result, operation) {
-    // Handle different result formats from MCP tools
-    const content = result.content || result.response || result.text || result.result || '';
-    const tokens = result.tokens || result.token_count || 0;
+    const tokens = result.eval_count || result.tokens || result.token_count || 0;
+    const model = result.model || this.defaultModel;
 
     return {
       content: typeof content === 'string' ? content : JSON.stringify(content),
-      model: result.model || 'llama-cpp',
-      duration_ms: result.duration_ms || 0,
+      model,
+      duration_ms: result.duration_ms || (result.total_duration ? result.total_duration / 1e6 : 0),
       tokens,
       success: true,
       operation,
-      raw: result
+      raw: result,
     };
   }
 }
 
 // =============================================================================
-// Singleton Instance
+// Helpers
 // =============================================================================
 
-let _bridgeInstance = null;
-
-/**
- * Get or create LlamaCppBridge singleton
- * @param {Object} config - Configuration options
- * @returns {LlamaCppBridge} Bridge instance
- */
-export function getLlamaCppBridge(config = {}) {
-  if (!_bridgeInstance) {
-    _bridgeInstance = new LlamaCppBridge(config);
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length) return 0;
+  let dot = 0,
+    nA = 0,
+    nB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    nA += a[i] * a[i];
+    nB += b[i] * b[i];
   }
+  return dot / (Math.sqrt(nA) * Math.sqrt(nB));
+}
+
+// =============================================================================
+// Singleton
+// =============================================================================
+
+let _bridgeInstance: LlamaCppBridge | null = null;
+
+export function getLlamaCppBridge(config: any = {}): LlamaCppBridge {
+  if (!_bridgeInstance) _bridgeInstance = new LlamaCppBridge(config);
   return _bridgeInstance;
 }
 
-/**
- * Reset bridge singleton (for testing)
- */
-export function resetLlamaCppBridge() {
+export function resetLlamaCppBridge(): void {
   _bridgeInstance = null;
 }
 
-// =============================================================================
-// Default Export
-// =============================================================================
-
-export default {
-  LlamaCppBridge,
-  getLlamaCppBridge,
-  resetLlamaCppBridge,
-  MCP_TOOLS
-};
+export default { LlamaCppBridge, getLlamaCppBridge, resetLlamaCppBridge, MCP_TOOLS, MCP_SERVER_ID };

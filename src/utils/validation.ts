@@ -54,9 +54,11 @@ export function isNonNegative(value) {
  * @returns {boolean} True if plain object
  */
 export function isObject(value) {
-  return value !== null &&
+  return (
+    value !== null &&
     typeof value === 'object' &&
-    Object.prototype.toString.call(value) === '[object Object]';
+    Object.prototype.toString.call(value) === '[object Object]'
+  );
 }
 
 /**
@@ -175,7 +177,7 @@ export function isJson(value) {
  * @returns {boolean} True if Date
  */
 export function isDate(value) {
-  return value instanceof Date && !isNaN(value.getTime());
+  return value instanceof Date && !Number.isNaN(value.getTime());
 }
 
 /**
@@ -262,7 +264,7 @@ export function validate(obj, schema) {
         boolean: isBoolean,
         array: isArray,
         object: isObject,
-        function: isFunction
+        function: isFunction,
       };
 
       if (typeChecks[rules.type] && !typeChecks[rules.type](value)) {
@@ -300,7 +302,7 @@ export function validate(obj, schema) {
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -327,5 +329,5 @@ export default {
   hasMinLength,
   hasMaxLength,
   assert,
-  validate
+  validate,
 };

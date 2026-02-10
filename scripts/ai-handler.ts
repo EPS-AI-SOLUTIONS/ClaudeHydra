@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * AI Handler - Local Ollama Integration
  * Replacement for ai-handler.ps1
@@ -12,10 +13,10 @@
  *   node scripts/ai-handler.js config defaultModel qwen2.5-coder:1.5b
  */
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
+import { spawn } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -34,7 +35,7 @@ const c = {
   yellow: '\x1b[33m',
   red: '\x1b[31m',
   gray: '\x1b[90m',
-  bold: '\x1b[1m'
+  bold: '\x1b[1m',
 };
 
 /**
@@ -52,7 +53,7 @@ function getConfig() {
   return {
     defaultModel: DEFAULT_MODEL,
     parallelRequests: 3,
-    timeout: 120
+    timeout: 120,
   };
 }
 
@@ -79,7 +80,7 @@ async function getOllamaStatus() {
 
     const response = await fetch(`${OLLAMA_HOST}/api/tags`, {
       method: 'GET',
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
@@ -91,12 +92,12 @@ async function getOllamaStatus() {
     const data = await response.json();
     return {
       running: true,
-      models: data.models || []
+      models: data.models || [],
     };
   } catch (error) {
     return {
       running: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -121,9 +122,9 @@ async function ollamaQuery(prompt, model = DEFAULT_MODEL) {
       body: JSON.stringify({
         model,
         prompt,
-        stream: false
+        stream: false,
       }),
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
@@ -161,13 +162,13 @@ async function batchQuery(prompts, model = DEFAULT_MODEL, parallel = 3) {
       results.push({
         prompt,
         response,
-        success: response !== null
+        success: response !== null,
       });
     } catch (error) {
       results.push({
         prompt,
         error: error.message,
-        success: false
+        success: false,
       });
     }
   }
@@ -186,8 +187,11 @@ async function batchQuery(prompts, model = DEFAULT_MODEL, parallel = 3) {
       for (let i = active.length - 1; i >= 0; i--) {
         // Check if promise is settled by racing with immediate resolve
         const isSettled = await Promise.race([
-          active[i].then(() => true, () => true),
-          Promise.resolve(false)
+          active[i].then(
+            () => true,
+            () => true,
+          ),
+          Promise.resolve(false),
         ]);
         if (isSettled) {
           active.splice(i, 1);
@@ -208,12 +212,19 @@ async function pullModel(model) {
 
   try {
     // Use spawn to show progress
-    const child = spawn('curl', [
-      '-X', 'POST',
-      `${OLLAMA_HOST}/api/pull`,
-      '-d', JSON.stringify({ name: model }),
-      '-H', 'Content-Type: application/json'
-    ], { stdio: 'inherit' });
+    const child = spawn(
+      'curl',
+      [
+        '-X',
+        'POST',
+        `${OLLAMA_HOST}/api/pull`,
+        '-d',
+        JSON.stringify({ name: model }),
+        '-H',
+        'Content-Type: application/json',
+      ],
+      { stdio: 'inherit' },
+    );
 
     return new Promise((resolve, reject) => {
       child.on('error', () => {
@@ -242,7 +253,7 @@ async function fetchPull(model) {
   const response = await fetch(`${OLLAMA_HOST}/api/pull`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: model })
+    body: JSON.stringify({ name: model }),
   });
 
   if (!response.ok) {
@@ -296,10 +307,10 @@ ${c.yellow}Config keys:${c.reset} defaultModel, parallelRequests, timeout
 `);
 
   // Show installed models if available
-  status.then(s => {
+  status.then((s) => {
     if (s.running && s.models?.length > 0) {
       console.log(`${c.yellow}Installed Ollama models:${c.reset}`);
-      s.models.forEach(m => {
+      s.models.forEach((m) => {
         console.log(`  ${c.cyan}- ${m.name}${c.reset}`);
       });
     } else if (!s.running) {
@@ -462,23 +473,15 @@ async function main() {
     case 'config':
       cmdConfig(commandArgs);
       break;
-    case 'help':
     default:
       showHelp();
   }
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error(`${c.red}Fatal error: ${error.message}${c.reset}`);
   process.exit(1);
 });
 
 // Export for programmatic use
-export {
-  getConfig,
-  saveConfig,
-  getOllamaStatus,
-  ollamaQuery,
-  batchQuery,
-  pullModel
-};
+export { getConfig, saveConfig, getOllamaStatus, ollamaQuery, batchQuery, pullModel };

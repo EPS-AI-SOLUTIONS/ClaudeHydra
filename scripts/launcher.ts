@@ -6,10 +6,10 @@
  * Usage: node scripts/launcher.js [arguments]
  */
 
-import { spawn } from 'child_process';
-import { existsSync, mkdirSync } from 'fs';
-import { dirname, join, resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { spawn } from 'node:child_process';
+import { existsSync, mkdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,7 +21,7 @@ const CONFIG = {
   configDir: join(ROOT_DIR, 'config'),
   dataDir: join(ROOT_DIR, 'data'),
   maxConcurrentAgents: '10',
-  parallelTasks: 'true'
+  parallelTasks: 'true',
 };
 
 /**
@@ -87,7 +87,7 @@ function launchClaude(args) {
   const child = spawn('node', [CONFIG.claudeCodePath, ...allArgs], {
     stdio: 'inherit',
     env: process.env,
-    cwd: process.cwd()
+    cwd: process.cwd(),
   });
 
   child.on('error', (err) => {

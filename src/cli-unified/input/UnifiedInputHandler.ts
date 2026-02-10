@@ -4,15 +4,14 @@
  * @module cli-unified/input/UnifiedInputHandler
  */
 
-import readline from 'readline';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
+import readline from 'node:readline';
+import { ANSI, DEFAULT_PROMPT, MULTILINE_PROMPT } from '../core/constants.js';
+import { EVENT_TYPES, eventBus } from '../core/EventBus.js';
 import { themeRegistry } from '../core/ThemeRegistry.js';
-import { eventBus, EVENT_TYPES } from '../core/EventBus.js';
-import { DEFAULT_PROMPT, MULTILINE_PROMPT, KEYS, ANSI } from '../core/constants.js';
-import { VimModeHandler, VIM_MODES } from './VimModeHandler.js';
-import { TemplateExpander } from './TemplateExpander.js';
 import { MacroRecorder } from './MacroRecorder.js';
-import { AutocompleteEngine } from './AutocompleteEngine.js';
+import { TemplateExpander } from './TemplateExpander.js';
+import { VimModeHandler } from './VimModeHandler.js';
 
 /**
  * Undo History for input
@@ -111,7 +110,7 @@ export class UnifiedInputHandler extends EventEmitter {
       input: process.stdin,
       output: process.stdout,
       terminal: true,
-      completer: this.#autocomplete ? this.#handleCompletion.bind(this) : undefined
+      completer: this.#autocomplete ? this.#handleCompletion.bind(this) : undefined,
     });
 
     this.#rl.on('line', (line) => {
@@ -153,7 +152,10 @@ export class UnifiedInputHandler extends EventEmitter {
       // Add vim mode indicator
       if (str.includes(this.#prompt) && this.#vim.enabled) {
         const indicator = this.#vim.getModeIndicator();
-        str = str.replace(this.#prompt, this.#theme.colors.dim(indicator) + ' ' + this.#theme.colors.prompt(this.#prompt));
+        str = str.replace(
+          this.#prompt,
+          `${this.#theme.colors.dim(indicator)} ${this.#theme.colors.prompt(this.#prompt)}`,
+        );
       } else if (str.includes(this.#prompt)) {
         str = str.replace(this.#prompt, this.#theme.colors.prompt(this.#prompt));
       }
@@ -189,25 +191,22 @@ export class UnifiedInputHandler extends EventEmitter {
 
       const displayPrompt = prompt || this.#prompt;
 
-      this.#rl.question(
-        this.#theme.colors.prompt(displayPrompt),
-        (answer) => {
-          if (this.#history && answer.trim()) {
-            this.#history.add(answer);
-          }
-
-          // Save to undo history
-          this.#undoHistory.push(answer);
-
-          eventBus.emit(EVENT_TYPES.INPUT_SUBMIT, { value: answer });
-
-          resolve({
-            value: answer,
-            multiline: false,
-            cancelled: false
-          });
+      this.#rl.question(this.#theme.colors.prompt(displayPrompt), (answer) => {
+        if (this.#history && answer.trim()) {
+          this.#history.add(answer);
         }
-      );
+
+        // Save to undo history
+        this.#undoHistory.push(answer);
+
+        eventBus.emit(EVENT_TYPES.INPUT_SUBMIT, { value: answer });
+
+        resolve({
+          value: answer,
+          multiline: false,
+          cancelled: false,
+        });
+      });
 
       if (this.#history) {
         this.#history.resetPosition();
@@ -231,7 +230,9 @@ export class UnifiedInputHandler extends EventEmitter {
       const prompt = initialPrompt || this.#prompt;
       const continuationPrompt = MULTILINE_PROMPT;
 
-      console.log(this.#theme.colors.dim('(Enter empty line or Ctrl+D to finish, Ctrl+C to cancel)'));
+      console.log(
+        this.#theme.colors.dim('(Enter empty line or Ctrl+D to finish, Ctrl+C to cancel)'),
+      );
 
       // Cleanup function to remove listener
       const cleanup = () => {
@@ -255,34 +256,31 @@ export class UnifiedInputHandler extends EventEmitter {
       const readLine = (isFirst) => {
         const currentPrompt = isFirst ? prompt : continuationPrompt;
 
-        this.#rl.question(
-          this.#theme.colors.prompt(currentPrompt),
-          (line) => {
-            if (line === '') {
-              this.#inMultilineMode = false;
-              cleanup(); // Remove sigint handler
+        this.#rl.question(this.#theme.colors.prompt(currentPrompt), (line) => {
+          if (line === '') {
+            this.#inMultilineMode = false;
+            cleanup(); // Remove sigint handler
 
-              const value = this.#multilineBuffer.join('\n');
+            const value = this.#multilineBuffer.join('\n');
 
-              if (this.#history && value.trim()) {
-                this.#history.add(value);
-              }
-
-              this.#undoHistory.push(value);
-              eventBus.emit(EVENT_TYPES.INPUT_SUBMIT, { value, multiline: true });
-
-              resolve({
-                value,
-                multiline: true,
-                cancelled: false
-              });
-              return;
+            if (this.#history && value.trim()) {
+              this.#history.add(value);
             }
 
-            this.#multilineBuffer.push(line);
-            readLine(false);
+            this.#undoHistory.push(value);
+            eventBus.emit(EVENT_TYPES.INPUT_SUBMIT, { value, multiline: true });
+
+            resolve({
+              value,
+              multiline: true,
+              cancelled: false,
+            });
+            return;
           }
-        );
+
+          this.#multilineBuffer.push(line);
+          readLine(false);
+        });
       };
 
       this.once('sigint', sigintHandler);
@@ -520,24 +518,23 @@ export function createInputHandler(options) {
   return new UnifiedInputHandler(options);
 }
 
-// Re-export sub-modules
-export { VimModeHandler, VIM_MODES } from './VimModeHandler.js';
-export { TemplateExpander, BUILTIN_TEMPLATES } from './TemplateExpander.js';
-export { MacroRecorder } from './MacroRecorder.js';
 export { AutocompleteEngine } from './AutocompleteEngine.js';
-
 // Export new enhancements
 export {
-  GhostTextPreview,
-  ExternalEditor,
-  KeyboardShortcuts,
-  FilePreview,
   ContextProgress,
-  createGhostTextPreview,
+  createContextProgress,
   createExternalEditor,
-  createKeyboardShortcuts,
   createFilePreview,
-  createContextProgress
+  createGhostTextPreview,
+  createKeyboardShortcuts,
+  ExternalEditor,
+  FilePreview,
+  GhostTextPreview,
+  KeyboardShortcuts,
 } from './InputEnhancements.js';
+export { MacroRecorder } from './MacroRecorder.js';
+export { BUILTIN_TEMPLATES, TemplateExpander } from './TemplateExpander.js';
+// Re-export sub-modules
+export { VIM_MODES, VimModeHandler } from './VimModeHandler.js';
 
 export default UnifiedInputHandler;

@@ -3,10 +3,17 @@
  * @module cli-unified/session/SessionManager
  */
 
-import { EventEmitter } from 'events';
-import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, unlinkSync } from 'fs';
-import { join, basename } from 'path';
-import { homedir } from 'os';
+import { EventEmitter } from 'node:events';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { DATA_DIR } from '../core/constants.js';
 
 /**
@@ -68,8 +75,8 @@ export class SessionManager extends EventEmitter {
       metadata: {
         mode: 'swarm',
         model: null,
-        totalTokens: 0
-      }
+        totalTokens: 0,
+      },
     };
 
     if (this.autoSave) {
@@ -92,7 +99,7 @@ export class SessionManager extends EventEmitter {
       role,
       content,
       timestamp: Date.now(),
-      ...options
+      ...options,
     };
 
     // Estimate tokens
@@ -160,24 +167,26 @@ export class SessionManager extends EventEmitter {
    * List all sessions
    */
   list() {
-    const files = readdirSync(this.basePath).filter(f => f.endsWith('.json'));
+    const files = readdirSync(this.basePath).filter((f) => f.endsWith('.json'));
 
-    return files.map(file => {
-      try {
-        const data = readFileSync(join(this.basePath, file), 'utf-8');
-        const session = JSON.parse(data);
-        return {
-          id: session.id,
-          name: session.name,
-          created: session.created,
-          modified: session.modified,
-          messageCount: session.messages?.length || 0,
-          tokens: session.metadata?.totalTokens || 0
-        };
-      } catch {
-        return null;
-      }
-    }).filter(Boolean);
+    return files
+      .map((file) => {
+        try {
+          const data = readFileSync(join(this.basePath, file), 'utf-8');
+          const session = JSON.parse(data);
+          return {
+            id: session.id,
+            name: session.name,
+            created: session.created,
+            modified: session.modified,
+            messageCount: session.messages?.length || 0,
+            tokens: session.metadata?.totalTokens || 0,
+          };
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
   }
 
   /**
@@ -238,10 +247,12 @@ export class SessionManager extends EventEmitter {
   getHistoryString(limit = 10) {
     const messages = this.getMessages(limit);
 
-    return messages.map(m => {
-      const role = m.role === 'user' ? 'User' : m.agent || 'Assistant';
-      return `${role}: ${m.content}`;
-    }).join('\n\n');
+    return messages
+      .map((m) => {
+        const role = m.role === 'user' ? 'User' : m.agent || 'Assistant';
+        return `${role}: ${m.content}`;
+      })
+      .join('\n\n');
   }
 
   /**
@@ -279,7 +290,7 @@ export class SessionManager extends EventEmitter {
       `*Messages: ${session.messages.length}*`,
       '',
       '---',
-      ''
+      '',
     ];
 
     for (const msg of session.messages) {
@@ -296,13 +307,14 @@ export class SessionManager extends EventEmitter {
   }
 
   _exportHtml(session) {
-    const messages = session.messages.map(msg => {
-      const role = msg.role === 'user' ? 'User' : msg.agent || 'Assistant';
-      const roleClass = msg.role === 'user' ? 'user' : 'assistant';
-      const time = new Date(msg.timestamp).toLocaleTimeString();
-      const content = msg.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const messages = session.messages
+      .map((msg) => {
+        const role = msg.role === 'user' ? 'User' : msg.agent || 'Assistant';
+        const roleClass = msg.role === 'user' ? 'user' : 'assistant';
+        const time = new Date(msg.timestamp).toLocaleTimeString();
+        const content = msg.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-      return `
+        return `
         <div class="message ${roleClass}">
           <div class="header">
             <span class="role">${role}</span>
@@ -311,7 +323,8 @@ export class SessionManager extends EventEmitter {
           <div class="content">${content}</div>
         </div>
       `;
-    }).join('\n');
+      })
+      .join('\n');
 
     return `
 <!DOCTYPE html>
@@ -355,7 +368,7 @@ export class SessionManager extends EventEmitter {
       `Messages: ${session.messages.length}`,
       '',
       '-'.repeat(40),
-      ''
+      '',
     ];
 
     for (const msg of session.messages) {

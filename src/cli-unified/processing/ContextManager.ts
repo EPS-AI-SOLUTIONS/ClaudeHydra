@@ -4,10 +4,10 @@
  * @module cli-unified/processing/ContextManager
  */
 
-import { EventEmitter } from 'events';
-import { readFileSync, existsSync, statSync, watch } from 'fs';
-import { basename, extname, resolve } from 'path';
-import { eventBus, EVENT_TYPES } from '../core/EventBus.js';
+import { EventEmitter } from 'node:events';
+import { existsSync, readFileSync, statSync, watch } from 'node:fs';
+import { basename, extname, resolve } from 'node:path';
+import { EVENT_TYPES, eventBus } from '../core/EventBus.js';
 
 /**
  * Language mappings for syntax highlighting hints
@@ -47,7 +47,7 @@ const LANGUAGE_MAP = {
   '.scss': 'scss',
   '.less': 'less',
   '.md': 'markdown',
-  '.txt': 'text'
+  '.txt': 'text',
 };
 
 /**
@@ -61,7 +61,7 @@ const PROJECT_PATTERNS = {
   java: ['pom.xml', 'build.gradle'],
   dotnet: ['*.csproj', '*.sln'],
   git: ['.git'],
-  docker: ['Dockerfile', 'docker-compose.yml']
+  docker: ['Dockerfile', 'docker-compose.yml'],
 };
 
 /**
@@ -96,7 +96,9 @@ export class ContextManager extends EventEmitter {
     }
 
     if (stat.size > this.maxFileSize) {
-      throw new Error(`File too large: ${filePath} (${Math.round(stat.size / 1024)}KB > ${Math.round(this.maxFileSize / 1024)}KB)`);
+      throw new Error(
+        `File too large: ${filePath} (${Math.round(stat.size / 1024)}KB > ${Math.round(this.maxFileSize / 1024)}KB)`,
+      );
     }
 
     if (this.currentSize + stat.size > this.maxTotalSize) {
@@ -114,7 +116,7 @@ export class ContextManager extends EventEmitter {
       language,
       size: stat.size,
       addedAt: Date.now(),
-      modified: stat.mtime.getTime()
+      modified: stat.mtime.getTime(),
     };
 
     this.files.set(resolved, fileInfo);
@@ -134,12 +136,12 @@ export class ContextManager extends EventEmitter {
   /**
    * Add URL content to context
    */
-  async addUrl(url, options = {}) {
+  async addUrl(url, _options = {}) {
     try {
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'ClaudeHydra/3.0'
-        }
+          'User-Agent': 'ClaudeHydra/3.0',
+        },
       });
 
       if (!response.ok) {
@@ -165,7 +167,7 @@ export class ContextManager extends EventEmitter {
         content,
         contentType,
         size: content.length,
-        fetchedAt: Date.now()
+        fetchedAt: Date.now(),
       };
 
       this.urls.set(url, urlInfo);
@@ -280,7 +282,7 @@ export class ContextManager extends EventEmitter {
    */
   clear() {
     // Stop all watchers
-    for (const [path, watcher] of this.watchers) {
+    for (const [_path, watcher] of this.watchers) {
       watcher.close();
     }
     this.watchers.clear();
@@ -300,7 +302,7 @@ export class ContextManager extends EventEmitter {
     const parts = [];
 
     // Files
-    for (const [path, file] of this.files) {
+    for (const [_path, file] of this.files) {
       parts.push(`--- FILE: ${file.name} (${file.language}) ---`);
       parts.push(file.content);
       parts.push('');
@@ -321,19 +323,19 @@ export class ContextManager extends EventEmitter {
    */
   getSummary() {
     return {
-      files: Array.from(this.files.values()).map(f => ({
+      files: Array.from(this.files.values()).map((f) => ({
         name: f.name,
         path: f.path,
         language: f.language,
-        size: f.size
+        size: f.size,
       })),
-      urls: Array.from(this.urls.values()).map(u => ({
+      urls: Array.from(this.urls.values()).map((u) => ({
         url: u.url,
         contentType: u.contentType,
-        size: u.size
+        size: u.size,
       })),
       totalSize: this.currentSize,
-      maxSize: this.maxTotalSize
+      maxSize: this.maxTotalSize,
     };
   }
 

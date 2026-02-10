@@ -9,20 +9,20 @@
 // ============================================================================
 
 export {
-  DANGEROUS_PATTERNS,
   BLOCKED_COMMANDS,
-  SENSITIVE_PATTERNS,
   DANGEROUS_PATH_PATTERNS,
-  SUSPICIOUS_NETWORK_PATTERNS,
-  SHELL_ESCAPE_CHARS,
-  RiskLevel,
-  PATTERN_RISK_LEVELS,
-  matchesAnyPattern,
+  DANGEROUS_PATTERNS,
+  default as patterns,
   getMatchingPatterns,
   isBlockedCommand,
-  isSensitivePath,
   isDangerousPath,
-  default as patterns
+  isSensitivePath,
+  matchesAnyPattern,
+  PATTERN_RISK_LEVELS,
+  RiskLevel,
+  SENSITIVE_PATTERNS,
+  SHELL_ESCAPE_CHARS,
+  SUSPICIOUS_NETWORK_PATTERNS,
 } from './patterns.js';
 
 // ============================================================================
@@ -30,13 +30,29 @@ export {
 // ============================================================================
 
 export {
-  SecurityEnforcer,
+  default as enforcer,
   getSecurityEnforcer,
-  resetSecurityEnforcer,
   isCommandSafe,
   isPathSafe,
-  default as enforcer
+  resetSecurityEnforcer,
+  SecurityEnforcer,
 } from './enforcer.js';
+
+// ============================================================================
+// Safe Command Exports
+// ============================================================================
+
+export {
+  ALLOWED_EXECUTABLES,
+  CommandSecurityError,
+  SAFE_GIT_SUBCOMMANDS,
+  safeGit,
+  safeSpawn,
+  safeWhich,
+  validateArgs,
+  validateExecutable,
+  validateGitCommand,
+} from './safe-command.js';
 
 // ============================================================================
 // Audit Logger Exports
@@ -44,17 +60,17 @@ export {
 
 export {
   AuditLogger,
-  auditLoggerReady,
   auditChildLogger,
-  default as auditLogger
+  auditLoggerReady,
+  default as auditLogger,
 } from './audit-logger.js';
 
 // ============================================================================
 // Convenience Re-exports
 // ============================================================================
 
-import { getSecurityEnforcer } from './enforcer.js';
 import auditLogger from './audit-logger.js';
+import { getSecurityEnforcer } from './enforcer.js';
 
 /**
  * Quick security check for a command
@@ -143,7 +159,7 @@ export default {
     matchesAny: null,
     isBlocked: null,
     isSensitive: null,
-    isDangerous: null
+    isDangerous: null,
   },
 
   // Security enforcement
@@ -158,23 +174,25 @@ export default {
   assessRisk,
   logSecurityEvent,
   logCommand,
-  initialize: initializeSecurity
+  initialize: initializeSecurity,
 };
 
 // Lazy load pattern functions into default export
-import('./patterns.js').then(patterns => {
-  const defaultExport = {
-    patterns: {
-      DANGEROUS_PATTERNS: patterns.DANGEROUS_PATTERNS,
-      BLOCKED_COMMANDS: patterns.BLOCKED_COMMANDS,
-      SENSITIVE_PATTERNS: patterns.SENSITIVE_PATTERNS,
-      matchesAny: patterns.matchesAnyPattern,
-      isBlocked: patterns.isBlockedCommand,
-      isSensitive: patterns.isSensitivePath,
-      isDangerous: patterns.isDangerousPath
-    }
-  };
-  Object.assign(module?.exports?.default?.patterns || {}, defaultExport.patterns);
-}).catch(() => {
-  // Ignore errors in lazy loading
-});
+import('./patterns.js')
+  .then((patterns) => {
+    const defaultExport = {
+      patterns: {
+        DANGEROUS_PATTERNS: patterns.DANGEROUS_PATTERNS,
+        BLOCKED_COMMANDS: patterns.BLOCKED_COMMANDS,
+        SENSITIVE_PATTERNS: patterns.SENSITIVE_PATTERNS,
+        matchesAny: patterns.matchesAnyPattern,
+        isBlocked: patterns.isBlockedCommand,
+        isSensitive: patterns.isSensitivePath,
+        isDangerous: patterns.isDangerousPath,
+      },
+    };
+    Object.assign(module?.exports?.default?.patterns || {}, defaultExport.patterns);
+  })
+  .catch(() => {
+    // Ignore errors in lazy loading
+  });

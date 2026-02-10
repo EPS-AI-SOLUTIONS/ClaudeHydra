@@ -98,7 +98,11 @@ export class MarkdownRenderer {
     if (/^[\s]*[-*+]\s/.test(line)) {
       const indent = line.match(/^(\s*)/)[1].length;
       const content = line.replace(/^[\s]*[-*+]\s/, '');
-      return ' '.repeat(indent) + colors.primary(`${symbols.bullet || '•'} `) + this.renderInline(content);
+      return (
+        ' '.repeat(indent) +
+        colors.primary(`${symbols.bullet || '•'} `) +
+        this.renderInline(content)
+      );
     }
 
     // Ordered list
@@ -106,7 +110,7 @@ export class MarkdownRenderer {
       const match = line.match(/^(\s*)(\d+)\.\s(.*)/);
       if (match) {
         const [, indent, num, content] = match;
-        return indent + colors.primary(`${num}.`) + ' ' + this.renderInline(content);
+        return `${indent + colors.primary(`${num}.`)} ${this.renderInline(content)}`;
       }
     }
 
@@ -114,9 +118,9 @@ export class MarkdownRenderer {
     if (/^[\s]*[-*]\s\[[ x]\]\s/.test(line)) {
       const checked = line.includes('[x]') || line.includes('[X]');
       const content = line.replace(/^[\s]*[-*]\s\[[ xX]\]\s/, '');
-      const symbol = checked ? (symbols.taskDone || '✔') : (symbols.taskPending || '○');
+      const symbol = checked ? symbols.taskDone || '✔' : symbols.taskPending || '○';
       const color = checked ? colors.success : colors.dim;
-      return '  ' + color(symbol) + ' ' + this.renderInline(content);
+      return `  ${color(symbol)} ${this.renderInline(content)}`;
     }
 
     // Empty line
@@ -174,7 +178,7 @@ export class MarkdownRenderer {
     });
 
     // Footer
-    output.push(colors.dim('└' + '─'.repeat(45)));
+    output.push(colors.dim(`└${'─'.repeat(45)}`));
 
     return output.join('\n');
   }
@@ -182,24 +186,25 @@ export class MarkdownRenderer {
   /**
    * Basic syntax highlighting
    */
-  highlightSyntax(code, lang) {
+  highlightSyntax(code, _lang) {
     const colors = this.theme.colors;
     if (!this.codeHighlight) return code;
 
     let result = code;
 
     // Keywords (common across languages)
-    const keywords = /\b(function|const|let|var|if|else|for|while|return|import|export|from|class|extends|async|await|try|catch|throw|new|this|super|static|def|self|None|True|False|and|or|not|in|is|lambda|yield|with|as|pass|break|continue|elif|except|finally|raise|assert|global|nonlocal|fn|mut|pub|use|mod|impl|trait|struct|enum|match|loop|where|move|ref|dyn)\b/g;
-    result = result.replace(keywords, match => colors.keyword(match));
+    const keywords =
+      /\b(function|const|let|var|if|else|for|while|return|import|export|from|class|extends|async|await|try|catch|throw|new|this|super|static|def|self|None|True|False|and|or|not|in|is|lambda|yield|with|as|pass|break|continue|elif|except|finally|raise|assert|global|nonlocal|fn|mut|pub|use|mod|impl|trait|struct|enum|match|loop|where|move|ref|dyn)\b/g;
+    result = result.replace(keywords, (match) => colors.keyword(match));
 
     // Strings
-    result = result.replace(/(["'`])(?:(?!\1)[^\\]|\\.)*\1/g, match => colors.string(match));
+    result = result.replace(/(["'`])(?:(?!\1)[^\\]|\\.)*\1/g, (match) => colors.string(match));
 
     // Numbers
-    result = result.replace(/\b(\d+\.?\d*)\b/g, match => colors.number(match));
+    result = result.replace(/\b(\d+\.?\d*)\b/g, (match) => colors.number(match));
 
     // Comments
-    result = result.replace(/(\/\/.*$|#.*$|\/\*[\s\S]*?\*\/)/gm, match => colors.dim(match));
+    result = result.replace(/(\/\/.*$|#.*$|\/\*[\s\S]*?\*\/)/gm, (match) => colors.dim(match));
 
     return result;
   }
@@ -213,7 +218,7 @@ export class MarkdownRenderer {
 
     // Calculate column widths
     const colWidths = headers.map((h, i) => {
-      const maxRow = Math.max(...rows.map(r => (r[i] || '').toString().length));
+      const maxRow = Math.max(...rows.map((r) => (r[i] || '').toString().length));
       return Math.max(h.length, maxRow) + 2;
     });
 
@@ -222,12 +227,14 @@ export class MarkdownRenderer {
     output.push(colors.highlight(headerRow));
 
     // Separator
-    const separator = colWidths.map(w => '─'.repeat(w)).join('┼');
+    const separator = colWidths.map((w) => '─'.repeat(w)).join('┼');
     output.push(colors.dim(separator));
 
     // Rows
     for (const row of rows) {
-      const rowStr = headers.map((_, i) => (row[i] || '').toString().padEnd(colWidths[i])).join('│');
+      const rowStr = headers
+        .map((_, i) => (row[i] || '').toString().padEnd(colWidths[i]))
+        .join('│');
       output.push(rowStr);
     }
 

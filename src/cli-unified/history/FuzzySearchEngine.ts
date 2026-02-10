@@ -23,16 +23,14 @@ export class FuzzySearchEngine {
     if (!this.caseSensitive) {
       text = text.toLowerCase();
     }
-    return text
-      .split(/[\s\-_.,;:!?'"()\[\]{}]+/)
-      .filter(t => t.length > 1);
+    return text.split(/[\s\-_.,;:!?'"()[\]{}]+/).filter((t) => t.length > 1);
   }
 
   /**
    * Calculate term frequency
    */
   termFrequency(term, tokens) {
-    const count = tokens.filter(t => t === term).length;
+    const count = tokens.filter((t) => t === term).length;
     return count / tokens.length;
   }
 
@@ -74,7 +72,7 @@ export class FuzzySearchEngine {
    * Remove document from index
    */
   removeDocument(id) {
-    const docIndex = this.documents.findIndex(d => d.id === id);
+    const docIndex = this.documents.findIndex((d) => d.id === id);
     if (docIndex === -1) return false;
 
     const doc = this.documents[docIndex];
@@ -167,7 +165,7 @@ export class FuzzySearchEngine {
       .slice(0, limit)
       .map(([docIndex, score]) => ({
         ...this.documents[docIndex],
-        score
+        score,
       }));
 
     return results;
@@ -210,7 +208,7 @@ export class FuzzySearchEngine {
         matrix[i][j] = Math.min(
           matrix[i - 1][j] + 1,
           matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + cost
+          matrix[i - 1][j - 1] + cost,
         );
       }
     }
@@ -230,7 +228,7 @@ export class FuzzySearchEngine {
     const threshold = options.threshold ?? 0.5;
 
     const results = this.documents
-      .map((doc, index) => {
+      .map((doc, _index) => {
         // Check each token for fuzzy match
         let maxScore = 0;
         const queryTokens = this.tokenize(query);
@@ -248,7 +246,7 @@ export class FuzzySearchEngine {
 
         return { ...doc, score: maxScore };
       })
-      .filter(r => r.score > 0)
+      .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
 
@@ -263,7 +261,7 @@ export class FuzzySearchEngine {
     const normalizedPrefix = this.caseSensitive ? prefix : prefix.toLowerCase();
 
     return this.documents
-      .filter(doc => {
+      .filter((doc) => {
         const text = this.caseSensitive ? doc.text : doc.text.toLowerCase();
         return text.startsWith(normalizedPrefix);
       })

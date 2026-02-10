@@ -4,8 +4,8 @@
  * @module cli-unified/output/StreamingRenderer
  */
 
-import { themeRegistry } from '../core/ThemeRegistry.js';
 import { ANSI } from '../core/constants.js';
+import { themeRegistry } from '../core/ThemeRegistry.js';
 
 /**
  * Streaming Renderer for token-by-token output
@@ -36,11 +36,16 @@ export class StreamingRenderer {
       this.processLine(line);
     }
 
-    // Handle partial line for display
+    // Handle partial line: append new content directly instead of re-rendering
+    // entire lineBuffer (re-rendering causes duplication when text wraps past
+    // terminal width, because \r only returns to the start of the last
+    // physical line, leaving wrapped content visible above)
     if (this.buffer.length > 0) {
+      const newContent = this.buffer;
       this.lineBuffer += this.buffer;
       this.buffer = '';
-      this.displayPartial(this.lineBuffer);
+      // Write only the new token — avoids re-rendering the whole line
+      process.stdout.write(newContent);
     }
   }
 
@@ -55,11 +60,13 @@ export class StreamingRenderer {
       if (this.inCodeBlock) {
         this.inCodeBlock = false;
         this.codeBlockLang = '';
-        process.stdout.write(colors.dim('└' + '─'.repeat(40)) + '\n');
+        process.stdout.write(`${colors.dim(`└${'─'.repeat(40)}`)}\n`);
       } else {
         this.inCodeBlock = true;
         this.codeBlockLang = line.slice(3).trim();
-        process.stdout.write(colors.dim(`┌─ ${this.codeBlockLang || 'code'} ${'─'.repeat(Math.max(0, 35 - this.codeBlockLang.length))}`) + '\n');
+        process.stdout.write(
+          `${colors.dim(`┌─ ${this.codeBlockLang || 'code'} ${'─'.repeat(Math.max(0, 35 - this.codeBlockLang.length))}`)}\n`,
+        );
       }
       return;
     }
@@ -87,7 +94,7 @@ export class StreamingRenderer {
         colors.primary,
         colors.info,
         colors.dim,
-        colors.dim
+        colors.dim,
       ];
       output = headerColors[Math.min(level - 1, 5)](text);
     }
@@ -105,17 +112,15 @@ export class StreamingRenderer {
       output = this.formatInline(line);
     }
 
-    process.stdout.write('\r' + ANSI.CLEAR_LINE + output + '\n');
+    process.stdout.write(`\r${ANSI.CLEAR_LINE}${output}\n`);
   }
 
   /**
    * Display partial line (being typed)
    */
   displayPartial(text) {
-    const formatted = this.inCodeBlock
-      ? this.theme.colors.code(text)
-      : this.formatInline(text);
-    process.stdout.write('\r' + ANSI.CLEAR_LINE + formatted);
+    const formatted = this.inCodeBlock ? this.theme.colors.code(text) : this.formatInline(text);
+    process.stdout.write(`\r${ANSI.CLEAR_LINE}${formatted}`);
   }
 
   /**
@@ -132,8 +137,9 @@ export class StreamingRenderer {
     result = result.replace(/`([^`]+)`/g, (_, c) => colors.code(c));
 
     // Links
-    result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) =>
-      colors.info(t) + colors.dim(` (${u})`)
+    result = result.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      (_, t, u) => colors.info(t) + colors.dim(` (${u})`),
     );
 
     return result;
@@ -143,16 +149,18 @@ export class StreamingRenderer {
    * Flush remaining buffer
    */
   flush() {
+    // Since write() now appends tokens directly, the lineBuffer content
+    // is already visible on screen. Just terminate the line with a newline.
     if (this.lineBuffer) {
-      this.processLine(this.lineBuffer);
+      process.stdout.write('\n');
       this.lineBuffer = '';
     }
     if (this.buffer) {
-      this.processLine(this.buffer);
+      process.stdout.write(`${this.buffer}\n`);
       this.buffer = '';
     }
     if (this.inCodeBlock) {
-      process.stdout.write(this.theme.colors.dim('└' + '─'.repeat(40)) + '\n');
+      process.stdout.write(`${this.theme.colors.dim(`└${'─'.repeat(40)}`)}\n`);
       this.inCodeBlock = false;
     }
   }
@@ -161,7 +169,7 @@ export class StreamingRenderer {
    * Clear current line
    */
   clearLine() {
-    process.stdout.write('\r' + ANSI.CLEAR_LINE);
+    process.stdout.write(`\r${ANSI.CLEAR_LINE}`);
   }
 
   /**
@@ -222,7 +230,7 @@ export class ProgressIndicator {
    */
   render() {
     const colors = this.theme.colors;
-    process.stdout.write('\r' + ANSI.CLEAR_LINE);
+    process.stdout.write(`\r${ANSI.CLEAR_LINE}`);
 
     const parts = this.stages.map((stage, idx) => {
       if (idx < this.currentStage) {
@@ -275,7 +283,7 @@ export class CollapsibleSection {
       return header + colors.dim(` (${this.content.length} lines)`);
     }
 
-    return [header, ...this.content.map(l => '  ' + l)].join('\n');
+    return [header, ...this.content.map((l) => `  ${l}`)].join('\n');
   }
 }
 

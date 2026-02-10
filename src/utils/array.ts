@@ -30,7 +30,7 @@ export function unique(array, keyFn) {
 
   if (keyFn) {
     const seen = new Set();
-    return array.filter(item => {
+    return array.filter((item) => {
       const key = keyFn(item);
       if (seen.has(key)) return false;
       seen.add(key);
@@ -50,9 +50,7 @@ export function unique(array, keyFn) {
 export function groupBy(array, keyOrFn) {
   if (!Array.isArray(array)) return {};
 
-  const getKey = typeof keyOrFn === 'function'
-    ? keyOrFn
-    : (item) => item[keyOrFn];
+  const getKey = typeof keyOrFn === 'function' ? keyOrFn : (item) => item[keyOrFn];
 
   return array.reduce((groups, item) => {
     const key = getKey(item);
@@ -137,7 +135,7 @@ export function compact(array) {
 export function intersection(a, b) {
   if (!Array.isArray(a) || !Array.isArray(b)) return [];
   const setB = new Set(b);
-  return a.filter(item => setB.has(item));
+  return a.filter((item) => setB.has(item));
 }
 
 /**
@@ -150,7 +148,7 @@ export function difference(a, b) {
   if (!Array.isArray(a)) return [];
   if (!Array.isArray(b)) return [...a];
   const setB = new Set(b);
-  return a.filter(item => !setB.has(item));
+  return a.filter((item) => !setB.has(item));
 }
 
 /**
@@ -265,5 +263,5 @@ export default {
   find,
   sum,
   average,
-  sortBy
+  sortBy,
 };

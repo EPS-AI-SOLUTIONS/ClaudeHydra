@@ -5,12 +5,12 @@
  * @module security/audit-logger
  */
 
-import { createWriteStream, existsSync, mkdirSync, statSync, renameSync, readdirSync, unlinkSync } from 'node:fs';
-import { appendFile, mkdir, stat, readdir, unlink, rename } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
 import { EventEmitter } from 'node:events';
-import { Security, Paths, SizeLimits, resolvePath } from '../constants.js';
-import logger, { createLogger } from '../logger.js';
+import { existsSync, mkdirSync } from 'node:fs';
+import { appendFile, mkdir, readdir, rename, stat, unlink } from 'node:fs/promises';
+import { join } from 'node:path';
+import { Paths, resolvePath, Security, SizeLimits } from '../constants.js';
+import { createLogger } from '../logger.js';
 import { DANGEROUS_PATTERNS } from './patterns.js';
 
 // Create a child logger for audit module
@@ -56,7 +56,7 @@ class AuditLogger extends EventEmitter {
       maxFiles = 10,
       flushInterval = 5000,
       bufferSize = 100,
-      syncMode = false
+      syncMode = false,
     } = options;
 
     /** @type {string} */
@@ -192,7 +192,7 @@ class AuditLogger extends EventEmitter {
       }
 
       // Write entries
-      const data = entries.map(e => JSON.stringify(e)).join('\n') + '\n';
+      const data = `${entries.map((e) => JSON.stringify(e)).join('\n')}\n`;
       await appendFile(this.logPath, data, { encoding: 'utf8' });
       this._currentFileSize += data.length;
 
@@ -217,7 +217,7 @@ class AuditLogger extends EventEmitter {
       // Get list of existing rotated files
       const files = await readdir(this.logDir);
       const rotatedFiles = files
-        .filter(f => f.startsWith(this.logFile) && f !== this.logFile)
+        .filter((f) => f.startsWith(this.logFile) && f !== this.logFile)
         .sort()
         .reverse();
 
@@ -258,7 +258,7 @@ class AuditLogger extends EventEmitter {
       user: context.user || process.env.USERNAME || process.env.USER || 'unknown',
       requestId: context.requestId || null,
       pid: process.pid,
-      data
+      data,
     };
   }
 
@@ -290,7 +290,7 @@ class AuditLogger extends EventEmitter {
     this._ensureLogDirSync();
     const { appendFileSync } = require('node:fs');
     try {
-      appendFileSync(this.logPath, JSON.stringify(entry) + '\n', { encoding: 'utf8' });
+      appendFileSync(this.logPath, `${JSON.stringify(entry)}\n`, { encoding: 'utf8' });
     } catch (error) {
       auditChildLogger.error('Audit log write failed', { error: error.message });
     }
@@ -310,7 +310,7 @@ class AuditLogger extends EventEmitter {
     const { cwd, exitCode, duration, dangerous, ...rest } = context;
 
     // Check for dangerous patterns - use imported DANGEROUS_PATTERNS
-    const isDangerous = dangerous ?? DANGEROUS_PATTERNS.some(p => p.test(command));
+    const isDangerous = dangerous ?? DANGEROUS_PATTERNS.some((p) => p.test(command));
     const severity = isDangerous ? Security.SEVERITY.WARN : Security.SEVERITY.INFO;
 
     // Also log to central logger for consistency
@@ -328,9 +328,9 @@ class AuditLogger extends EventEmitter {
         cwd,
         exitCode,
         duration,
-        dangerous: isDangerous
+        dangerous: isDangerous,
       },
-      rest
+      rest,
     );
 
     this._log(entry);
@@ -352,7 +352,7 @@ class AuditLogger extends EventEmitter {
       Security.EVENT_TYPES.SECURITY_EVENT,
       severity,
       { event, details: context.details || {} },
-      context
+      context,
     );
 
     this._log(entry);
@@ -374,7 +374,7 @@ class AuditLogger extends EventEmitter {
       Security.EVENT_TYPES.FILE_ACCESS,
       Security.SEVERITY.INFO,
       { path, operation },
-      context
+      context,
     );
 
     this._log(entry);
@@ -397,7 +397,7 @@ class AuditLogger extends EventEmitter {
       Security.EVENT_TYPES.API_CALL,
       severity,
       { endpoint, method, statusCode, duration },
-      rest
+      rest,
     );
 
     this._log(entry);
@@ -427,9 +427,9 @@ class AuditLogger extends EventEmitter {
         input: sanitizedInput,
         success,
         duration,
-        error: error ? String(error) : undefined
+        error: error ? String(error) : undefined,
       },
-      rest
+      rest,
     );
 
     this._log(entry);
@@ -450,9 +450,9 @@ class AuditLogger extends EventEmitter {
       {
         key,
         oldValue: this._sanitizeValue(oldValue),
-        newValue: this._sanitizeValue(newValue)
+        newValue: this._sanitizeValue(newValue),
       },
-      context
+      context,
     );
 
     this._log(entry);
@@ -472,7 +472,7 @@ class AuditLogger extends EventEmitter {
       Security.EVENT_TYPES.AUTH_EVENT,
       severity,
       { action, success },
-      context
+      context,
     );
 
     this._log(entry);
@@ -493,11 +493,20 @@ class AuditLogger extends EventEmitter {
       return input;
     }
 
-    const sensitiveKeys = ['password', 'secret', 'token', 'apiKey', 'api_key', 'key', 'auth', 'credential'];
+    const sensitiveKeys = [
+      'password',
+      'secret',
+      'token',
+      'apiKey',
+      'api_key',
+      'key',
+      'auth',
+      'credential',
+    ];
     const sanitized = { ...input };
 
     for (const key of Object.keys(sanitized)) {
-      if (sensitiveKeys.some(s => key.toLowerCase().includes(s))) {
+      if (sensitiveKeys.some((s) => key.toLowerCase().includes(s))) {
         sanitized[key] = '[REDACTED]';
       } else if (typeof sanitized[key] === 'object') {
         sanitized[key] = this._sanitizeInput(sanitized[key]);
@@ -517,12 +526,12 @@ class AuditLogger extends EventEmitter {
     if (value === undefined) return 'undefined';
     if (value === null) return 'null';
     if (typeof value === 'string' && value.length > 100) {
-      return value.slice(0, 100) + '...[truncated]';
+      return `${value.slice(0, 100)}...[truncated]`;
     }
     if (typeof value === 'object') {
       try {
         const str = JSON.stringify(value);
-        return str.length > 200 ? str.slice(0, 200) + '...[truncated]' : str;
+        return str.length > 200 ? `${str.slice(0, 200)}...[truncated]` : str;
       } catch {
         return '[Object]';
       }
@@ -564,7 +573,7 @@ class AuditLogger extends EventEmitter {
       currentFileSize: this._currentFileSize,
       maxFileSize: this.maxFileSize,
       logPath: this.logPath,
-      initialized: this._initialized
+      initialized: this._initialized,
     };
   }
 }
@@ -573,14 +582,10 @@ class AuditLogger extends EventEmitter {
 const defaultAuditLogger = new AuditLogger();
 
 // Auto-initialize on first use
-const initPromise = defaultAuditLogger.initialize().catch(err => {
+const initPromise = defaultAuditLogger.initialize().catch((err) => {
   auditChildLogger.error('Failed to initialize audit logger', { error: err.message });
 });
 
 export default defaultAuditLogger;
 
-export {
-  AuditLogger,
-  initPromise as auditLoggerReady,
-  auditChildLogger
-};
+export { AuditLogger, initPromise as auditLoggerReady, auditChildLogger };

@@ -35,7 +35,7 @@ describe('SwarmMode Module', () => {
       run: vi.fn()
     };
 
-    // Create mock query processor
+    // Create mock query processor (with EventEmitter methods for agentic iteration listeners)
     mockQueryProcessor = {
       defaultModel: 'test-model',
       process: vi.fn(() => Promise.resolve({ text: 'response', response: 'AI response' })),
@@ -45,7 +45,9 @@ describe('SwarmMode Module', () => {
           { response: 'Response 2' }
         ],
         errors: []
-      }))
+      })),
+      on: vi.fn(),
+      off: vi.fn()
     };
 
     // Create mock output
@@ -58,6 +60,7 @@ describe('SwarmMode Module', () => {
       streamFlush: vi.fn(),
       info: vi.fn(),
       error: vi.fn(),
+      dim: vi.fn(),
       createProgressIndicator: vi.fn(() => ({
         start: vi.fn(),
         advance: vi.fn(),

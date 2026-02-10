@@ -3,7 +3,7 @@
  * @module utils/crypto
  */
 
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 /**
  * Generate a SHA-256 hash of a string
@@ -67,7 +67,7 @@ export function generateUuid() {
     hex.substring(8, 12),
     hex.substring(12, 16),
     hex.substring(16, 20),
-    hex.substring(20, 32)
+    hex.substring(20, 32),
   ].join('-');
 }
 
@@ -104,12 +104,14 @@ export function hashObject(obj) {
  * @returns {string} Combined hash
  */
 export function combineHash(...values) {
-  const combined = values.map(v => {
-    if (v === null) return 'null';
-    if (v === undefined) return 'undefined';
-    if (typeof v === 'object') return JSON.stringify(v, Object.keys(v).sort());
-    return String(v);
-  }).join(':');
+  const combined = values
+    .map((v) => {
+      if (v === null) return 'null';
+      if (v === undefined) return 'undefined';
+      if (typeof v === 'object') return JSON.stringify(v, Object.keys(v).sort());
+      return String(v);
+    })
+    .join(':');
 
   return hash(combined);
 }
@@ -151,7 +153,7 @@ export function verifyPassword(password, storedHash, salt) {
  * @returns {string} HMAC signature
  */
 export function hmac(data, secret, algorithm = 'sha256', encoding = 'hex') {
-  const { createHmac } = require('crypto');
+  const { createHmac } = require('node:crypto');
   return createHmac(algorithm, secret).update(data).digest(encoding);
 }
 
@@ -166,5 +168,5 @@ export default {
   combineHash,
   hashPassword,
   verifyPassword,
-  hmac
+  hmac,
 };

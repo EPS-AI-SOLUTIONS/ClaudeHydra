@@ -1,6 +1,6 @@
-import Logger from '../logger.js';
 import EmbeddingService from '../ai/embeddings.js';
 import { JsonDbAdapter } from '../db/index.js';
+import Logger from '../logger.js';
 
 // Utility: Calculate Cosine Similarity
 function cosineSimilarity(vecA, vecB) {
@@ -25,13 +25,13 @@ class VectorStore {
     try {
       Logger.info('Generating embedding for document...');
       const vector = await EmbeddingService.generate(content);
-      
+
       const doc = {
         id: Date.now().toString(36),
         content,
         vector,
         metadata,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       this.db.push(this.collection, doc);
@@ -47,17 +47,18 @@ class VectorStore {
     try {
       const queryVector = await EmbeddingService.generate(query);
       const docs = this.db.get(this.collection);
-      
+
       if (!docs || docs.length === 0) return [];
 
-      const results = docs.map(doc => ({
-        content: doc.content,
-        metadata: doc.metadata,
-        score: cosineSimilarity(queryVector, doc.vector)
-      }))
-      .filter(res => res.score >= threshold)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+      const results = docs
+        .map((doc) => ({
+          content: doc.content,
+          metadata: doc.metadata,
+          score: cosineSimilarity(queryVector, doc.vector),
+        }))
+        .filter((res) => res.score >= threshold)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
 
       Logger.info(`Vector search found ${results.length} matches`);
       return results;

@@ -6,23 +6,22 @@
  * @module src/tasks
  */
 
-// Storage
-export {
-  TodoStorage,
-  TodoStatus,
-  getTodoStorage,
-  resetTodoStorage
-} from './todo-storage.js';
-
 // Manager
 export {
-  TodoManager,
   getTodoManager,
-  resetTodoManager,
-  writeTodos,
+  getTodoStats,
   getTodos,
-  getTodoStats
+  resetTodoManager,
+  TodoManager,
+  writeTodos,
 } from './todo-manager.js';
+// Storage
+export {
+  getTodoStorage,
+  resetTodoStorage,
+  TodoStatus,
+  TodoStorage,
+} from './todo-storage.js';
 
 // ============================================================================
 // Convenience Functions
@@ -61,20 +60,19 @@ export async function shutdownTasks() {
 // ============================================================================
 
 import {
-  TodoStorage as _TodoStorage,
-  TodoStatus as _TodoStatus,
-  getTodoStorage as _getTodoStorage,
-  resetTodoStorage as _resetTodoStorage
-} from './todo-storage.js';
-
-import {
-  TodoManager as _TodoManager,
   getTodoManager as _getTodoManager,
-  resetTodoManager as _resetTodoManager,
-  writeTodos as _writeTodos,
+  getTodoStats as _getTodoStats,
   getTodos as _getTodos,
-  getTodoStats as _getTodoStats
+  resetTodoManager as _resetTodoManager,
+  TodoManager as _TodoManager,
+  writeTodos as _writeTodos,
 } from './todo-manager.js';
+import {
+  getTodoStorage as _getTodoStorage,
+  resetTodoStorage as _resetTodoStorage,
+  TodoStatus as _TodoStatus,
+  TodoStorage as _TodoStorage,
+} from './todo-storage.js';
 
 export default {
   TodoStorage: _TodoStorage,
@@ -88,5 +86,5 @@ export default {
   getTodos: _getTodos,
   getTodoStats: _getTodoStats,
   initTasks,
-  shutdownTasks
+  shutdownTasks,
 };

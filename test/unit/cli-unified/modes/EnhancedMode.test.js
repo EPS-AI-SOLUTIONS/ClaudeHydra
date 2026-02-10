@@ -33,12 +33,14 @@ describe('EnhancedMode Module', () => {
       run: vi.fn()
     };
 
-    // Create mock query processor
+    // Create mock query processor (with EventEmitter methods for agentic iteration listeners)
     mockQueryProcessor = {
       defaultModel: 'test-model',
       getModels: vi.fn(() => Promise.resolve(['model1', 'model2'])),
       checkHealth: vi.fn(() => Promise.resolve({ healthy: true, models: ['model1'] })),
-      process: vi.fn(() => Promise.resolve({ text: 'response' }))
+      process: vi.fn(() => Promise.resolve({ text: 'response' })),
+      on: vi.fn(),
+      off: vi.fn()
     };
 
     // Create mock output
@@ -51,7 +53,8 @@ describe('EnhancedMode Module', () => {
       newline: vi.fn(),
       streamWrite: vi.fn(),
       streamFlush: vi.fn(),
-      success: vi.fn()
+      success: vi.fn(),
+      dim: vi.fn()
     };
 
     // Create mock history

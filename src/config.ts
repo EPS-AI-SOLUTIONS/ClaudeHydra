@@ -13,47 +13,13 @@
 
 import 'dotenv/config';
 import { z } from 'zod';
-
-// =============================================================================
-// Custom Zod Transformers for Environment Variables
-// =============================================================================
-
-/**
- * Coerces a string environment variable to a number with a default fallback.
- * Returns the default if the value is empty, undefined, or not a valid number.
- */
-const envNumber = (defaultValue) =>
-  z
-    .string()
-    .optional()
-    .transform((val) => {
-      if (val === undefined || val === null || val === '') return defaultValue;
-      const parsed = Number(val);
-      return Number.isNaN(parsed) ? defaultValue : parsed;
-    });
-
-/**
- * Coerces a string environment variable to a boolean.
- * Only 'true' (case-sensitive) is treated as true; everything else is false.
- */
-const envBoolean = (defaultValue) =>
-  z
-    .string()
-    .optional()
-    .transform((val) => {
-      if (val === undefined || val === null || val === '') return defaultValue;
-      return val === 'true';
-    });
-
-/**
- * String environment variable with a default value.
- */
-const envString = (defaultValue) =>
-  z
-    .string()
-    .optional()
-    .default(defaultValue)
-    .transform((val) => val || defaultValue);
+import {
+  envBoolean,
+  envNumberInRange,
+  envString,
+  formatZodErrors,
+  parseZodErrors,
+} from './utils/zod-helpers.js';
 
 // =============================================================================
 // Configuration Schema Definition
@@ -75,18 +41,14 @@ export const configSchema = z
     // Model Configuration
     // -------------------------------------------------------------------------
     /** @description Default model for general queries */
-    DEFAULT_MODEL: envString('llama3.2:3b').describe(
-      'Default LLM model for general operations'
-    ),
+    DEFAULT_MODEL: envString('llama3.2:3b').describe('Default LLM model for general operations'),
 
     /** @description Fast model for quick, lightweight operations */
-    FAST_MODEL: envString('llama3.2:1b').describe(
-      'Lightweight model for fast operations'
-    ),
+    FAST_MODEL: envString('llama3.2:1b').describe('Lightweight model for fast operations'),
 
     /** @description Specialized model for code generation/analysis */
     CODER_MODEL: envString('qwen2.5-coder:1.5b').describe(
-      'Specialized model for code-related tasks'
+      'Specialized model for code-related tasks',
     ),
 
     // -------------------------------------------------------------------------
@@ -96,9 +58,7 @@ export const configSchema = z
     CACHE_DIR: envString('./cache').describe('Cache directory path'),
 
     /** @description Cache time-to-live in seconds (converted to ms internally) */
-    CACHE_TTL: envNumber(3600)
-      .pipe(z.number().int().min(0).max(86400 * 30)) // Max 30 days
-      .describe('Cache TTL in seconds (0-2592000)'),
+    CACHE_TTL: envNumberInRange(3600, 0, 86400 * 30).describe('Cache TTL in seconds (0-2592000)'),
 
     /** @description Whether caching is enabled */
     CACHE_ENABLED: envBoolean(true).describe('Enable/disable response caching'),
@@ -121,97 +81,89 @@ export const configSchema = z
         },
         {
           message:
-            'CACHE_ENCRYPTION_KEY must be a 32-byte key encoded as 64 hex chars or 44 base64 chars (with padding)'
-        }
+            'CACHE_ENCRYPTION_KEY must be a 32-byte key encoded as 64 hex chars or 44 base64 chars (with padding)',
+        },
       )
       .describe('AES-256-GCM encryption key (empty to disable)'),
 
     /** @description Maximum number of entries in the LRU memory cache */
-    CACHE_MAX_MEMORY_ENTRIES: envNumber(1000)
-      .pipe(z.number().int().min(10).max(100000))
-      .describe('Max entries in memory cache (10-100000)'),
-
-    /** @description Maximum memory usage for cache in MB */
-    CACHE_MAX_MEMORY_MB: envNumber(100)
-      .pipe(z.number().int().min(1).max(2048))
-      .describe('Max memory for cache in MB (1-2048)'),
-
-    /** @description Interval for automatic cache cleanup in ms */
-    CACHE_CLEANUP_INTERVAL_MS: envNumber(300000)
-      .pipe(z.number().int().min(10000).max(3600000))
-      .describe('Cache cleanup interval in ms (10000-3600000)'),
-
-    /** @description Whether to persist cache to disk */
-    CACHE_PERSIST_TO_DISK: envBoolean(true).describe(
-      'Enable disk persistence for cache'
+    CACHE_MAX_MEMORY_ENTRIES: envNumberInRange(1000, 10, 100000).describe(
+      'Max entries in memory cache (10-100000)',
     ),
 
+    /** @description Maximum memory usage for cache in MB */
+    CACHE_MAX_MEMORY_MB: envNumberInRange(100, 1, 2048).describe(
+      'Max memory for cache in MB (1-2048)',
+    ),
+
+    /** @description Interval for automatic cache cleanup in ms */
+    CACHE_CLEANUP_INTERVAL_MS: envNumberInRange(300000, 10000, 3600000).describe(
+      'Cache cleanup interval in ms (10000-3600000)',
+    ),
+
+    /** @description Whether to persist cache to disk */
+    CACHE_PERSIST_TO_DISK: envBoolean(true).describe('Enable disk persistence for cache'),
+
     /** @description Minimum response length to cache */
-    CACHE_MIN_RESPONSE_LENGTH: envNumber(10)
-      .pipe(z.number().int().min(1).max(1000))
-      .describe('Minimum response length to cache (1-1000)'),
+    CACHE_MIN_RESPONSE_LENGTH: envNumberInRange(10, 1, 1000).describe(
+      'Minimum response length to cache (1-1000)',
+    ),
 
     // -------------------------------------------------------------------------
     // Queue Configuration
     // -------------------------------------------------------------------------
     /** @description Maximum concurrent queue operations */
-    QUEUE_MAX_CONCURRENT: envNumber(10)
-      .pipe(z.number().int().min(1).max(100))
-      .describe('Max concurrent queue operations (1-100)'),
+    QUEUE_MAX_CONCURRENT: envNumberInRange(10, 1, 100).describe(
+      'Max concurrent queue operations (1-100)',
+    ),
 
     /** @description Maximum retry attempts for failed operations */
-    QUEUE_MAX_RETRIES: envNumber(3)
-      .pipe(z.number().int().min(0).max(10))
-      .describe('Max retry attempts (0-10)'),
+    QUEUE_MAX_RETRIES: envNumberInRange(3, 0, 10).describe('Max retry attempts (0-10)'),
 
     /** @description Base delay in ms for exponential backoff */
-    QUEUE_RETRY_DELAY_BASE: envNumber(1000)
-      .pipe(z.number().int().min(100).max(30000))
-      .describe('Base retry delay in ms (100-30000)'),
+    QUEUE_RETRY_DELAY_BASE: envNumberInRange(1000, 100, 30000).describe(
+      'Base retry delay in ms (100-30000)',
+    ),
 
     /** @description Queue operation timeout in ms */
-    QUEUE_TIMEOUT_MS: envNumber(60000)
-      .pipe(z.number().int().min(1000).max(600000))
-      .describe('Queue timeout in ms (1000-600000)'),
+    QUEUE_TIMEOUT_MS: envNumberInRange(60000, 1000, 600000).describe(
+      'Queue timeout in ms (1000-600000)',
+    ),
 
     /** @description Rate limit token bucket size */
-    QUEUE_RATE_LIMIT_TOKENS: envNumber(10)
-      .pipe(z.number().int().min(1).max(1000))
-      .describe('Rate limit token bucket size (1-1000)'),
+    QUEUE_RATE_LIMIT_TOKENS: envNumberInRange(10, 1, 1000).describe(
+      'Rate limit token bucket size (1-1000)',
+    ),
 
     /** @description Rate limit token refill rate per second */
-    QUEUE_RATE_LIMIT_REFILL: envNumber(2)
-      .pipe(z.number().int().min(1).max(100))
-      .describe('Rate limit refill per second (1-100)'),
+    QUEUE_RATE_LIMIT_REFILL: envNumberInRange(2, 1, 100).describe(
+      'Rate limit refill per second (1-100)',
+    ),
 
     // -------------------------------------------------------------------------
     // Model Cache Configuration
     // -------------------------------------------------------------------------
     /** @description TTL for model metadata cache in ms */
-    MODEL_CACHE_TTL_MS: envNumber(300000)
-      .pipe(z.number().int().min(0).max(3600000))
-      .describe('Model cache TTL in ms (0-3600000)'),
+    MODEL_CACHE_TTL_MS: envNumberInRange(300000, 0, 3600000).describe(
+      'Model cache TTL in ms (0-3600000)',
+    ),
 
     // -------------------------------------------------------------------------
     // Health Check Configuration
     // -------------------------------------------------------------------------
     /** @description Timeout for health check requests in ms */
-    HEALTH_CHECK_TIMEOUT_MS: envNumber(5000)
-      .pipe(z.number().int().min(500).max(30000))
-      .describe('Health check timeout in ms (500-30000)'),
+    HEALTH_CHECK_TIMEOUT_MS: envNumberInRange(5000, 500, 30000).describe(
+      'Health check timeout in ms (500-30000)',
+    ),
 
     // -------------------------------------------------------------------------
     // Runtime Mode Configuration
     // -------------------------------------------------------------------------
     /** @description YOLO mode: faster but less safe defaults */
-    HYDRA_YOLO: envBoolean(false).describe(
-      'Enable YOLO mode (faster, fewer retries)'
-    ),
+    HYDRA_YOLO: envBoolean(false).describe('Enable YOLO mode (faster, fewer retries)'),
 
     /** @description Whether to block risky operations */
-    HYDRA_RISK_BLOCKING: envBoolean(true).describe(
-      'Block potentially risky operations'
-    )
+    HYDRA_RISK_BLOCKING: envBoolean(true).describe('Block potentially risky operations'),
   })
   .strict();
 
@@ -250,21 +202,14 @@ function parseEnvConfig() {
     MODEL_CACHE_TTL_MS: process.env.MODEL_CACHE_TTL_MS,
     HEALTH_CHECK_TIMEOUT_MS: process.env.HEALTH_CHECK_TIMEOUT_MS,
     HYDRA_YOLO: process.env.HYDRA_YOLO,
-    HYDRA_RISK_BLOCKING: process.env.HYDRA_RISK_BLOCKING
+    HYDRA_RISK_BLOCKING: process.env.HYDRA_RISK_BLOCKING,
   };
 
   const result = configSchema.safeParse(rawEnv);
 
   if (!result.success) {
-    const errors = result.error.issues
-      .map((issue) => {
-        const path = issue.path.join('.');
-        return `  - ${path}: ${issue.message}`;
-      })
-      .join('\n');
-
     throw new Error(
-      `Configuration validation failed:\n${errors}\n\nCheck your .env file or environment variables.`
+      `Configuration validation failed:\n${formatZodErrors(result.error.issues)}\n\nCheck your .env file or environment variables.`,
     );
   }
 
@@ -296,9 +241,7 @@ function buildConfig(rawConfig) {
 
   // RISK_BLOCKING defaults to opposite of YOLO_MODE unless explicitly set
   const riskBlocking =
-    process.env.HYDRA_RISK_BLOCKING !== undefined
-      ? rawConfig.HYDRA_RISK_BLOCKING
-      : !yoloMode;
+    process.env.HYDRA_RISK_BLOCKING !== undefined ? rawConfig.HYDRA_RISK_BLOCKING : !yoloMode;
 
   return {
     // API
@@ -336,7 +279,7 @@ function buildConfig(rawConfig) {
 
     // Runtime Modes
     YOLO_MODE: yoloMode,
-    RISK_BLOCKING: riskBlocking
+    RISK_BLOCKING: riskBlocking,
   };
 }
 
@@ -436,13 +379,17 @@ export function validateConfigDetailed(config) {
       warnings.push('CACHE_TTL is 0 - caching will be effectively disabled');
     }
     if (result.data.QUEUE_MAX_CONCURRENT > 50) {
-      warnings.push(`QUEUE_MAX_CONCURRENT is ${result.data.QUEUE_MAX_CONCURRENT} - high concurrency may cause resource exhaustion`);
+      warnings.push(
+        `QUEUE_MAX_CONCURRENT is ${result.data.QUEUE_MAX_CONCURRENT} - high concurrency may cause resource exhaustion`,
+      );
     }
     if (result.data.QUEUE_MAX_RETRIES === 0) {
       warnings.push('QUEUE_MAX_RETRIES is 0 - failed operations will not be retried');
     }
     if (result.data.CACHE_MAX_MEMORY_MB > 1024) {
-      warnings.push(`CACHE_MAX_MEMORY_MB is ${result.data.CACHE_MAX_MEMORY_MB}MB - high memory usage may impact system performance`);
+      warnings.push(
+        `CACHE_MAX_MEMORY_MB is ${result.data.CACHE_MAX_MEMORY_MB}MB - high memory usage may impact system performance`,
+      );
     }
 
     return {
@@ -450,39 +397,32 @@ export function validateConfigDetailed(config) {
       errors: [],
       warnings,
       data: result.data,
-      summary: warnings.length > 0
-        ? `Configuration valid with ${warnings.length} warning(s)`
-        : 'Configuration valid'
+      summary:
+        warnings.length > 0
+          ? `Configuration valid with ${warnings.length} warning(s)`
+          : 'Configuration valid',
     };
   }
 
   // Parse Zod errors into detailed format
-  const errors = result.error.issues.map((issue) => {
-    const field = issue.path.length > 0 ? issue.path[issue.path.length - 1] : 'unknown';
-    const path = issue.path.join('.');
+  const errors = parseZodErrors(result.error.issues).map((err) => {
+    const issue = result.error.issues.find((i) => i.path.join('.') === err.path);
+    const error = { ...err };
 
-    /** @type {ValidationError} */
-    const error = {
-      field: String(field),
-      message: issue.message,
-      code: issue.code,
-      path
-    };
-
-    // Add received value if available
-    if ('received' in issue) {
+    if (issue && 'received' in issue) {
       error.received = issue.received;
     }
 
-    // Add expected value based on error type
-    if (issue.code === 'invalid_type') {
-      error.expected = issue.expected;
-    } else if (issue.code === 'too_small') {
-      error.expected = `>= ${issue.minimum}`;
-    } else if (issue.code === 'too_big') {
-      error.expected = `<= ${issue.maximum}`;
-    } else if (issue.code === 'invalid_enum_value') {
-      error.expected = issue.options;
+    if (issue) {
+      if (issue.code === 'invalid_type') {
+        error.expected = issue.expected;
+      } else if (issue.code === 'too_small') {
+        error.expected = `>= ${issue.minimum}`;
+      } else if (issue.code === 'too_big') {
+        error.expected = `<= ${issue.maximum}`;
+      } else if (issue.code === 'invalid_enum_value') {
+        error.expected = issue.options;
+      }
     }
 
     return error;
@@ -492,7 +432,7 @@ export function validateConfigDetailed(config) {
     valid: false,
     errors,
     warnings,
-    summary: `Configuration invalid: ${errors.length} error(s) found`
+    summary: `Configuration invalid: ${errors.length} error(s) found`,
   };
 }
 
@@ -509,7 +449,7 @@ export function getConfigDocumentation() {
   for (const [field, schema] of Object.entries(shape)) {
     const description = schema.description || 'No description available';
     let type = 'unknown';
-    let defaultValue = undefined;
+    let defaultValue;
     let required = true;
 
     // Extract type information from Zod schema
@@ -529,7 +469,7 @@ export function getConfigDocumentation() {
       description,
       type,
       default: defaultValue,
-      required
+      required,
     });
   }
 

@@ -52,7 +52,7 @@ export const Styles = Object.freeze({
   /** Framed text */
   FRAMED: '\x1b[51m',
   /** Encircled text */
-  ENCIRCLED: '\x1b[52m'
+  ENCIRCLED: '\x1b[52m',
 });
 
 // ============================================================================
@@ -85,7 +85,7 @@ export const FgColors = Object.freeze({
   BRIGHT_BLUE: '\x1b[94m',
   BRIGHT_MAGENTA: '\x1b[95m',
   BRIGHT_CYAN: '\x1b[96m',
-  BRIGHT_WHITE: '\x1b[97m'
+  BRIGHT_WHITE: '\x1b[97m',
 });
 
 // ============================================================================
@@ -116,7 +116,7 @@ export const BgColors = Object.freeze({
   BRIGHT_BLUE: '\x1b[104m',
   BRIGHT_MAGENTA: '\x1b[105m',
   BRIGHT_CYAN: '\x1b[106m',
-  BRIGHT_WHITE: '\x1b[107m'
+  BRIGHT_WHITE: '\x1b[107m',
 });
 
 // ============================================================================
@@ -179,7 +179,7 @@ export const COLORS = Object.freeze({
   bgBrightBlue: BgColors.BRIGHT_BLUE,
   bgBrightMagenta: BgColors.BRIGHT_MAGENTA,
   bgBrightCyan: BgColors.BRIGHT_CYAN,
-  bgBrightWhite: BgColors.BRIGHT_WHITE
+  bgBrightWhite: BgColors.BRIGHT_WHITE,
 });
 
 // ============================================================================
@@ -215,7 +215,7 @@ export function supportsColors() {
   // Check for CI environments that support colors
   if (process.env.CI) {
     const supportedCI = ['TRAVIS', 'CIRCLECI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'BUILDKITE'];
-    if (supportedCI.some(ci => process.env[ci])) {
+    if (supportedCI.some((ci) => process.env[ci])) {
       return true;
     }
   }
@@ -223,7 +223,7 @@ export function supportsColors() {
   // Check for Windows
   if (process.platform === 'win32') {
     // Windows 10 build 10586 added ANSI support
-    const osRelease = require('os').release().split('.');
+    const osRelease = require('node:os').release().split('.');
     if (Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586) {
       return true;
     }
@@ -451,7 +451,7 @@ export const Color256Palette = Object.freeze({
   // 216 color cube (16-231)
   COLOR_CUBE: { start: 16, end: 231 },
   // Grayscale (232-255)
-  GRAYSCALE: { start: 232, end: 255 }
+  GRAYSCALE: { start: 232, end: 255 },
 });
 
 /**
@@ -466,15 +466,15 @@ export function rgbTo256(r, g, b) {
   if (r === g && g === b) {
     if (r < 8) return 16; // Black
     if (r > 248) return 231; // White
-    return Math.round((r - 8) / 247 * 24) + 232;
+    return Math.round(((r - 8) / 247) * 24) + 232;
   }
 
   // Map to 6x6x6 color cube
-  const rIndex = Math.round(r / 255 * 5);
-  const gIndex = Math.round(g / 255 * 5);
-  const bIndex = Math.round(b / 255 * 5);
+  const rIndex = Math.round((r / 255) * 5);
+  const gIndex = Math.round((g / 255) * 5);
+  const bIndex = Math.round((b / 255) * 5);
 
-  return 16 + (36 * rIndex) + (6 * gIndex) + bIndex;
+  return 16 + 36 * rIndex + 6 * gIndex + bIndex;
 }
 
 /**
@@ -578,7 +578,10 @@ export function hexToRgb(hex) {
 
   // Handle shorthand notation (e.g., 'f50' -> 'ff5500')
   if (clean.length === 3) {
-    clean = clean.split('').map(c => c + c).join('');
+    clean = clean
+      .split('')
+      .map((c) => c + c)
+      .join('');
   }
 
   const r = parseInt(clean.substring(0, 2), 16) || 0;
@@ -595,7 +598,10 @@ export function hexToRgb(hex) {
  * @returns {string} Hex color (e.g., '#ff5500')
  */
 export function rgbToHex(r, g, b) {
-  const toHex = (c) => Math.max(0, Math.min(255, Math.floor(c))).toString(16).padStart(2, '0');
+  const toHex = (c) =>
+    Math.max(0, Math.min(255, Math.floor(c)))
+      .toString(16)
+      .padStart(2, '0');
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
@@ -619,9 +625,9 @@ export function hslToRgb(h, s, l) {
   const hue2rgb = (p, q, t) => {
     if (t < 0) t += 1;
     if (t > 1) t -= 1;
-    if (t < 1/6) return p + (q - p) * 6 * t;
-    if (t < 1/2) return q;
-    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
     return p;
   };
 
@@ -629,9 +635,9 @@ export function hslToRgb(h, s, l) {
   const p = 2 * lNorm - q;
 
   return {
-    r: Math.round(hue2rgb(p, q, hNorm + 1/3) * 255),
+    r: Math.round(hue2rgb(p, q, hNorm + 1 / 3) * 255),
     g: Math.round(hue2rgb(p, q, hNorm) * 255),
-    b: Math.round(hue2rgb(p, q, hNorm - 1/3) * 255)
+    b: Math.round(hue2rgb(p, q, hNorm - 1 / 3) * 255),
   };
 }
 
@@ -663,7 +669,7 @@ export function interpolateColor(color1, color2, factor) {
   return {
     r: Math.round(color1.r + (color2.r - color1.r) * factor),
     g: Math.round(color1.g + (color2.g - color1.g) * factor),
-    b: Math.round(color1.b + (color2.b - color1.b) * factor)
+    b: Math.round(color1.b + (color2.b - color1.b) * factor),
   };
 }
 
@@ -678,7 +684,7 @@ export function createGradientColors(colors, steps) {
     throw new Error('Gradient requires at least 2 colors');
   }
 
-  const rgbColors = colors.map(c => hexToRgb(c));
+  const rgbColors = colors.map((c) => hexToRgb(c));
   const result = [];
   const segmentSteps = Math.ceil(steps / (colors.length - 1));
 
@@ -735,7 +741,15 @@ export function gradient(text, colors) {
  * @returns {string} Rainbow-colored text
  */
 export function rainbow(text) {
-  return gradient(text, ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3']);
+  return gradient(text, [
+    '#ff0000',
+    '#ff7f00',
+    '#ffff00',
+    '#00ff00',
+    '#0000ff',
+    '#4b0082',
+    '#9400d3',
+  ]);
 }
 
 /**
@@ -774,7 +788,7 @@ export const Gradients = Object.freeze({
   COOL_BLUES: ['#2193b0', '#6dd5ed'],
   EMERALD: ['#348f50', '#56b4d3'],
   CHERRY: ['#eb3349', '#f45c43'],
-  ROYAL: ['#141e30', '#243b55']
+  ROYAL: ['#141e30', '#243b55'],
 });
 
 /**
@@ -807,152 +821,152 @@ export const Themes = Object.freeze({
     muted: '#808080',
     accent: '#ff7f00',
     background: '#000000',
-    foreground: '#ffffff'
+    foreground: '#ffffff',
   },
 
   /** Cyberpunk theme - neon colors on dark background */
   CYBERPUNK: {
     name: 'cyberpunk',
-    primary: '#ff00ff',    // Magenta
-    secondary: '#00ffff',  // Cyan
-    success: '#39ff14',    // Neon green
-    warning: '#ffff00',    // Yellow
-    error: '#ff0040',      // Hot pink/red
-    info: '#00d4ff',       // Electric blue
-    muted: '#666699',      // Muted purple
-    accent: '#ff6600',     // Orange
-    highlight: '#ff00ff',  // Pink highlight
+    primary: '#ff00ff', // Magenta
+    secondary: '#00ffff', // Cyan
+    success: '#39ff14', // Neon green
+    warning: '#ffff00', // Yellow
+    error: '#ff0040', // Hot pink/red
+    info: '#00d4ff', // Electric blue
+    muted: '#666699', // Muted purple
+    accent: '#ff6600', // Orange
+    highlight: '#ff00ff', // Pink highlight
     background: '#0d0221', // Dark purple
-    foreground: '#e0e0ff'  // Light lavender
+    foreground: '#e0e0ff', // Light lavender
   },
 
   /** Matrix theme - green terminal style */
   MATRIX: {
     name: 'matrix',
-    primary: '#00ff00',    // Bright green
-    secondary: '#00cc00',  // Medium green
-    success: '#00ff00',    // Bright green
-    warning: '#99ff00',    // Yellow-green
-    error: '#ff3300',      // Red
-    info: '#00ff66',       // Teal green
-    muted: '#006600',      // Dark green
-    accent: '#33ff33',     // Light green
-    highlight: '#66ff66',  // Lighter green
+    primary: '#00ff00', // Bright green
+    secondary: '#00cc00', // Medium green
+    success: '#00ff00', // Bright green
+    warning: '#99ff00', // Yellow-green
+    error: '#ff3300', // Red
+    info: '#00ff66', // Teal green
+    muted: '#006600', // Dark green
+    accent: '#33ff33', // Light green
+    highlight: '#66ff66', // Lighter green
     background: '#000000', // Black
-    foreground: '#00ff00'  // Green
+    foreground: '#00ff00', // Green
   },
 
   /** Ocean theme - blue and teal colors */
   OCEAN: {
     name: 'ocean',
-    primary: '#0077be',    // Ocean blue
-    secondary: '#00a9a5',  // Teal
-    success: '#48cae4',    // Light blue
-    warning: '#ffd166',    // Sandy yellow
-    error: '#ef476f',      // Coral red
-    info: '#90e0ef',       // Sky blue
-    muted: '#457b9d',      // Steel blue
-    accent: '#06d6a0',     // Seafoam
-    highlight: '#00b4d8',  // Bright cyan
+    primary: '#0077be', // Ocean blue
+    secondary: '#00a9a5', // Teal
+    success: '#48cae4', // Light blue
+    warning: '#ffd166', // Sandy yellow
+    error: '#ef476f', // Coral red
+    info: '#90e0ef', // Sky blue
+    muted: '#457b9d', // Steel blue
+    accent: '#06d6a0', // Seafoam
+    highlight: '#00b4d8', // Bright cyan
     background: '#03045e', // Deep ocean
-    foreground: '#caf0f8'  // Light cyan
+    foreground: '#caf0f8', // Light cyan
   },
 
   /** Sunset theme - warm orange and pink colors */
   SUNSET: {
     name: 'sunset',
-    primary: '#ff6b6b',    // Coral
-    secondary: '#feca57',  // Golden yellow
-    success: '#1dd1a1',    // Mint green
-    warning: '#ff9f43',    // Orange
-    error: '#ee5a52',      // Red
-    info: '#ff9ff3',       // Pink
-    muted: '#c8d6e5',      // Light gray
-    accent: '#ff6b6b',     // Coral accent
-    highlight: '#ffeaa7',  // Light yellow
+    primary: '#ff6b6b', // Coral
+    secondary: '#feca57', // Golden yellow
+    success: '#1dd1a1', // Mint green
+    warning: '#ff9f43', // Orange
+    error: '#ee5a52', // Red
+    info: '#ff9ff3', // Pink
+    muted: '#c8d6e5', // Light gray
+    accent: '#ff6b6b', // Coral accent
+    highlight: '#ffeaa7', // Light yellow
     background: '#2c2c54', // Dark purple
-    foreground: '#f8f9fa'  // White
+    foreground: '#f8f9fa', // White
   },
 
   /** Forest theme - green and brown natural colors */
   FOREST: {
     name: 'forest',
-    primary: '#2d6a4f',    // Forest green
-    secondary: '#74c69d',  // Light green
-    success: '#40916c',    // Medium green
-    warning: '#dda15e',    // Amber
-    error: '#bc6c25',      // Brown-red
-    info: '#95d5b2',       // Sage
-    muted: '#6c757d',      // Gray
-    accent: '#52b788',     // Teal green
-    highlight: '#b7e4c7',  // Mint
+    primary: '#2d6a4f', // Forest green
+    secondary: '#74c69d', // Light green
+    success: '#40916c', // Medium green
+    warning: '#dda15e', // Amber
+    error: '#bc6c25', // Brown-red
+    info: '#95d5b2', // Sage
+    muted: '#6c757d', // Gray
+    accent: '#52b788', // Teal green
+    highlight: '#b7e4c7', // Mint
     background: '#1b4332', // Dark green
-    foreground: '#d8f3dc'  // Light green
+    foreground: '#d8f3dc', // Light green
   },
 
   /** Dracula theme - popular dark theme */
   DRACULA: {
     name: 'dracula',
-    primary: '#bd93f9',    // Purple
-    secondary: '#8be9fd',  // Cyan
-    success: '#50fa7b',    // Green
-    warning: '#f1fa8c',    // Yellow
-    error: '#ff5555',      // Red
-    info: '#8be9fd',       // Cyan
-    muted: '#6272a4',      // Comment gray
-    accent: '#ff79c6',     // Pink
-    highlight: '#ffb86c',  // Orange
+    primary: '#bd93f9', // Purple
+    secondary: '#8be9fd', // Cyan
+    success: '#50fa7b', // Green
+    warning: '#f1fa8c', // Yellow
+    error: '#ff5555', // Red
+    info: '#8be9fd', // Cyan
+    muted: '#6272a4', // Comment gray
+    accent: '#ff79c6', // Pink
+    highlight: '#ffb86c', // Orange
     background: '#282a36', // Background
-    foreground: '#f8f8f2'  // Foreground
+    foreground: '#f8f8f2', // Foreground
   },
 
   /** Nord theme - arctic, north-bluish colors */
   NORD: {
     name: 'nord',
-    primary: '#88c0d0',    // Frost cyan
-    secondary: '#81a1c1',  // Frost blue
-    success: '#a3be8c',    // Aurora green
-    warning: '#ebcb8b',    // Aurora yellow
-    error: '#bf616a',      // Aurora red
-    info: '#5e81ac',       // Frost blue dark
-    muted: '#4c566a',      // Polar night
-    accent: '#b48ead',     // Aurora purple
-    highlight: '#8fbcbb',  // Frost teal
+    primary: '#88c0d0', // Frost cyan
+    secondary: '#81a1c1', // Frost blue
+    success: '#a3be8c', // Aurora green
+    warning: '#ebcb8b', // Aurora yellow
+    error: '#bf616a', // Aurora red
+    info: '#5e81ac', // Frost blue dark
+    muted: '#4c566a', // Polar night
+    accent: '#b48ead', // Aurora purple
+    highlight: '#8fbcbb', // Frost teal
     background: '#2e3440', // Polar night
-    foreground: '#eceff4'  // Snow storm
+    foreground: '#eceff4', // Snow storm
   },
 
   /** Monokai theme - classic code editor colors */
   MONOKAI: {
     name: 'monokai',
-    primary: '#f92672',    // Pink
-    secondary: '#66d9ef',  // Blue
-    success: '#a6e22e',    // Green
-    warning: '#e6db74',    // Yellow
-    error: '#f92672',      // Pink/red
-    info: '#66d9ef',       // Blue
-    muted: '#75715e',      // Comment gray
-    accent: '#fd971f',     // Orange
-    highlight: '#ae81ff',  // Purple
+    primary: '#f92672', // Pink
+    secondary: '#66d9ef', // Blue
+    success: '#a6e22e', // Green
+    warning: '#e6db74', // Yellow
+    error: '#f92672', // Pink/red
+    info: '#66d9ef', // Blue
+    muted: '#75715e', // Comment gray
+    accent: '#fd971f', // Orange
+    highlight: '#ae81ff', // Purple
     background: '#272822', // Background
-    foreground: '#f8f8f2'  // Foreground
+    foreground: '#f8f8f2', // Foreground
   },
 
   /** Solarized Dark theme */
   SOLARIZED_DARK: {
     name: 'solarized_dark',
-    primary: '#268bd2',    // Blue
-    secondary: '#2aa198',  // Cyan
-    success: '#859900',    // Green
-    warning: '#b58900',    // Yellow
-    error: '#dc322f',      // Red
-    info: '#6c71c4',       // Violet
-    muted: '#586e75',      // Base01
-    accent: '#cb4b16',     // Orange
-    highlight: '#d33682',  // Magenta
+    primary: '#268bd2', // Blue
+    secondary: '#2aa198', // Cyan
+    success: '#859900', // Green
+    warning: '#b58900', // Yellow
+    error: '#dc322f', // Red
+    info: '#6c71c4', // Violet
+    muted: '#586e75', // Base01
+    accent: '#cb4b16', // Orange
+    highlight: '#d33682', // Magenta
     background: '#002b36', // Base03
-    foreground: '#839496'  // Base0
-  }
+    foreground: '#839496', // Base0
+  },
 });
 
 /**
@@ -1131,7 +1145,7 @@ export function style(text, options = {}) {
 export function box(text, options = {}) {
   const padding = options.padding || 1;
   const lines = text.split('\n');
-  const maxLength = Math.max(...lines.map(l => visibleLength(l)));
+  const maxLength = Math.max(...lines.map((l) => visibleLength(l)));
   const width = maxLength + padding * 2;
 
   const borderColor = options.borderColor ? fgHex(options.borderColor) : '';
@@ -1141,7 +1155,7 @@ export function box(text, options = {}) {
   const top = `${borderColor}\u250c${horizontal}\u2510${RESET}`;
   const bottom = `${borderColor}\u2514${horizontal}\u2518${RESET}`;
 
-  const paddedLines = lines.map(line => {
+  const paddedLines = lines.map((line) => {
     const lineLength = visibleLength(line);
     const rightPad = width - lineLength - padding;
     return `${borderColor}\u2502${RESET}${' '.repeat(padding)}${textColor}${line}${RESET}${' '.repeat(rightPad)}${borderColor}\u2502${RESET}`;
@@ -1159,14 +1173,38 @@ export function box(text, options = {}) {
  * @readonly
  */
 export const SpinnerFrames = Object.freeze({
-  DOTS: ['\u280b', '\u2819', '\u2839', '\u2838', '\u283c', '\u2834', '\u2826', '\u2827', '\u2807', '\u280f'],
+  DOTS: [
+    '\u280b',
+    '\u2819',
+    '\u2839',
+    '\u2838',
+    '\u283c',
+    '\u2834',
+    '\u2826',
+    '\u2827',
+    '\u2807',
+    '\u280f',
+  ],
   LINE: ['-', '\\', '|', '/'],
   CIRCLE: ['\u25dc', '\u25dd', '\u25de', '\u25df'],
   SQUARE: ['\u25eb', '\u25ea'],
   ARROW: ['\u2190', '\u2196', '\u2191', '\u2197', '\u2192', '\u2198', '\u2193', '\u2199'],
   BOUNCE: ['\u2801', '\u2802', '\u2804', '\u2840', '\u2880', '\u2820', '\u2810', '\u2808'],
   BLOCKS: ['\u2588', '\u2589', '\u258a', '\u258b', '\u258c', '\u258d', '\u258e', '\u258f'],
-  CLOCK: ['\ud83d\udd50', '\ud83d\udd51', '\ud83d\udd52', '\ud83d\udd53', '\ud83d\udd54', '\ud83d\udd55', '\ud83d\udd56', '\ud83d\udd57', '\ud83d\udd58', '\ud83d\udd59', '\ud83d\udd5a', '\ud83d\udd5b']
+  CLOCK: [
+    '\ud83d\udd50',
+    '\ud83d\udd51',
+    '\ud83d\udd52',
+    '\ud83d\udd53',
+    '\ud83d\udd54',
+    '\ud83d\udd55',
+    '\ud83d\udd56',
+    '\ud83d\udd57',
+    '\ud83d\udd58',
+    '\ud83d\udd59',
+    '\ud83d\udd5a',
+    '\ud83d\udd5b',
+  ],
 });
 
 /**
@@ -1301,5 +1339,5 @@ export default {
 
   // Animation helpers
   SpinnerFrames,
-  progressBar
+  progressBar,
 };

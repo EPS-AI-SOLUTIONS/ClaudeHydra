@@ -6,10 +6,10 @@
  * @module src/hooks/hook-manager
  */
 
-import { EventEmitter } from 'events';
-import fs from 'fs/promises';
-import path from 'path';
-import { BUILTIN_HOOKS, getBuiltinHook } from './builtin-hooks.js';
+import { EventEmitter } from 'node:events';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { getBuiltinHook } from './builtin-hooks.js';
 
 // ============================================================================
 // Constants
@@ -26,7 +26,7 @@ export const HookEvent = {
   POST_TOOL_USE: 'PostToolUse',
   POST_TOOL_USE_FAILURE: 'PostToolUseFailure',
   PRE_PLAN_PHASE: 'PrePlanPhase',
-  POST_PLAN_PHASE: 'PostPlanPhase'
+  POST_PLAN_PHASE: 'PostPlanPhase',
 };
 
 /**
@@ -140,7 +140,7 @@ export class HookManager extends EventEmitter {
       try {
         const module = await import(path.resolve(handler));
         hookFn = module.default || module.hook;
-      } catch (error) {
+      } catch (_error) {
         console.warn(`[HookManager] Failed to load custom hook: ${handler}`);
         return;
       }
@@ -151,7 +151,7 @@ export class HookManager extends EventEmitter {
       type,
       fn: hookFn,
       timeout,
-      options
+      options,
     });
   }
 
@@ -164,8 +164,8 @@ export class HookManager extends EventEmitter {
    */
   createShellHook(command, options = {}) {
     return async (context) => {
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
+      const { exec } = await import('node:child_process');
+      const { promisify } = await import('node:util');
       const execAsync = promisify(exec);
 
       // Interpolate context variables into command
@@ -173,7 +173,7 @@ export class HookManager extends EventEmitter {
       for (const [key, value] of Object.entries(context)) {
         interpolatedCommand = interpolatedCommand.replace(
           new RegExp(`\\$\\{${key}\\}`, 'g'),
-          String(value)
+          String(value),
         );
       }
 
@@ -181,19 +181,19 @@ export class HookManager extends EventEmitter {
         const { stdout, stderr } = await execAsync(interpolatedCommand, {
           timeout: options.timeout || 30000,
           cwd: options.cwd || process.cwd(),
-          env: { ...process.env, ...options.env }
+          env: { ...process.env, ...options.env },
         });
 
         return {
           success: true,
           stdout: stdout.trim(),
-          stderr: stderr.trim()
+          stderr: stderr.trim(),
         };
       } catch (error) {
         return {
           success: false,
           error: error.message,
-          exitCode: error.code
+          exitCode: error.code,
         };
       }
     };
@@ -261,7 +261,7 @@ export class HookManager extends EventEmitter {
           name: hook.name,
           success: result.success !== false,
           duration,
-          result
+          result,
         });
 
         this.emit('hookExecuted', {
@@ -269,7 +269,7 @@ export class HookManager extends EventEmitter {
           hook: hook.name,
           success: result.success !== false,
           duration,
-          result
+          result,
         });
 
         // Check if hook blocked execution
@@ -292,14 +292,14 @@ export class HookManager extends EventEmitter {
           name: hook.name,
           success: false,
           duration,
-          error: error.message
+          error: error.message,
         });
 
         this.emit('hookFailed', {
           event,
           hook: hook.name,
           duration,
-          error
+          error,
         });
 
         success = false;
@@ -329,7 +329,7 @@ export class HookManager extends EventEmitter {
 
     const executionPromise = hook.fn({
       ...context,
-      hookOptions: hook.options
+      hookOptions: hook.options,
     });
 
     return Promise.race([executionPromise, timeoutPromise]);
@@ -363,11 +363,7 @@ export class HookManager extends EventEmitter {
    * @returns {Promise<Object>}
    */
   async onPreToolUse(toolName, args) {
-    return this.execute(
-      HookEvent.PRE_TOOL_USE,
-      { toolName, args },
-      { stopOnFailure: true }
-    );
+    return this.execute(HookEvent.PRE_TOOL_USE, { toolName, args }, { stopOnFailure: true });
   }
 
   /**
@@ -385,7 +381,7 @@ export class HookManager extends EventEmitter {
       args,
       result,
       duration,
-      success: true
+      success: true,
     });
   }
 
@@ -404,7 +400,7 @@ export class HookManager extends EventEmitter {
       args,
       error,
       retryCount,
-      success: false
+      success: false,
     });
   }
 
@@ -416,11 +412,7 @@ export class HookManager extends EventEmitter {
    * @returns {Promise<Object>}
    */
   async onPrePlanPhase(phase, plan) {
-    return this.execute(
-      HookEvent.PRE_PLAN_PHASE,
-      { phase, plan },
-      { stopOnFailure: true }
-    );
+    return this.execute(HookEvent.PRE_PLAN_PHASE, { phase, plan }, { stopOnFailure: true });
   }
 
   /**
@@ -437,7 +429,7 @@ export class HookManager extends EventEmitter {
       phase,
       plan,
       output,
-      duration
+      duration,
     });
   }
 
@@ -462,7 +454,7 @@ export class HookManager extends EventEmitter {
       result[event] = hooks.map((h) => ({
         name: h.name,
         type: h.type,
-        timeout: h.timeout
+        timeout: h.timeout,
       }));
     }
     return result;

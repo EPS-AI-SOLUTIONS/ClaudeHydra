@@ -7,9 +7,10 @@
  * @module src/mcp/transports/stdio
  */
 
-import { spawn } from 'child_process';
-import { EventEmitter } from 'events';
-import { createInterface } from 'readline';
+import { spawn } from 'node:child_process';
+import { EventEmitter } from 'node:events';
+import { createInterface } from 'node:readline';
+import { validateArgs, validateExecutable } from '../../security/safe-command.js';
 
 // ============================================================================
 // Constants
@@ -25,7 +26,7 @@ export const TransportState = {
   READY: 'ready',
   CLOSING: 'closing',
   CLOSED: 'closed',
-  ERROR: 'error'
+  ERROR: 'error',
 };
 
 // ============================================================================
@@ -60,7 +61,7 @@ export class StdioTransport extends EventEmitter {
       args: config.args || [],
       env: { ...process.env, ...config.env },
       cwd: config.cwd || process.cwd(),
-      timeout: config.timeout || 30000
+      timeout: config.timeout || 30000,
     };
 
     /** @type {TransportState} */
@@ -101,12 +102,28 @@ export class StdioTransport extends EventEmitter {
       }, this.config.timeout);
 
       try {
-        // Spawn the process
+        // SECURITY FIX: Validate command/args and remove shell: true.
+        // MCP server commands come from .hydra/mcp-servers.json config.
+        // With shell: false, argument array is passed directly to the OS,
+        // preventing shell metacharacter interpretation.
+        const execCheck = validateExecutable(
+          this.config.command,
+          true /* MCP servers can be unlisted */,
+        );
+        if (!execCheck.valid) {
+          throw new Error(`Security: MCP server command rejected: ${execCheck.reason}`);
+        }
+
+        const argsCheck = validateArgs(this.config.args);
+        if (!argsCheck.valid) {
+          throw new Error(`Security: MCP server args rejected: ${argsCheck.reason}`);
+        }
+
         this.process = spawn(this.config.command, this.config.args, {
           env: this.config.env,
           cwd: this.config.cwd,
           stdio: ['pipe', 'pipe', 'pipe'],
-          shell: true
+          shell: false, // SECURITY: was `true` — shell interpretation disabled
         });
 
         // Handle process errors
@@ -127,7 +144,7 @@ export class StdioTransport extends EventEmitter {
         // Set up readline for stdout
         this.readline = createInterface({
           input: this.process.stdout,
-          crlfDelay: Infinity
+          crlfDelay: Infinity,
         });
 
         this.readline.on('line', (line) => {
@@ -183,7 +200,7 @@ export class StdioTransport extends EventEmitter {
       jsonrpc: '2.0',
       method,
       params,
-      id
+      id,
     };
 
     return new Promise((resolve, reject) => {
@@ -212,7 +229,7 @@ export class StdioTransport extends EventEmitter {
     const message = {
       jsonrpc: '2.0',
       method,
-      params
+      params,
     };
 
     this.send(message);
@@ -229,7 +246,7 @@ export class StdioTransport extends EventEmitter {
     }
 
     const json = JSON.stringify(message);
-    this.process.stdin.write(json + '\n');
+    this.process.stdin.write(`${json}\n`);
   }
 
   /**
@@ -259,7 +276,7 @@ export class StdioTransport extends EventEmitter {
         // It's a notification or unexpected message
         this.emit('message', message);
       }
-    } catch (error) {
+    } catch (_error) {
       // Not valid JSON, emit as raw output
       this.emit('output', line);
     }
@@ -278,7 +295,7 @@ export class StdioTransport extends EventEmitter {
     this.state = TransportState.CLOSING;
 
     // Reject all pending requests
-    for (const [id, pending] of this.pendingRequests) {
+    for (const [_id, pending] of this.pendingRequests) {
       clearTimeout(pending.timer);
       pending.reject(new Error('Transport closed'));
     }
@@ -343,7 +360,7 @@ export class StdioTransport extends EventEmitter {
       connected: this.process.connected,
       killed: this.process.killed,
       exitCode: this.process.exitCode,
-      signalCode: this.process.signalCode
+      signalCode: this.process.signalCode,
     };
   }
 }
@@ -380,7 +397,7 @@ export function createStdioTransport(config) {
     args: config.args,
     env: config.env,
     cwd: config.cwd,
-    timeout: config.timeout
+    timeout: config.timeout,
   });
 }
 

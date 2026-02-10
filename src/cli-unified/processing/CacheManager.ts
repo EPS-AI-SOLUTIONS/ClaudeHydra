@@ -4,9 +4,9 @@
  * @module cli-unified/processing/CacheManager
  */
 
-import { EventEmitter } from 'events';
-import { createHash } from 'crypto';
-import { eventBus, EVENT_TYPES } from '../core/EventBus.js';
+import { createHash } from 'node:crypto';
+import { EventEmitter } from 'node:events';
+import { EVENT_TYPES, eventBus } from '../core/EventBus.js';
 
 /**
  * LRU Cache implementation
@@ -96,7 +96,7 @@ export const TokenUtils = {
       'gpt-4': { input: 0.03, output: 0.06 },
       'gpt-3.5-turbo': { input: 0.001, output: 0.002 },
       'claude-3': { input: 0.015, output: 0.075 },
-      'default': { input: 0.001, output: 0.002 }
+      default: { input: 0.001, output: 0.002 },
     };
 
     const rates = pricing[model] || pricing.default;
@@ -106,9 +106,9 @@ export const TokenUtils = {
     return {
       input: inputCost,
       output: outputCost,
-      total: inputCost + outputCost
+      total: inputCost + outputCost,
     };
-  }
+  },
 };
 
 /**
@@ -128,7 +128,7 @@ export class CacheManager extends EventEmitter {
       misses: 0,
       sets: 0,
       evictions: 0,
-      totalTokensSaved: 0
+      totalTokensSaved: 0,
     };
   }
 
@@ -202,7 +202,7 @@ export class CacheManager extends EventEmitter {
       response,
       timestamp: Date.now(),
       tokens,
-      metadata: options.metadata || {}
+      metadata: options.metadata || {},
     };
 
     this.cache.set(key, entry);
@@ -236,14 +236,14 @@ export class CacheManager extends EventEmitter {
    */
   getStats() {
     const total = this.stats.hits + this.stats.misses;
-    const hitRate = total > 0 ? (this.stats.hits / total * 100).toFixed(1) : 0;
+    const hitRate = total > 0 ? ((this.stats.hits / total) * 100).toFixed(1) : 0;
 
     return {
       ...this.stats,
       hitRate: `${hitRate}%`,
       size: this.cache.size,
       maxSize: this.cache.maxSize,
-      estimatedSavings: TokenUtils.estimateCost(this.stats.totalTokensSaved, 0).total.toFixed(4)
+      estimatedSavings: TokenUtils.estimateCost(this.stats.totalTokensSaved, 0).total.toFixed(4),
     };
   }
 
@@ -256,7 +256,7 @@ export class CacheManager extends EventEmitter {
       misses: 0,
       sets: 0,
       evictions: 0,
-      totalTokensSaved: 0
+      totalTokensSaved: 0,
     };
   }
 

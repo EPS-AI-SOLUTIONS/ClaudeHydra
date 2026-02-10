@@ -4,10 +4,10 @@
  * @module cli-unified/input/MacroRecorder
  */
 
-import { EventEmitter } from 'events';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { homedir } from 'os';
+import { EventEmitter } from 'node:events';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { DATA_DIR } from '../core/constants.js';
 
 const MACROS_FILE = join(homedir(), DATA_DIR, 'macros', 'macros.json');
@@ -84,7 +84,7 @@ export class MacroRecorder extends EventEmitter {
     this.macros[name] = {
       name,
       actions,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     this._saveMacros();
@@ -120,7 +120,7 @@ export class MacroRecorder extends EventEmitter {
     this.recordBuffer.push({
       type: action.type,
       data: action.data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     this.emit('actionRecorded', action);
@@ -141,7 +141,7 @@ export class MacroRecorder extends EventEmitter {
       key,
       name: macro.name,
       actionCount: macro.actions.length,
-      createdAt: macro.createdAt
+      createdAt: macro.createdAt,
     }));
   }
 
@@ -180,7 +180,7 @@ export class MacroRecorder extends EventEmitter {
   /**
    * Execute a single action
    */
-  async _executeAction(action, context) {
+  async _executeAction(action, _context) {
     switch (action.type) {
       case 'input':
         return { type: 'input', text: action.data };
@@ -189,7 +189,7 @@ export class MacroRecorder extends EventEmitter {
         return { type: 'command', command: action.data };
 
       case 'wait':
-        await new Promise(resolve => setTimeout(resolve, action.data));
+        await new Promise((resolve) => setTimeout(resolve, action.data));
         return { type: 'wait', duration: action.data };
 
       case 'template':
@@ -228,7 +228,7 @@ export class MacroRecorder extends EventEmitter {
 
     this.macros[newName] = {
       ...this.macros[oldName],
-      name: newName
+      name: newName,
     };
     delete this.macros[oldName];
 

@@ -3,8 +3,13 @@
  * @module cli-unified
  */
 
-import { UnifiedCLI, createCLI } from './UnifiedCLI.js';
-import { CLI_MODES, VERSION, CODENAME } from './core/constants.js';
+// Force chalk colors on Windows Terminal / modern terminals
+if (!process.env.FORCE_COLOR && (process.env.WT_SESSION || process.stdout.isTTY)) {
+  process.env.FORCE_COLOR = '3';
+}
+
+import { CLI_MODES, CODENAME, VERSION } from './core/constants.js';
+import { createCLI, UnifiedCLI } from './UnifiedCLI.js';
 
 // Re-export main class and factory
 export { UnifiedCLI, createCLI };
@@ -12,54 +17,47 @@ export { UnifiedCLI, createCLI };
 // Re-export constants
 export { CLI_MODES, VERSION, CODENAME };
 
+export * from './core/ConfigManager.js';
 // Re-export core modules
 export * from './core/constants.js';
 export * from './core/EventBus.js';
-export * from './core/ConfigManager.js';
 export * from './core/ThemeRegistry.js';
-
-// Re-export output modules
-export * from './output/SpinnerSystem.js';
-export * from './output/BorderRenderer.js';
-export * from './output/MarkdownRenderer.js';
-export * from './output/TableRenderer.js';
-export * from './output/StreamingRenderer.js';
-export * from './output/UnifiedOutputRenderer.js';
-
-// Re-export input modules
-export * from './input/AutocompleteEngine.js';
-export * from './input/VimModeHandler.js';
-export * from './input/TemplateExpander.js';
-export * from './input/MacroRecorder.js';
-export * from './input/UnifiedInputHandler.js';
-
 // Re-export history modules
 export * from './history/FuzzySearchEngine.js';
 export * from './history/UnifiedHistoryManager.js';
-
-// Re-export processing modules
-export * from './processing/UnifiedCommandParser.js';
-export * from './processing/AgentRouter.js';
-export * from './processing/ContextManager.js';
-export * from './processing/CacheManager.js';
-export * from './processing/QueryProcessor.js';
-
+// Re-export input modules
+export * from './input/AutocompleteEngine.js';
+// Re-export input enhancements
+export {
+  ContextProgress,
+  ExternalEditor,
+  FilePreview,
+  GhostTextPreview,
+  KeyboardShortcuts,
+} from './input/InputEnhancements.js';
+export * from './input/MacroRecorder.js';
+export * from './input/TemplateExpander.js';
+export * from './input/UnifiedInputHandler.js';
+export * from './input/VimModeHandler.js';
 // Re-export modes
 export { BasicMode } from './modes/BasicMode.js';
 export { EnhancedMode } from './modes/EnhancedMode.js';
 export { SwarmMode } from './modes/SwarmMode.js';
-
+export * from './output/BorderRenderer.js';
+export * from './output/MarkdownRenderer.js';
+// Re-export output modules
+export * from './output/SpinnerSystem.js';
+export * from './output/StreamingRenderer.js';
+export * from './output/TableRenderer.js';
+export * from './output/UnifiedOutputRenderer.js';
+export * from './processing/AgentRouter.js';
+export * from './processing/CacheManager.js';
+export * from './processing/ContextManager.js';
+export * from './processing/QueryProcessor.js';
+// Re-export processing modules
+export * from './processing/UnifiedCommandParser.js';
 // Re-export session manager
-export { SessionManager, createSessionManager } from './session/SessionManager.js';
-
-// Re-export input enhancements
-export {
-  GhostTextPreview,
-  ExternalEditor,
-  KeyboardShortcuts,
-  FilePreview,
-  ContextProgress
-} from './input/InputEnhancements.js';
+export { createSessionManager, SessionManager } from './session/SessionManager.js';
 
 /**
  * Main entry point - run CLI
@@ -68,8 +66,8 @@ export async function main(args = process.argv.slice(2)) {
   // Parse command line arguments
   // Defaults: swarm mode, yolo enabled (no questions, full permissions)
   const options = {
-    yolo: true,        // No confirmation prompts
-    autoApprove: true  // Auto-approve all actions
+    yolo: true, // No confirmation prompts
+    autoApprove: true, // Auto-approve all actions
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -91,9 +89,15 @@ export async function main(args = process.argv.slice(2)) {
     } else if (arg === '--safe' || arg === '--confirm') {
       options.yolo = false;
       options.autoApprove = false;
+    } else if (arg === '--verbose' || arg === '-V') {
+      options.verbose = true;
+    } else if (arg === '--trace') {
+      options.trace = true;
     } else if (arg === '--version' || arg === '-v') {
       console.log(`ClaudeHydra CLI v${VERSION} (${CODENAME})`);
       process.exit(0);
+    } else if (arg === '--diagnose') {
+      options.diagnose = true;
     } else if (arg === '--help' || arg === '-h') {
       console.log(`
 ClaudeHydra CLI v${VERSION} (${CODENAME})
@@ -108,6 +112,7 @@ Options:
   --swarm             Shortcut for --mode swarm
   --yolo, -y, --yes   No confirmations, full permissions [DEFAULT]
   --safe, --confirm   Ask for confirmations (safe mode)
+  --diagnose          Run Claude SDK diagnostic and exit
   --version, -v       Show version
   --help, -h          Show this help
 
@@ -121,9 +126,91 @@ Examples:
   claudehydra                    Start in swarm mode, YOLO (default)
   claudehydra --safe             Start with confirmations enabled
   claudehydra --theme cyberpunk  Start with cyberpunk theme
+  claudehydra --diagnose         Check Claude SDK connection
 `);
       process.exit(0);
     }
+  }
+
+  // Run diagnostic mode if requested
+  if (options.diagnose) {
+    process.env.CLAUDE_SDK_DEBUG = '1';
+    const { healthCheck } = await import('../hydra/providers/claude-client.js');
+
+    console.log(`ClaudeHydra CLI v${VERSION} (${CODENAME})`);
+    console.log('Uruchamianie diagnostyki Claude SDK...\n');
+
+    const result = await healthCheck();
+
+    if (result.available) {
+      console.log('✓ Claude SDK: DOSTĘPNY');
+      console.log(`  Provider: ${result.provider}`);
+      console.log(`  Modele: ${result.models?.join(', ')}`);
+      console.log(`  Latencja: ${result.latency_ms}ms`);
+      if (result.claudeCodeVersion) {
+        console.log(`  Claude Code: v${result.claudeCodeVersion}`);
+      }
+    } else {
+      console.log('✗ Claude SDK: NIEDOSTĘPNY');
+      console.log(`  Błąd: ${result.error}`);
+      if (result.errorType) {
+        console.log(`  Typ: ${result.errorType}`);
+      }
+      if (result.stderrOutput) {
+        console.log(`\n  [stderr]:`);
+        for (const line of result.stderrOutput.split('\n')) {
+          console.log(`    ${line}`);
+        }
+      }
+      if (result.suggestions?.length) {
+        console.log('\nSugestie:');
+        for (const s of result.suggestions) {
+          console.log(`  → ${s}`);
+        }
+      }
+    }
+
+    console.log(`\nŚrodowisko:`);
+    console.log(`  Node.js: ${process.version}`);
+    console.log(`  Platform: ${process.platform} ${process.arch}`);
+    console.log(`  CLAUDE_SDK_DEBUG: ${process.env.CLAUDE_SDK_DEBUG || 'nie ustawiony'}`);
+    console.log(`  CLAUDE_API_KEY: ${process.env.CLAUDE_API_KEY ? 'ustawiony' : 'nie ustawiony'}`);
+
+    process.exit(result.available ? 0 : 1);
+  }
+
+  // TEMPORARY: --test-sdk flag to debug crash in full CLI context
+  if (args.includes('--test-sdk')) {
+    console.log('[test-sdk] Creating full CLI...');
+    const cli = await createCLI(options);
+    await cli.initLocal();
+
+    // Start MCP in background (same as run())
+    cli
+      .initMCP?.()
+      .then(() => console.log('[test-sdk] MCP connected'))
+      .catch(() => {});
+
+    console.log('[test-sdk] CLI initialized with readline. Testing SDK...');
+    console.log(
+      '[test-sdk] stdin.isTTY:',
+      process.stdin.isTTY,
+      'stdout.isTTY:',
+      process.stdout.isTTY,
+    );
+    console.log('[test-sdk] FORCE_COLOR:', process.env.FORCE_COLOR);
+
+    const { generate } = await import('../hydra/providers/claude-client.js');
+    const start = Date.now();
+    const result = await generate('Say pong. One word only.', {
+      model: 'claude-opus',
+      maxTurns: 1,
+      timeout: 30000,
+    });
+    console.log(
+      `[test-sdk] Done in ${Date.now() - start}ms | success=${result.success} content=${result.content?.substring(0, 50)} error=${result.error}`,
+    );
+    process.exit(result.success ? 0 : 1);
   }
 
   // Create and run CLI
@@ -138,7 +225,7 @@ export default {
   main,
   CLI_MODES,
   VERSION,
-  CODENAME
+  CODENAME,
 };
 
 // Global error handlers
@@ -159,7 +246,7 @@ process.on('uncaughtException', (error) => {
 // Run if executed directly
 const isMain = process.argv[1]?.includes('cli-unified');
 if (isMain) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('Fatal error:', error.message);
     if (error.stack) {
       console.error(error.stack);

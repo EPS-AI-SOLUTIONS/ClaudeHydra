@@ -7,15 +7,13 @@
  * @module src/planning/plan-mode
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 import {
+  canPhaseStart,
+  getOrderedPhases,
+  inferAgentFromDescription,
   PhaseName,
   PhaseStatus,
-  PHASE_CONFIGS,
-  getOrderedPhases,
-  canPhaseStart,
-  getPhaseConfig,
-  inferAgentFromDescription
 } from './phases.js';
 import { getPlanStorage } from './plan-storage.js';
 
@@ -34,7 +32,7 @@ export const PlanModeState = {
   PAUSED: 'paused',
   COMPLETED: 'completed',
   FAILED: 'failed',
-  CANCELLED: 'cancelled'
+  CANCELLED: 'cancelled',
 };
 
 // ============================================================================
@@ -106,7 +104,7 @@ export class PlanModeController extends EventEmitter {
       // Create new plan
       this.currentPlan = await this.storage.create(query, {
         ...options.metadata,
-        startedAt: new Date().toISOString()
+        startedAt: new Date().toISOString(),
       });
 
       this.emit('planStart', { plan: this.currentPlan });
@@ -172,13 +170,13 @@ export class PlanModeController extends EventEmitter {
     await this.storage.updatePhase(this.currentPlan.id, phaseConfig.name, {
       status: PhaseStatus.ACTIVE,
       agent: phaseConfig.agent,
-      startedAt: new Date().toISOString()
+      startedAt: new Date().toISOString(),
     });
 
     this.emit('phaseStart', {
       phase: phaseConfig.name,
       agent: phaseConfig.agent,
-      plan: this.currentPlan
+      plan: this.currentPlan,
     });
 
     try {
@@ -205,13 +203,13 @@ export class PlanModeController extends EventEmitter {
       await this.storage.updatePhase(this.currentPlan.id, phaseConfig.name, {
         status: PhaseStatus.COMPLETED,
         completedAt: new Date().toISOString(),
-        output
+        output,
       });
 
       this.emit('phaseComplete', {
         phase: phaseConfig.name,
         output,
-        plan: this.currentPlan
+        plan: this.currentPlan,
       });
 
       return output;
@@ -232,7 +230,10 @@ export class PlanModeController extends EventEmitter {
 
     // Execute with timeout
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(`Phase timeout: ${phaseConfig.name}`)), phaseConfig.timeout);
+      setTimeout(
+        () => reject(new Error(`Phase timeout: ${phaseConfig.name}`)),
+        phaseConfig.timeout,
+      );
     });
 
     const executionPromise = this.agentExecutor({
@@ -241,7 +242,7 @@ export class PlanModeController extends EventEmitter {
       systemPrompt: phaseConfig.systemPrompt,
       query: this.currentPlan.query,
       context,
-      signal: this.abortController?.signal
+      signal: this.abortController?.signal,
     });
 
     return Promise.race([executionPromise, timeoutPromise]);
@@ -263,7 +264,7 @@ export class PlanModeController extends EventEmitter {
     const results = {
       completed: [],
       failed: [],
-      skipped: []
+      skipped: [],
     };
 
     // Execute parallel groups
@@ -276,7 +277,7 @@ export class PlanModeController extends EventEmitter {
 
       // Execute tasks in parallel within each group
       const groupResults = await Promise.allSettled(
-        group.map((taskId) => this.executeTask(planOutput.tasks.find((t) => t.id === taskId)))
+        group.map((taskId) => this.executeTask(planOutput.tasks.find((t) => t.id === taskId))),
       );
 
       // Process results
@@ -311,7 +312,7 @@ export class PlanModeController extends EventEmitter {
 
     // Update task status
     await this.storage.updateTask(this.currentPlan.id, task.id, {
-      status: 'in_progress'
+      status: 'in_progress',
     });
 
     try {
@@ -326,15 +327,15 @@ export class PlanModeController extends EventEmitter {
         context: {
           planId: this.currentPlan.id,
           taskId: task.id,
-          previousOutputs: Object.fromEntries(this.phaseOutputs)
+          previousOutputs: Object.fromEntries(this.phaseOutputs),
         },
-        signal: this.abortController?.signal
+        signal: this.abortController?.signal,
       });
 
       // Update task status
       await this.storage.updateTask(this.currentPlan.id, task.id, {
         status: 'completed',
-        output
+        output,
       });
 
       this.emit('taskComplete', { task, output, plan: this.currentPlan });
@@ -343,7 +344,7 @@ export class PlanModeController extends EventEmitter {
     } catch (error) {
       await this.storage.updateTask(this.currentPlan.id, task.id, {
         status: 'failed',
-        error: error.message
+        error: error.message,
       });
 
       throw error;
@@ -374,7 +375,7 @@ export class PlanModeController extends EventEmitter {
     const context = {
       planId: this.currentPlan.id,
       query: this.currentPlan.query,
-      previousPhases: {}
+      previousPhases: {},
     };
 
     // Add outputs from dependency phases
@@ -397,13 +398,13 @@ export class PlanModeController extends EventEmitter {
     await this.storage.updatePhase(this.currentPlan.id, phaseName, {
       status: PhaseStatus.FAILED,
       completedAt: new Date().toISOString(),
-      error: error.message
+      error: error.message,
     });
 
     this.emit('phaseFailed', {
       phase: phaseName,
       error,
-      plan: this.currentPlan
+      plan: this.currentPlan,
     });
   }
 
@@ -414,7 +415,11 @@ export class PlanModeController extends EventEmitter {
     await this.storage.updateStatus(this.currentPlan.id, 'completed');
 
     // Add final outputs
-    await this.storage.addOutput(this.currentPlan.id, 'phaseOutputs', Object.fromEntries(this.phaseOutputs));
+    await this.storage.addOutput(
+      this.currentPlan.id,
+      'phaseOutputs',
+      Object.fromEntries(this.phaseOutputs),
+    );
 
     this.setState(PlanModeState.COMPLETED);
 
@@ -509,7 +514,7 @@ export class PlanModeController extends EventEmitter {
       agent: params.agent,
       phase: params.phase,
       timestamp: new Date().toISOString(),
-      result: 'Placeholder - implement actual agent executor'
+      result: 'Placeholder - implement actual agent executor',
     };
   }
 
@@ -524,7 +529,7 @@ export class PlanModeController extends EventEmitter {
       planId: this.currentPlan?.id,
       currentPhase: this.currentPhase,
       phaseOutputs: Object.fromEntries(this.phaseOutputs),
-      plan: this.currentPlan
+      plan: this.currentPlan,
     };
   }
 

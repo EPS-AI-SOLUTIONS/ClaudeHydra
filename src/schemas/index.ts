@@ -8,103 +8,98 @@
 // JSON Schema Exports (from tool-schema.js)
 // ============================================================================
 export {
-  ToolCategory,
-  toolMetadataSchema,
-  toolDefinitionSchema,
   SchemaValidator,
+  ToolCategory,
+  toolDefinitionSchema,
+  toolMetadataSchema,
   validateToolDefinition,
-  validateToolInput as validateToolInputJson
+  validateToolInput as validateToolInputJson,
 } from './tool-schema.js';
 
 // ============================================================================
 // Zod Schema Exports (from tools.js)
 // ============================================================================
 
+// ============================================================================
+// File Schemas (Buffer-based for CLI/Node.js)
+// ============================================================================
+export {
+  // Preset schemas
+  codeFileSchema,
+  // Factory
+  createFileBufferSchema,
+  documentFileSchema,
+  type FileBuffer,
+  type FileBufferSchemaOptions,
+  // Buffer schemas
+  fileBufferSchema,
+  // Path schema
+  filePathSchema,
+  formatFileErrors,
+  imageFileSchema,
+  // Validation utilities
+  validateFileBuffer,
+} from './file.js';
 // Filesystem schemas
-export {
-  listDirectorySchema,
-  readFileSchema,
-  writeFileSchema,
-  deleteFileSchema
-} from './tools.js';
-
 // Shell schemas
-export {
-  shellCommandSchema,
-  DANGEROUS_PATTERNS,
-  BLOCKED_COMMANDS,
-  assessCommandRisk
-} from './tools.js';
-
 // Knowledge/Memory schemas
-export {
-  knowledgeAddSchema,
-  knowledgeSearchSchema,
-  knowledgeDeleteSchema
-} from './tools.js';
-
 // Swarm schemas
-export {
-  swarmSchema,
-  swarmAgentSchema
-} from './tools.js';
-
 // Generation schemas
-export {
-  generateSchema,
-  chatSchema,
-  embeddingsSchema,
-  generationParamsSchema
-} from './tools.js';
-
 // API schemas
-export {
-  apiProxySchema
-} from './tools.js';
-
 // ============================================================================
 // Reusable Schema Components
 // ============================================================================
-export {
-  // Path schemas
-  safePathSchema,
-  absolutePathSchema,
-
-  // String schemas
-  nonEmptyString,
-  fileContentSchema,
-  urlSchema,
-  tagsSchema,
-
-  // Number schemas
-  positiveInt,
-  temperatureSchema,
-  topPSchema,
-
-  // Model schemas
-  modelSchema,
-  agentSchema,
-
-  // Schema registry
-  schemaRegistry,
-  getSchemaForTool
-} from './tools.js';
-
 // ============================================================================
 // Validation Utilities
 // ============================================================================
 export {
+  absolutePathSchema,
+  agentSchema,
+  apiProxySchema,
+  assessCommandRisk,
+  BLOCKED_COMMANDS,
+  chatSchema,
+  DANGEROUS_PATTERNS,
+  deleteFileSchema,
+  embeddingsSchema,
+  fileContentSchema,
+  formatZodErrors,
+  generateSchema,
+  generationParamsSchema,
+  getSchemaForTool,
+  knowledgeAddSchema,
+  knowledgeDeleteSchema,
+  knowledgeSearchSchema,
+  listDirectorySchema,
+  // Model schemas
+  modelSchema,
+  // String schemas
+  nonEmptyString,
+  // Number schemas
+  positiveInt,
+  readFileSchema,
+  // Path schemas
+  safePathSchema,
+  // Schema registry
+  schemaRegistry,
+  shellCommandSchema,
+  swarmAgentSchema,
+  swarmSchema,
+  tagsSchema,
+  temperatureSchema,
+  topPSchema,
+  urlSchema,
   validateInput,
   validateOrThrow,
   validateToolInput,
-  formatZodErrors
+  writeFileSchema,
 } from './tools.js';
 
+import jsonSchemas from './tool-schema.js';
 // ============================================================================
 // Default Exports
 // ============================================================================
 import toolSchemas from './tools.js';
-import jsonSchemas from './tool-schema.js';
 
 /**
  * Combined schema exports
@@ -112,5 +107,5 @@ import jsonSchemas from './tool-schema.js';
  */
 export default {
   ...toolSchemas,
-  ...jsonSchemas
+  ...jsonSchemas,
 };

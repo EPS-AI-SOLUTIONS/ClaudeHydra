@@ -1,6 +1,6 @@
-import http from 'http';
-import Logger from '../logger.js';
+import http from 'node:http';
 import { MODELS } from '../constants.js';
+import Logger from '../logger.js';
 
 class EmbeddingService {
   constructor() {
@@ -12,7 +12,7 @@ class EmbeddingService {
     return new Promise((resolve, reject) => {
       const data = JSON.stringify({
         model: this.model,
-        prompt: text
+        prompt: text,
       });
 
       const url = new URL(`${this.host}/api/embeddings`);
@@ -20,14 +20,16 @@ class EmbeddingService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Content-Length': data.length
-        }
+          'Content-Length': data.length,
+        },
       };
 
       const req = http.request(url, options, (res) => {
         let responseBody = '';
 
-        res.on('data', (chunk) => { responseBody += chunk; });
+        res.on('data', (chunk) => {
+          responseBody += chunk;
+        });
         res.on('end', () => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
             try {

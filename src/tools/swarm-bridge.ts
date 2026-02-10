@@ -5,9 +5,9 @@
  */
 
 import { z } from 'zod';
-import { BaseTool, ToolResult } from './base-tool.js';
+import { ToolExecutionError } from '../errors/AppError.js';
 import { swarmSchema } from '../schemas/tools.js';
-import { ValidationError, ToolExecutionError } from '../errors/AppError.js';
+import { BaseTool } from './base-tool.js';
 
 /**
  * @typedef {Object} SwarmIteration
@@ -97,7 +97,7 @@ class SwarmResultProcessor {
     if (!rawResult) {
       return {
         success: false,
-        error: 'Swarm returned no result'
+        error: 'Swarm returned no result',
       };
     }
 
@@ -106,7 +106,7 @@ class SwarmResultProcessor {
       return {
         success: false,
         error: rawResult.error,
-        partialResults: rawResult.partialResults || null
+        partialResults: rawResult.partialResults || null,
       };
     }
 
@@ -118,7 +118,7 @@ class SwarmResultProcessor {
       agentsUsed: rawResult.agentsUsed || [],
       executionTime: rawResult.executionTime,
       memoryStored: rawResult.memoryStored || false,
-      summary: this.generateSummary(rawResult)
+      summary: SwarmResultProcessor.generateSummary(rawResult),
     };
   }
 
@@ -129,13 +129,13 @@ class SwarmResultProcessor {
    */
   static generateSummary(result) {
     const iterations = result.iterations || [];
-    const agentCount = new Set(iterations.map(i => i.agent)).size;
+    const agentCount = new Set(iterations.map((i) => i.agent)).size;
 
     return {
       totalIterations: iterations.length,
       uniqueAgents: agentCount,
       hasOutput: !!(result.finalOutput || result.output),
-      completedSuccessfully: result.success !== false
+      completedSuccessfully: result.success !== false,
     };
   }
 }
@@ -149,9 +149,10 @@ class HydraSwarmTool extends BaseTool {
   constructor() {
     super({
       name: 'hydra_swarm',
-      description: 'Execute the multi-step Agent Swarm Protocol for complex task decomposition and execution',
+      description:
+        'Execute the multi-step Agent Swarm Protocol for complex task decomposition and execution',
       inputSchema: swarmSchema,
-      timeoutMs: 300000 // 5 minutes for swarm operations
+      timeoutMs: 300000, // 5 minutes for swarm operations
     });
   }
 
@@ -174,7 +175,7 @@ class HydraSwarmTool extends BaseTool {
     if (error || !swarmFn) {
       throw new ToolExecutionError(
         `Swarm engine is not available: ${error || 'Unknown error'}`,
-        'SWARM_UNAVAILABLE'
+        'SWARM_UNAVAILABLE',
       );
     }
 
@@ -182,7 +183,7 @@ class HydraSwarmTool extends BaseTool {
       promptPreview: prompt.substring(0, 100),
       agents,
       maxIterations,
-      parallel
+      parallel,
     });
 
     // Execute swarm with configuration
@@ -192,7 +193,7 @@ class HydraSwarmTool extends BaseTool {
       saveMemory,
       title,
       maxIterations,
-      parallel
+      parallel,
     });
 
     // Process and return result
@@ -204,8 +205,8 @@ class HydraSwarmTool extends BaseTool {
         prompt: prompt.substring(0, 200) + (prompt.length > 200 ? '...' : ''),
         agents,
         saveMemory,
-        maxIterations
-      }
+        maxIterations,
+      },
     };
   }
 }
@@ -221,7 +222,7 @@ class SwarmStatusTool extends BaseTool {
       name: 'swarm_status',
       description: 'Check the availability and status of the swarm engine',
       inputSchema: z.object({}),
-      timeoutMs: 5000
+      timeoutMs: 5000,
     });
   }
 
@@ -236,7 +237,7 @@ class SwarmStatusTool extends BaseTool {
       available: !!swarmFn,
       error: error || null,
       version: swarmFn?.version || 'unknown',
-      capabilities: swarmFn ? await this.getCapabilities(swarmFn) : []
+      capabilities: swarmFn ? await this.getCapabilities(swarmFn) : [],
     };
   }
 
@@ -273,7 +274,7 @@ const swarmStatusTool = new SwarmStatusTool();
  */
 export const tools = {
   hydraSwarm: hydraSwarmTool,
-  swarmStatus: swarmStatusTool
+  swarmStatus: swarmStatusTool,
 };
 
 /**
@@ -285,20 +286,15 @@ export default [
     name: hydraSwarmTool.name,
     description: hydraSwarmTool.description,
     inputSchema: hydraSwarmTool.getJsonSchema(),
-    execute: (input) => hydraSwarmTool.execute(input)
+    execute: (input) => hydraSwarmTool.execute(input),
   },
   {
     name: swarmStatusTool.name,
     description: swarmStatusTool.description,
     inputSchema: swarmStatusTool.getJsonSchema(),
-    execute: (input) => swarmStatusTool.execute(input)
-  }
+    execute: (input) => swarmStatusTool.execute(input),
+  },
 ];
 
 // Named exports for direct class access
-export {
-  HydraSwarmTool,
-  SwarmResultProcessor,
-  SwarmStatusTool,
-  loadSwarmModule
-};
+export { HydraSwarmTool, SwarmResultProcessor, SwarmStatusTool, loadSwarmModule };

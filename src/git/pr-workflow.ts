@@ -7,8 +7,9 @@
  * @module src/git/pr-workflow
  */
 
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+import { safeGit } from '../security/safe-command.js';
 
 const execAsync = promisify(exec);
 
@@ -27,7 +28,10 @@ const PR_FOOTER = '\n\n🤖 Generated with [Claude Code](https://claude.com/clau
 // ============================================================================
 
 /**
- * Execute git command
+ * Execute git command (delegated to safeGit for security validation).
+ *
+ * SECURITY FIX: Replaced raw `execAsync(\`git ${command}\`)` with safeGit()
+ * which validates the git subcommand against injection patterns before execution.
  *
  * @param {string} command - Git command
  * @param {Object} [options] - Execution options
@@ -35,26 +39,7 @@ const PR_FOOTER = '\n\n🤖 Generated with [Claude Code](https://claude.com/clau
  */
 async function git(command, options = {}) {
   const { cwd = process.cwd() } = options;
-
-  try {
-    const { stdout, stderr } = await execAsync(`git ${command}`, {
-      cwd,
-      maxBuffer: 10 * 1024 * 1024
-    });
-
-    return {
-      success: true,
-      stdout: stdout.trim(),
-      stderr: stderr.trim()
-    };
-  } catch (error) {
-    return {
-      success: false,
-      stdout: error.stdout?.trim() || '',
-      stderr: error.stderr?.trim() || error.message,
-      error
-    };
-  }
+  return safeGit(command, { cwd, maxBuffer: 10 * 1024 * 1024 });
 }
 
 /**
@@ -70,20 +55,20 @@ async function gh(command, options = {}) {
   try {
     const { stdout, stderr } = await execAsync(`gh ${command}`, {
       cwd,
-      maxBuffer: 10 * 1024 * 1024
+      maxBuffer: 10 * 1024 * 1024,
     });
 
     return {
       success: true,
       stdout: stdout.trim(),
-      stderr: stderr.trim()
+      stderr: stderr.trim(),
     };
   } catch (error) {
     return {
       success: false,
       stdout: error.stdout?.trim() || '',
       stderr: error.stderr?.trim() || error.message,
-      error
+      error,
     };
   }
 }
@@ -117,7 +102,7 @@ export class PRWorkflow {
     const [branchResult, remoteResult, aheadBehindResult] = await Promise.all([
       git('branch --show-current', { cwd: this.cwd }),
       git('rev-parse --abbrev-ref --symbolic-full-name @{u}', { cwd: this.cwd }),
-      git(`rev-list --left-right --count ${this.baseBranch}...HEAD`, { cwd: this.cwd })
+      git(`rev-list --left-right --count ${this.baseBranch}...HEAD`, { cwd: this.cwd }),
     ]);
 
     const currentBranch = branchResult.stdout;
@@ -139,7 +124,7 @@ export class PRWorkflow {
       remote,
       ahead,
       behind,
-      baseBranch: this.baseBranch
+      baseBranch: this.baseBranch,
     };
   }
 
@@ -149,19 +134,21 @@ export class PRWorkflow {
    * @returns {Promise<Object[]>}
    */
   async getCommitsForPR() {
-    const result = await git(
-      `log ${this.baseBranch}..HEAD --format="%h|%s|%an|%ae"`,
-      { cwd: this.cwd }
-    );
+    const result = await git(`log ${this.baseBranch}..HEAD --format="%h|%s|%an|%ae"`, {
+      cwd: this.cwd,
+    });
 
     if (!result.success || !result.stdout) {
       return [];
     }
 
-    return result.stdout.split('\n').filter((l) => l.trim()).map((line) => {
-      const [hash, subject, author, email] = line.split('|');
-      return { hash, subject, author, email };
-    });
+    return result.stdout
+      .split('\n')
+      .filter((l) => l.trim())
+      .map((line) => {
+        const [hash, subject, author, email] = line.split('|');
+        return { hash, subject, author, email };
+      });
   }
 
   /**
@@ -170,29 +157,29 @@ export class PRWorkflow {
    * @returns {Promise<Object>}
    */
   async getChangedFiles() {
-    const result = await git(
-      `diff --name-status ${this.baseBranch}...HEAD`,
-      { cwd: this.cwd }
-    );
+    const result = await git(`diff --name-status ${this.baseBranch}...HEAD`, { cwd: this.cwd });
 
     if (!result.success) {
       return { files: [], stats: {} };
     }
 
-    const files = result.stdout.split('\n').filter((l) => l.trim()).map((line) => {
-      const [status, ...pathParts] = line.split(/\s+/);
-      return {
-        status: status[0],
-        path: pathParts.join(' ')
-      };
-    });
+    const files = result.stdout
+      .split('\n')
+      .filter((l) => l.trim())
+      .map((line) => {
+        const [status, ...pathParts] = line.split(/\s+/);
+        return {
+          status: status[0],
+          path: pathParts.join(' '),
+        };
+      });
 
     const stats = {
       added: files.filter((f) => f.status === 'A').length,
       modified: files.filter((f) => f.status === 'M').length,
       deleted: files.filter((f) => f.status === 'D').length,
       renamed: files.filter((f) => f.status === 'R').length,
-      total: files.length
+      total: files.length,
     };
 
     return { files, stats };
@@ -204,10 +191,7 @@ export class PRWorkflow {
    * @returns {Promise<Object>}
    */
   async getDiffStats() {
-    const result = await git(
-      `diff --stat ${this.baseBranch}...HEAD`,
-      { cwd: this.cwd }
-    );
+    const result = await git(`diff --stat ${this.baseBranch}...HEAD`, { cwd: this.cwd });
 
     if (!result.success) {
       return { additions: 0, deletions: 0 };
@@ -303,7 +287,7 @@ export class PRWorkflow {
     return {
       success: true,
       url: prUrl,
-      stdout: result.stdout
+      stdout: result.stdout,
     };
   }
 
@@ -321,7 +305,7 @@ export class PRWorkflow {
     if (commits.length === 1) {
       // Use single commit subject (truncate if needed)
       const subject = commits[0].subject;
-      return subject.length > 70 ? subject.slice(0, 67) + '...' : subject;
+      return subject.length > 70 ? `${subject.slice(0, 67)}...` : subject;
     }
 
     // Multiple commits - summarize
@@ -432,14 +416,14 @@ export class PRWorkflow {
       title,
       body,
       base: options.base || this.baseBranch,
-      draft: options.draft
+      draft: options.draft,
     });
 
     return {
       ...result,
       title,
       commits: commits.length,
-      filesChanged: changedFiles.stats.total
+      filesChanged: changedFiles.stats.total,
     };
   }
 
@@ -471,7 +455,7 @@ export class PRWorkflow {
   async getPR(prNumber) {
     const result = await gh(
       `pr view ${prNumber} --json number,title,state,body,url,author,reviews,comments`,
-      { cwd: this.cwd }
+      { cwd: this.cwd },
     );
 
     if (!result.success) {
@@ -488,10 +472,9 @@ export class PRWorkflow {
    * @returns {Promise<Object[]>}
    */
   async getPRComments(prNumber) {
-    const result = await gh(
-      `api repos/{owner}/{repo}/pulls/${prNumber}/comments`,
-      { cwd: this.cwd }
-    );
+    const result = await gh(`api repos/{owner}/{repo}/pulls/${prNumber}/comments`, {
+      cwd: this.cwd,
+    });
 
     if (!result.success) {
       return [];
