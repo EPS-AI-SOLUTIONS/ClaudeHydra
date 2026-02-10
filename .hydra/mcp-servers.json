@@ -28,7 +28,13 @@
     "serena": {
       "type": "stdio",
       "command": "C:/Users/BIURODOM/.local/bin/uvx.exe",
-      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--project-from-cwd"],
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--project-from-cwd"
+      ],
       "timeout": 120000,
       "healthCheck": {
         "enabled": true,
@@ -77,7 +83,13 @@
     "filesystem": {
       "type": "stdio",
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@anthropics/mcp-server-filesystem", "C:/Users/BIURODOM/Desktop/ClaudeHydra"],
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@anthropics/mcp-server-filesystem",
+        "C:/Users/BIURODOM/Desktop/ClaudeHydra"
+      ],
       "timeout": 30000,
       "healthCheck": {
         "enabled": true,
@@ -103,12 +115,20 @@
       "command": "cmd",
       "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-github"],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}",
+        "GITHUB_TOOLSETS": "repos,issues,pull_requests,code_security"
       },
       "timeout": 60000,
       "healthCheck": {
         "enabled": true,
-        "interval": 120000
+        "interval": 120000,
+        "timeout": 10000
+      },
+      "retry": {
+        "maxRetries": 3,
+        "baseDelay": 2000,
+        "maxDelay": 15000,
+        "backoffMultiplier": 2
       },
       "tags": ["git", "github", "vcs"],
       "enabled": true

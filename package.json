@@ -3,12 +3,27 @@
   "version": "2.1.0",
   "description": "ClaudeHydra - Unified CLI with Witcher Swarm (12 Agents)",
   "type": "module",
-  "main": "src/server.ts",
+  "main": "dist/server.js",
   "exports": {
-    ".": "./src/server.ts",
-    "./cli": "./src/cli-unified/index.ts",
-    "./cli-unified": "./src/cli-unified/index.ts",
-    "./cli-unified/*": "./src/cli-unified/*.ts"
+    ".": {
+      "import": {
+        "source": "./src/server.ts",
+        "default": "./dist/server.js"
+      }
+    },
+    "./cli": {
+      "import": {
+        "source": "./src/cli-unified/index.ts",
+        "default": "./dist/cli-unified/index.js"
+      }
+    },
+    "./cli-unified": {
+      "import": {
+        "source": "./src/cli-unified/index.ts",
+        "default": "./dist/cli-unified/index.js"
+      }
+    },
+    "./cli-unified/*": "./dist/cli-unified/*.js"
   },
   "scripts": {
     "start": "tsx src/server.ts",
@@ -27,7 +42,9 @@
     "ai:list": "node scripts/ai-handler.js list",
     "swarm": "tsx src/cli-unified/index.ts --mode swarm",
     "enhanced": "tsx src/cli-unified/index.ts --mode enhanced",
+    "prebuild": "node -e \"const fs=require('fs');if(fs.existsSync('dist'))fs.rmSync('dist',{recursive:true})\"",
     "build": "tsc",
+    "postbuild": "echo Build complete - dist/ ready",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -45,8 +62,8 @@
     "shortcut:verbose": "powershell -ExecutionPolicy Bypass -File scripts/create-shortcut.ps1 -Verbose"
   },
   "bin": {
-    "claudehydra": "src/cli-unified/index.ts",
-    "hydra-cli": "src/cli-unified/index.ts"
+    "claudehydra": "dist/cli-unified/index.js",
+    "hydra-cli": "dist/cli-unified/index.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.37",
