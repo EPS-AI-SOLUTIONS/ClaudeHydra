@@ -16,6 +16,9 @@ import {
   loadProjectContext as _loadProjectContext,
   logPlanPhase as _logPlanPhase,
   logToolExecution as _logToolExecution,
+  postCommitReview as _postCommitReview,
+  postPushLog as _postPushLog,
+  prePushGate as _prePushGate,
   rateLimit as _rateLimit,
   securityAudit as _securityAudit,
   validatePlanPhase as _validatePlanPhase,
@@ -33,7 +36,18 @@ export {
   _validatePlanPhase as validatePlanPhase,
   _logPlanPhase as logPlanPhase,
   _cleanupSession as cleanupSession,
+  _postCommitReview as postCommitReview,
+  _prePushGate as prePushGate,
+  _postPushLog as postPushLog,
 };
+
+// Git hooks module
+export {
+  GIT_HOOKS,
+  postCommitReview as gitPostCommitReview,
+  postPushLog as gitPostPushLog,
+  prePushGate as gitPrePushGate,
+} from './git-hooks.js';
 
 // Hook manager
 import {
@@ -93,6 +107,11 @@ export default {
   validatePlanPhase: _validatePlanPhase,
   logPlanPhase: _logPlanPhase,
   cleanupSession: _cleanupSession,
+
+  // Git pipeline hooks
+  postCommitReview: _postCommitReview,
+  prePushGate: _prePushGate,
+  postPushLog: _postPushLog,
 
   // Manager
   HookManager: _HookManager,

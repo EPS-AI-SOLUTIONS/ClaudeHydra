@@ -27,6 +27,11 @@ export const HookEvent = {
   POST_TOOL_USE_FAILURE: 'PostToolUseFailure',
   PRE_PLAN_PHASE: 'PrePlanPhase',
   POST_PLAN_PHASE: 'PostPlanPhase',
+
+  // Git pipeline hooks
+  POST_COMMIT: 'PostCommit',
+  PRE_PUSH: 'PrePush',
+  POST_PUSH: 'PostPush',
 };
 
 /**
@@ -126,6 +131,7 @@ export class HookManager extends EventEmitter {
   async registerFromConfig(eventName, hookConfig) {
     const { handler, type = 'builtin', timeout = 30000, options = {} } = hookConfig;
 
+    // biome-ignore lint/suspicious/noImplicitAnyLet: hookFn is assigned dynamically from builtin/shell/custom sources
     let hookFn;
 
     if (type === 'builtin') {
@@ -430,6 +436,53 @@ export class HookManager extends EventEmitter {
       plan,
       output,
       duration,
+    });
+  }
+
+  // ==========================================================================
+  // Git Pipeline Hooks
+  // ==========================================================================
+
+  /**
+   * Execute post-commit hooks (Vesemir review)
+   *
+   * @param {Object} context - Commit context
+   * @returns {Promise<Object>}
+   */
+  async onPostCommit(context = {}) {
+    return this.execute(HookEvent.POST_COMMIT, {
+      ...context,
+      cwd: context.cwd || process.cwd(),
+    });
+  }
+
+  /**
+   * Execute pre-push hooks (quality gate)
+   *
+   * @param {Object} context - Push context
+   * @returns {Promise<Object>}
+   */
+  async onPrePush(context = {}) {
+    return this.execute(
+      HookEvent.PRE_PUSH,
+      {
+        ...context,
+        cwd: context.cwd || process.cwd(),
+      },
+      { stopOnFailure: true },
+    );
+  }
+
+  /**
+   * Execute post-push hooks
+   *
+   * @param {Object} context - Push context
+   * @returns {Promise<Object>}
+   */
+  async onPostPush(context = {}) {
+    return this.execute(HookEvent.POST_PUSH, {
+      ...context,
+      cwd: context.cwd || process.cwd(),
     });
   }
 

@@ -76,14 +76,15 @@ export const AGENT_TIERS = {
 
 /**
  * Executor model specializations
- * All agents now use Claude Opus 4 via Anthropic API
+ * Most agents use Claude Opus 4 via Anthropic API.
+ * Vesemir uses Claude Sonnet 4.5 for cost-effective automated code review.
  */
 export const EXECUTOR_MODELS = {
   Ciri: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Fast execution & portals
   Jaskier: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Documentation/logging
   Geralt: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Security/ops
   Triss: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Data/integration
-  Vesemir: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Mentoring/review
+  Vesemir: { model: 'claude-sonnet-4-5-20250929', provider: 'claude' }, // Code review (Sonnet — cost-effective)
   Eskel: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Testing/stability
   Lambert: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Refactoring/cleanup
   Zoltan: { model: 'claude-opus-4-20250514', provider: 'claude' }, // Infra/DevOps
@@ -140,9 +141,18 @@ export const AGENT_SPECS = {
   },
   Vesemir: {
     persona: 'Mentor',
-    focus: 'Mentoring/Review',
+    focus: 'Code Review/Quality',
     tier: 'executor',
-    skills: ['code review', 'best practices', 'teaching', 'guidance'],
+    skills: [
+      'code review',
+      'best practices',
+      'quality gates',
+      'security audit',
+      'architecture review',
+      'post-commit review',
+      'teaching',
+      'guidance',
+    ],
   },
   Ciri: {
     persona: 'Prodigy',
@@ -269,6 +279,24 @@ export function buildAgentPrompt(agent) {
 
   const tierInfo = MODEL_TIERS[spec.tier];
 
+  // Vesemir gets a specialized prompt for code review
+  if (agent === 'Vesemir') {
+    return `You are Vesemir, the eldest and most experienced witcher from the School of the Wolf.
+Your role: Senior Code Reviewer and Quality Gate Guardian
+Your specialization: ${spec.focus}
+Your skills: ${spec.skills.join(', ')}
+
+As the Mentor, you review code with decades of experience. You are firm but fair:
+- You focus on substance over style — security, correctness, architecture
+- You explain the "why" behind your advice, teaching the younger witchers
+- You praise good patterns when you see them — positive reinforcement matters
+- You use Claude Sonnet for cost-effective, thorough automated reviews
+- You never block on trivial issues, only on genuine threats to quality
+
+Respond in character while completing the task professionally.
+Be concise but thorough. Focus on your area of expertise.`;
+  }
+
   return `You are ${agent}, the ${spec.persona} from the School of the Wolf.
 Your role: ${tierInfo?.description || spec.focus}
 Your specialization: ${spec.focus}
@@ -310,6 +338,7 @@ export async function invokeAgent(agent, prompt, options = {}) {
   const startTime = Date.now();
 
   try {
+    // biome-ignore lint/suspicious/noImplicitAnyLet: result type varies by provider (claude vs ollama)
     let result;
 
     if (modelConfig.provider === 'claude') {
@@ -393,6 +422,7 @@ export async function invokeAgent(agent, prompt, options = {}) {
 export function classifyPrompt(prompt) {
   const promptLower = prompt.toLowerCase();
 
+  // biome-ignore lint/suspicious/noImplicitAnyLet: agent is assigned in pattern matching branches below
   let agent;
 
   // Pattern matching for agent selection
@@ -404,7 +434,11 @@ export function classifyPrompt(prompt) {
     agent = 'Triss';
   } else if (/document|readme|explain|report|log|comment|summarize/.test(promptLower)) {
     agent = 'Jaskier';
-  } else if (/review|mentor|best.?practice|guideline|improve/.test(promptLower)) {
+  } else if (
+    /review|mentor|best.?practice|guideline|improve|code.?quality|post.?commit|pre.?push/.test(
+      promptLower,
+    )
+  ) {
     agent = 'Vesemir';
   } else if (/quick|fast|simple|easy|trivial/.test(promptLower)) {
     agent = 'Ciri';
@@ -469,6 +503,7 @@ export function analyzeComplexity(prompt) {
   score += hasMultipleTasks ? 2 : 0;
   score += technicalTerms;
 
+  // biome-ignore lint/suspicious/noImplicitAnyLet: level is assigned in conditional chain below
   let level;
   if (score <= 2) level = 'Simple';
   else if (score <= 5) level = 'Moderate';

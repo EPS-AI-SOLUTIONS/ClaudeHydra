@@ -444,6 +444,48 @@ export async function cleanupSession(_context) {
 }
 
 // ============================================================================
+// Git Pipeline Hooks (delegated to git-hooks module)
+// ============================================================================
+
+/**
+ * Lazy-load git hooks to avoid circular dependencies
+ */
+async function loadGitHooks() {
+  const { GIT_HOOKS } = await import('./git-hooks.js');
+  return GIT_HOOKS;
+}
+
+/**
+ * Post-commit review via Vesemir
+ * @param {Object} context - Hook context
+ * @returns {Promise<Object>}
+ */
+export async function postCommitReview(context) {
+  const gitHooks = await loadGitHooks();
+  return gitHooks.postCommitReview(context);
+}
+
+/**
+ * Pre-push quality gate
+ * @param {Object} context - Hook context
+ * @returns {Promise<Object>}
+ */
+export async function prePushGate(context) {
+  const gitHooks = await loadGitHooks();
+  return gitHooks.prePushGate(context);
+}
+
+/**
+ * Post-push logging
+ * @param {Object} context - Hook context
+ * @returns {Promise<Object>}
+ */
+export async function postPushLog(context) {
+  const gitHooks = await loadGitHooks();
+  return gitHooks.postPushLog(context);
+}
+
+// ============================================================================
 // Hook Registry
 // ============================================================================
 
@@ -467,6 +509,11 @@ export const BUILTIN_HOOKS = {
   // Plan phase hooks
   validatePlanPhase,
   logPlanPhase,
+
+  // Git pipeline hooks
+  postCommitReview,
+  prePushGate,
+  postPushLog,
 };
 
 /**

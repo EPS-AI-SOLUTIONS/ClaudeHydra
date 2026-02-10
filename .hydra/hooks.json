@@ -143,6 +143,57 @@
           "archivePlans": true
         }
       }
+    ],
+
+    "PostCommit": [
+      {
+        "name": "vesemir-post-commit-review",
+        "type": "builtin",
+        "handler": "postCommitReview",
+        "enabled": true,
+        "timeout": 120000,
+        "config": {
+          "autoReview": true,
+          "strictness": "normal",
+          "saveReviews": true,
+          "reviewDir": ".hydra/reviews",
+          "ignorePatterns": [
+            "*.lock",
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "*.min.js",
+            "*.min.css",
+            "dist/**",
+            "build/**",
+            "node_modules/**"
+          ]
+        }
+      }
+    ],
+
+    "PrePush": [
+      {
+        "name": "vesemir-pre-push-gate",
+        "type": "builtin",
+        "handler": "prePushGate",
+        "enabled": false,
+        "timeout": 180000,
+        "config": {
+          "blockOnCritical": true,
+          "minScore": 40,
+          "strictness": "normal",
+          "ignorePatterns": ["*.lock", "package-lock.json", "pnpm-lock.yaml"]
+        }
+      }
+    ],
+
+    "PostPush": [
+      {
+        "name": "post-push-logger",
+        "type": "builtin",
+        "handler": "postPushLog",
+        "enabled": true
+      }
     ]
   }
 }
