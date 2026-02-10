@@ -12,19 +12,25 @@ mod ollama_commands;
 mod parallel;
 
 use tauri::Manager;
+#[cfg(not(debug_assertions))]
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Initialize logging
-    let _ = tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        .with(tracing_subscriber::EnvFilter::from_default_env())
-        .try_init();
-
     // DevTools - only in debug builds for performance/security
+    // NOTE: devtools::init() sets its own global tracing subscriber,
+    // so we only init tracing_subscriber manually in release builds.
     #[cfg(debug_assertions)]
     let devtools = tauri_plugin_devtools::init();
+
+    // Initialize logging (release builds only - devtools handles this in debug)
+    #[cfg(not(debug_assertions))]
+    {
+        let _ = tracing_subscriber::registry()
+            .with(tracing_subscriber::fmt::layer())
+            .with(tracing_subscriber::EnvFilter::from_default_env())
+            .try_init();
+    }
 
     let mut builder = tauri::Builder::default();
 

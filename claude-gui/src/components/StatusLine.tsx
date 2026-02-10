@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { useEffect, useState } from 'react';
 import { useClaudeStore } from '../stores/claudeStore';
 import { formatSizeGB } from '../utils/format';
 
 // Check if running in Tauri (v2 uses __TAURI_INTERNALS__)
-const isTauri = () => typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+const isTauri = () =>
+  typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
 interface OllamaModel {
   name: string;
@@ -48,7 +49,6 @@ export function StatusLine() {
     return () => clearInterval(interval);
   }, []);
 
-
   return (
     <footer className="glass-panel px-3 py-1.5 flex items-center justify-between text-[11px] font-mono border-t border-matrix-accent/20">
       {/* Left section - Session status */}
@@ -65,7 +65,7 @@ export function StatusLine() {
             }`}
           />
           <span className="text-matrix-text-secondary">
-            Claude: {isConnecting ? 'Connecting...' : status.is_active ? 'Active' : 'Inactive'}
+            Claude: {isConnecting ? 'Łączenie...' : status.is_active ? 'Aktywny' : 'Nieaktywny'}
           </span>
         </div>
 
@@ -79,7 +79,7 @@ export function StatusLine() {
             }`}
           />
           <span className="text-matrix-text-secondary">
-            Ollama: {ollamaConnected ? `${ollamaModels.length} models` : 'Offline'}
+            Ollama: {ollamaConnected ? `${ollamaModels.length} modeli` : 'Offline'}
           </span>
         </div>
 
@@ -100,27 +100,33 @@ export function StatusLine() {
         {/* Pending approval */}
         {pendingApproval && (
           <div className="flex items-center gap-1.5 text-matrix-warning animate-pulse">
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <svg
+              className="w-3 h-3"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              role="img"
+              aria-label="Ostrzeżenie"
+            >
               <path
                 fillRule="evenodd"
                 d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
                 clipRule="evenodd"
               />
             </svg>
-            <span>Pending Approval</span>
+            <span>Oczekuje na zatwierdzenie</span>
           </div>
         )}
       </div>
 
       {/* Center section - Statistics */}
       <div className="flex items-center gap-4 text-matrix-text-dim">
-        <span title="Approved">
+        <span title="Zatwierdzone">
           <span className="text-matrix-accent">✓</span> {status.approved_count}
         </span>
-        <span title="Denied">
+        <span title="Odrzucone">
           <span className="text-matrix-error">✗</span> {status.denied_count}
         </span>
-        <span title="Auto-approved">
+        <span title="Automatyczne">
           <span className="text-matrix-warning">⚡</span> {status.auto_approved_count}
         </span>
       </div>
@@ -131,7 +137,10 @@ export function StatusLine() {
         {ollamaConnected && ollamaModels.length > 0 && (
           <div className="flex items-center gap-1 text-matrix-text-dim">
             <span className="text-cyan-400">⚙</span>
-            <span className="max-w-[150px] truncate" title={ollamaModels.map(m => m.name).join(', ')}>
+            <span
+              className="max-w-[150px] truncate"
+              title={ollamaModels.map((m) => m.name).join(', ')}
+            >
               {ollamaModels.slice(0, 2).map((m, i) => (
                 <span key={m.name}>
                   {i > 0 && ', '}

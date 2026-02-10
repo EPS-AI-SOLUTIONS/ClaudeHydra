@@ -1,31 +1,29 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { Toaster } from 'sonner';
-import { Header } from './components/Header';
-import { TerminalView } from './components/TerminalView';
-import { StatusLine } from './components/StatusLine';
-import { MatrixRain } from './components/MatrixRain';
 import { CpuDashboard } from './components/CpuDashboard';
-import { useClaudeStore } from './stores/claudeStore';
-import { claudeIpc } from './lib/ipc';
+import { Header } from './components/Header';
 import {
-  OllamaChatViewLazy,
-  ChatHistoryViewLazy,
-  SettingsViewLazy,
-  HistoryViewLazy,
-  RulesViewLazy,
-  LearningPanelLazy,
-  DebugPanelLazy,
-  SidebarLazy,
   LazyComponentWrapper,
+  SettingsViewLazy,
+  SidebarLazy,
+  WelcomeViewLazy,
 } from './components/LazyComponents';
+import { MatrixRain } from './components/MatrixRain';
+import { StatusLine } from './components/StatusLine';
 import { SuspenseFallback } from './components/SuspenseFallback';
+import { TerminalView } from './components/TerminalView';
+import { claudeIpc } from './lib/ipc';
+import { useClaudeStore } from './stores/claudeStore';
 import './index.css';
 
 // Check if running in Tauri (v2 uses __TAURI_INTERNALS__)
-const isTauri = () => typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+const isTauri = () =>
+  typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
 function App() {
-  const { currentView, workingDir, cliPath, initPrompt, setStatus, setConnecting, addOutputLine } = useClaudeStore();
+  const { currentView, workingDir, cliPath, initPrompt, setStatus, setConnecting, addOutputLine } =
+    useClaudeStore();
   const autoStarted = useRef(false);
   const [debugMsg, setDebugMsg] = useState<string>('[AUTO-START] Loading...');
 
@@ -53,7 +51,7 @@ function App() {
           break;
         }
         updateDebug(`[AUTO-START] Waiting for Tauri... ${i + 1}/10`);
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       if (!tauriReady) {
@@ -64,7 +62,7 @@ function App() {
       updateDebug('[AUTO-START] Tauri ready...');
 
       // Dodatkowe opóźnienie na stabilność
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       try {
         updateDebug('[AUTO-START] Getting status...');
@@ -92,7 +90,7 @@ function App() {
         updateDebug(`[AUTO-START] Session result: ${sessionResult}`);
 
         // Poczekaj chwilę na stabilizację sesji
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         const newStatus = await claudeIpc.getStatus();
         updateDebug(`[AUTO-START] Status: is_active=${newStatus.is_active}`);
@@ -124,73 +122,50 @@ function App() {
     autoStart();
   }, [workingDir, cliPath, initPrompt, setStatus, setConnecting, addOutputLine]);
 
-  // Debug banner component
-  const DebugBanner = () => debugMsg ? (
-    <div style={{
-      position: 'fixed',
-      top: 10,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      background: '#00ff41',
-      color: '#000',
-      padding: '10px 20px',
-      borderRadius: 5,
-      zIndex: 99999,
-      fontFamily: 'monospace',
-      fontWeight: 'bold',
-    }}>
-      {debugMsg}
-    </div>
-  ) : null;
+  // Debug banner component - only visible in dev mode
+  const DebugBanner = () =>
+    import.meta.env.DEV && debugMsg ? (
+      <div
+        style={{
+          position: 'fixed',
+          top: 10,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#00ff41',
+          color: '#000',
+          padding: '10px 20px',
+          borderRadius: 5,
+          zIndex: 99999,
+          fontFamily: 'monospace',
+          fontWeight: 'bold',
+        }}
+      >
+        {debugMsg}
+      </div>
+    ) : null;
 
   const renderView = () => {
     switch (currentView) {
+      case 'home':
+        return (
+          <LazyComponentWrapper>
+            <WelcomeViewLazy />
+          </LazyComponentWrapper>
+        );
       case 'terminal':
         return <TerminalView />;
-      case 'ollama':
-        return (
-          <LazyComponentWrapper>
-            <OllamaChatViewLazy />
-          </LazyComponentWrapper>
-        );
-      case 'learning':
-        return (
-          <LazyComponentWrapper>
-            <LearningPanelLazy />
-          </LazyComponentWrapper>
-        );
-      case 'debug':
-        return (
-          <LazyComponentWrapper>
-            <DebugPanelLazy />
-          </LazyComponentWrapper>
-        );
-      case 'chats':
-        return (
-          <LazyComponentWrapper>
-            <ChatHistoryViewLazy />
-          </LazyComponentWrapper>
-        );
-      case 'history':
-        return (
-          <LazyComponentWrapper>
-            <HistoryViewLazy />
-          </LazyComponentWrapper>
-        );
       case 'settings':
         return (
           <LazyComponentWrapper>
             <SettingsViewLazy />
           </LazyComponentWrapper>
         );
-      case 'rules':
+      default:
         return (
           <LazyComponentWrapper>
-            <RulesViewLazy />
+            <WelcomeViewLazy />
           </LazyComponentWrapper>
         );
-      default:
-        return <TerminalView />;
     }
   };
 
@@ -238,11 +213,20 @@ function App() {
           {/* Header */}
           <Header />
 
-          {/* Content */}
-          <div className="flex-1 overflow-hidden">
-            <Suspense fallback={<SuspenseFallback />}>
-              {renderView()}
-            </Suspense>
+          {/* Content with view transition animation */}
+          <div className="flex-1 overflow-hidden relative">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentView}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                className="h-full w-full"
+              >
+                <Suspense fallback={<SuspenseFallback />}>{renderView()}</Suspense>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
           {/* Status Line */}

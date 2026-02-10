@@ -16,11 +16,11 @@ cd /d "%~dp0claude-gui"
 :: Check if node_modules exists
 if not exist "node_modules" (
     echo [INFO] Installing dependencies...
-    call npm install
+    call pnpm install
 )
 
 echo [INFO] Starting Tauri dev server...
 echo [INFO] Press Ctrl+C to stop
 echo.
 
-call npm run tauri dev
+call pnpm tauri dev

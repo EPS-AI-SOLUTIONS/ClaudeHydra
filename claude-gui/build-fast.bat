@@ -1,6 +1,7 @@
 @echo off
 REM Fast Build Script with sccache for Claude HYDRA
 REM Uses sccache for compilation caching - ~44% faster rebuilds
+REM Uses "tauri build" to ensure frontend (Vite) is built before Rust
 
 setlocal
 
@@ -23,15 +24,15 @@ if "%1"=="--stats" goto stats
 goto dev
 
 :dev
-echo Building DEV version...
-cd /d "%~dp0src-tauri"
-cargo build
+echo Building DEV version (frontend + Rust)...
+cd /d "%~dp0"
+call pnpm tauri build --debug --no-bundle
 goto end
 
 :release
-echo Building RELEASE version...
-cd /d "%~dp0src-tauri"
-cargo build --release
+echo Building RELEASE version (frontend + Rust)...
+cd /d "%~dp0"
+call pnpm tauri build --no-bundle
 goto end
 
 :clean

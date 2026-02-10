@@ -72,7 +72,7 @@ interface ClaudeState {
   workingDir: string;
   cliPath: string;
   sidebarCollapsed: boolean;
-  currentView: 'terminal' | 'settings' | 'history' | 'rules' | 'chats' | 'ollama' | 'learning' | 'debug';
+  currentView: 'home' | 'terminal' | 'settings';
 
   // Auto-start config
   autoStartEnabled: boolean;
@@ -149,7 +149,7 @@ export const useClaudeStore = create<ClaudeState>()(
       workingDir: 'C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra',
       cliPath: 'C:\\Users\\BIURODOM\\Desktop\\ClaudeHydra\\bin\\claude-code\\cli.js',
       sidebarCollapsed: false,
-      currentView: 'terminal',
+      currentView: 'home',
 
       // API Configuration - initial empty values
       apiKeys: {
@@ -290,7 +290,7 @@ export const useClaudeStore = create<ClaudeState>()(
       updateChatSessionTitle: (id, title) =>
         set((state) => ({
           chatSessions: state.chatSessions.map((s) =>
-            s.id === id ? { ...s, title, updatedAt: Date.now() } : s
+            s.id === id ? { ...s, title, updatedAt: Date.now() } : s,
           ),
         })),
 
@@ -315,7 +315,7 @@ export const useClaudeStore = create<ClaudeState>()(
             updatedSessions = state.chatSessions.map((s) =>
               s.id === state.currentChatSessionId
                 ? { ...s, title: truncatedTitle, updatedAt: Date.now() }
-                : s
+                : s,
             );
           }
 
@@ -383,7 +383,7 @@ export const useClaudeStore = create<ClaudeState>()(
       name: 'claude-gui-storage',
       version: 1, // Increment when migration is needed
       migrate: (persistedState, version) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: persisted state has unknown shape during migration
         const state = persistedState as any;
 
         // Migration from version 0 to 1: Fix ClaudeCli -> ClaudeHydra paths
@@ -416,6 +416,6 @@ export const useClaudeStore = create<ClaudeState>()(
         autoApproveOnStart: state.autoApproveOnStart,
         initPrompt: state.initPrompt,
       }),
-    }
-  )
+    },
+  ),
 );

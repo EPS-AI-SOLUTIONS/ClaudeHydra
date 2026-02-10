@@ -1,25 +1,42 @@
-import { RefreshCw, FolderOpen } from 'lucide-react';
-import { useClaudeStore } from '../stores/claudeStore';
+import { FolderOpen, RefreshCw } from 'lucide-react';
 import { useClaude } from '../hooks/useClaude';
+import { useClaudeStore } from '../stores/claudeStore';
+
+// Check if running in Tauri
+const isTauri = () =>
+  typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
 export function Header() {
   const { currentView, workingDir, setWorkingDir } = useClaudeStore();
   const { status } = useClaude();
 
   const viewTitles: Record<string, string> = {
+    home: 'Strona główna',
     terminal: 'Terminal',
-    ollama: 'Ollama AI',
-    chats: 'Historia czatów',
     settings: 'Ustawienia',
-    history: 'Historia zatwierdzeń',
-    rules: 'Reguły automatyczne',
   };
 
   const handleChangeDir = async () => {
-    // For now, use a simple prompt. In production, use Tauri's dialog API
-    const newDir = window.prompt('Enter working directory:', workingDir);
-    if (newDir) {
-      setWorkingDir(newDir);
+    if (isTauri()) {
+      try {
+        const { open } = await import('@tauri-apps/plugin-dialog');
+        const selected = await open({
+          directory: true,
+          multiple: false,
+          defaultPath: workingDir,
+          title: 'Wybierz katalog roboczy',
+        });
+        if (selected && typeof selected === 'string') {
+          setWorkingDir(selected);
+        }
+      } catch {
+        // Fallback to prompt if dialog fails
+        const newDir = window.prompt('Podaj katalog roboczy:', workingDir);
+        if (newDir) setWorkingDir(newDir);
+      }
+    } else {
+      const newDir = window.prompt('Podaj katalog roboczy:', workingDir);
+      if (newDir) setWorkingDir(newDir);
     }
   };
 
@@ -29,11 +46,12 @@ export function Header() {
       <div className="flex items-center gap-2 text-sm">
         <span className="text-matrix-text-dim">HYDRA</span>
         <span className="text-matrix-border">/</span>
-        <span className="text-matrix-accent">{viewTitles[currentView]}</span>
+        <span className="text-matrix-accent">{viewTitles[currentView] ?? currentView}</span>
       </div>
 
       {/* Center - Working Directory */}
       <button
+        type="button"
         onClick={handleChangeDir}
         className="flex items-center gap-2 text-xs text-matrix-text-dim hover:text-matrix-accent transition-colors"
       >
@@ -45,7 +63,7 @@ export function Header() {
       <div className="flex items-center gap-4">
         {status.is_active && status.session_id && (
           <span className="text-xs text-matrix-text-dim">
-            Session: {status.session_id.slice(0, 8)}...
+            Sesja: {status.session_id.slice(0, 8)}...
           </span>
         )}
 
@@ -55,12 +73,11 @@ export function Header() {
               status.is_active ? 'status-dot-online' : 'status-dot-offline'
             }`}
           />
-          <span className="text-xs">
-            {status.is_active ? 'Połączony' : 'Rozłączony'}
-          </span>
+          <span className="text-xs">{status.is_active ? 'Połączony' : 'Rozłączony'}</span>
         </div>
 
         <button
+          type="button"
           className="p-2 rounded-lg hover:bg-matrix-accent/10 transition-colors"
           title="Odśwież"
         >
