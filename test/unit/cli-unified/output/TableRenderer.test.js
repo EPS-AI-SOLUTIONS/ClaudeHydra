@@ -3,20 +3,20 @@
  * @module test/unit/cli-unified/output/TableRenderer.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock ThemeRegistry
 vi.mock('../../../../src/cli-unified/core/ThemeRegistry.js', () => ({
   themeRegistry: {
     getCurrent: vi.fn(() => ({
       colors: {
-        primary: vi.fn(s => `[primary]${s}[/primary]`),
-        highlight: vi.fn(s => `[highlight]${s}[/highlight]`),
-        dim: vi.fn(s => `[dim]${s}[/dim]`),
-        border: vi.fn(s => `[border]${s}[/border]`)
-      }
-    }))
-  }
+        primary: vi.fn((s) => `[primary]${s}[/primary]`),
+        highlight: vi.fn((s) => `[highlight]${s}[/highlight]`),
+        dim: vi.fn((s) => `[dim]${s}[/dim]`),
+        border: vi.fn((s) => `[border]${s}[/border]`),
+      },
+    })),
+  },
 }));
 
 // Mock constants
@@ -33,7 +33,7 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
     teeUp: '┴',
     teeRight: '├',
     teeLeft: '┤',
-    cross: '┼'
+    cross: '┼',
   },
   BOX_DOUBLE: {
     horizontal: '═',
@@ -46,7 +46,7 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
     teeUp: '╩',
     teeRight: '╠',
     teeLeft: '╣',
-    cross: '╬'
+    cross: '╬',
   },
   BOX_ROUNDED: {
     horizontal: '─',
@@ -59,7 +59,7 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
     teeUp: '┴',
     teeRight: '├',
     teeLeft: '┤',
-    cross: '┼'
+    cross: '┼',
   },
   BOX_ASCII: {
     horizontal: '-',
@@ -72,20 +72,20 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
     teeUp: '+',
     teeRight: '+',
     teeLeft: '+',
-    cross: '+'
-  }
+    cross: '+',
+  },
 }));
 
 import {
-  TABLE_STYLES,
-  LIST_STYLES,
   ALIGNMENT,
-  TableRenderer,
-  ListRenderer,
-  createTableRenderer,
   createListRenderer,
+  createTableRenderer,
+  LIST_STYLES,
+  ListRenderer,
+  renderList,
   renderTable,
-  renderList
+  TABLE_STYLES,
+  TableRenderer,
 } from '../../../../src/cli-unified/output/TableRenderer.js';
 
 describe('TableRenderer Module', () => {
@@ -186,7 +186,7 @@ describe('TableRenderer Module', () => {
           style: 'grid',
           padding: 2,
           zebra: true,
-          maxWidth: 80
+          maxWidth: 80,
         });
         expect(renderer.style).toBe('grid');
         expect(renderer.padding).toBe(2);
@@ -213,7 +213,10 @@ describe('TableRenderer Module', () => {
       it('should render a basic table', () => {
         const renderer = new TableRenderer({ style: 'simple' });
         const headers = ['Name', 'Age'];
-        const rows = [['Alice', '30'], ['Bob', '25']];
+        const rows = [
+          ['Alice', '30'],
+          ['Bob', '25'],
+        ];
         const result = renderer.render(headers, rows);
 
         expect(result).toContain('Name');
@@ -264,7 +267,10 @@ describe('TableRenderer Module', () => {
       it('should calculate column widths based on content', () => {
         const renderer = new TableRenderer();
         const headers = ['Name', 'Description'];
-        const rows = [['A', 'Short'], ['BB', 'Much longer text']];
+        const rows = [
+          ['A', 'Short'],
+          ['BB', 'Much longer text'],
+        ];
         const widths = renderer.calculateWidths(headers, rows);
 
         expect(widths[0]).toBe(4); // 'Name' is longest in col 0
@@ -295,7 +301,10 @@ describe('TableRenderer Module', () => {
 
       it('should render array as key-value table', () => {
         const renderer = new TableRenderer({ style: 'simple' });
-        const data = [['key1', 'value1'], ['key2', 'value2']];
+        const data = [
+          ['key1', 'value1'],
+          ['key2', 'value2'],
+        ];
         const result = renderer.renderKeyValue(data);
 
         expect(result).toContain('key1');
@@ -328,7 +337,7 @@ describe('TableRenderer Module', () => {
       it('should accept custom options', () => {
         const renderer = new ListRenderer({
           style: 'number',
-          indent: 4
+          indent: 4,
         });
         expect(renderer.style).toBe('number');
         expect(renderer.indent).toBe(4);
@@ -386,8 +395,8 @@ describe('TableRenderer Module', () => {
         const items = [
           {
             text: 'Parent',
-            children: ['Child 1', 'Child 2']
-          }
+            children: ['Child 1', 'Child 2'],
+          },
         ];
         const result = renderer.render(items);
 
@@ -400,7 +409,7 @@ describe('TableRenderer Module', () => {
         const renderer = new ListRenderer({ style: 'bullet' });
         const items = [
           { text: 'Level 0', level: 0 },
-          { text: 'Level 1', level: 1 }
+          { text: 'Level 1', level: 1 },
         ];
         const result = renderer.render(items);
 
@@ -414,7 +423,7 @@ describe('TableRenderer Module', () => {
         const renderer = new ListRenderer();
         const definitions = {
           'Term 1': 'Definition 1',
-          'Term 2': 'Definition 2'
+          'Term 2': 'Definition 2',
         };
         const result = renderer.renderDefinitions(definitions);
 

@@ -1,24 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
-  Brain,
-  Database,
-  Search,
-  Plus,
-  Trash2,
-  RefreshCw,
-  Download,
-  Settings2,
-  Loader2,
-  Check,
-  X,
-  FileJson,
-  Cpu,
   BookOpen,
-  Sparkles,
+  Brain,
+  Check,
   ChevronDown,
   ChevronRight,
+  Cpu,
+  Database,
+  Download,
+  FileJson,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Search,
+  Settings2,
+  Sparkles,
+  Trash2,
+  X,
 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 // ============================================================================
 // Types
@@ -59,7 +59,12 @@ interface TrainingExample {
 // Sub-components
 // ============================================================================
 
-function StatCard({ label, value, icon: Icon, color }: {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+}: {
   label: string;
   value: string | number;
   icon: React.ElementType;
@@ -76,7 +81,13 @@ function StatCard({ label, value, icon: Icon, color }: {
   );
 }
 
-function SectionHeader({ title, icon: Icon, expanded, onToggle, actions }: {
+function SectionHeader({
+  title,
+  icon: Icon,
+  expanded,
+  onToggle,
+  actions,
+}: {
   title: string;
   icon: React.ElementType;
   expanded: boolean;
@@ -170,7 +181,9 @@ export function LearningPanel() {
 
   const fetchTrainingExamples = useCallback(async () => {
     try {
-      const result = await invoke<TrainingExample[]>('learning_get_training_examples', { limit: 20 });
+      const result = await invoke<TrainingExample[]>('learning_get_training_examples', {
+        limit: 20,
+      });
       setTrainingExamples(result);
     } catch (err) {
       console.error('Failed to fetch training examples:', err);
@@ -485,7 +498,11 @@ export function LearningPanel() {
                     disabled={addingDoc || !addDocContent.trim()}
                     className="glass-button glass-button-primary px-3"
                   >
-                    {addingDoc ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                    {addingDoc ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Plus size={14} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -568,7 +585,9 @@ export function LearningPanel() {
                     <input
                       type="text"
                       value={editedPrefs.code_language}
-                      onChange={(e) => setEditedPrefs({ ...editedPrefs, code_language: e.target.value })}
+                      onChange={(e) =>
+                        setEditedPrefs({ ...editedPrefs, code_language: e.target.value })
+                      }
                       className="glass-input w-full text-sm mt-1"
                     />
                   </div>
@@ -591,7 +610,9 @@ export function LearningPanel() {
                     <input
                       type="text"
                       value={editedPrefs.coding_style}
-                      onChange={(e) => setEditedPrefs({ ...editedPrefs, coding_style: e.target.value })}
+                      onChange={(e) =>
+                        setEditedPrefs({ ...editedPrefs, coding_style: e.target.value })
+                      }
                       className="glass-input w-full text-sm mt-1"
                     />
                   </div>

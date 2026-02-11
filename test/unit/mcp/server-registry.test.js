@@ -3,13 +3,13 @@
  * @module test/unit/mcp/server-registry.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  ServerState,
+  getServerRegistry,
+  resetServerRegistry,
   ServerEntry,
   ServerRegistry,
-  getServerRegistry,
-  resetServerRegistry
+  ServerState,
 } from '../../../src/mcp/server-registry.js';
 
 describe('MCP Server Registry', () => {
@@ -195,7 +195,7 @@ describe('MCP Server Registry', () => {
         const entry = new ServerEntry('test', {
           type: 'stdio',
           enabled: true,
-          tags: ['ai']
+          tags: ['ai'],
         });
         entry.state = ServerState.CONNECTED;
         entry.connectedAt = new Date('2024-01-01T00:00:00Z');
@@ -266,8 +266,7 @@ describe('MCP Server Registry', () => {
       it('should throw for duplicate registration', () => {
         registry.register('test', {});
 
-        expect(() => registry.register('test', {}))
-          .toThrow('Server already registered: test');
+        expect(() => registry.register('test', {})).toThrow('Server already registered: test');
       });
     });
 
@@ -367,8 +366,7 @@ describe('MCP Server Registry', () => {
       });
 
       it('should throw for unknown server', () => {
-        expect(() => registry.setDefault('unknown'))
-          .toThrow('Server not registered: unknown');
+        expect(() => registry.setDefault('unknown')).toThrow('Server not registered: unknown');
       });
     });
 
@@ -453,7 +451,7 @@ describe('MCP Server Registry', () => {
         expect(spy).toHaveBeenCalledWith({
           entry: expect.any(ServerEntry),
           previousState: ServerState.DISCONNECTED,
-          currentState: ServerState.CONNECTING
+          currentState: ServerState.CONNECTING,
         });
       });
 
@@ -496,8 +494,9 @@ describe('MCP Server Registry', () => {
       });
 
       it('should throw for unknown server', () => {
-        expect(() => registry.updateState('unknown', ServerState.CONNECTED))
-          .toThrow('Server not registered: unknown');
+        expect(() => registry.updateState('unknown', ServerState.CONNECTED)).toThrow(
+          'Server not registered: unknown',
+        );
       });
     });
 
@@ -527,13 +526,14 @@ describe('MCP Server Registry', () => {
 
         expect(spy).toHaveBeenCalledWith({
           serverId: 'test',
-          tools: expect.any(Array)
+          tools: expect.any(Array),
         });
       });
 
       it('should throw for unknown server', () => {
-        expect(() => registry.registerTools('unknown', []))
-          .toThrow('Server not registered: unknown');
+        expect(() => registry.registerTools('unknown', [])).toThrow(
+          'Server not registered: unknown',
+        );
       });
     });
 
@@ -548,8 +548,9 @@ describe('MCP Server Registry', () => {
       });
 
       it('should throw for unknown server', () => {
-        expect(() => registry.registerResources('unknown', []))
-          .toThrow('Server not registered: unknown');
+        expect(() => registry.registerResources('unknown', [])).toThrow(
+          'Server not registered: unknown',
+        );
       });
     });
 
@@ -564,8 +565,9 @@ describe('MCP Server Registry', () => {
       });
 
       it('should throw for unknown server', () => {
-        expect(() => registry.registerPrompts('unknown', []))
-          .toThrow('Server not registered: unknown');
+        expect(() => registry.registerPrompts('unknown', [])).toThrow(
+          'Server not registered: unknown',
+        );
       });
     });
 
@@ -623,8 +625,9 @@ describe('MCP Server Registry', () => {
       });
 
       it('should throw for unknown server', () => {
-        expect(() => registry.updateHealth('unknown', {}))
-          .toThrow('Server not registered: unknown');
+        expect(() => registry.updateHealth('unknown', {})).toThrow(
+          'Server not registered: unknown',
+        );
       });
     });
 

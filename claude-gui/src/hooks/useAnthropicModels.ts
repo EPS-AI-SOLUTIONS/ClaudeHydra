@@ -4,8 +4,7 @@ import { useClaudeStore } from '../stores/claudeStore';
 import type { AnthropicApiModel, AnthropicModel } from '../types/anthropic';
 
 const isTauri = () =>
-  typeof window !== 'undefined' &&
-  ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+  typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
 /** Parse model ID into family and version */
 function parseModelId(id: string): { family: string; version: string } {
@@ -109,8 +108,8 @@ export function useAnthropicModels() {
   const query = useQuery({
     queryKey: ['anthropic-models', anthropicKey ? 'keyed' : 'server'],
     queryFn: () => fetchAnthropicModels(anthropicKey),
-    staleTime: 1000 * 60 * 60,       // 1 hour
-    gcTime: 1000 * 60 * 60 * 24,     // 24 hours
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
     retry: 2,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });

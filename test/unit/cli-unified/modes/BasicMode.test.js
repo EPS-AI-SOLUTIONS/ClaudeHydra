@@ -3,13 +3,10 @@
  * @module test/unit/cli-unified/modes/BasicMode.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  BasicMode,
-  createBasicMode
-} from '../../../../src/cli-unified/modes/BasicMode.js';
+import { BasicMode, createBasicMode } from '../../../../src/cli-unified/modes/BasicMode.js';
 
 describe('BasicMode Module', () => {
   let mockCli;
@@ -26,7 +23,7 @@ describe('BasicMode Module', () => {
     mockCommandParser = {
       register: vi.fn(),
       isCommand: vi.fn(() => false),
-      run: vi.fn()
+      run: vi.fn(),
     };
 
     // Create mock query processor
@@ -34,7 +31,7 @@ describe('BasicMode Module', () => {
       defaultModel: 'test-model',
       getModels: vi.fn(() => Promise.resolve(['model1', 'model2'])),
       checkHealth: vi.fn(() => Promise.resolve({ healthy: true, models: ['model1'] })),
-      process: vi.fn(() => Promise.resolve({ text: 'response' }))
+      process: vi.fn(() => Promise.resolve({ text: 'response' })),
     };
 
     // Create mock output
@@ -47,19 +44,19 @@ describe('BasicMode Module', () => {
       newline: vi.fn(),
       streamWrite: vi.fn(),
       streamFlush: vi.fn(),
-      success: vi.fn()
+      success: vi.fn(),
     };
 
     // Create mock history
     mockHistory = {
       getRecent: vi.fn(() => []),
-      count: 5
+      count: 5,
     };
 
     // Create mock theme registry
     mockThemeRegistry = {
       list: vi.fn(() => ['default', 'dark', 'light']),
-      getCurrent: vi.fn(() => ({ name: 'default' }))
+      getCurrent: vi.fn(() => ({ name: 'default' })),
     };
 
     // Create mock CLI
@@ -69,7 +66,7 @@ describe('BasicMode Module', () => {
       output: mockOutput,
       history: mockHistory,
       themeRegistry: mockThemeRegistry,
-      streaming: false
+      streaming: false,
     };
   });
 
@@ -123,7 +120,7 @@ describe('BasicMode Module', () => {
       await mode.init();
 
       const modelCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'model'
+        (call) => call[0].name === 'model',
       );
       expect(modelCmd).toBeDefined();
       expect(modelCmd[0].aliases).toContain('m');
@@ -134,7 +131,7 @@ describe('BasicMode Module', () => {
       await mode.init();
 
       const mlCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'multiline'
+        (call) => call[0].name === 'multiline',
       );
       expect(mlCmd).toBeDefined();
       expect(mlCmd[0].aliases).toContain('ml');
@@ -145,7 +142,7 @@ describe('BasicMode Module', () => {
       await mode.init();
 
       const themeCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'theme'
+        (call) => call[0].name === 'theme',
       );
       expect(themeCmd).toBeDefined();
       expect(themeCmd[0].aliases).toContain('t');
@@ -156,7 +153,7 @@ describe('BasicMode Module', () => {
       await mode.init();
 
       const histCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'history'
+        (call) => call[0].name === 'history',
       );
       expect(histCmd).toBeDefined();
       expect(histCmd[0].aliases).toContain('hist');
@@ -167,7 +164,7 @@ describe('BasicMode Module', () => {
       await mode.init();
 
       const statusCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'status'
+        (call) => call[0].name === 'status',
       );
       expect(statusCmd).toBeDefined();
     });
@@ -184,7 +181,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const modelCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'model'
+          (call) => call[0].name === 'model',
         );
         const result = await modelCmd[0].handler(['new-model']);
 
@@ -197,7 +194,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const modelCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'model'
+          (call) => call[0].name === 'model',
         );
         const result = await modelCmd[0].handler([]);
 
@@ -213,7 +210,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const mlCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'multiline'
+          (call) => call[0].name === 'multiline',
         );
         const ctx = {};
         await mlCmd[0].handler([], ctx);
@@ -228,7 +225,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const themeCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'theme'
+          (call) => call[0].name === 'theme',
         );
         const result = await themeCmd[0].handler(['dark']);
 
@@ -241,7 +238,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const themeCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'theme'
+          (call) => call[0].name === 'theme',
         );
         const result = await themeCmd[0].handler([]);
 
@@ -252,16 +249,13 @@ describe('BasicMode Module', () => {
 
     describe('history command', () => {
       it('should show recent history', async () => {
-        mockHistory.getRecent.mockReturnValue([
-          { text: 'query 1' },
-          { text: 'query 2' }
-        ]);
+        mockHistory.getRecent.mockReturnValue([{ text: 'query 1' }, { text: 'query 2' }]);
 
         const mode = new BasicMode(mockCli);
         await mode.init();
 
         const histCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'history'
+          (call) => call[0].name === 'history',
         );
         const result = await histCmd[0].handler([]);
 
@@ -275,7 +269,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const histCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'history'
+          (call) => call[0].name === 'history',
         );
         await histCmd[0].handler(['5']);
 
@@ -289,7 +283,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const histCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'history'
+          (call) => call[0].name === 'history',
         );
         const result = await histCmd[0].handler([]);
 
@@ -304,7 +298,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const histCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'history'
+          (call) => call[0].name === 'history',
         );
         const result = await histCmd[0].handler([]);
 
@@ -318,7 +312,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const statusCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'status'
+          (call) => call[0].name === 'status',
         );
         const result = await statusCmd[0].handler();
 
@@ -334,7 +328,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const statusCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'status'
+          (call) => call[0].name === 'status',
         );
         const result = await statusCmd[0].handler();
 
@@ -346,7 +340,7 @@ describe('BasicMode Module', () => {
         await mode.init();
 
         const statusCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'status'
+          (call) => call[0].name === 'status',
         );
         const result = await statusCmd[0].handler();
 
@@ -403,7 +397,7 @@ describe('BasicMode Module', () => {
     describe('query processing (streaming)', () => {
       it('should stream tokens', async () => {
         mockCli.streaming = true;
-        mockQueryProcessor.process.mockImplementation(async (input, options) => {
+        mockQueryProcessor.process.mockImplementation(async (_input, options) => {
           // Simulate streaming
           if (options.onToken) {
             options.onToken('Hello');

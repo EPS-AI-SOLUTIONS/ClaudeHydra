@@ -5,8 +5,13 @@
  * bez blokowania UI.
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { getWorkerPool, WorkerTask, WorkerResult, terminateWorkerPool } from '../utils/workerPool';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  getWorkerPool,
+  terminateWorkerPool,
+  type WorkerResult,
+  type WorkerTask,
+} from '../utils/workerPool';
 
 interface UseWorkerOptions {
   /** Priorytet zadania (1-10, wyższy = ważniejszy) */
@@ -75,100 +80,106 @@ export function useWorker<T = unknown>(options: UseWorkerOptions = {}): UseWorke
     };
   }, [onProgress, autoCleanup]);
 
-  const execute = useCallback(async (task: WorkerTask): Promise<WorkerResult<T>> => {
-    setIsLoading(true);
-    setError(null);
-    setProgress(0);
+  const execute = useCallback(
+    async (task: WorkerTask): Promise<WorkerResult<T>> => {
+      setIsLoading(true);
+      setError(null);
+      setProgress(0);
 
-    try {
-      const res = await poolRef.current.execute<T>(task, priority);
+      try {
+        const res = await poolRef.current.execute<T>(task, priority);
 
-      if (mountedRef.current) {
-        if (res.status === 'success') {
-          setResult(res.value);
-          setProgress(100);
-        } else if (res.status === 'error') {
-          setError(res.message);
-        }
-        setIsLoading(false);
-        setStats(poolRef.current.getStats());
-      }
-
-      return res;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      if (mountedRef.current) {
-        setError(message);
-        setIsLoading(false);
-      }
-      return { status: 'error', message, workerId: -1 };
-    }
-  }, [priority]);
-
-  const executeAll = useCallback(async (tasks: WorkerTask[]): Promise<WorkerResult<T>[]> => {
-    setIsLoading(true);
-    setError(null);
-    setProgress(0);
-
-    try {
-      const results = await poolRef.current.executeAll<T>(tasks, priority);
-
-      if (mountedRef.current) {
-        const successResults = results.filter(r => r.status === 'success');
-        if (successResults.length > 0) {
-          setResult((successResults[successResults.length - 1] as { value: T }).value);
-        }
-        setProgress(100);
-        setIsLoading(false);
-        setStats(poolRef.current.getStats());
-      }
-
-      return results;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      if (mountedRef.current) {
-        setError(message);
-        setIsLoading(false);
-      }
-      return [{ status: 'error', message, workerId: -1 }];
-    }
-  }, [priority]);
-
-  const executeBatch = useCallback(async (
-    tasks: WorkerTask[],
-    batchSize?: number
-  ): Promise<WorkerResult<T>[]> => {
-    setIsLoading(true);
-    setError(null);
-    setProgress(0);
-
-    try {
-      const results = await poolRef.current.executeBatch<T>(
-        tasks,
-        batchSize,
-        (completed, total) => {
-          if (mountedRef.current) {
-            setProgress(Math.round((completed / total) * 100));
+        if (mountedRef.current) {
+          if (res.status === 'success') {
+            setResult(res.value);
+            setProgress(100);
+          } else if (res.status === 'error') {
+            setError(res.message);
           }
+          setIsLoading(false);
+          setStats(poolRef.current.getStats());
         }
-      );
 
-      if (mountedRef.current) {
-        setProgress(100);
-        setIsLoading(false);
-        setStats(poolRef.current.getStats());
+        return res;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (mountedRef.current) {
+          setError(message);
+          setIsLoading(false);
+        }
+        return { status: 'error', message, workerId: -1 };
       }
+    },
+    [priority],
+  );
 
-      return results;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      if (mountedRef.current) {
-        setError(message);
-        setIsLoading(false);
+  const executeAll = useCallback(
+    async (tasks: WorkerTask[]): Promise<WorkerResult<T>[]> => {
+      setIsLoading(true);
+      setError(null);
+      setProgress(0);
+
+      try {
+        const results = await poolRef.current.executeAll<T>(tasks, priority);
+
+        if (mountedRef.current) {
+          const successResults = results.filter((r) => r.status === 'success');
+          if (successResults.length > 0) {
+            setResult((successResults[successResults.length - 1] as { value: T }).value);
+          }
+          setProgress(100);
+          setIsLoading(false);
+          setStats(poolRef.current.getStats());
+        }
+
+        return results;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (mountedRef.current) {
+          setError(message);
+          setIsLoading(false);
+        }
+        return [{ status: 'error', message, workerId: -1 }];
       }
-      return [{ status: 'error', message, workerId: -1 }];
-    }
-  }, [priority]);
+    },
+    [priority],
+  );
+
+  const executeBatch = useCallback(
+    async (tasks: WorkerTask[], batchSize?: number): Promise<WorkerResult<T>[]> => {
+      setIsLoading(true);
+      setError(null);
+      setProgress(0);
+
+      try {
+        const results = await poolRef.current.executeBatch<T>(
+          tasks,
+          batchSize,
+          (completed, total) => {
+            if (mountedRef.current) {
+              setProgress(Math.round((completed / total) * 100));
+            }
+          },
+        );
+
+        if (mountedRef.current) {
+          setProgress(100);
+          setIsLoading(false);
+          setStats(poolRef.current.getStats());
+        }
+
+        return results;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (mountedRef.current) {
+          setError(message);
+          setIsLoading(false);
+        }
+        return [{ status: 'error', message, workerId: -1 }];
+      }
+    },
+    [],
+  );
 
   return {
     execute,
@@ -188,10 +199,13 @@ export function useWorker<T = unknown>(options: UseWorkerOptions = {}): UseWorke
 export function useWorkerSearch(data: string[]) {
   const { execute, isLoading, result, error } = useWorker<Array<{ item: string; score: number }>>();
 
-  const search = useCallback(async (query: string) => {
-    if (!query.trim() || data.length === 0) return [];
-    return execute({ type: 'search', data, query });
-  }, [data, execute]);
+  const search = useCallback(
+    async (query: string) => {
+      if (!query.trim() || data.length === 0) return [];
+      return execute({ type: 'search', data, query });
+    },
+    [data, execute],
+  );
 
   return { search, isLoading, results: result ?? [], error };
 }
@@ -202,9 +216,12 @@ export function useWorkerSearch(data: string[]) {
 export function useWorkerSort() {
   const { execute, isLoading, result, error } = useWorker<number[]>();
 
-  const sort = useCallback(async (data: number[]) => {
-    return execute({ type: 'sort', data });
-  }, [execute]);
+  const sort = useCallback(
+    async (data: number[]) => {
+      return execute({ type: 'sort', data });
+    },
+    [execute],
+  );
 
   return { sort, isLoading, sorted: result ?? [], error };
 }
@@ -215,9 +232,12 @@ export function useWorkerSort() {
 export function useWorkerHash() {
   const { execute, isLoading, result, error } = useWorker<number>();
 
-  const hash = useCallback(async (data: string) => {
-    return execute({ type: 'hash', data });
-  }, [execute]);
+  const hash = useCallback(
+    async (data: string) => {
+      return execute({ type: 'hash', data });
+    },
+    [execute],
+  );
 
   return { hash, isLoading, hashValue: result, error };
 }

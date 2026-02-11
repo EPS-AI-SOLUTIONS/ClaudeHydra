@@ -1,8 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { useClaude } from './useClaude';
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useClaudeStore } from '../stores/claudeStore';
-import { mockInvoke } from '../test/setup';
+import { useClaude } from './useClaude';
 
 // Mock claudeIpc
 vi.mock('../lib/ipc', () => ({
@@ -88,7 +87,7 @@ describe('useClaude hook', () => {
       expect(claudeIpc.startSession).toHaveBeenCalledWith(
         'C:\\test\\dir',
         'C:\\test\\cli.js',
-        'Test prompt'
+        'Test prompt',
       );
     });
 
@@ -138,7 +137,7 @@ describe('useClaude hook', () => {
       });
 
       const outputLines = useClaudeStore.getState().outputLines;
-      expect(outputLines.some(line => line.type === 'error')).toBe(true);
+      expect(outputLines.some((line) => line.type === 'error')).toBe(true);
     });
 
     it('resets connecting state after error', async () => {
@@ -187,7 +186,7 @@ describe('useClaude hook', () => {
       });
 
       const outputLines = useClaudeStore.getState().outputLines;
-      expect(outputLines.some(line => line.content === 'Session stopped')).toBe(true);
+      expect(outputLines.some((line) => line.content === 'Session stopped')).toBe(true);
     });
   });
 
@@ -210,7 +209,7 @@ describe('useClaude hook', () => {
       });
 
       const outputLines = useClaudeStore.getState().outputLines;
-      expect(outputLines.some(line => line.content === '> hello world')).toBe(true);
+      expect(outputLines.some((line) => line.content === '> hello world')).toBe(true);
     });
 
     it('handles send error gracefully', async () => {
@@ -223,7 +222,7 @@ describe('useClaude hook', () => {
       });
 
       const outputLines = useClaudeStore.getState().outputLines;
-      expect(outputLines.some(line => line.type === 'error')).toBe(true);
+      expect(outputLines.some((line) => line.type === 'error')).toBe(true);
     });
   });
 
@@ -286,7 +285,7 @@ describe('useClaude hook', () => {
       });
 
       const outputLines = useClaudeStore.getState().outputLines;
-      expect(outputLines.some(line => line.content === '[APPROVED]')).toBe(true);
+      expect(outputLines.some((line) => line.content === '[APPROVED]')).toBe(true);
     });
   });
 
@@ -349,7 +348,7 @@ describe('useClaude hook', () => {
       });
 
       const outputLines = useClaudeStore.getState().outputLines;
-      expect(outputLines.some(line => line.content === '[DENIED]')).toBe(true);
+      expect(outputLines.some((line) => line.content === '[DENIED]')).toBe(true);
     });
   });
 
@@ -384,7 +383,7 @@ describe('useClaude hook', () => {
       });
 
       const outputLines = useClaudeStore.getState().outputLines;
-      expect(outputLines.some(line => line.type === 'error')).toBe(true);
+      expect(outputLines.some((line) => line.type === 'error')).toBe(true);
     });
   });
 
@@ -442,7 +441,7 @@ describe('useClaude - Prompting scenarios', () => {
       await result.current.sendInput(multiLinePrompt);
     });
 
-    expect(claudeIpc.sendInput).toHaveBeenCalledWith(multiLinePrompt + '\n');
+    expect(claudeIpc.sendInput).toHaveBeenCalledWith(`${multiLinePrompt}\n`);
   });
 
   it('handles special characters in prompts', async () => {
@@ -454,7 +453,7 @@ describe('useClaude - Prompting scenarios', () => {
       await result.current.sendInput(specialPrompt);
     });
 
-    expect(claudeIpc.sendInput).toHaveBeenCalledWith(specialPrompt + '\n');
+    expect(claudeIpc.sendInput).toHaveBeenCalledWith(`${specialPrompt}\n`);
   });
 
   it('handles unicode in prompts', async () => {
@@ -466,7 +465,7 @@ describe('useClaude - Prompting scenarios', () => {
       await result.current.sendInput(unicodePrompt);
     });
 
-    expect(claudeIpc.sendInput).toHaveBeenCalledWith(unicodePrompt + '\n');
+    expect(claudeIpc.sendInput).toHaveBeenCalledWith(`${unicodePrompt}\n`);
   });
 
   it('handles code block prompts', async () => {
@@ -483,7 +482,7 @@ function add(a: number, b: number) {
       await result.current.sendInput(codePrompt);
     });
 
-    expect(claudeIpc.sendInput).toHaveBeenCalledWith(codePrompt + '\n');
+    expect(claudeIpc.sendInput).toHaveBeenCalledWith(`${codePrompt}\n`);
   });
 
   it('handles rapid sequential prompts', async () => {
@@ -544,9 +543,9 @@ describe('useClaude - Error handling', () => {
     });
 
     const outputLines = useClaudeStore.getState().outputLines;
-    expect(outputLines.some(line =>
-      line.type === 'error' && line.content.includes('timeout')
-    )).toBe(true);
+    expect(
+      outputLines.some((line) => line.type === 'error' && line.content.includes('timeout')),
+    ).toBe(true);
   });
 
   it('handles session disconnect', async () => {
@@ -559,7 +558,7 @@ describe('useClaude - Error handling', () => {
     });
 
     const outputLines = useClaudeStore.getState().outputLines;
-    expect(outputLines.some(line => line.type === 'error')).toBe(true);
+    expect(outputLines.some((line) => line.type === 'error')).toBe(true);
   });
 
   it('recovers from temporary errors', async () => {
@@ -581,7 +580,7 @@ describe('useClaude - Error handling', () => {
     });
 
     const outputLines = useClaudeStore.getState().outputLines;
-    expect(outputLines.some(line => line.type === 'error')).toBe(true);
-    expect(outputLines.some(line => line.content === '> test2')).toBe(true);
+    expect(outputLines.some((line) => line.type === 'error')).toBe(true);
+    expect(outputLines.some((line) => line.content === '> test2')).toBe(true);
   });
 });

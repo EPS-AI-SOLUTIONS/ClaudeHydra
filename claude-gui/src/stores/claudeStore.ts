@@ -7,11 +7,12 @@ import type {
   SessionStatus,
 } from '../types/claude';
 
-interface OutputLine {
+export interface OutputLine {
   id: string;
   timestamp: Date;
   type: 'output' | 'assistant' | 'tool' | 'error' | 'system' | 'approval';
   content: string;
+  model?: string;
   data?: Record<string, unknown>;
 }
 
@@ -72,7 +73,7 @@ interface ClaudeState {
   workingDir: string;
   cliPath: string;
   sidebarCollapsed: boolean;
-  currentView: 'home' | 'terminal' | 'settings';
+  currentView: 'home' | 'terminal' | 'settings' | 'history' | 'agents';
 
   // Auto-start config
   autoStartEnabled: boolean;
@@ -90,6 +91,7 @@ interface ClaudeState {
   chatSessions: ChatSession[];
   currentChatSessionId: string | null;
   chatHistory: Record<string, ChatMessage[]>; // sessionId -> messages
+  openTabs: string[]; // ordered list of open tab session IDs
   theme: 'dark' | 'light';
   defaultProvider: 'claude' | 'ollama';
 
@@ -122,6 +124,11 @@ interface ClaudeState {
   toggleTheme: () => void;
   setDefaultProvider: (provider: 'claude' | 'ollama') => void;
   getCurrentMessages: () => ChatMessage[];
+
+  // Tab Actions
+  openTab: (sessionId: string) => void;
+  closeTab: (sessionId: string) => void;
+  switchTab: (sessionId: string) => void;
 
   // Auto-start Actions
   setAutoStartEnabled: (enabled: boolean) => void;
@@ -175,6 +182,7 @@ export const useClaudeStore = create<ClaudeState>()(
       chatSessions: [],
       currentChatSessionId: null,
       chatHistory: {},
+      openTabs: [],
       theme: 'dark',
       defaultProvider: 'claude',
 
@@ -264,6 +272,7 @@ export const useClaudeStore = create<ClaudeState>()(
           ],
           currentChatSessionId: id,
           chatHistory: { ...state.chatHistory, [id]: [] },
+          openTabs: state.openTabs.includes(id) ? state.openTabs : [...state.openTabs, id],
         }));
         return id;
       },
@@ -272,16 +281,24 @@ export const useClaudeStore = create<ClaudeState>()(
         set((state) => {
           const newSessions = state.chatSessions.filter((s) => s.id !== id);
           const { [id]: _deleted, ...newHistory } = state.chatHistory;
+          const newTabs = state.openTabs.filter((t) => t !== id);
           let newCurrentId = state.currentChatSessionId;
 
           if (state.currentChatSessionId === id) {
-            newCurrentId = newSessions.length > 0 ? newSessions[0].id : null;
+            // Switch to next tab or first session
+            const closedIdx = state.openTabs.indexOf(id);
+            if (newTabs.length > 0) {
+              newCurrentId = newTabs[Math.min(closedIdx, newTabs.length - 1)];
+            } else {
+              newCurrentId = newSessions.length > 0 ? newSessions[0].id : null;
+            }
           }
 
           return {
             chatSessions: newSessions,
             chatHistory: newHistory,
             currentChatSessionId: newCurrentId,
+            openTabs: newTabs,
           };
         }),
 
@@ -374,6 +391,43 @@ export const useClaudeStore = create<ClaudeState>()(
         return state.chatHistory[state.currentChatSessionId] || [];
       },
 
+      // Tab Actions
+      openTab: (sessionId) =>
+        set((state) => ({
+          openTabs: state.openTabs.includes(sessionId)
+            ? state.openTabs
+            : [...state.openTabs, sessionId],
+          currentChatSessionId: sessionId,
+          currentView: 'terminal',
+        })),
+
+      closeTab: (sessionId) =>
+        set((state) => {
+          const newTabs = state.openTabs.filter((t) => t !== sessionId);
+          let newCurrentId = state.currentChatSessionId;
+
+          if (state.currentChatSessionId === sessionId) {
+            const closedIdx = state.openTabs.indexOf(sessionId);
+            if (newTabs.length > 0) {
+              newCurrentId = newTabs[Math.min(closedIdx, newTabs.length - 1)];
+            } else {
+              newCurrentId = null;
+            }
+          }
+
+          return {
+            openTabs: newTabs,
+            currentChatSessionId: newCurrentId,
+            currentView: newTabs.length > 0 ? state.currentView : 'home',
+          };
+        }),
+
+      switchTab: (sessionId) =>
+        set({
+          currentChatSessionId: sessionId,
+          currentView: 'terminal',
+        }),
+
       // Auto-start Actions
       setAutoStartEnabled: (enabled) => set({ autoStartEnabled: enabled }),
       setAutoApproveOnStart: (enabled) => set({ autoApproveOnStart: enabled }),
@@ -402,13 +456,14 @@ export const useClaudeStore = create<ClaudeState>()(
         workingDir: state.workingDir,
         cliPath: state.cliPath,
         sidebarCollapsed: state.sidebarCollapsed,
-        apiKeys: state.apiKeys,
+        // apiKeys intentionally excluded from persistence (security: no plaintext secrets in localStorage)
         endpoints: state.endpoints,
         activeSessionId: state.activeSessionId,
         // Multi-Session persistence
         chatSessions: state.chatSessions,
         currentChatSessionId: state.currentChatSessionId,
         chatHistory: state.chatHistory,
+        openTabs: state.openTabs,
         theme: state.theme,
         defaultProvider: state.defaultProvider,
         // Auto-start persistence

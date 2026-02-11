@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OllamaChatView } from './OllamaChatView';
 
 // Mock scrollIntoView before rendering components
@@ -204,7 +204,7 @@ describe('ChatContainer (OllamaChatView)', () => {
         render(<OllamaChatView />);
       });
 
-      const textarea = screen.getByRole('textbox');
+      const _textarea = screen.getByRole('textbox');
       await user.keyboard('hello');
 
       expect(document.body).toBeTruthy();
@@ -518,12 +518,12 @@ describe('ChatContainer (OllamaChatView)', () => {
 
       const textarea = screen.getByRole('textbox');
       await user.click(textarea);
-      
+
       expect(textarea).toBeInTheDocument();
     });
 
     it('buttons can be clicked without error', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
 
       await act(async () => {
         render(<OllamaChatView />);

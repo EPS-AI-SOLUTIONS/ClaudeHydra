@@ -1,22 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { useCallback, useEffect, useState } from 'react';
 
 // Check if running in Tauri (v2 uses __TAURI_INTERNALS__)
-const isTauri = () => typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+const isTauri = () =>
+  typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
 import {
+  Check,
+  Clock,
+  FileText,
+  Globe,
+  Loader2,
+  RefreshCw,
+  Settings,
   Shield,
   ShieldCheck,
   ShieldOff,
-  Check,
-  X,
-  RefreshCw,
-  Clock,
   Terminal,
-  FileText,
-  Globe,
-  Settings,
-  Loader2,
+  X,
 } from 'lucide-react';
 
 interface BridgeRequest {
@@ -207,9 +208,7 @@ export function BridgePanel() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <TypeIcon size={14} className={typeColor} />
-                    <span className="text-[10px] font-mono text-matrix-text-dim">
-                      {request.id}
-                    </span>
+                    <span className="text-[10px] font-mono text-matrix-text-dim">{request.id}</span>
                   </div>
                   <div className="flex items-center gap-1 text-[10px] text-matrix-text-dim">
                     <Clock size={10} />

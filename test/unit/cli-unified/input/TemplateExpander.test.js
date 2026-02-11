@@ -3,8 +3,8 @@
  * @module test/unit/cli-unified/input/TemplateExpander.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs
 vi.mock('fs', () => ({
@@ -13,18 +13,18 @@ vi.mock('fs', () => ({
   writeFileSync: vi.fn(),
   mkdirSync: vi.fn(),
   readdirSync: vi.fn().mockReturnValue([]),
-  unlinkSync: vi.fn()
+  unlinkSync: vi.fn(),
 }));
 
 // Mock constants
 vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
-  DATA_DIR: '.claude-test'
+  DATA_DIR: '.claude-test',
 }));
 
 import {
-  TemplateExpander,
+  BUILTIN_TEMPLATES,
   createTemplateExpander,
-  BUILTIN_TEMPLATES
+  TemplateExpander,
 } from '../../../../src/cli-unified/input/TemplateExpander.js';
 
 describe('TemplateExpander', () => {
@@ -78,7 +78,7 @@ describe('TemplateExpander', () => {
     });
 
     it('should have all templates with required fields', () => {
-      for (const [key, template] of Object.entries(BUILTIN_TEMPLATES)) {
+      for (const [_key, template] of Object.entries(BUILTIN_TEMPLATES)) {
         expect(template.name).toBeDefined();
         expect(template.prompt).toBeDefined();
         expect(Array.isArray(template.variables)).toBe(true);
@@ -103,12 +103,14 @@ describe('TemplateExpander', () => {
     it('should load custom templates from disk', () => {
       existsSync.mockReturnValue(true);
       readdirSync.mockReturnValue(['custom.json']);
-      readFileSync.mockReturnValue(JSON.stringify({
-        name: 'Custom Template',
-        prompt: 'Custom {{var}}',
-        variables: ['var'],
-        agent: 'Geralt'
-      }));
+      readFileSync.mockReturnValue(
+        JSON.stringify({
+          name: 'Custom Template',
+          prompt: 'Custom {{var}}',
+          variables: ['var'],
+          agent: 'Geralt',
+        }),
+      );
 
       const exp = new TemplateExpander({ templatesDir: '/test/templates' });
 
@@ -160,7 +162,7 @@ describe('TemplateExpander', () => {
       expect(Array.isArray(list)).toBe(true);
       expect(list.length).toBe(Object.keys(BUILTIN_TEMPLATES).length);
 
-      const item = list.find(t => t.key === 'code-review');
+      const item = list.find((t) => t.key === 'code-review');
       expect(item).toBeDefined();
       expect(item.name).toBe('Code Review');
       expect(item.variables).toContain('code');
@@ -191,7 +193,7 @@ describe('TemplateExpander', () => {
   describe('apply()', () => {
     it('should apply template with variables', () => {
       const result = expander.apply('code-review', {
-        code: 'function test() {}'
+        code: 'function test() {}',
       });
 
       expect(result.prompt).toContain('function test() {}');
@@ -223,7 +225,7 @@ describe('TemplateExpander', () => {
         name: 'Multi Var',
         prompt: '{{lang}} code in {{lang}} format',
         variables: ['lang'],
-        agent: 'Ciri'
+        agent: 'Ciri',
       });
 
       const result = expander.apply('multi-var', { lang: 'Python' });
@@ -365,7 +367,7 @@ describe('TemplateExpander', () => {
       expander.create('custom', {
         name: 'Custom Template',
         prompt: 'Custom prompt with {{var}}',
-        agent: 'Geralt'
+        agent: 'Geralt',
       });
 
       expect(expander.has('custom')).toBe(true);
@@ -376,7 +378,7 @@ describe('TemplateExpander', () => {
       expander.create('auto-vars', {
         name: 'Auto Vars',
         prompt: 'Hello {{name}}, you have {{count}} items',
-        agent: 'Ciri'
+        agent: 'Ciri',
       });
 
       const template = expander.get('auto-vars');
@@ -391,7 +393,7 @@ describe('TemplateExpander', () => {
         name: 'Custom',
         prompt: 'Test',
         variables: [],
-        agent: 'Geralt'
+        agent: 'Geralt',
       });
 
       expect(mkdirSync).toHaveBeenCalledWith(expect.any(String), { recursive: true });
@@ -405,7 +407,7 @@ describe('TemplateExpander', () => {
         name: 'Custom',
         prompt: 'Test',
         variables: [],
-        agent: 'Geralt'
+        agent: 'Geralt',
       });
 
       expect(spy).toHaveBeenCalledWith('custom', expect.any(Object));
@@ -420,7 +422,7 @@ describe('TemplateExpander', () => {
         name: 'Custom',
         prompt: 'Test',
         variables: [],
-        agent: 'Geralt'
+        agent: 'Geralt',
       });
 
       const result = expander.delete('custom');
@@ -430,8 +432,7 @@ describe('TemplateExpander', () => {
     });
 
     it('should throw when deleting built-in template', () => {
-      expect(() => expander.delete('code-review'))
-        .toThrow('Cannot delete built-in template');
+      expect(() => expander.delete('code-review')).toThrow('Cannot delete built-in template');
     });
 
     it('should return false for non-existent template', () => {
@@ -446,7 +447,7 @@ describe('TemplateExpander', () => {
         name: 'Custom',
         prompt: 'Test',
         variables: [],
-        agent: 'Geralt'
+        agent: 'Geralt',
       });
       expander.delete('custom');
 

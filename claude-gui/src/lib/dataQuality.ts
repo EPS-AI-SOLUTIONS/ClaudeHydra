@@ -14,11 +14,11 @@
 // ============================================================================
 
 export interface QualityScore {
-  total: number;           // 0-100
-  responseLength: number;  // 0-30
-  codePresence: number;    // 0-20
-  formatting: number;      // 0-20
-  keywordDensity: number;  // 0-30
+  total: number; // 0-100
+  responseLength: number; // 0-30
+  codePresence: number; // 0-20
+  formatting: number; // 0-20
+  keywordDensity: number; // 0-30
   breakdown: QualityBreakdown;
 }
 
@@ -202,23 +202,84 @@ export function deduplicateBatch(texts: string[], threshold: number = 0.85): num
 
 // Technical keywords that indicate quality content
 const TECHNICAL_KEYWORDS = [
-  'function', 'class', 'interface', 'type', 'const', 'let', 'var',
-  'async', 'await', 'promise', 'return', 'export', 'import',
-  'api', 'endpoint', 'database', 'query', 'schema', 'model',
-  'component', 'hook', 'state', 'props', 'render', 'effect',
-  'algorithm', 'complexity', 'performance', 'optimization',
-  'test', 'mock', 'assert', 'expect', 'describe', 'it',
-  'error', 'exception', 'debug', 'log', 'trace',
-  'security', 'authentication', 'authorization', 'encryption',
+  'function',
+  'class',
+  'interface',
+  'type',
+  'const',
+  'let',
+  'var',
+  'async',
+  'await',
+  'promise',
+  'return',
+  'export',
+  'import',
+  'api',
+  'endpoint',
+  'database',
+  'query',
+  'schema',
+  'model',
+  'component',
+  'hook',
+  'state',
+  'props',
+  'render',
+  'effect',
+  'algorithm',
+  'complexity',
+  'performance',
+  'optimization',
+  'test',
+  'mock',
+  'assert',
+  'expect',
+  'describe',
+  'it',
+  'error',
+  'exception',
+  'debug',
+  'log',
+  'trace',
+  'security',
+  'authentication',
+  'authorization',
+  'encryption',
 ];
 
 // Actionable keywords that indicate useful instructions
 const ACTIONABLE_KEYWORDS = [
-  'create', 'implement', 'build', 'add', 'remove', 'delete', 'update',
-  'fix', 'refactor', 'optimize', 'improve', 'enhance', 'modify',
-  'explain', 'describe', 'analyze', 'review', 'check', 'verify',
-  'configure', 'setup', 'install', 'deploy', 'test', 'debug',
-  'convert', 'transform', 'migrate', 'integrate', 'connect',
+  'create',
+  'implement',
+  'build',
+  'add',
+  'remove',
+  'delete',
+  'update',
+  'fix',
+  'refactor',
+  'optimize',
+  'improve',
+  'enhance',
+  'modify',
+  'explain',
+  'describe',
+  'analyze',
+  'review',
+  'check',
+  'verify',
+  'configure',
+  'setup',
+  'install',
+  'deploy',
+  'test',
+  'debug',
+  'convert',
+  'transform',
+  'migrate',
+  'integrate',
+  'connect',
 ];
 
 /**
@@ -255,7 +316,7 @@ export function scoreQuality(response: string, prompt?: string): QualityScore {
  * Optimal: 100-2000 words
  */
 function scoreResponseLength(text: string): number {
-  const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+  const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
 
   if (wordCount < 10) return 0;
   if (wordCount < 30) return 5;
@@ -285,7 +346,7 @@ function scoreCodePresence(text: string): number {
   // Check for code-like patterns (functions, arrows, etc.)
   const codePatterns = [
     /\w+\s*\([^)]*\)\s*[{=>]/g, // function calls/definitions
-    /=>\s*[{(]/g,               // arrow functions
+    /=>\s*[{(]/g, // arrow functions
     /\b(if|for|while|switch)\s*\(/g, // control structures
     /\b(const|let|var)\s+\w+/g, // variable declarations
   ];
@@ -312,7 +373,7 @@ function scoreFormatting(text: string): number {
   if (/^[\s]*[-*+]\s+.+/m.test(text) || /^[\s]*\d+\.\s+.+/m.test(text)) score += 5;
 
   // Paragraphs (multiple line breaks indicating structure)
-  const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+  const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
   if (paragraphs.length >= 2) score += 3;
   if (paragraphs.length >= 4) score += 2;
 
@@ -375,7 +436,7 @@ function scoreKeywordDensity(text: string): number {
  * Build detailed breakdown of quality metrics
  */
 function buildBreakdown(text: string, combinedText: string): QualityBreakdown {
-  const words = text.split(/\s+/).filter(w => w.length > 0);
+  const words = text.split(/\s+/).filter((w) => w.length > 0);
 
   let technicalCount = 0;
   for (const keyword of TECHNICAL_KEYWORDS) {
@@ -420,7 +481,10 @@ const LOW_QUALITY_PATTERNS: Array<{ type: string; pattern: RegExp }> = [
   { type: 'repetitive', pattern: /(.{10,})\1{2,}/gi },
 
   // Gibberish (random character sequences)
-  { type: 'gibberish', pattern: /[a-z]{15,}(?![a-z]*(?:tion|ment|able|ible|ness|less|ship|ward|wise|like))/gi },
+  {
+    type: 'gibberish',
+    pattern: /[a-z]{15,}(?![a-z]*(?:tion|ment|able|ible|ness|less|ship|ward|wise|like))/gi,
+  },
 
   // Excessive punctuation
   { type: 'excessive_punctuation', pattern: /[!?]{4,}|\.{5,}/g },
@@ -464,7 +528,7 @@ export function filterContent(text: string): ContentFilterResult {
   let severity: ContentFilterResult['severity'] = 'none';
   if (flags.length > 0) severity = 'low';
   if (flags.length >= 3) severity = 'medium';
-  if (flags.length >= 5 || flags.some(f => f.type === 'spam' || f.type === 'gibberish')) {
+  if (flags.length >= 5 || flags.some((f) => f.type === 'spam' || f.type === 'gibberish')) {
     severity = 'high';
   }
 
@@ -497,7 +561,7 @@ const ENGLISH_PATTERNS = [
 // Code patterns
 const CODE_PATTERNS = [
   /\b(const|let|var|function|class|interface|type|export|import|return)\b/g,
-  /[{}\[\]();]/g,
+  /[{}[\]();]/g,
   /=>/g,
   /[<>]=?/g,
   /\b(async|await|Promise|void|null|undefined|true|false)\b/g,
@@ -550,7 +614,7 @@ export function detectLanguage(text: string): LanguageAnalysis {
   // Check for code blocks
   const codeBlocks = text.match(/```[\s\S]*?```/g);
   if (codeBlocks) {
-    codeScore += codeBlocks.join('').length / totalChars * 50;
+    codeScore += (codeBlocks.join('').length / totalChars) * 50;
   }
 
   // Normalize scores
@@ -601,27 +665,109 @@ export function detectLanguage(text: string): LanguageAnalysis {
 
 // Common instruction verbs (English and Polish)
 const INSTRUCTION_VERBS_EN = [
-  'create', 'implement', 'build', 'make', 'add', 'write', 'generate',
-  'remove', 'delete', 'fix', 'repair', 'update', 'modify', 'change',
-  'refactor', 'optimize', 'improve', 'enhance', 'simplify',
-  'explain', 'describe', 'analyze', 'review', 'check', 'verify', 'validate',
-  'find', 'search', 'locate', 'get', 'fetch', 'retrieve', 'list',
-  'configure', 'setup', 'install', 'deploy', 'run', 'execute', 'test',
-  'convert', 'transform', 'migrate', 'import', 'export',
-  'show', 'display', 'print', 'output', 'return',
-  'help', 'assist', 'guide', 'teach', 'demonstrate',
+  'create',
+  'implement',
+  'build',
+  'make',
+  'add',
+  'write',
+  'generate',
+  'remove',
+  'delete',
+  'fix',
+  'repair',
+  'update',
+  'modify',
+  'change',
+  'refactor',
+  'optimize',
+  'improve',
+  'enhance',
+  'simplify',
+  'explain',
+  'describe',
+  'analyze',
+  'review',
+  'check',
+  'verify',
+  'validate',
+  'find',
+  'search',
+  'locate',
+  'get',
+  'fetch',
+  'retrieve',
+  'list',
+  'configure',
+  'setup',
+  'install',
+  'deploy',
+  'run',
+  'execute',
+  'test',
+  'convert',
+  'transform',
+  'migrate',
+  'import',
+  'export',
+  'show',
+  'display',
+  'print',
+  'output',
+  'return',
+  'help',
+  'assist',
+  'guide',
+  'teach',
+  'demonstrate',
 ];
 
 const INSTRUCTION_VERBS_PL = [
-  'utwórz', 'stwórz', 'zaimplementuj', 'zbuduj', 'dodaj', 'napisz', 'wygeneruj',
-  'usuń', 'napraw', 'zaktualizuj', 'zmodyfikuj', 'zmień',
-  'zrefaktoryzuj', 'zoptymalizuj', 'ulepsz', 'uprość',
-  'wyjaśnij', 'opisz', 'przeanalizuj', 'przejrzyj', 'sprawdź', 'zweryfikuj',
-  'znajdź', 'wyszukaj', 'pobierz', 'wylistuj',
-  'skonfiguruj', 'zainstaluj', 'wdróż', 'uruchom', 'wykonaj', 'przetestuj',
-  'przekonwertuj', 'przekształć', 'zmigruj', 'zaimportuj', 'wyeksportuj',
-  'pokaż', 'wyświetl', 'wydrukuj', 'zwróć',
-  'pomóż', 'pomagaj', 'naucz', 'zademonstruj',
+  'utwórz',
+  'stwórz',
+  'zaimplementuj',
+  'zbuduj',
+  'dodaj',
+  'napisz',
+  'wygeneruj',
+  'usuń',
+  'napraw',
+  'zaktualizuj',
+  'zmodyfikuj',
+  'zmień',
+  'zrefaktoryzuj',
+  'zoptymalizuj',
+  'ulepsz',
+  'uprość',
+  'wyjaśnij',
+  'opisz',
+  'przeanalizuj',
+  'przejrzyj',
+  'sprawdź',
+  'zweryfikuj',
+  'znajdź',
+  'wyszukaj',
+  'pobierz',
+  'wylistuj',
+  'skonfiguruj',
+  'zainstaluj',
+  'wdróż',
+  'uruchom',
+  'wykonaj',
+  'przetestuj',
+  'przekonwertuj',
+  'przekształć',
+  'zmigruj',
+  'zaimportuj',
+  'wyeksportuj',
+  'pokaż',
+  'wyświetl',
+  'wydrukuj',
+  'zwróć',
+  'pomóż',
+  'pomagaj',
+  'naucz',
+  'zademonstruj',
 ];
 
 const ALL_VERBS = [...INSTRUCTION_VERBS_EN, ...INSTRUCTION_VERBS_PL];
@@ -635,7 +781,10 @@ export function extractInstruction(prompt: string): InstructionExtraction {
   const normalized = prompt.trim();
 
   // Split into sentences
-  const sentences = normalized.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 0);
+  const sentences = normalized
+    .split(/[.!?]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 
   if (sentences.length === 0) {
     return {
@@ -656,7 +805,7 @@ export function extractInstruction(prompt: string): InstructionExtraction {
   for (let i = 0; i < words.length && i < 10; i++) {
     const word = words[i].toLowerCase().replace(/[^a-ząćęłńóśźż]/gi, '');
 
-    if (ALL_VERBS.some(v => v.toLowerCase() === word)) {
+    if (ALL_VERBS.some((v) => v.toLowerCase() === word)) {
       verbIndex = i;
       foundVerb = word;
       break;
@@ -667,8 +816,10 @@ export function extractInstruction(prompt: string): InstructionExtraction {
   if (verbIndex === -1 && words.length > 0) {
     const firstWord = words[0].toLowerCase();
     // Check if first word looks like a verb (ends with common verb suffixes)
-    if (/^[a-z]+(e|ed|ing|ify|ize|ate)$/i.test(firstWord) ||
-        /^[a-ząćęłńóśźż]+(uj|aj|ij|ej|ać|ić|yć)$/i.test(firstWord)) {
+    if (
+      /^[a-z]+(e|ed|ing|ify|ize|ate)$/i.test(firstWord) ||
+      /^[a-ząćęłńóśźż]+(uj|aj|ij|ej|ać|ić|yć)$/i.test(firstWord)
+    ) {
       verbIndex = 0;
       foundVerb = firstWord;
     }
@@ -677,8 +828,27 @@ export function extractInstruction(prompt: string): InstructionExtraction {
   // Extract subject (words after verb up to preposition/conjunction or end)
   let subject: string | null = null;
   if (verbIndex >= 0 && verbIndex < words.length - 1) {
-    const stopWords = ['to', 'for', 'with', 'in', 'on', 'at', 'from', 'by', 'that', 'which',
-                       'do', 'dla', 'z', 'w', 'na', 'od', 'przez', 'który', 'która'];
+    const stopWords = [
+      'to',
+      'for',
+      'with',
+      'in',
+      'on',
+      'at',
+      'from',
+      'by',
+      'that',
+      'which',
+      'do',
+      'dla',
+      'z',
+      'w',
+      'na',
+      'od',
+      'przez',
+      'który',
+      'która',
+    ];
     const subjectWords: string[] = [];
 
     for (let i = verbIndex + 1; i < words.length && i < verbIndex + 6; i++) {
@@ -741,9 +911,8 @@ export function assessSample(prompt: string, response: string): SampleAssessment
   // - Quality score >= 40
   // - Not high severity content filter
   // - Not gibberish language detection
-  const isAcceptable = quality.total >= 40 &&
-                       contentFilter.severity !== 'high' &&
-                       language.confidence > 20;
+  const isAcceptable =
+    quality.total >= 40 && contentFilter.severity !== 'high' && language.confidence > 20;
 
   return {
     quality,

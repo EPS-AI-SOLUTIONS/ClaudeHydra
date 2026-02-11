@@ -9,17 +9,18 @@
  * approve/deny flow, and view state preservation.
  */
 
-import { test, expect } from '../fixtures/test-setup';
-import { TerminalPage } from '../page-objects/TerminalPage';
+import { setMockInvokeResult } from '../fixtures/tauri-mocks';
+import { AGENTS, type NAV_LABELS, SELECTORS, TIMEOUTS } from '../fixtures/test-data';
+import { expect, test } from '../fixtures/test-setup';
 import { ChatPage } from '../page-objects/ChatPage';
 import { SessionSidebar } from '../page-objects/SessionSidebar';
-import { SettingsView } from '../page-objects/SettingsView';
-import { SELECTORS, NAV_LABELS, TIMEOUTS, AGENTS, TEST_MESSAGES } from '../fixtures/test-data';
-import { setMockInvokeResult } from '../fixtures/tauri-mocks';
+import { TerminalPage } from '../page-objects/TerminalPage';
 
 test.describe('Swarm Workflow Integration', () => {
-
-  test('full workflow: sidebar → terminal → send → output → switch views', async ({ page, stream }) => {
+  test('full workflow: sidebar → terminal → send → output → switch views', async ({
+    page,
+    stream,
+  }) => {
     const sidebar = new SessionSidebar(page);
     const terminal = new TerminalPage(page);
 
@@ -29,12 +30,20 @@ test.describe('Swarm Workflow Integration', () => {
 
     // 2. Make session active
     await setMockInvokeResult(page, 'get_session_status', {
-      running: true, session_id: 'workflow-test', is_active: true,
-      pending_approval: false, auto_approve_all: false,
-      approved_count: 0, denied_count: 0, auto_approved_count: 0,
+      running: true,
+      session_id: 'workflow-test',
+      is_active: true,
+      pending_approval: false,
+      auto_approve_all: false,
+      approved_count: 0,
+      denied_count: 0,
+      auto_approved_count: 0,
     });
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     // 3. Send a command in terminal
     await terminal.sendInput('Analyze the project');
@@ -69,12 +78,20 @@ test.describe('Swarm Workflow Integration', () => {
 
     // Set session active
     await setMockInvokeResult(page, 'get_session_status', {
-      running: true, session_id: 'swarm-test', is_active: true,
-      pending_approval: false, auto_approve_all: false,
-      approved_count: 0, denied_count: 0, auto_approved_count: 0,
+      running: true,
+      session_id: 'swarm-test',
+      is_active: true,
+      pending_approval: false,
+      auto_approve_all: false,
+      approved_count: 0,
+      denied_count: 0,
+      auto_approved_count: 0,
     });
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     // Simulate full Swarm with all 15 agents
     const allAgents = AGENTS.map((a) => a.name);
@@ -90,11 +107,19 @@ test.describe('Swarm Workflow Integration', () => {
 
     // Create sessions
     await setMockInvokeResult(page, 'list_chat_sessions', [
-      { id: 's1', title: 'Architecture Review', message_count: 5, created_at: new Date().toISOString() },
+      {
+        id: 's1',
+        title: 'Architecture Review',
+        message_count: 5,
+        created_at: new Date().toISOString(),
+      },
       { id: 's2', title: 'Bug Triage', message_count: 3, created_at: new Date().toISOString() },
     ]);
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     // Verify sessions exist
     const count = await sidebar.getSessionCount();
@@ -113,16 +138,24 @@ test.describe('Swarm Workflow Integration', () => {
   });
 
   test('approval workflow: start → approve → deny', async ({ page }) => {
-    const terminal = new TerminalPage(page);
+    const _terminal = new TerminalPage(page);
 
     // Set session active with pending approval
     await setMockInvokeResult(page, 'get_session_status', {
-      running: true, session_id: 'approval-test', is_active: true,
-      pending_approval: true, auto_approve_all: false,
-      approved_count: 0, denied_count: 0, auto_approved_count: 0,
+      running: true,
+      session_id: 'approval-test',
+      is_active: true,
+      pending_approval: true,
+      auto_approve_all: false,
+      approved_count: 0,
+      denied_count: 0,
+      auto_approved_count: 0,
     });
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     // Verify the app shows some kind of approval UI
     // (ApprovalDialog component should be visible when pending_approval is true)
@@ -136,7 +169,16 @@ test.describe('Swarm Workflow Integration', () => {
     const sidebar = new SessionSidebar(page);
 
     // Navigate through all main views
-    const views: Array<keyof typeof NAV_LABELS> = ['terminal', 'ollama', 'learning', 'debug', 'chats', 'rules', 'history', 'settings'];
+    const views: Array<keyof typeof NAV_LABELS> = [
+      'terminal',
+      'ollama',
+      'learning',
+      'debug',
+      'chats',
+      'rules',
+      'history',
+      'settings',
+    ];
 
     for (const view of views) {
       await sidebar.navigateTo(view);
@@ -159,12 +201,20 @@ test.describe('Swarm Workflow Integration', () => {
 
     // Now simulate session running
     await setMockInvokeResult(page, 'get_session_status', {
-      running: true, session_id: 'started-session', is_active: true,
-      pending_approval: false, auto_approve_all: false,
-      approved_count: 0, denied_count: 0, auto_approved_count: 0,
+      running: true,
+      session_id: 'started-session',
+      is_active: true,
+      pending_approval: false,
+      auto_approve_all: false,
+      approved_count: 0,
+      denied_count: 0,
+      auto_approved_count: 0,
     });
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     // Click Stop button
     await sidebar.clickStop();
@@ -186,7 +236,10 @@ test.describe('Swarm Workflow Integration', () => {
     await page.waitForTimeout(200);
 
     // Simulate streaming response
-    await stream.simulateOllamaResponse('llama3.2:3b', 'The Witcher saga by Andrzej Sapkowski is a fantasy series set in a Slavic-inspired world');
+    await stream.simulateOllamaResponse(
+      'llama3.2:3b',
+      'The Witcher saga by Andrzej Sapkowski is a fantasy series set in a Slavic-inspired world',
+    );
     await page.waitForTimeout(500);
 
     // Switch to settings

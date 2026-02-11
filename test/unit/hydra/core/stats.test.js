@@ -3,14 +3,14 @@
  * @module test/unit/hydra/core/stats.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  RollingStats,
-  TimeSeriesMetrics,
   Counter,
+  getStatsCollector,
   Histogram,
+  RollingStats,
   StatsCollector,
-  getStatsCollector
+  TimeSeriesMetrics,
 } from '../../../../src/hydra/core/stats.js';
 
 describe('HYDRA Stats', () => {
@@ -97,7 +97,7 @@ describe('HYDRA Stats', () => {
         stats.add(4);
         stats.add(6);
         const stdDev = stats.stdDev();
-        expect(stdDev).toBeCloseTo(1.414, 2);
+        expect(stdDev).toBeCloseTo(Math.SQRT2, 2);
       });
 
       it('should return 0 for less than 2 samples', () => {
@@ -278,8 +278,8 @@ describe('HYDRA Stats', () => {
         counter.inc(2, { provider: 'claude' });
         const all = counter.getAll();
         expect(all).toHaveLength(2);
-        expect(all.find(i => i.labels.provider === 'gemini').value).toBe(1);
-        expect(all.find(i => i.labels.provider === 'claude').value).toBe(2);
+        expect(all.find((i) => i.labels.provider === 'gemini').value).toBe(1);
+        expect(all.find((i) => i.labels.provider === 'claude').value).toBe(2);
       });
     });
 
@@ -327,13 +327,13 @@ describe('HYDRA Stats', () => {
       });
 
       it('should bucket values correctly', () => {
-        histogram.observe(5);  // <= 10
+        histogram.observe(5); // <= 10
         histogram.observe(15); // <= 50
         histogram.observe(75); // <= 100
         const data = histogram.getData();
-        expect(data.buckets.find(b => b.le === 10).count).toBe(1);
-        expect(data.buckets.find(b => b.le === 50).count).toBe(2);
-        expect(data.buckets.find(b => b.le === 100).count).toBe(3);
+        expect(data.buckets.find((b) => b.le === 10).count).toBe(1);
+        expect(data.buckets.find((b) => b.le === 50).count).toBe(2);
+        expect(data.buckets.find((b) => b.le === 100).count).toBe(3);
       });
     });
 
@@ -388,7 +388,7 @@ describe('HYDRA Stats', () => {
           latency: 100,
           cost: 0.01,
           tokens: 500,
-          success: true
+          success: true,
         });
         const summary = collector.getSummary();
         expect(summary.requests.total).toBe(1);
@@ -400,7 +400,7 @@ describe('HYDRA Stats', () => {
           provider: 'gemini',
           category: 'simple',
           success: false,
-          error: { type: 'timeout' }
+          error: { type: 'timeout' },
         });
         const summary = collector.getSummary();
         expect(summary.errors.total).toBe(1);
@@ -413,7 +413,7 @@ describe('HYDRA Stats', () => {
           latency: 5,
           category: 'simple',
           provider: 'gemini',
-          complexity: 0.3
+          complexity: 0.3,
         });
         const summary = collector.getSummary();
         expect(summary.requests.total).toBeGreaterThan(0);
@@ -428,7 +428,7 @@ describe('HYDRA Stats', () => {
           latency: 100,
           cost: 0.01,
           tokens: 500,
-          success: true
+          success: true,
         });
         const summary = collector.getSummary();
         expect(summary.requests).toBeDefined();
@@ -444,7 +444,7 @@ describe('HYDRA Stats', () => {
         collector.recordRequest({
           provider: 'gemini',
           latency: 100,
-          success: true
+          success: true,
         });
         const trends = collector.getTrends(60000);
         expect(trends.latency).toBeInstanceOf(Array);
@@ -458,7 +458,7 @@ describe('HYDRA Stats', () => {
         collector.recordRequest({
           provider: 'gemini',
           latency: 100,
-          success: true
+          success: true,
         });
         const prometheus = collector.exportPrometheus();
         expect(prometheus).toContain('# HELP');
@@ -473,7 +473,7 @@ describe('HYDRA Stats', () => {
         collector.recordRequest({
           provider: 'gemini',
           latency: 100,
-          success: true
+          success: true,
         });
         collector.reset();
         const summary = collector.getSummary();

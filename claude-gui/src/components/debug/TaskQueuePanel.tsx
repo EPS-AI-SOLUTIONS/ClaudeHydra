@@ -3,7 +3,7 @@
  * Displays queued tasks with progress bars for Debug LiveView
  */
 
-import { ListTodo, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Clock, ListTodo, Loader2, XCircle } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -23,31 +23,39 @@ interface TaskQueuePanelProps {
 export function TaskQueuePanel({ activeTasks, queuedTasks, completedTasks }: TaskQueuePanelProps) {
   // Generate mock tasks for visualization
   const tasks: Task[] = [
-    ...Array(activeTasks).fill(null).map((_, i) => ({
-      id: `active-${i}`,
-      name: `Task ${i + 1}`,
-      status: 'running' as const,
-      progress: Math.random() * 80 + 10,
-    })),
-    ...Array(Math.min(queuedTasks, 5)).fill(null).map((_, i) => ({
-      id: `queued-${i}`,
-      name: `Queued ${i + 1}`,
-      status: 'queued' as const,
-      progress: 0,
-    })),
+    ...Array(activeTasks)
+      .fill(null)
+      .map((_, i) => ({
+        id: `active-${i}`,
+        name: `Task ${i + 1}`,
+        status: 'running' as const,
+        progress: Math.random() * 80 + 10,
+      })),
+    ...Array(Math.min(queuedTasks, 5))
+      .fill(null)
+      .map((_, i) => ({
+        id: `queued-${i}`,
+        name: `Queued ${i + 1}`,
+        status: 'queued' as const,
+        progress: 0,
+      })),
   ];
 
   const getStatusIcon = (status: Task['status']) => {
     switch (status) {
-      case 'running': return <Loader2 size={12} className="animate-spin text-yellow-400" />;
-      case 'queued': return <Clock size={12} className="text-gray-400" />;
-      case 'completed': return <CheckCircle size={12} className="text-green-400" />;
-      case 'failed': return <XCircle size={12} className="text-red-400" />;
+      case 'running':
+        return <Loader2 size={12} className="animate-spin text-yellow-400" />;
+      case 'queued':
+        return <Clock size={12} className="text-gray-400" />;
+      case 'completed':
+        return <CheckCircle size={12} className="text-green-400" />;
+      case 'failed':
+        return <XCircle size={12} className="text-red-400" />;
     }
   };
 
   const totalCapacity = Math.max(activeTasks + queuedTasks, 10);
-  const utilizationPercent = ((activeTasks) / totalCapacity) * 100;
+  const utilizationPercent = (activeTasks / totalCapacity) * 100;
 
   return (
     <div className="glass-card p-3">
@@ -81,20 +89,22 @@ export function TaskQueuePanel({ activeTasks, queuedTasks, completedTasks }: Tas
       <div className="space-y-1.5 max-h-24 overflow-auto">
         {tasks.length === 0 ? (
           <div className="text-center text-xs text-matrix-text-dim py-2">No tasks</div>
-        ) : tasks.map(task => (
-          <div key={task.id} className="flex items-center gap-2">
-            {getStatusIcon(task.status)}
-            <span className="text-[10px] text-matrix-text flex-1 truncate">{task.name}</span>
-            {task.status === 'running' && (
-              <div className="w-16 h-1.5 bg-matrix-bg-primary/50 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-yellow-400 transition-all"
-                  style={{ width: `${task.progress}%` }}
-                />
-              </div>
-            )}
-          </div>
-        ))}
+        ) : (
+          tasks.map((task) => (
+            <div key={task.id} className="flex items-center gap-2">
+              {getStatusIcon(task.status)}
+              <span className="text-[10px] text-matrix-text flex-1 truncate">{task.name}</span>
+              {task.status === 'running' && (
+                <div className="w-16 h-1.5 bg-matrix-bg-primary/50 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-yellow-400 transition-all"
+                    style={{ width: `${task.progress}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

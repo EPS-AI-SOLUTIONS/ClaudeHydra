@@ -3,12 +3,12 @@
  * @module test/unit/cli-unified/modes/EnhancedMode.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  createEnhancedMode,
   EnhancedMode,
-  createEnhancedMode
 } from '../../../../src/cli-unified/modes/EnhancedMode.js';
 
 describe('EnhancedMode Module', () => {
@@ -30,7 +30,7 @@ describe('EnhancedMode Module', () => {
     mockCommandParser = {
       register: vi.fn(),
       isCommand: vi.fn(() => false),
-      run: vi.fn()
+      run: vi.fn(),
     };
 
     // Create mock query processor (with EventEmitter methods for agentic iteration listeners)
@@ -40,7 +40,7 @@ describe('EnhancedMode Module', () => {
       checkHealth: vi.fn(() => Promise.resolve({ healthy: true, models: ['model1'] })),
       process: vi.fn(() => Promise.resolve({ text: 'response' })),
       on: vi.fn(),
-      off: vi.fn()
+      off: vi.fn(),
     };
 
     // Create mock output
@@ -54,7 +54,7 @@ describe('EnhancedMode Module', () => {
       streamWrite: vi.fn(),
       streamFlush: vi.fn(),
       success: vi.fn(),
-      dim: vi.fn()
+      dim: vi.fn(),
     };
 
     // Create mock history
@@ -63,13 +63,13 @@ describe('EnhancedMode Module', () => {
       addBookmark: vi.fn(),
       getBookmark: vi.fn(),
       listBookmarks: vi.fn(() => []),
-      count: 5
+      count: 5,
     };
 
     // Create mock theme registry
     mockThemeRegistry = {
       list: vi.fn(() => ['default', 'dark', 'light']),
-      getCurrent: vi.fn(() => ({ name: 'default' }))
+      getCurrent: vi.fn(() => ({ name: 'default' })),
     };
 
     // Create mock context manager
@@ -77,7 +77,7 @@ describe('EnhancedMode Module', () => {
       addFile: vi.fn((path) => ({ name: path, language: 'javascript', size: 1024 })),
       addUrl: vi.fn(() => Promise.resolve({ size: 2048 })),
       clear: vi.fn(),
-      getSummary: vi.fn(() => ({ files: [], urls: [], totalSize: 0, maxSize: 100000 }))
+      getSummary: vi.fn(() => ({ files: [], urls: [], totalSize: 0, maxSize: 100000 })),
     };
 
     // Create mock cache
@@ -88,13 +88,13 @@ describe('EnhancedMode Module', () => {
         hitRate: '66.7%',
         size: 50,
         maxSize: 100,
-        totalTokensSaved: 1000
+        totalTokensSaved: 1000,
       })),
       clear: vi.fn(),
       enable: vi.fn(),
       disable: vi.fn(),
       isEnabled: true,
-      size: 50
+      size: 50,
     };
 
     // Create mock session manager
@@ -104,7 +104,7 @@ describe('EnhancedMode Module', () => {
         name: 'Test Session',
         messages: [],
         metadata: { totalTokens: 5000 },
-        created: Date.now()
+        created: Date.now(),
       })),
       create: vi.fn(),
       save: vi.fn(() => true),
@@ -113,7 +113,7 @@ describe('EnhancedMode Module', () => {
       list: vi.fn(() => []),
       delete: vi.fn(() => true),
       rename: vi.fn(),
-      export: vi.fn(() => '# Export')
+      export: vi.fn(() => '# Export'),
     };
 
     // Create mock input manager
@@ -124,8 +124,8 @@ describe('EnhancedMode Module', () => {
         apply: vi.fn(),
         listVariables: vi.fn(() => ({})),
         getVariable: vi.fn(),
-        setVariable: vi.fn()
-      }
+        setVariable: vi.fn(),
+      },
     };
 
     // Create mock CLI
@@ -139,7 +139,7 @@ describe('EnhancedMode Module', () => {
       cache: mockCache,
       session: mockSession,
       input: mockInput,
-      streaming: false
+      streaming: false,
     };
   });
 
@@ -198,9 +198,7 @@ describe('EnhancedMode Module', () => {
       const mode = new EnhancedMode(mockCli);
       await mode.init();
 
-      const fileCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'file'
-      );
+      const fileCmd = mockCommandParser.register.mock.calls.find((call) => call[0].name === 'file');
       expect(fileCmd).toBeDefined();
       expect(fileCmd[0].aliases).toContain('f');
       expect(fileCmd[0].category).toBe('context');
@@ -210,9 +208,7 @@ describe('EnhancedMode Module', () => {
       const mode = new EnhancedMode(mockCli);
       await mode.init();
 
-      const urlCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'url'
-      );
+      const urlCmd = mockCommandParser.register.mock.calls.find((call) => call[0].name === 'url');
       expect(urlCmd).toBeDefined();
       expect(urlCmd[0].aliases).toContain('u');
     });
@@ -222,7 +218,7 @@ describe('EnhancedMode Module', () => {
       await mode.init();
 
       const ctxCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'context'
+        (call) => call[0].name === 'context',
       );
       expect(ctxCmd).toBeDefined();
       expect(ctxCmd[0].aliases).toContain('ctx');
@@ -233,7 +229,7 @@ describe('EnhancedMode Module', () => {
       await mode.init();
 
       const cacheCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'cache'
+        (call) => call[0].name === 'cache',
       );
       expect(cacheCmd).toBeDefined();
       expect(cacheCmd[0].category).toBe('performance');
@@ -244,7 +240,7 @@ describe('EnhancedMode Module', () => {
       await mode.init();
 
       const tplCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'template'
+        (call) => call[0].name === 'template',
       );
       expect(tplCmd).toBeDefined();
       expect(tplCmd[0].aliases).toContain('tpl');
@@ -254,9 +250,7 @@ describe('EnhancedMode Module', () => {
       const mode = new EnhancedMode(mockCli);
       await mode.init();
 
-      const vimCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'vim'
-      );
+      const vimCmd = mockCommandParser.register.mock.calls.find((call) => call[0].name === 'vim');
       expect(vimCmd).toBeDefined();
     });
 
@@ -264,9 +258,7 @@ describe('EnhancedMode Module', () => {
       const mode = new EnhancedMode(mockCli);
       await mode.init();
 
-      const varCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'var'
-      );
+      const varCmd = mockCommandParser.register.mock.calls.find((call) => call[0].name === 'var');
       expect(varCmd).toBeDefined();
     });
 
@@ -275,7 +267,7 @@ describe('EnhancedMode Module', () => {
       await mode.init();
 
       const bmCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'bookmark'
+        (call) => call[0].name === 'bookmark',
       );
       expect(bmCmd).toBeDefined();
       expect(bmCmd[0].aliases).toContain('bm');
@@ -286,7 +278,7 @@ describe('EnhancedMode Module', () => {
       await mode.init();
 
       const sesCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'session'
+        (call) => call[0].name === 'session',
       );
       expect(sesCmd).toBeDefined();
       expect(sesCmd[0].aliases).toContain('ses');
@@ -297,7 +289,7 @@ describe('EnhancedMode Module', () => {
       await mode.init();
 
       const keysCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'shortcuts'
+        (call) => call[0].name === 'shortcuts',
       );
       expect(keysCmd).toBeDefined();
     });
@@ -307,7 +299,7 @@ describe('EnhancedMode Module', () => {
       await mode.init();
 
       const tokensCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'tokens'
+        (call) => call[0].name === 'tokens',
       );
       expect(tokensCmd).toBeDefined();
     });
@@ -324,7 +316,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const fileCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'file'
+          (call) => call[0].name === 'file',
         );
         const result = await fileCmd[0].handler(['test.js'], { flags: {} });
 
@@ -337,7 +329,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const fileCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'file'
+          (call) => call[0].name === 'file',
         );
         const result = await fileCmd[0].handler([], { flags: {} });
 
@@ -350,9 +342,7 @@ describe('EnhancedMode Module', () => {
         const mode = new EnhancedMode(mockCli);
         await mode.init();
 
-        const urlCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'url'
-        );
+        const urlCmd = mockCommandParser.register.mock.calls.find((call) => call[0].name === 'url');
         const result = await urlCmd[0].handler(['https://example.com']);
 
         expect(mockContext.addUrl).toHaveBeenCalledWith('https://example.com');
@@ -363,9 +353,7 @@ describe('EnhancedMode Module', () => {
         const mode = new EnhancedMode(mockCli);
         await mode.init();
 
-        const urlCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'url'
-        );
+        const urlCmd = mockCommandParser.register.mock.calls.find((call) => call[0].name === 'url');
         const result = await urlCmd[0].handler([]);
 
         expect(result).toContain('Usage');
@@ -378,7 +366,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const ctxCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'context'
+          (call) => call[0].name === 'context',
         );
         const result = await ctxCmd[0].handler(['clear']);
 
@@ -391,7 +379,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const ctxCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'context'
+          (call) => call[0].name === 'context',
         );
         const result = await ctxCmd[0].handler([]);
 
@@ -403,14 +391,14 @@ describe('EnhancedMode Module', () => {
           files: [{ name: 'test.js', language: 'javascript' }],
           urls: [{ url: 'https://example.com' }],
           totalSize: 3072,
-          maxSize: 100000
+          maxSize: 100000,
         });
 
         const mode = new EnhancedMode(mockCli);
         await mode.init();
 
         const ctxCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'context'
+          (call) => call[0].name === 'context',
         );
         const result = await ctxCmd[0].handler([]);
 
@@ -427,7 +415,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const cacheCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'cache'
+          (call) => call[0].name === 'cache',
         );
         const result = await cacheCmd[0].handler(['stats']);
 
@@ -441,7 +429,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const cacheCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'cache'
+          (call) => call[0].name === 'cache',
         );
         const result = await cacheCmd[0].handler(['clear']);
 
@@ -454,7 +442,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const cacheCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'cache'
+          (call) => call[0].name === 'cache',
         );
         const result = await cacheCmd[0].handler(['on']);
 
@@ -467,7 +455,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const cacheCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'cache'
+          (call) => call[0].name === 'cache',
         );
         const result = await cacheCmd[0].handler(['off']);
 
@@ -480,7 +468,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const cacheCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'cache'
+          (call) => call[0].name === 'cache',
         );
         const result = await cacheCmd[0].handler([]);
 
@@ -494,9 +482,7 @@ describe('EnhancedMode Module', () => {
         const mode = new EnhancedMode(mockCli);
         await mode.init();
 
-        const vimCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'vim'
-        );
+        const vimCmd = mockCommandParser.register.mock.calls.find((call) => call[0].name === 'vim');
         const result = await vimCmd[0].handler();
 
         expect(mockInput.toggleVimMode).toHaveBeenCalled();
@@ -507,15 +493,13 @@ describe('EnhancedMode Module', () => {
 
     describe('bookmark command', () => {
       it('should list bookmarks', async () => {
-        mockHistory.listBookmarks.mockReturnValue([
-          { name: 'bm1', text: 'bookmark text 1' }
-        ]);
+        mockHistory.listBookmarks.mockReturnValue([{ name: 'bm1', text: 'bookmark text 1' }]);
 
         const mode = new EnhancedMode(mockCli);
         await mode.init();
 
         const bmCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'bookmark'
+          (call) => call[0].name === 'bookmark',
         );
         const result = await bmCmd[0].handler(['list']);
 
@@ -527,7 +511,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const bmCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'bookmark'
+          (call) => call[0].name === 'bookmark',
         );
         const result = await bmCmd[0].handler(['add', 'mybookmark']);
 
@@ -540,7 +524,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const bmCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'bookmark'
+          (call) => call[0].name === 'bookmark',
         );
         const result = await bmCmd[0].handler(['add']);
 
@@ -554,7 +538,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const bmCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'bookmark'
+          (call) => call[0].name === 'bookmark',
         );
         const result = await bmCmd[0].handler(['get', 'mybookmark']);
 
@@ -568,7 +552,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const keysCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'shortcuts'
+          (call) => call[0].name === 'shortcuts',
         );
         const result = await keysCmd[0].handler();
 
@@ -584,7 +568,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const tokensCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'tokens'
+          (call) => call[0].name === 'tokens',
         );
         const result = await tokensCmd[0].handler();
 
@@ -599,7 +583,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const sesCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'session'
+          (call) => call[0].name === 'session',
         );
         const result = await sesCmd[0].handler([]);
 
@@ -612,7 +596,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const sesCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'session'
+          (call) => call[0].name === 'session',
         );
         const result = await sesCmd[0].handler(['new', 'My', 'New', 'Session']);
 
@@ -625,7 +609,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const sesCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'session'
+          (call) => call[0].name === 'session',
         );
         const result = await sesCmd[0].handler(['save']);
 
@@ -635,14 +619,14 @@ describe('EnhancedMode Module', () => {
 
       it('should list sessions', async () => {
         mockSession.list.mockReturnValue([
-          { id: 'ses-123456789012', name: 'Session 1', messageCount: 10 }
+          { id: 'ses-123456789012', name: 'Session 1', messageCount: 10 },
         ]);
 
         const mode = new EnhancedMode(mockCli);
         await mode.init();
 
         const sesCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'session'
+          (call) => call[0].name === 'session',
         );
         const result = await sesCmd[0].handler(['list']);
 
@@ -655,7 +639,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const sesCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'session'
+          (call) => call[0].name === 'session',
         );
         const result = await sesCmd[0].handler(['export', 'md']);
 
@@ -668,7 +652,7 @@ describe('EnhancedMode Module', () => {
         await mode.init();
 
         const sesCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'session'
+          (call) => call[0].name === 'session',
         );
         const result = await sesCmd[0].handler(['delete', 'ses-123']);
 
@@ -714,7 +698,7 @@ describe('EnhancedMode Module', () => {
 
       it('should handle streaming mode', async () => {
         mockCli.streaming = true;
-        mockQueryProcessor.process.mockImplementation(async (input, options) => {
+        mockQueryProcessor.process.mockImplementation(async (_input, options) => {
           if (options.onToken) {
             options.onToken('Hello');
             options.onToken(' world');

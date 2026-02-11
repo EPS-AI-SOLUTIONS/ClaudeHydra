@@ -3,7 +3,7 @@
  * @module test/unit/utils/fs.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs/promises
 vi.mock('node:fs/promises', () => ({
@@ -17,8 +17,8 @@ vi.mock('node:fs/promises', () => ({
     unlink: vi.fn(),
     rm: vi.fn(),
     copyFile: vi.fn().mockResolvedValue(undefined),
-    rename: vi.fn().mockResolvedValue(undefined)
-  }
+    rename: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
 vi.mock('fs', () => ({
@@ -32,8 +32,8 @@ vi.mock('fs', () => ({
     unlink: vi.fn(),
     rm: vi.fn(),
     copyFile: vi.fn().mockResolvedValue(undefined),
-    rename: vi.fn().mockResolvedValue(undefined)
-  }
+    rename: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
 describe('Filesystem Utilities', () => {
@@ -45,7 +45,7 @@ describe('Filesystem Utilities', () => {
     vi.resetModules();
 
     // Import fresh modules
-    fsMock = await import('fs');
+    fsMock = await import('node:fs');
     fsUtils = await import('../../../src/utils/fs.js');
   });
 
@@ -180,7 +180,7 @@ describe('Filesystem Utilities', () => {
       expect(fsMock.promises.writeFile).toHaveBeenCalledWith(
         '/test/data.json',
         '{\n  "key": "value"\n}\n',
-        'utf-8'
+        'utf-8',
       );
     });
 
@@ -190,7 +190,7 @@ describe('Filesystem Utilities', () => {
       expect(fsMock.promises.writeFile).toHaveBeenCalledWith(
         '/test/data.json',
         '{\n    "a": 1\n}\n',
-        'utf-8'
+        'utf-8',
       );
     });
   });
@@ -216,7 +216,7 @@ describe('Filesystem Utilities', () => {
   describe('isDirectory()', () => {
     it('should return true for directories', async () => {
       fsMock.promises.stat.mockResolvedValueOnce({
-        isDirectory: () => true
+        isDirectory: () => true,
       });
 
       const result = await fsUtils.isDirectory('/test/dir');
@@ -226,7 +226,7 @@ describe('Filesystem Utilities', () => {
 
     it('should return false for files', async () => {
       fsMock.promises.stat.mockResolvedValueOnce({
-        isDirectory: () => false
+        isDirectory: () => false,
       });
 
       const result = await fsUtils.isDirectory('/test/file.txt');
@@ -246,7 +246,7 @@ describe('Filesystem Utilities', () => {
   describe('isFile()', () => {
     it('should return true for files', async () => {
       fsMock.promises.stat.mockResolvedValueOnce({
-        isFile: () => true
+        isFile: () => true,
       });
 
       const result = await fsUtils.isFile('/test/file.txt');
@@ -256,7 +256,7 @@ describe('Filesystem Utilities', () => {
 
     it('should return false for directories', async () => {
       fsMock.promises.stat.mockResolvedValueOnce({
-        isFile: () => false
+        isFile: () => false,
       });
 
       const result = await fsUtils.isFile('/test/dir');
@@ -295,7 +295,7 @@ describe('Filesystem Utilities', () => {
     it('should list files in directory', async () => {
       fsMock.promises.readdir.mockResolvedValueOnce([
         { name: 'file1.txt', isDirectory: () => false, isFile: () => true },
-        { name: 'file2.txt', isDirectory: () => false, isFile: () => true }
+        { name: 'file2.txt', isDirectory: () => false, isFile: () => true },
       ]);
 
       const result = await fsUtils.listFiles('/test/dir');
@@ -309,10 +309,10 @@ describe('Filesystem Utilities', () => {
       fsMock.promises.readdir
         .mockResolvedValueOnce([
           { name: 'file1.txt', isDirectory: () => false, isFile: () => true },
-          { name: 'subdir', isDirectory: () => true, isFile: () => false }
+          { name: 'subdir', isDirectory: () => true, isFile: () => false },
         ])
         .mockResolvedValueOnce([
-          { name: 'file2.txt', isDirectory: () => false, isFile: () => true }
+          { name: 'file2.txt', isDirectory: () => false, isFile: () => true },
         ]);
 
       const result = await fsUtils.listFiles('/test/dir', { recursive: true });
@@ -323,7 +323,7 @@ describe('Filesystem Utilities', () => {
     it('should filter files by pattern', async () => {
       fsMock.promises.readdir.mockResolvedValueOnce([
         { name: 'file1.txt', isDirectory: () => false, isFile: () => true },
-        { name: 'file2.js', isDirectory: () => false, isFile: () => true }
+        { name: 'file2.js', isDirectory: () => false, isFile: () => true },
       ]);
 
       const result = await fsUtils.listFiles('/test/dir', { filter: /\.txt$/ });
@@ -369,7 +369,10 @@ describe('Filesystem Utilities', () => {
       const result = await fsUtils.safeDeleteDir('/test/dir');
 
       expect(result).toBe(true);
-      expect(fsMock.promises.rm).toHaveBeenCalledWith('/test/dir', { recursive: true, force: true });
+      expect(fsMock.promises.rm).toHaveBeenCalledWith('/test/dir', {
+        recursive: true,
+        force: true,
+      });
     });
 
     it('should return false if directory does not exist', async () => {

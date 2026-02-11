@@ -1,7 +1,7 @@
+import { Plus, Save, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Save, ToggleLeft, ToggleRight } from 'lucide-react';
-import { useClaudeStore } from '../stores/claudeStore';
 import { claudeIpc } from '../lib/ipc';
+import { useClaudeStore } from '../stores/claudeStore';
 import type { ApprovalRule, ToolType } from '../types/claude';
 
 export function RulesView() {
@@ -15,16 +15,14 @@ export function RulesView() {
   }, [setRules]);
 
   const handleToggleRule = (ruleId: string) => {
-    const newRules = rules.map((r) =>
-      r.id === ruleId ? { ...r, enabled: !r.enabled } : r
-    );
+    const newRules = rules.map((r) => (r.id === ruleId ? { ...r, enabled: !r.enabled } : r));
     setRules(newRules);
     setHasChanges(true);
   };
 
   const handleToggleAutoApprove = (ruleId: string) => {
     const newRules = rules.map((r) =>
-      r.id === ruleId ? { ...r, auto_approve: !r.auto_approve } : r
+      r.id === ruleId ? { ...r, auto_approve: !r.auto_approve } : r,
     );
     setRules(newRules);
     setHasChanges(true);
@@ -80,9 +78,7 @@ export function RulesView() {
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-matrix-accent">
-          Auto-Approve Rules
-        </h2>
+        <h2 className="text-lg font-semibold text-matrix-accent">Auto-Approve Rules</h2>
         <div className="flex gap-2">
           <button onClick={handleAddRule} className="glass-button flex items-center gap-2 text-sm">
             <Plus size={14} />
@@ -110,10 +106,7 @@ export function RulesView() {
         ) : (
           <div className="space-y-3">
             {rules.map((rule) => (
-              <div
-                key={rule.id}
-                className={`glass-card p-4 ${!rule.enabled ? 'opacity-50' : ''}`}
-              >
+              <div key={rule.id} className={`glass-card p-4 ${!rule.enabled ? 'opacity-50' : ''}`}>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -122,9 +115,7 @@ export function RulesView() {
                         {rule.tool}
                       </span>
                     </div>
-                    <p className="text-xs text-matrix-text-dim mt-1">
-                      {rule.description}
-                    </p>
+                    <p className="text-xs text-matrix-text-dim mt-1">{rule.description}</p>
                     <code className="text-xs text-blue-400 mt-2 block font-mono">
                       /{rule.pattern}/
                     </code>
@@ -139,20 +130,14 @@ export function RulesView() {
                       }`}
                       title="Toggle auto-approve"
                     >
-                      {rule.auto_approve ? (
-                        <ToggleRight size={16} />
-                      ) : (
-                        <ToggleLeft size={16} />
-                      )}
+                      {rule.auto_approve ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
                       Auto
                     </button>
 
                     {/* Enable toggle */}
                     <button
                       onClick={() => handleToggleRule(rule.id)}
-                      className={`text-xs ${
-                        rule.enabled ? 'text-green-400' : 'text-red-400'
-                      }`}
+                      className={`text-xs ${rule.enabled ? 'text-green-400' : 'text-red-400'}`}
                       title="Toggle enabled"
                     >
                       {rule.enabled ? 'ON' : 'OFF'}
@@ -188,31 +173,23 @@ export function RulesView() {
                 <input
                   type="text"
                   value={editingRule.name}
-                  onChange={(e) =>
-                    setEditingRule({ ...editingRule, name: e.target.value })
-                  }
+                  onChange={(e) => setEditingRule({ ...editingRule, name: e.target.value })}
                   className="w-full glass-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-matrix-text mb-1">
-                  Description
-                </label>
+                <label className="block text-sm text-matrix-text mb-1">Description</label>
                 <input
                   type="text"
                   value={editingRule.description}
-                  onChange={(e) =>
-                    setEditingRule({ ...editingRule, description: e.target.value })
-                  }
+                  onChange={(e) => setEditingRule({ ...editingRule, description: e.target.value })}
                   className="w-full glass-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-matrix-text mb-1">
-                  Tool Type
-                </label>
+                <label className="block text-sm text-matrix-text mb-1">Tool Type</label>
                 <select
                   value={editingRule.tool}
                   onChange={(e) =>
@@ -232,15 +209,11 @@ export function RulesView() {
               </div>
 
               <div>
-                <label className="block text-sm text-matrix-text mb-1">
-                  Pattern (Regex)
-                </label>
+                <label className="block text-sm text-matrix-text mb-1">Pattern (Regex)</label>
                 <input
                   type="text"
                   value={editingRule.pattern}
-                  onChange={(e) =>
-                    setEditingRule({ ...editingRule, pattern: e.target.value })
-                  }
+                  onChange={(e) => setEditingRule({ ...editingRule, pattern: e.target.value })}
                   className="w-full glass-input font-mono"
                   placeholder="^git\s+status"
                 />
@@ -251,9 +224,7 @@ export function RulesView() {
                   <input
                     type="checkbox"
                     checked={editingRule.enabled}
-                    onChange={(e) =>
-                      setEditingRule({ ...editingRule, enabled: e.target.checked })
-                    }
+                    onChange={(e) => setEditingRule({ ...editingRule, enabled: e.target.checked })}
                     className="accent-matrix-accent"
                   />
                   Enabled
@@ -277,16 +248,10 @@ export function RulesView() {
             </div>
 
             <div className="flex gap-2 mt-6">
-              <button
-                onClick={() => setEditingRule(null)}
-                className="glass-button flex-1"
-              >
+              <button onClick={() => setEditingRule(null)} className="glass-button flex-1">
                 Cancel
               </button>
-              <button
-                onClick={handleSaveRule}
-                className="glass-button glass-button-primary flex-1"
-              >
+              <button onClick={handleSaveRule} className="glass-button glass-button-primary flex-1">
                 Save
               </button>
             </div>

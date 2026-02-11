@@ -1,10 +1,10 @@
 /**
  * Create desktop shortcuts for ClaudeHydra and GeminiHydra
  */
-import { execSync } from 'child_process';
-import { existsSync } from 'fs';
-import { homedir } from 'os';
-import { join } from 'path';
+import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 
 const desktop = join(homedir(), 'Desktop');
 
@@ -13,14 +13,14 @@ const shortcuts = [
     name: 'ClaudeHydra',
     target: join(desktop, 'ClaudeHydra', 'start-hydra.bat'),
     workdir: join(desktop, 'ClaudeHydra'),
-    description: 'ClaudeHydra - Witcher Swarm'
+    description: 'ClaudeHydra - Witcher Swarm',
   },
   {
     name: 'GeminiHydra',
     target: join(desktop, 'GeminiHydra', 'GeminiHydra', 'start-hydra.bat'),
     workdir: join(desktop, 'GeminiHydra', 'GeminiHydra'),
-    description: 'GeminiHydra - Witcher Swarm'
-  }
+    description: 'GeminiHydra - Witcher Swarm',
+  },
 ];
 
 for (const shortcut of shortcuts) {

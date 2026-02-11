@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { claudeIpc, parallelIpc } from './ipc';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockInvoke } from '../test/setup';
+import { claudeIpc, parallelIpc } from './ipc';
 
 describe('claudeIpc', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     // Setup default mock responses
-    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
+    mockInvoke.mockImplementation((cmd: string, _args?: Record<string, unknown>) => {
       switch (cmd) {
         case 'start_claude_session':
           return Promise.resolve('session-uuid-12345');
@@ -323,11 +323,9 @@ describe('parallelIpc', () => {
         { index: 1, prompt: 'Bye', response: 'Goodbye!', error: null, duration_ms: 80 },
       ]);
 
-      const results = await parallelIpc.batchGenerate(
-        'llama3.2:3b',
-        ['Hello', 'Bye'],
-        { temperature: 0.7 }
-      );
+      const results = await parallelIpc.batchGenerate('llama3.2:3b', ['Hello', 'Bye'], {
+        temperature: 0.7,
+      });
 
       expect(mockInvoke).toHaveBeenCalledWith('ollama_batch_generate', {
         model: 'llama3.2:3b',

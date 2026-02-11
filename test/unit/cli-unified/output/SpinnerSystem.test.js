@@ -3,7 +3,7 @@
  * @module test/unit/cli-unified/output/SpinnerSystem.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock ora
 const mockOra = {
@@ -19,11 +19,11 @@ const mockOra = {
   color: 'cyan',
   spinner: {},
   prefixText: '',
-  suffixText: ''
+  suffixText: '',
 };
 
 vi.mock('ora', () => ({
-  default: vi.fn(() => mockOra)
+  default: vi.fn(() => mockOra),
 }));
 
 // Mock ThemeRegistry
@@ -33,27 +33,27 @@ vi.mock('../../../../src/cli-unified/core/ThemeRegistry.js', () => ({
       spinnerType: 'dots',
       spinner: null,
       colors: {
-        primary: vi.fn(s => s),
-        success: vi.fn(s => s),
-        dim: vi.fn(s => s),
-        highlight: vi.fn(s => s)
-      }
-    }))
-  }
+        primary: vi.fn((s) => s),
+        success: vi.fn((s) => s),
+        dim: vi.fn((s) => s),
+        highlight: vi.fn((s) => s),
+      },
+    })),
+  },
 }));
 
 import {
-  SpinnerTypes,
-  getSpinnerType,
-  getAvailableSpinnerTypes,
-  Spinner,
-  ProgressBar,
-  MultiSpinner,
   AnimatedText,
+  createMultiSpinner,
+  createProgressBar,
   createSpinner,
   createTypedSpinner,
-  createProgressBar,
-  createMultiSpinner
+  getAvailableSpinnerTypes,
+  getSpinnerType,
+  MultiSpinner,
+  ProgressBar,
+  Spinner,
+  SpinnerTypes,
 } from '../../../../src/cli-unified/output/SpinnerSystem.js';
 
 describe('SpinnerSystem', () => {
@@ -95,12 +95,46 @@ describe('SpinnerSystem', () => {
 
     it('should have all expected spinner types', () => {
       const expectedTypes = [
-        'dots', 'dots2', 'dots3', 'line', 'line2', 'circle', 'circle2', 'circle3',
-        'square', 'square2', 'square3', 'bounce', 'bounce2', 'pulse', 'pulse2',
-        'wave', 'wave2', 'arrow', 'arrow2', 'arrow3', 'clock', 'moon', 'earth',
-        'toggle', 'toggle2', 'boxBounce', 'boxBounce2', 'triangle', 'binary',
-        'aesthetic', 'star', 'growVertical', 'growHorizontal', 'noise', 'point',
-        'simpleDots', 'hydra', 'classic', 'witcher', 'cyber'
+        'dots',
+        'dots2',
+        'dots3',
+        'line',
+        'line2',
+        'circle',
+        'circle2',
+        'circle3',
+        'square',
+        'square2',
+        'square3',
+        'bounce',
+        'bounce2',
+        'pulse',
+        'pulse2',
+        'wave',
+        'wave2',
+        'arrow',
+        'arrow2',
+        'arrow3',
+        'clock',
+        'moon',
+        'earth',
+        'toggle',
+        'toggle2',
+        'boxBounce',
+        'boxBounce2',
+        'triangle',
+        'binary',
+        'aesthetic',
+        'star',
+        'growVertical',
+        'growHorizontal',
+        'noise',
+        'point',
+        'simpleDots',
+        'hydra',
+        'classic',
+        'witcher',
+        'cyber',
       ];
 
       for (const type of expectedTypes) {

@@ -3,9 +3,8 @@
  * @module test/unit/swarm/protocol.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
-import { randomUUID } from 'crypto';
+import { writeFileSync } from 'node:fs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs functions
 vi.mock('fs', async () => {
@@ -15,13 +14,13 @@ vi.mock('fs', async () => {
     existsSync: vi.fn().mockReturnValue(true),
     mkdirSync: vi.fn(),
     writeFileSync: vi.fn(),
-    readFileSync: vi.fn().mockReturnValue('[]')
+    readFileSync: vi.fn().mockReturnValue('[]'),
   };
 });
 
 // Mock crypto
 vi.mock('crypto', () => ({
-  randomUUID: vi.fn(() => '12345678-1234-1234-1234-123456789abc')
+  randomUUID: vi.fn(() => '12345678-1234-1234-1234-123456789abc'),
 }));
 
 // Mock ConnectionPool
@@ -35,7 +34,7 @@ vi.mock('../../../src/hydra/core/pool.js', () => {
     }
   }
   return {
-    ConnectionPool: MockConnectionPool
+    ConnectionPool: MockConnectionPool,
   };
 });
 
@@ -43,15 +42,15 @@ vi.mock('../../../src/hydra/core/pool.js', () => {
 vi.mock('../../../src/hydra/providers/llamacpp-bridge.js', () => ({
   getLlamaCppBridge: vi.fn(() => ({
     generate: vi.fn().mockResolvedValue({ content: 'test response', model: 'main' }),
-    getInfo: vi.fn().mockResolvedValue({ status: 'connected' })
-  }))
+    getInfo: vi.fn().mockResolvedValue({ status: 'connected' }),
+  })),
 }));
 
 // Mock claude-client
 vi.mock('../../../src/hydra/providers/claude-client.js', () => ({
   healthCheck: vi.fn().mockResolvedValue({ healthy: true }),
   generate: vi.fn().mockResolvedValue({ content: 'claude response' }),
-  selectModel: vi.fn().mockReturnValue('claude-3-sonnet-20240229')
+  selectModel: vi.fn().mockReturnValue('claude-3-sonnet-20240229'),
 }));
 
 // Mock agents module
@@ -61,18 +60,18 @@ vi.mock('../../../src/swarm/agents.js', () => ({
     agent: 'TestAgent',
     tier: 'executor',
     response: 'Test response',
-    duration: 1000
+    duration: 1000,
   }),
   classifyPrompt: vi.fn().mockReturnValue({
     prompt: 'test',
     agent: 'Geralt',
     tier: 'executor',
     provider: 'llamacpp',
-    model: 'main'
+    model: 'main',
   }),
   analyzeComplexity: vi.fn().mockReturnValue({
     level: 'moderate',
-    factors: []
+    factors: [],
   }),
   checkProviders: vi.fn().mockResolvedValue({
     allReady: true,
@@ -80,24 +79,37 @@ vi.mock('../../../src/swarm/agents.js', () => ({
     tiers: {
       commander: true,
       coordinator: true,
-      executor: true
-    }
+      executor: true,
+    },
   }),
   AGENT_SPECS: {
     Dijkstra: { persona: 'Spymaster', focus: 'Planning', tier: 'commander', skills: [] },
     Regis: { persona: 'Sage', focus: 'Research', tier: 'coordinator', skills: [] },
-    Geralt: { persona: 'White Wolf', focus: 'Security', tier: 'executor', skills: [] }
+    Geralt: { persona: 'White Wolf', focus: 'Security', tier: 'executor', skills: [] },
   },
-  AGENT_NAMES: ['Dijkstra', 'Regis', 'Geralt', 'Yennefer', 'Jaskier', 'Triss', 'Vesemir', 'Ciri', 'Eskel', 'Lambert', 'Zoltan', 'Philippa'],
+  AGENT_NAMES: [
+    'Dijkstra',
+    'Regis',
+    'Geralt',
+    'Yennefer',
+    'Jaskier',
+    'Triss',
+    'Vesemir',
+    'Ciri',
+    'Eskel',
+    'Lambert',
+    'Zoltan',
+    'Philippa',
+  ],
   MODEL_TIERS: {
     commander: { provider: 'claude', model: 'opus', displayName: 'Claude Opus' },
     coordinator: { provider: 'claude', model: 'sonnet', displayName: 'Claude Sonnet' },
-    executor: { provider: 'llamacpp', model: 'main', tool: 'llama_generate' }
+    executor: { provider: 'llamacpp', model: 'main', tool: 'llama_generate' },
   },
   AGENT_TIERS: {
     Dijkstra: 'commander',
     Regis: 'coordinator',
-    Geralt: 'executor'
+    Geralt: 'executor',
   },
   getAgentTier: vi.fn((agent) => {
     const tiers = {
@@ -106,10 +118,10 @@ vi.mock('../../../src/swarm/agents.js', () => ({
       Yennefer: 'coordinator',
       Jaskier: 'coordinator',
       Geralt: 'executor',
-      Triss: 'executor'
+      Triss: 'executor',
     };
     return tiers[agent] || 'executor';
-  })
+  }),
 }));
 
 describe('Swarm Protocol', () => {
@@ -175,11 +187,15 @@ describe('Swarm Protocol', () => {
       });
 
       it('should have higher concurrency than standard', () => {
-        expect(protocol.YOLO_MODE.maxConcurrency).toBeGreaterThan(protocol.STANDARD_MODE.maxConcurrency);
+        expect(protocol.YOLO_MODE.maxConcurrency).toBeGreaterThan(
+          protocol.STANDARD_MODE.maxConcurrency,
+        );
       });
 
       it('should have lower timeout than standard', () => {
-        expect(protocol.YOLO_MODE.timeoutSeconds).toBeLessThan(protocol.STANDARD_MODE.timeoutSeconds);
+        expect(protocol.YOLO_MODE.timeoutSeconds).toBeLessThan(
+          protocol.STANDARD_MODE.timeoutSeconds,
+        );
       });
 
       it('should have fewer retry attempts than standard', () => {
@@ -239,13 +255,11 @@ describe('Swarm Protocol', () => {
 
       await protocol.invokeSwarm('test query', {
         verbose: false,
-        skipResearch: true
+        skipResearch: true,
       });
 
       // Regis should not be called when skipping research
-      const regisCalls = invokeAgent.mock.calls.filter(
-        call => call[0] === 'Regis'
-      );
+      const regisCalls = invokeAgent.mock.calls.filter((call) => call[0] === 'Regis');
       expect(regisCalls.length).toBe(0);
     });
 
@@ -280,9 +294,7 @@ describe('Swarm Protocol', () => {
       await protocol.quickSwarm('test query', { verbose: false });
 
       // Regis (research) should not be called
-      const regisCalls = invokeAgent.mock.calls.filter(
-        call => call[0] === 'Regis'
-      );
+      const regisCalls = invokeAgent.mock.calls.filter((call) => call[0] === 'Regis');
       expect(regisCalls.length).toBe(0);
     });
 
@@ -361,8 +373,8 @@ describe('Swarm Protocol', () => {
         tiers: {
           commander: false,
           coordinator: false,
-          executor: false
-        }
+          executor: false,
+        },
       });
 
       const result = await protocol.invokeSwarm('test query', { verbose: false });
@@ -379,8 +391,8 @@ describe('Swarm Protocol', () => {
         tiers: {
           commander: false,
           coordinator: false,
-          executor: true
-        }
+          executor: true,
+        },
       });
 
       const result = await protocol.invokeSwarm('test query', { verbose: false });
@@ -398,7 +410,7 @@ describe('Swarm Protocol', () => {
     it('YOLO mode should be faster but less safe', () => {
       // YOLO has higher concurrency
       expect(protocol.YOLO_MODE.maxConcurrency).toBeGreaterThan(
-        protocol.STANDARD_MODE.maxConcurrency
+        protocol.STANDARD_MODE.maxConcurrency,
       );
 
       // YOLO has no safety blocking
@@ -406,14 +418,10 @@ describe('Swarm Protocol', () => {
       expect(protocol.STANDARD_MODE.safetyBlocking).toBe(true);
 
       // YOLO has shorter timeouts
-      expect(protocol.YOLO_MODE.timeoutSeconds).toBeLessThan(
-        protocol.STANDARD_MODE.timeoutSeconds
-      );
+      expect(protocol.YOLO_MODE.timeoutSeconds).toBeLessThan(protocol.STANDARD_MODE.timeoutSeconds);
 
       // YOLO has fewer retries
-      expect(protocol.YOLO_MODE.retryAttempts).toBeLessThan(
-        protocol.STANDARD_MODE.retryAttempts
-      );
+      expect(protocol.YOLO_MODE.retryAttempts).toBeLessThan(protocol.STANDARD_MODE.retryAttempts);
     });
   });
 });

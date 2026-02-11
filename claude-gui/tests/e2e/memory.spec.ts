@@ -6,11 +6,15 @@
  * refresh, and clear.
  */
 
-import { test, expect } from '../fixtures/test-setup';
+import {
+  createMockKnowledgeGraph,
+  createMockMemories,
+  setMockInvokeResult,
+} from '../fixtures/tauri-mocks';
+import { SELECTORS } from '../fixtures/test-data';
+import { expect, test } from '../fixtures/test-setup';
 import { MemoryPanel } from '../page-objects/MemoryPanel';
 import { SessionSidebar } from '../page-objects/SessionSidebar';
-import { SELECTORS, UI_TEXTS, AGENT_NAMES, TIMEOUTS } from '../fixtures/test-data';
-import { setMockInvokeResult, createMockMemories, createMockKnowledgeGraph } from '../fixtures/tauri-mocks';
 
 test.describe('Agent Memory', () => {
   let memory: MemoryPanel;
@@ -47,7 +51,7 @@ test.describe('Agent Memory', () => {
     await page.waitForTimeout(500);
 
     const selects = page.locator(SELECTORS.memory.agentSelect);
-    if (await selects.count() > 0) {
+    if ((await selects.count()) > 0) {
       const agents = await memory.getAvailableAgents();
       // Should have at least 15 agent options (plus possibly "All" option)
       expect(agents.length).toBeGreaterThanOrEqual(15);
@@ -100,7 +104,7 @@ test.describe('Agent Memory', () => {
     await page.waitForTimeout(500);
 
     const agentSelect = page.locator(SELECTORS.memory.agentSelect);
-    if (await agentSelect.count() > 0) {
+    if ((await agentSelect.count()) > 0) {
       await memory.filterByAgent('Yennefer');
       const selected = await memory.getSelectedAgent();
       expect(selected).toContain('Yennefer');
@@ -113,7 +117,7 @@ test.describe('Agent Memory', () => {
 
     const kgHeading = page.locator(SELECTORS.memory.knowledgeGraphHeading);
     // Knowledge graph may or may not be visible depending on view
-    const visible = await kgHeading.isVisible();
+    const _visible = await kgHeading.isVisible();
     // Just verify the app didn't crash
     expect(await page.locator(SELECTORS.sidebar.container).isVisible()).toBe(true);
   });

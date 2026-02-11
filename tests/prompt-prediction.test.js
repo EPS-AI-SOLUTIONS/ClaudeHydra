@@ -3,14 +3,14 @@
  * @jest-environment node
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import {
-  PromptPredictor,
-  IntelligentQueue,
-  createPredictionProvider,
   ComplexityAnalyzer,
+  createPredictionProvider,
+  createPredictionSystem,
+  IntelligentQueue,
+  PromptPredictor,
   RoutingEngine,
-  createPredictionSystem
 } from '../src/prompt-prediction/index.js';
 
 describe('PromptPredictor', () => {
@@ -105,7 +105,7 @@ describe('RoutingEngine', () => {
     const simple = router.selectProvider('list files');
     const complex = router.selectProvider(
       'design a microservices architecture with async message queuing, ' +
-      'database sharding, and distributed caching strategy'
+        'database sharding, and distributed caching strategy',
     );
 
     expect(simple.complexity.level).toBe('simple');

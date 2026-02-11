@@ -69,7 +69,7 @@ export class EmbeddingBatcher {
 
   constructor(
     embeddingFn: EmbeddingFunction,
-    options?: { batchSize?: number; flushTimeoutMs?: number }
+    options?: { batchSize?: number; flushTimeoutMs?: number },
   ) {
     this.embeddingFn = embeddingFn;
     this.batchSize = options?.batchSize ?? 10;
@@ -347,6 +347,7 @@ export class SimpleANN {
       });
     }
 
+    // biome-ignore lint/style/noNonNullAssertion: bucket is guaranteed by set() above
     const bucket = this.buckets.get(bucketKey)!;
 
     // Remove existing item with same id
@@ -375,11 +376,7 @@ export class SimpleANN {
   /**
    * Search for k nearest neighbors
    */
-  search(
-    queryEmbedding: number[],
-    k = 5,
-    searchBuckets = 3
-  ): Array<{ id: string; score: number }> {
+  search(queryEmbedding: number[], k = 5, searchBuckets = 3): Array<{ id: string; score: number }> {
     const queryBucket = this.getBucketKey(queryEmbedding);
 
     // Get nearby buckets to search
@@ -509,7 +506,7 @@ export class LazyEmbeddingManager {
 
   constructor(
     embeddingFn: EmbeddingFunction,
-    options?: { batchSize?: number; embeddingDimension?: number }
+    options?: { batchSize?: number; embeddingDimension?: number },
   ) {
     this.batcher = new EmbeddingBatcher(embeddingFn, {
       batchSize: options?.batchSize ?? 10,
@@ -527,11 +524,7 @@ export class LazyEmbeddingManager {
   /**
    * Store content without immediate embedding
    */
-  store(
-    id: string,
-    content: string,
-    metadata?: Record<string, unknown>
-  ): LazyEmbedding {
+  store(id: string, content: string, metadata?: Record<string, unknown>): LazyEmbedding {
     const item: LazyEmbedding = {
       id,
       content,
@@ -604,9 +597,7 @@ export class LazyEmbeddingManager {
    * Force embed all un-embedded items
    */
   async embedAll(): Promise<number> {
-    const unembedded = Array.from(this.items.values()).filter(
-      (item) => item.embedding === null
-    );
+    const unembedded = Array.from(this.items.values()).filter((item) => item.embedding === null);
 
     if (unembedded.length === 0) return 0;
 
@@ -673,11 +664,7 @@ export class QueryCache<T = unknown> {
   /**
    * Get cached value or compute if missing/expired
    */
-  async getOrCompute(
-    key: string,
-    compute: () => Promise<T>,
-    customTtl?: number
-  ): Promise<T> {
+  async getOrCompute(key: string, compute: () => Promise<T>, customTtl?: number): Promise<T> {
     const hash = this.hashKey(key);
     const cached = this.cache.get(hash);
 
@@ -847,11 +834,19 @@ export class QueryCache<T = unknown> {
   }
 
   /**
+   * Destroy the cache - stop cleanup and clear all entries
+   */
+  destroy(): void {
+    this.stopCleanup();
+    this.clear();
+  }
+
+  /**
    * Evict oldest entries to make room
    */
   private evictOldest(count = 1): void {
     const entries = Array.from(this.cache.entries()).sort(
-      (a, b) => a[1].createdAt - b[1].createdAt
+      (a, b) => a[1].createdAt - b[1].createdAt,
     );
 
     for (let i = 0; i < count && i < entries.length; i++) {
@@ -891,7 +886,7 @@ export function hashQuery(query: string, options?: Record<string, unknown>): str
  * Measure execution time of async function
  */
 export async function measureTime<T>(
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<{ result: T; durationMs: number }> {
   const start = performance.now();
   const result = await fn();
@@ -904,7 +899,7 @@ export async function measureTime<T>(
  */
 export function debounce<T extends (...args: unknown[]) => unknown>(
   fn: T,
-  delayMs: number
+  delayMs: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -924,7 +919,7 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
  */
 export function throttle<T extends (...args: unknown[]) => unknown>(
   fn: T,
-  limitMs: number
+  limitMs: number,
 ): (...args: Parameters<T>) => void {
   let lastCall = 0;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;

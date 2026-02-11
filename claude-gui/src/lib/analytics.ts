@@ -144,25 +144,55 @@ export function classifyQuery(query: string): QueryType {
 
   // Code patterns
   const codePatterns = [
-    'write', 'create', 'implement', 'function', 'class', 'component',
-    'code', 'script', 'program', 'build', 'develop', 'napish', 'stworz'
+    'write',
+    'create',
+    'implement',
+    'function',
+    'class',
+    'component',
+    'code',
+    'script',
+    'program',
+    'build',
+    'develop',
+    'napish',
+    'stworz',
   ];
 
   // Explain patterns
   const explainPatterns = [
-    'explain', 'what is', 'how does', 'why', 'describe', 'tell me',
-    'wyjasni', 'co to', 'jak dziala', 'dlaczego', 'opisz'
+    'explain',
+    'what is',
+    'how does',
+    'why',
+    'describe',
+    'tell me',
+    'wyjasni',
+    'co to',
+    'jak dziala',
+    'dlaczego',
+    'opisz',
   ];
 
   // Debug patterns
   const debugPatterns = [
-    'fix', 'debug', 'error', 'bug', 'issue', 'problem', 'crash',
-    'not working', 'napraw', 'blad', 'nie dziala', 'problem'
+    'fix',
+    'debug',
+    'error',
+    'bug',
+    'issue',
+    'problem',
+    'crash',
+    'not working',
+    'napraw',
+    'blad',
+    'nie dziala',
+    'problem',
   ];
 
-  if (codePatterns.some(p => lowerQuery.includes(p))) return 'code';
-  if (explainPatterns.some(p => lowerQuery.includes(p))) return 'explain';
-  if (debugPatterns.some(p => lowerQuery.includes(p))) return 'debug';
+  if (codePatterns.some((p) => lowerQuery.includes(p))) return 'code';
+  if (explainPatterns.some((p) => lowerQuery.includes(p))) return 'explain';
+  if (debugPatterns.some((p) => lowerQuery.includes(p))) return 'debug';
   return 'general';
 }
 
@@ -171,24 +201,106 @@ export function classifyQuery(query: string): QueryType {
  */
 export function extractKeywords(text: string): string[] {
   const stopWords = new Set([
-    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-    'should', 'may', 'might', 'must', 'shall', 'can', 'to', 'of', 'in',
-    'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through',
-    'and', 'or', 'but', 'if', 'then', 'else', 'when', 'up', 'down',
-    'out', 'over', 'under', 'again', 'further', 'once', 'here', 'there',
-    'this', 'that', 'these', 'those', 'it', 'its', 'i', 'me', 'my',
-    'we', 'our', 'you', 'your', 'he', 'she', 'they', 'them', 'their',
+    'the',
+    'a',
+    'an',
+    'is',
+    'are',
+    'was',
+    'were',
+    'be',
+    'been',
+    'being',
+    'have',
+    'has',
+    'had',
+    'do',
+    'does',
+    'did',
+    'will',
+    'would',
+    'could',
+    'should',
+    'may',
+    'might',
+    'must',
+    'shall',
+    'can',
+    'to',
+    'of',
+    'in',
+    'for',
+    'on',
+    'with',
+    'at',
+    'by',
+    'from',
+    'as',
+    'into',
+    'through',
+    'and',
+    'or',
+    'but',
+    'if',
+    'then',
+    'else',
+    'when',
+    'up',
+    'down',
+    'out',
+    'over',
+    'under',
+    'again',
+    'further',
+    'once',
+    'here',
+    'there',
+    'this',
+    'that',
+    'these',
+    'those',
+    'it',
+    'its',
+    'i',
+    'me',
+    'my',
+    'we',
+    'our',
+    'you',
+    'your',
+    'he',
+    'she',
+    'they',
+    'them',
+    'their',
     // Polish stop words
-    'i', 'w', 'z', 'na', 'do', 'nie', 'tak', 'jak', 'co', 'to', 'czy',
-    'dla', 'po', 'ale', 'ze', 'sie', 'jest', 'oraz', 'przez', 'od'
+    'i',
+    'w',
+    'z',
+    'na',
+    'do',
+    'nie',
+    'tak',
+    'jak',
+    'co',
+    'to',
+    'czy',
+    'dla',
+    'po',
+    'ale',
+    'ze',
+    'sie',
+    'jest',
+    'oraz',
+    'przez',
+    'od',
   ]);
 
   return text
     .toLowerCase()
     .replace(/[^a-z0-9\u0080-\u024F\s]/g, ' ')
     .split(/\s+/)
-    .filter(word => word.length > 2 && !stopWords.has(word));
+    .filter((word) => word.length > 2 && !stopWords.has(word));
 }
 
 /**
@@ -197,10 +309,9 @@ export function extractKeywords(text: string): string[] {
  */
 export function clusterTopics(
   keywordFrequency: Record<string, number>,
-  k: number = K_CLUSTERS
+  k: number = K_CLUSTERS,
 ): TopicCluster[] {
-  const entries = Object.entries(keywordFrequency)
-    .sort(([, a], [, b]) => b - a);
+  const entries = Object.entries(keywordFrequency).sort(([, a], [, b]) => b - a);
 
   if (entries.length === 0) {
     return [];
@@ -252,7 +363,7 @@ function calculateAvgPerformance(history: PerformanceTiming[]): PerformanceTimin
       generationMs: acc.generationMs + t.generationMs,
       totalMs: acc.totalMs + t.totalMs,
     }),
-    { embeddingMs: 0, retrievalMs: 0, generationMs: 0, totalMs: 0 }
+    { embeddingMs: 0, retrievalMs: 0, generationMs: 0, totalMs: 0 },
   );
 
   const count = history.length;
@@ -427,7 +538,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           };
 
           const newHistory = [...state.performanceHistory, newEntry].slice(
-            -MAX_PERFORMANCE_HISTORY
+            -MAX_PERFORMANCE_HISTORY,
           );
 
           return {
@@ -446,10 +557,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           };
 
           return {
-            recentActivity: [newEntry, ...state.recentActivity].slice(
-              0,
-              MAX_ACTIVITY_ENTRIES
-            ),
+            recentActivity: [newEntry, ...state.recentActivity].slice(0, MAX_ACTIVITY_ENTRIES),
           };
         }),
 
@@ -479,8 +587,8 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         alzurStatus: state.alzurStatus,
         // Note: performanceHistory, sessionCost, and recentActivity are NOT persisted
       }),
-    }
-  )
+    },
+  ),
 );
 
 // ============================================================================

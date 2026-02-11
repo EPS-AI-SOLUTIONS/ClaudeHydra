@@ -29,11 +29,31 @@
   "pipeline": {
     "title": "6-Stage Execution Pipeline",
     "stages": [
-      { "number": 1, "name": "Speculate", "description": "Analyze task requirements", "icon": "lightbulb" },
-      { "number": 2, "name": "Plan", "description": "Strategic planning with Dijkstra", "icon": "map" },
+      {
+        "number": 1,
+        "name": "Speculate",
+        "description": "Analyze task requirements",
+        "icon": "lightbulb"
+      },
+      {
+        "number": 2,
+        "name": "Plan",
+        "description": "Strategic planning with Dijkstra",
+        "icon": "map"
+      },
       { "number": 3, "name": "Execute", "description": "Parallel agent execution", "icon": "play" },
-      { "number": 4, "name": "Validate", "description": "Code review by Vesemir", "icon": "check-circle" },
-      { "number": 5, "name": "Synthesize", "description": "Merge agent outputs", "icon": "git-merge" },
+      {
+        "number": 4,
+        "name": "Validate",
+        "description": "Code review by Vesemir",
+        "icon": "check-circle"
+      },
+      {
+        "number": 5,
+        "name": "Synthesize",
+        "description": "Merge agent outputs",
+        "icon": "git-merge"
+      },
       { "number": 6, "name": "Output", "description": "Format and deliver results", "icon": "send" }
     ]
   },

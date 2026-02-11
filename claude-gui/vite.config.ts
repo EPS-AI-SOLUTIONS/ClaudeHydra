@@ -1,8 +1,9 @@
 /// <reference types="vitest" />
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import compression from "vite-plugin-compression";
-import os from "os";
+
+import os from 'node:os';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+import compression from 'vite-plugin-compression';
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -46,9 +47,16 @@ export default defineConfig(async () => ({
             return 'vendor-react';
           }
           // Markdown rendering (heavy) - lazy loaded with chat views
-          if (id.includes('react-markdown') || id.includes('remark-') || id.includes('rehype-') ||
-              id.includes('unified') || id.includes('mdast') || id.includes('hast') ||
-              id.includes('micromark') || id.includes('highlight.js')) {
+          if (
+            id.includes('react-markdown') ||
+            id.includes('remark-') ||
+            id.includes('rehype-') ||
+            id.includes('unified') ||
+            id.includes('mdast') ||
+            id.includes('hast') ||
+            id.includes('micromark') ||
+            id.includes('highlight.js')
+          ) {
             return 'vendor-markdown';
           }
           // Animation library
@@ -109,14 +117,14 @@ export default defineConfig(async () => ({
     host: host || false,
     hmr: host
       ? {
-          protocol: "ws",
+          protocol: 'ws',
           host,
           port: 4201,
         }
       : undefined,
     watch: {
       // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+      ignored: ['**/src-tauri/**'],
     },
     // Proxy APIs for browser mode (bypasses CORS)
     proxy: {

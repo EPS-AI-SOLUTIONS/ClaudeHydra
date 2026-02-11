@@ -187,32 +187,108 @@ const QUANTIZATION_PRESETS: QuantizationPreset[] = [
 
 const QUERY_TYPE_KEYWORDS: Record<QueryType, string[]> = {
   code: [
-    'write', 'code', 'function', 'implement', 'create', 'build', 'develop',
-    'typescript', 'javascript', 'python', 'react', 'component', 'api', 'class',
-    'method', 'algorithm', 'script', 'program', 'refactor', 'optimize'
+    'write',
+    'code',
+    'function',
+    'implement',
+    'create',
+    'build',
+    'develop',
+    'typescript',
+    'javascript',
+    'python',
+    'react',
+    'component',
+    'api',
+    'class',
+    'method',
+    'algorithm',
+    'script',
+    'program',
+    'refactor',
+    'optimize',
   ],
   explain: [
-    'explain', 'what is', 'how does', 'why', 'describe', 'tell me about',
-    'understand', 'clarify', 'meaning', 'definition', 'concept', 'theory',
-    'example', 'tutorial', 'guide', 'learn'
+    'explain',
+    'what is',
+    'how does',
+    'why',
+    'describe',
+    'tell me about',
+    'understand',
+    'clarify',
+    'meaning',
+    'definition',
+    'concept',
+    'theory',
+    'example',
+    'tutorial',
+    'guide',
+    'learn',
   ],
   debug: [
-    'debug', 'fix', 'error', 'bug', 'issue', 'problem', 'not working',
-    'fails', 'crash', 'exception', 'undefined', 'null', 'broken', 'wrong',
-    'troubleshoot', 'diagnose', 'resolve'
+    'debug',
+    'fix',
+    'error',
+    'bug',
+    'issue',
+    'problem',
+    'not working',
+    'fails',
+    'crash',
+    'exception',
+    'undefined',
+    'null',
+    'broken',
+    'wrong',
+    'troubleshoot',
+    'diagnose',
+    'resolve',
   ],
   chat: [
-    'hello', 'hi', 'hey', 'thanks', 'thank you', 'please', 'help',
-    'can you', 'would you', 'could you', 'opinion', 'think', 'feel'
+    'hello',
+    'hi',
+    'hey',
+    'thanks',
+    'thank you',
+    'please',
+    'help',
+    'can you',
+    'would you',
+    'could you',
+    'opinion',
+    'think',
+    'feel',
   ],
   analyze: [
-    'analyze', 'review', 'assess', 'evaluate', 'compare', 'benchmark',
-    'performance', 'security', 'audit', 'inspect', 'check', 'validate',
-    'test', 'verify', 'measure'
+    'analyze',
+    'review',
+    'assess',
+    'evaluate',
+    'compare',
+    'benchmark',
+    'performance',
+    'security',
+    'audit',
+    'inspect',
+    'check',
+    'validate',
+    'test',
+    'verify',
+    'measure',
   ],
   translate: [
-    'translate', 'convert', 'transform', 'migrate', 'port', 'rewrite',
-    'from', 'to', 'language', 'format', 'syntax'
+    'translate',
+    'convert',
+    'transform',
+    'migrate',
+    'port',
+    'rewrite',
+    'from',
+    'to',
+    'language',
+    'format',
+    'syntax',
   ],
   unknown: [],
 };
@@ -266,7 +342,12 @@ interface ModelRegistryState {
   createAbTest: (config: Omit<ABTestConfig, 'id' | 'startedAt' | 'endedAt' | 'results'>) => string;
   startAbTest: (id: string) => void;
   stopAbTest: (id: string) => void;
-  recordAbTestResult: (testId: string, variant: 'primary' | 'challenger', success: boolean, latencyMs: number) => void;
+  recordAbTestResult: (
+    testId: string,
+    variant: 'primary' | 'challenger',
+    success: boolean,
+    latencyMs: number,
+  ) => void;
   getAbTestWinner: (testId: string) => 'primary' | 'challenger' | 'inconclusive';
   routeAbTestTraffic: (testId: string) => 'primary' | 'challenger';
 
@@ -349,7 +430,7 @@ export const useModelRegistry = create<ModelRegistryState>()(
         set((state) => {
           const { [id]: _deleted, ...remaining } = state.models;
           // Also remove related snapshots
-          const filteredSnapshots = state.snapshots.filter(s => s.modelId !== id);
+          const filteredSnapshots = state.snapshots.filter((s) => s.modelId !== id);
           return { models: remaining, snapshots: filteredSnapshots };
         });
       },
@@ -358,7 +439,7 @@ export const useModelRegistry = create<ModelRegistryState>()(
 
       getAllModels: () => Object.values(get().models),
 
-      getActiveModels: () => Object.values(get().models).filter(m => m.isActive),
+      getActiveModels: () => Object.values(get().models).filter((m) => m.isActive),
 
       updateModelMetrics: (id, metrics) => {
         set((state) => {
@@ -390,8 +471,20 @@ export const useModelRegistry = create<ModelRegistryState>()(
           startedAt: 0,
           endedAt: null,
           results: {
-            primary: { requests: 0, avgLatencyMs: 0, errorCount: 0, userPreferences: 0, conversionRate: 0 },
-            challenger: { requests: 0, avgLatencyMs: 0, errorCount: 0, userPreferences: 0, conversionRate: 0 },
+            primary: {
+              requests: 0,
+              avgLatencyMs: 0,
+              errorCount: 0,
+              userPreferences: 0,
+              conversionRate: 0,
+            },
+            challenger: {
+              requests: 0,
+              avgLatencyMs: 0,
+              errorCount: 0,
+              userPreferences: 0,
+              conversionRate: 0,
+            },
           },
         };
 
@@ -439,11 +532,10 @@ export const useModelRegistry = create<ModelRegistryState>()(
 
           const metrics = test.results[variant];
           const newRequests = metrics.requests + 1;
-          const newAvgLatency =
-            (metrics.avgLatencyMs * metrics.requests + latencyMs) / newRequests;
+          const newAvgLatency = (metrics.avgLatencyMs * metrics.requests + latencyMs) / newRequests;
           const newErrorCount = success ? metrics.errorCount : metrics.errorCount + 1;
           const newConversionRate =
-            ((metrics.conversionRate * metrics.requests) + (success ? 1 : 0)) / newRequests;
+            (metrics.conversionRate * metrics.requests + (success ? 1 : 0)) / newRequests;
 
           return {
             abTests: {
@@ -480,12 +572,12 @@ export const useModelRegistry = create<ModelRegistryState>()(
         // Scoring: lower latency, higher conversion, fewer errors
         const primaryScore =
           primary.conversionRate * 100 -
-          (primary.avgLatencyMs / 1000) -
+          primary.avgLatencyMs / 1000 -
           (primary.errorCount / primary.requests) * 50;
 
         const challengerScore =
           challenger.conversionRate * 100 -
-          (challenger.avgLatencyMs / 1000) -
+          challenger.avgLatencyMs / 1000 -
           (challenger.errorCount / challenger.requests) * 50;
 
         const threshold = 5; // Need 5% better to declare winner
@@ -514,7 +606,10 @@ export const useModelRegistry = create<ModelRegistryState>()(
         let bestScore = 0;
         const matchedKeywords: string[] = [];
 
-        for (const [type, keywords] of Object.entries(QUERY_TYPE_KEYWORDS) as [QueryType, string[]][]) {
+        for (const [type, keywords] of Object.entries(QUERY_TYPE_KEYWORDS) as [
+          QueryType,
+          string[],
+        ][]) {
           let score = 0;
           const matches: string[] = [];
 
@@ -548,7 +643,7 @@ export const useModelRegistry = create<ModelRegistryState>()(
         const classification = state.classifyQuery(query);
 
         // Check for custom routing rule first
-        const customRule = state.routingRules.find(r => r.queryType === classification.type);
+        const customRule = state.routingRules.find((r) => r.queryType === classification.type);
         if (customRule) {
           const preferredModel = state.models[customRule.preferredModelId];
           if (preferredModel?.isActive) return preferredModel;
@@ -565,8 +660,8 @@ export const useModelRegistry = create<ModelRegistryState>()(
 
         // Find best match from preferences
         for (const preferred of preferredModels) {
-          const match = activeModels.find(
-            m => m.baseModel.toLowerCase().includes(preferred.toLowerCase())
+          const match = activeModels.find((m) =>
+            m.baseModel.toLowerCase().includes(preferred.toLowerCase()),
           );
           if (match) return match;
         }
@@ -583,7 +678,7 @@ export const useModelRegistry = create<ModelRegistryState>()(
 
       setRoutingRule: (rule) => {
         set((state) => {
-          const existing = state.routingRules.findIndex(r => r.queryType === rule.queryType);
+          const existing = state.routingRules.findIndex((r) => r.queryType === rule.queryType);
           const newRules = [...state.routingRules];
 
           if (existing >= 0) {
@@ -598,7 +693,7 @@ export const useModelRegistry = create<ModelRegistryState>()(
 
       removeRoutingRule: (queryType) => {
         set((state) => ({
-          routingRules: state.routingRules.filter(r => r.queryType !== queryType),
+          routingRules: state.routingRules.filter((r) => r.queryType !== queryType),
         }));
       },
 
@@ -622,11 +717,11 @@ export const useModelRegistry = create<ModelRegistryState>()(
         set((state) => {
           // Keep only last MAX_SNAPSHOTS_PER_MODEL snapshots per model
           const existingForModel = state.snapshots
-            .filter(s => s.modelId === modelId)
+            .filter((s) => s.modelId === modelId)
             .sort((a, b) => b.createdAt - a.createdAt);
 
           const toKeep = existingForModel.slice(0, MAX_SNAPSHOTS_PER_MODEL - 1);
-          const otherSnapshots = state.snapshots.filter(s => s.modelId !== modelId);
+          const otherSnapshots = state.snapshots.filter((s) => s.modelId !== modelId);
 
           return {
             snapshots: [...otherSnapshots, ...toKeep, snapshot],
@@ -639,14 +734,14 @@ export const useModelRegistry = create<ModelRegistryState>()(
       rollbackModel: (modelId, snapshotId) => {
         const state = get();
         const modelSnapshots = state.snapshots
-          .filter(s => s.modelId === modelId)
+          .filter((s) => s.modelId === modelId)
           .sort((a, b) => b.createdAt - a.createdAt);
 
         if (modelSnapshots.length === 0) return false;
 
         // Use specific snapshot or most recent
         const targetSnapshot = snapshotId
-          ? modelSnapshots.find(s => s.id === snapshotId)
+          ? modelSnapshots.find((s) => s.id === snapshotId)
           : modelSnapshots[0];
 
         if (!targetSnapshot) return false;
@@ -669,14 +764,14 @@ export const useModelRegistry = create<ModelRegistryState>()(
       },
 
       getModelSnapshots: (modelId) => {
-        return get().snapshots
-          .filter(s => s.modelId === modelId)
+        return get()
+          .snapshots.filter((s) => s.modelId === modelId)
           .sort((a, b) => b.createdAt - a.createdAt);
       },
 
       deleteSnapshot: (snapshotId) => {
         set((state) => ({
-          snapshots: state.snapshots.filter(s => s.id !== snapshotId),
+          snapshots: state.snapshots.filter((s) => s.id !== snapshotId),
         }));
       },
 
@@ -687,7 +782,7 @@ export const useModelRegistry = create<ModelRegistryState>()(
       getQuantizationPresets: () => QUANTIZATION_PRESETS,
 
       selectQuantization: (presetId) => {
-        const preset = QUANTIZATION_PRESETS.find(p => p.id === presetId);
+        const preset = QUANTIZATION_PRESETS.find((p) => p.id === presetId);
         if (preset) {
           set({ selectedQuantization: presetId });
         }
@@ -715,9 +810,13 @@ export const useModelRegistry = create<ModelRegistryState>()(
           const canvas = document.createElement('canvas');
           const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
           if (gl) {
-            const debugInfo = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info');
+            const debugInfo = (gl as WebGLRenderingContext).getExtension(
+              'WEBGL_debug_renderer_info',
+            );
             if (debugInfo) {
-              const renderer = (gl as WebGLRenderingContext).getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+              const renderer = (gl as WebGLRenderingContext).getParameter(
+                debugInfo.UNMASKED_RENDERER_WEBGL,
+              );
               info.gpuName = renderer;
               info.isGpuAvailable = true;
 
@@ -746,7 +845,7 @@ export const useModelRegistry = create<ModelRegistryState>()(
 
         if (!hardware) {
           // Default recommendation without hardware info
-          return QUANTIZATION_PRESETS.find(p => p.id === 'q4_k_m')!;
+          return QUANTIZATION_PRESETS.find((p) => p.id === 'q4_k_m')!;
         }
 
         const availableRam = hardware.availableRamGB;
@@ -755,13 +854,13 @@ export const useModelRegistry = create<ModelRegistryState>()(
 
         // Select based on available memory
         if (effectiveMemory >= 24) {
-          return QUANTIZATION_PRESETS.find(p => p.id === 'f16')!;
+          return QUANTIZATION_PRESETS.find((p) => p.id === 'f16')!;
         } else if (effectiveMemory >= 12) {
-          return QUANTIZATION_PRESETS.find(p => p.id === 'q8_0')!;
+          return QUANTIZATION_PRESETS.find((p) => p.id === 'q8_0')!;
         } else if (effectiveMemory >= 8) {
-          return QUANTIZATION_PRESETS.find(p => p.id === 'q5_k_m')!;
+          return QUANTIZATION_PRESETS.find((p) => p.id === 'q5_k_m')!;
         } else {
-          return QUANTIZATION_PRESETS.find(p => p.id === 'q4_k_m')!;
+          return QUANTIZATION_PRESETS.find((p) => p.id === 'q4_k_m')!;
         }
       },
 
@@ -771,15 +870,19 @@ export const useModelRegistry = create<ModelRegistryState>()(
 
       exportRegistry: () => {
         const state = get();
-        return JSON.stringify({
-          models: state.models,
-          abTests: state.abTests,
-          routingRules: state.routingRules,
-          snapshots: state.snapshots,
-          selectedQuantization: state.selectedQuantization,
-          exportedAt: Date.now(),
-          version: '1.0.0',
-        }, null, 2);
+        return JSON.stringify(
+          {
+            models: state.models,
+            abTests: state.abTests,
+            routingRules: state.routingRules,
+            snapshots: state.snapshots,
+            selectedQuantization: state.selectedQuantization,
+            exportedAt: Date.now(),
+            version: '1.0.0',
+          },
+          null,
+          2,
+        );
       },
 
       importRegistry: (json) => {
@@ -826,8 +929,8 @@ export const useModelRegistry = create<ModelRegistryState>()(
         snapshots: state.snapshots,
         selectedQuantization: state.selectedQuantization,
       }),
-    }
-  )
+    },
+  ),
 );
 
 // ============================================================================

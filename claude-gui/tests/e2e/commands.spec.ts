@@ -5,10 +5,10 @@
  * placeholder changes, output lines, clear, and direct IPC test.
  */
 
-import { test, expect } from '../fixtures/test-setup';
-import { TerminalPage } from '../page-objects/TerminalPage';
-import { SELECTORS, UI_TEXTS, TIMEOUTS, TEST_MESSAGES } from '../fixtures/test-data';
 import { setMockInvokeResult } from '../fixtures/tauri-mocks';
+import { SELECTORS, TIMEOUTS, UI_TEXTS } from '../fixtures/test-data';
+import { expect, test } from '../fixtures/test-setup';
+import { TerminalPage } from '../page-objects/TerminalPage';
 
 test.describe('Terminal View', () => {
   let terminal: TerminalPage;
@@ -101,12 +101,20 @@ test.describe('Terminal View', () => {
   test('displays streaming output lines with correct prefixes', async ({ page, stream }) => {
     // Simulate session active
     await setMockInvokeResult(page, 'get_session_status', {
-      running: true, session_id: 'test-123', is_active: true,
-      pending_approval: false, auto_approve_all: false,
-      approved_count: 0, denied_count: 0, auto_approved_count: 0,
+      running: true,
+      session_id: 'test-123',
+      is_active: true,
+      pending_approval: false,
+      auto_approve_all: false,
+      approved_count: 0,
+      denied_count: 0,
+      auto_approved_count: 0,
     });
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     // Simulate Claude session output
     await stream.simulateClaudeSessionOutput(['Hello from Claude!', 'Task completed.']);

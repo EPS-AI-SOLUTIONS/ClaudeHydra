@@ -209,10 +209,7 @@ export function clearTimerResults(): void {
 /**
  * Async function timing wrapper
  */
-export async function withTiming<T>(
-  name: string,
-  fn: () => Promise<T>
-): Promise<T> {
+export async function withTiming<T>(name: string, fn: () => Promise<T>): Promise<T> {
   timerStart(name);
   try {
     return await fn();
@@ -232,7 +229,7 @@ export async function logToBackend(
   level: LogLevel,
   source: string,
   message: string,
-  details?: string
+  details?: string,
 ): Promise<void> {
   if (!isTauri()) return;
 
@@ -266,10 +263,7 @@ export async function getBackendStats(): Promise<unknown> {
 /**
  * Get debug logs from Rust backend
  */
-export async function getBackendLogs(
-  level?: LogLevel,
-  limit?: number
-): Promise<unknown[]> {
+export async function getBackendLogs(level?: LogLevel, limit?: number): Promise<unknown[]> {
   if (!isTauri()) return [];
 
   try {

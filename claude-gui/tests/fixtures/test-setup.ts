@@ -6,8 +6,8 @@
  */
 
 import { test as base, expect } from '@playwright/test';
-import { injectTauriMocks } from './tauri-mocks';
 import { createStreamSimulator, type StreamSimulator } from './stream-simulator';
+import { injectTauriMocks } from './tauri-mocks';
 import { SELECTORS, TIMEOUTS } from './test-data';
 
 // ── Fixture Types ──────────────────────────────────────────────────────────────
@@ -16,7 +16,7 @@ interface TestFixtures {
   /** StreamSimulator instance for the current page */
   stream: StreamSimulator;
   /** Auto-initialized page with Tauri mocks injected */
-  autoInit: void;
+  autoInit: undefined;
 }
 
 // ── Test Extension ─────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ export { expect };
  */
 export async function setupTest(
   page: import('@playwright/test').Page,
-  mockOverrides: Record<string, unknown> = {}
+  mockOverrides: Record<string, unknown> = {},
 ): Promise<StreamSimulator> {
   await injectTauriMocks(page, mockOverrides);
   await page.goto('/');
@@ -75,7 +75,7 @@ export async function setupTest(
  */
 export async function setupThemeTest(
   page: import('@playwright/test').Page,
-  mockOverrides: Record<string, unknown> = {}
+  mockOverrides: Record<string, unknown> = {},
 ): Promise<StreamSimulator> {
   await injectTauriMocks(page, mockOverrides);
 

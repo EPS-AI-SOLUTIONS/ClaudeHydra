@@ -3,20 +3,20 @@
  * @module test/unit/tools/shell.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { spawn } from 'child_process';
-import { EventEmitter } from 'events';
+import { spawn } from 'node:child_process';
+import { EventEmitter } from 'node:events';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock child_process
 vi.mock('child_process', () => ({
-  spawn: vi.fn()
+  spawn: vi.fn(),
 }));
 
 // Mock audit logger
 vi.mock('../../../src/security/audit-logger.js', () => ({
   default: {
-    logCommand: vi.fn()
-  }
+    logCommand: vi.fn(),
+  },
 }));
 
 // Mock schemas - need to provide actual exports
@@ -33,14 +33,15 @@ vi.mock('../../../src/schemas/tools.js', async () => {
         return { safe: false, risks: ['elevated privileges'], severity: 'high' };
       }
       return { safe: true, risks: [], severity: 'low' };
-    })
+    }),
   };
 });
 
 // Dynamic import after mocks are set up
 const { tools } = await import('../../../src/tools/shell.js');
-import AuditLogger from '../../../src/security/audit-logger.js';
+
 import { assessCommandRisk } from '../../../src/schemas/tools.js';
+import AuditLogger from '../../../src/security/audit-logger.js';
 
 describe('Shell Tools', () => {
   let mockChildProcess;
@@ -70,30 +71,34 @@ describe('Shell Tools', () => {
     it('should reject commands that are too long', async () => {
       const longCommand = 'a'.repeat(15000);
 
-      await expect(tools.runShell.run({
-        command: longCommand,
-        timeout: 5000
-      })).rejects.toThrow('exceeds maximum length');
+      await expect(
+        tools.runShell.run({
+          command: longCommand,
+          timeout: 5000,
+        }),
+      ).rejects.toThrow('exceeds maximum length');
     });
 
     it('should block critical security risk commands', async () => {
       assessCommandRisk.mockReturnValueOnce({
         safe: false,
         risks: ['destructive'],
-        severity: 'critical'
+        severity: 'critical',
       });
 
-      await expect(tools.runShell.run({
-        command: 'rm -rf /',
-        timeout: 5000
-      })).rejects.toThrow('blocked for security reasons');
+      await expect(
+        tools.runShell.run({
+          command: 'rm -rf /',
+          timeout: 5000,
+        }),
+      ).rejects.toThrow('blocked for security reasons');
     });
 
     it('should allow commands with warnings for non-critical risks', async () => {
       assessCommandRisk.mockReturnValueOnce({
         safe: false,
         risks: ['elevated privileges'],
-        severity: 'high'
+        severity: 'high',
       });
 
       // Simulate successful command execution
@@ -104,7 +109,7 @@ describe('Shell Tools', () => {
 
       const result = await tools.runShell.run({
         command: 'sudo ls',
-        timeout: 5000
+        timeout: 5000,
       });
 
       expect(result.risks).toContain('elevated privileges');
@@ -128,12 +133,12 @@ describe('Shell Tools', () => {
         command: 'echo test',
         env: {
           SAFE_VAR: 'value',
-          LD_PRELOAD: '/evil/lib.so',   // Should be filtered
+          LD_PRELOAD: '/evil/lib.so', // Should be filtered
           DYLD_INSERT_LIBRARIES: '/evil', // Should be filtered
-          BASH_ENV: '/evil/script',       // Should be filtered
-          NORMAL_VAR: 'ok'
+          BASH_ENV: '/evil/script', // Should be filtered
+          NORMAL_VAR: 'ok',
         },
-        timeout: 5000
+        timeout: 5000,
       });
 
       // The spawn call should have been made with filtered env
@@ -158,9 +163,9 @@ describe('Shell Tools', () => {
         command: 'echo test',
         env: {
           SAFE: 'normal-value',
-          DANGEROUS: '$(whoami)'  // Contains command substitution
+          DANGEROUS: '$(whoami)', // Contains command substitution
         },
-        timeout: 5000
+        timeout: 5000,
       });
 
       const spawnCall = spawn.mock.calls[0];
@@ -194,7 +199,7 @@ describe('Shell Tools', () => {
 
         const result = await tools.runShell.run({
           command: 'echo Hello World',
-          timeout: 5000
+          timeout: 5000,
         });
 
         expect(result.exitCode).toBe(0);
@@ -214,7 +219,7 @@ describe('Shell Tools', () => {
         const result = await tools.runShell.run({
           command: 'test command',
           captureStderr: true,
-          timeout: 5000
+          timeout: 5000,
         });
 
         expect(result.stdout).toBe('stdout output');
@@ -228,10 +233,12 @@ describe('Shell Tools', () => {
           mockChildProcess.emit('error', new Error('Command not found'));
         }, 10);
 
-        await expect(tools.runShell.run({
-          command: 'nonexistent-command',
-          timeout: 5000
-        })).rejects.toThrow('Failed to execute command');
+        await expect(
+          tools.runShell.run({
+            command: 'nonexistent-command',
+            timeout: 5000,
+          }),
+        ).rejects.toThrow('Failed to execute command');
       });
 
       it('should handle non-zero exit codes', async () => {
@@ -245,7 +252,7 @@ describe('Shell Tools', () => {
         const result = await tools.runShell.run({
           command: 'failing-command',
           captureStderr: true,
-          timeout: 5000
+          timeout: 5000,
         });
 
         expect(result.exitCode).toBe(1);
@@ -257,7 +264,7 @@ describe('Shell Tools', () => {
 
         const promise = tools.runShell.run({
           command: 'sleep 100',
-          timeout: 1000
+          timeout: 1000,
         });
 
         // Advance past timeout
@@ -284,15 +291,15 @@ describe('Shell Tools', () => {
 
         await tools.runShell.run({
           command: 'echo test',
-          timeout: 5000
+          timeout: 5000,
         });
 
         expect(AuditLogger.logCommand).toHaveBeenCalledWith(
           'echo test',
           expect.objectContaining({
             risks: [],
-            severity: 'low'
-          })
+            severity: 'low',
+          }),
         );
       });
 
@@ -308,7 +315,7 @@ describe('Shell Tools', () => {
 
         const result = await tools.runShell.run({
           command: 'cat large-file',
-          timeout: 5000
+          timeout: 5000,
         });
 
         expect(result.stdout.length).toBeLessThanOrEqual(5 * 1024 * 1024 + 50);
@@ -328,7 +335,7 @@ describe('Shell Tools', () => {
         const result = await tools.runShell.run({
           command: 'error-command',
           captureStderr: true,
-          timeout: 5000
+          timeout: 5000,
         });
 
         expect(result.stderr.length).toBeLessThanOrEqual(1024 * 1024 + 50);
@@ -344,7 +351,7 @@ describe('Shell Tools', () => {
 
         const result = await tools.runShell.run({
           command: 'echo test',
-          timeout: 5000
+          timeout: 5000,
         });
 
         expect(typeof result.durationMs).toBe('number');
@@ -389,11 +396,11 @@ describe('Shell Tools', () => {
         // Start a command but don't finish it
         tools.runShell.run({
           command: 'sleep 100',
-          timeout: 60000
+          timeout: 60000,
         });
 
         // Wait for process to be tracked
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
 
         // Cleanup should kill active processes
         tools.runShell.cleanup();
@@ -411,11 +418,13 @@ describe('Shell Tools', () => {
     it('should block working directory outside project root', async () => {
       assessCommandRisk.mockReturnValue({ safe: true, risks: [], severity: 'low' });
 
-      await expect(tools.runShell.run({
-        command: 'ls',
-        cwd: '/etc',
-        timeout: 5000
-      })).rejects.toThrow('must be within project root');
+      await expect(
+        tools.runShell.run({
+          command: 'ls',
+          cwd: '/etc',
+          timeout: 5000,
+        }),
+      ).rejects.toThrow('must be within project root');
     });
 
     it('should allow working directory within project', async () => {
@@ -429,7 +438,7 @@ describe('Shell Tools', () => {
       const result = await tools.runShell.run({
         command: 'ls',
         cwd: './src',
-        timeout: 5000
+        timeout: 5000,
       });
 
       expect(result.exitCode).toBe(0);

@@ -120,7 +120,7 @@ export const useFeedbackStore = create<FeedbackState>()(
           const sessionId = state.currentSessionId;
 
           // Update session metrics
-          let updatedMetrics = { ...state.sessionMetrics };
+          const updatedMetrics = { ...state.sessionMetrics };
           if (sessionId) {
             const metrics = updatedMetrics[sessionId] || { ...defaultMetrics };
 
@@ -158,7 +158,7 @@ export const useFeedbackStore = create<FeedbackState>()(
           const existing = state.ratings[messageId];
           const sessionId = state.currentSessionId;
 
-          let updatedMetrics = { ...state.sessionMetrics };
+          const updatedMetrics = { ...state.sessionMetrics };
           if (sessionId && !existing?.edited) {
             const metrics = updatedMetrics[sessionId] || { ...defaultMetrics };
             metrics.edits++;
@@ -187,7 +187,7 @@ export const useFeedbackStore = create<FeedbackState>()(
           const existing = state.ratings[messageId];
           const sessionId = state.currentSessionId;
 
-          let updatedMetrics = { ...state.sessionMetrics };
+          const updatedMetrics = { ...state.sessionMetrics };
           if (sessionId && !existing?.followUp) {
             const metrics = updatedMetrics[sessionId] || { ...defaultMetrics };
             metrics.followUps++;
@@ -215,7 +215,7 @@ export const useFeedbackStore = create<FeedbackState>()(
         set((state) => {
           const sessionId = state.currentSessionId;
 
-          let updatedMetrics = { ...state.sessionMetrics };
+          const updatedMetrics = { ...state.sessionMetrics };
           if (sessionId) {
             const metrics = updatedMetrics[sessionId] || { ...defaultMetrics };
             metrics.codeCopies++;
@@ -248,7 +248,7 @@ export const useFeedbackStore = create<FeedbackState>()(
           });
 
           // Update metrics
-          let updatedMetrics = { ...state.sessionMetrics };
+          const updatedMetrics = { ...state.sessionMetrics };
           if (sessionId) {
             const metrics = updatedMetrics[sessionId] || { ...defaultMetrics };
             if (result === 'success') {
@@ -318,8 +318,8 @@ export const useFeedbackStore = create<FeedbackState>()(
         codeCopyEvents: state.codeCopyEvents.slice(-100), // Persist only last 100
         sessionMetrics: state.sessionMetrics,
       }),
-    }
-  )
+    },
+  ),
 );
 
 // ============================================================================
@@ -330,11 +330,7 @@ export const useFeedbackStore = create<FeedbackState>()(
  * Track when user copies code from AI response
  * Call this when the copy button is clicked on a code block
  */
-export function trackCodeCopy(
-  messageId: string,
-  code: string,
-  language?: string
-): void {
+export function trackCodeCopy(messageId: string, code: string, language?: string): void {
   const store = useFeedbackStore.getState();
   store.trackCodeCopy({
     messageId,
@@ -348,9 +344,10 @@ export function trackCodeCopy(
  * Detect success/failure from user message content
  * Returns true if message indicates code execution result
  */
-export function detectExecutionResult(
-  userMessage: string
-): { detected: boolean; result: 'success' | 'failure' | null } {
+export function detectExecutionResult(userMessage: string): {
+  detected: boolean;
+  result: 'success' | 'failure' | null;
+} {
   const lowerMessage = userMessage.toLowerCase();
 
   // Success indicators
@@ -421,7 +418,7 @@ export function detectEdit(original: string, modified: string): EditDiff {
 
   // Simple line-by-line comparison with LCS-inspired approach
   let matchedChars = 0;
-  let totalChars = Math.max(original.length, modified.length);
+  const totalChars = Math.max(original.length, modified.length);
 
   // Use a simple diff approach
   let i = 0;
@@ -459,7 +456,10 @@ export function detectEdit(original: string, modified: string): EditDiff {
       const lookAheadOriginal = originalLines.slice(i + 1, i + 4).indexOf(modifiedLines[j]);
       const lookAheadModified = modifiedLines.slice(j + 1, j + 4).indexOf(originalLines[i]);
 
-      if (lookAheadOriginal !== -1 && (lookAheadModified === -1 || lookAheadOriginal <= lookAheadModified)) {
+      if (
+        lookAheadOriginal !== -1 &&
+        (lookAheadModified === -1 || lookAheadOriginal <= lookAheadModified)
+      ) {
         // Original line was removed
         changes.push({
           type: 'remove',
@@ -494,9 +494,8 @@ export function detectEdit(original: string, modified: string): EditDiff {
   }
 
   // Calculate similarity using Levenshtein-inspired metric
-  const similarity = totalChars > 0
-    ? (matchedChars / totalChars) * 100
-    : (original === modified ? 100 : 0);
+  const similarity =
+    totalChars > 0 ? (matchedChars / totalChars) * 100 : original === modified ? 100 : 0;
 
   return {
     original,
@@ -510,11 +509,7 @@ export function detectEdit(original: string, modified: string): EditDiff {
  * Check if a message has been significantly edited
  * Returns true if similarity is below threshold
  */
-export function hasSignificantEdit(
-  original: string,
-  modified: string,
-  threshold = 90
-): boolean {
+export function hasSignificantEdit(original: string, modified: string, threshold = 90): boolean {
   if (original === modified) return false;
   const diff = detectEdit(original, modified);
   return diff.similarity < threshold;
@@ -550,7 +545,7 @@ const FOLLOW_UP_PATTERNS: RegExp[] = [
   /^can you give (me )?an example/i,
   /^example\??$/i,
   /^for example\??$/i,
-  /\?{2,}$/,  // Multiple question marks indicate confusion
+  /\?{2,}$/, // Multiple question marks indicate confusion
 
   // Polish patterns
   /^co masz na mysli/i,
@@ -571,8 +566,8 @@ const FOLLOW_UP_KEYWORDS = [
   'unclear',
   'confusing',
   'confused',
-  'don\'t understand',
-  'doesn\'t make sense',
+  "don't understand",
+  "doesn't make sense",
   'what exactly',
   'more specific',
   'be more clear',
@@ -697,7 +692,7 @@ function calculateScore(metrics: SessionQualityMetrics): number {
   const followUpPenalty = followUps * 0.2;
 
   // Execution success/failure
-  const executionScore = (successfulExecutions * 0.5) - (failedExecutions * 0.5);
+  const executionScore = successfulExecutions * 0.5 - failedExecutions * 0.5;
 
   // Calculate final score
   const rawScore = ratingScore + completionBonus - editPenalty - followUpPenalty + executionScore;

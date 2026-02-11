@@ -3,8 +3,7 @@
  * @module test/unit/mcp/config-loader.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import path from 'path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs/promises
 vi.mock('fs/promises', () => ({
@@ -12,26 +11,26 @@ vi.mock('fs/promises', () => ({
     readFile: vi.fn(),
     writeFile: vi.fn(),
     mkdir: vi.fn(),
-    watch: vi.fn()
+    watch: vi.fn(),
   },
   readFile: vi.fn(),
   writeFile: vi.fn(),
   mkdir: vi.fn(),
-  watch: vi.fn()
+  watch: vi.fn(),
 }));
 
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
 import {
-  HealthCheckConfigSchema,
-  RetryConfigSchema,
-  MCPServerConfigSchema,
-  MCPConfigSchema,
-  MCPConfigLoader,
   ConfigNotFoundError,
-  ConfigValidationError,
   ConfigParseError,
+  ConfigValidationError,
   getConfigLoader,
-  resetConfigLoader
+  HealthCheckConfigSchema,
+  MCPConfigLoader,
+  MCPConfigSchema,
+  MCPServerConfigSchema,
+  RetryConfigSchema,
+  resetConfigLoader,
 } from '../../../src/mcp/config-loader.js';
 
 describe('MCP Configuration Loader', () => {
@@ -43,12 +42,12 @@ describe('MCP Configuration Loader', () => {
         command: 'test-cmd',
         args: ['-v'],
         timeout: 30000,
-        enabled: true
-      }
+        enabled: true,
+      },
     },
     groups: {
-      ai: ['test-server']
-    }
+      ai: ['test-server'],
+    },
   };
 
   beforeEach(() => {
@@ -70,7 +69,7 @@ describe('MCP Configuration Loader', () => {
         enabled: true,
         interval: 60000,
         timeout: 5000,
-        cacheTTL: 30000
+        cacheTTL: 30000,
       };
 
       const result = HealthCheckConfigSchema.parse(config);
@@ -93,10 +92,12 @@ describe('MCP Configuration Loader', () => {
     });
 
     it('should reject extra properties', () => {
-      expect(() => HealthCheckConfigSchema.parse({
-        enabled: true,
-        extraField: 'not allowed'
-      })).toThrow();
+      expect(() =>
+        HealthCheckConfigSchema.parse({
+          enabled: true,
+          extraField: 'not allowed',
+        }),
+      ).toThrow();
     });
   });
 
@@ -106,7 +107,7 @@ describe('MCP Configuration Loader', () => {
         maxRetries: 5,
         baseDelay: 2000,
         maxDelay: 60000,
-        backoffMultiplier: 3
+        backoffMultiplier: 3,
       };
 
       const result = RetryConfigSchema.parse(config);
@@ -140,7 +141,7 @@ describe('MCP Configuration Loader', () => {
         command: 'npx',
         args: ['-y', 'test-mcp'],
         timeout: 30000,
-        enabled: true
+        enabled: true,
       };
 
       const result = MCPServerConfigSchema.parse(config);
@@ -154,9 +155,9 @@ describe('MCP Configuration Loader', () => {
       const config = {
         type: 'http',
         url: 'http://localhost:8080/mcp',
-        headers: { 'Authorization': 'Bearer token' },
+        headers: { Authorization: 'Bearer token' },
         timeout: 30000,
-        enabled: true
+        enabled: true,
       };
 
       const result = MCPServerConfigSchema.parse(config);
@@ -170,7 +171,7 @@ describe('MCP Configuration Loader', () => {
         type: 'sse',
         url: 'http://localhost:8080/events',
         timeout: 60000,
-        enabled: true
+        enabled: true,
       };
 
       const result = MCPServerConfigSchema.parse(config);
@@ -179,38 +180,46 @@ describe('MCP Configuration Loader', () => {
     });
 
     it('should require command for stdio type', () => {
-      expect(() => MCPServerConfigSchema.parse({
-        type: 'stdio',
-        timeout: 30000
-      })).toThrow('stdio type requires command');
+      expect(() =>
+        MCPServerConfigSchema.parse({
+          type: 'stdio',
+          timeout: 30000,
+        }),
+      ).toThrow('stdio type requires command');
     });
 
     it('should require url for http type', () => {
-      expect(() => MCPServerConfigSchema.parse({
-        type: 'http',
-        timeout: 30000
-      })).toThrow('http/sse types require url');
+      expect(() =>
+        MCPServerConfigSchema.parse({
+          type: 'http',
+          timeout: 30000,
+        }),
+      ).toThrow('http/sse types require url');
     });
 
     it('should require url for sse type', () => {
-      expect(() => MCPServerConfigSchema.parse({
-        type: 'sse',
-        timeout: 30000
-      })).toThrow('http/sse types require url');
+      expect(() =>
+        MCPServerConfigSchema.parse({
+          type: 'sse',
+          timeout: 30000,
+        }),
+      ).toThrow('http/sse types require url');
     });
 
     it('should reject invalid type', () => {
-      expect(() => MCPServerConfigSchema.parse({
-        type: 'websocket',
-        url: 'ws://localhost:8080'
-      })).toThrow();
+      expect(() =>
+        MCPServerConfigSchema.parse({
+          type: 'websocket',
+          url: 'ws://localhost:8080',
+        }),
+      ).toThrow();
     });
 
     it('should support optional tags', () => {
       const config = {
         type: 'stdio',
         command: 'test',
-        tags: ['ai', 'local']
+        tags: ['ai', 'local'],
       };
 
       const result = MCPServerConfigSchema.parse(config);
@@ -222,7 +231,7 @@ describe('MCP Configuration Loader', () => {
       const config = {
         type: 'stdio',
         command: 'test',
-        env: { API_KEY: 'secret' }
+        env: { API_KEY: 'secret' },
       };
 
       const result = MCPServerConfigSchema.parse(config);
@@ -236,8 +245,8 @@ describe('MCP Configuration Loader', () => {
         command: 'test',
         healthCheck: {
           enabled: false,
-          interval: 120000
-        }
+          interval: 120000,
+        },
       };
 
       const result = MCPServerConfigSchema.parse(config);
@@ -259,11 +268,11 @@ describe('MCP Configuration Loader', () => {
     it('should use default version', () => {
       const config = {
         servers: {
-          'test': {
+          test: {
             type: 'stdio',
-            command: 'test'
-          }
-        }
+            command: 'test',
+          },
+        },
       };
 
       const result = MCPConfigSchema.parse(config);
@@ -275,8 +284,8 @@ describe('MCP Configuration Loader', () => {
       const config = {
         $schema: './schemas/mcp.schema.json',
         servers: {
-          'test': { type: 'stdio', command: 'test' }
-        }
+          test: { type: 'stdio', command: 'test' },
+        },
       };
 
       const result = MCPConfigSchema.parse(config);
@@ -287,13 +296,13 @@ describe('MCP Configuration Loader', () => {
     it('should support optional defaults section', () => {
       const config = {
         servers: {
-          'test': { type: 'stdio', command: 'test' }
+          test: { type: 'stdio', command: 'test' },
         },
         defaults: {
           timeout: 60000,
           healthCheck: { enabled: true },
-          retry: { maxRetries: 5 }
-        }
+          retry: { maxRetries: 5 },
+        },
       };
 
       const result = MCPConfigSchema.parse(config);
@@ -317,7 +326,7 @@ describe('MCP Configuration Loader', () => {
 
       it('should accept custom config path', () => {
         const loader = new MCPConfigLoader({
-          configPath: '/custom/path/config.json'
+          configPath: '/custom/path/config.json',
         });
 
         expect(loader.configPath).toBe('/custom/path/config.json');
@@ -331,7 +340,7 @@ describe('MCP Configuration Loader', () => {
 
       it('should accept envOverrides option', () => {
         const loader = new MCPConfigLoader({
-          envOverrides: { API_KEY: 'test' }
+          envOverrides: { API_KEY: 'test' },
         });
 
         expect(loader.envOverrides).toEqual({ API_KEY: 'test' });
@@ -365,9 +374,11 @@ describe('MCP Configuration Loader', () => {
 
         await loader.load();
 
-        expect(loadedSpy).toHaveBeenCalledWith(expect.objectContaining({
-          servers: expect.any(Object)
-        }));
+        expect(loadedSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            servers: expect.any(Object),
+          }),
+        );
       });
 
       it('should throw ConfigNotFoundError for missing file', async () => {
@@ -376,7 +387,7 @@ describe('MCP Configuration Loader', () => {
         fs.readFile.mockRejectedValue(error);
 
         const loader = new MCPConfigLoader({
-          configPath: '/missing/config.json'
+          configPath: '/missing/config.json',
         });
 
         await expect(loader.load()).rejects.toThrow(ConfigNotFoundError);
@@ -391,11 +402,13 @@ describe('MCP Configuration Loader', () => {
       });
 
       it('should throw ConfigValidationError for invalid schema', async () => {
-        fs.readFile.mockResolvedValue(JSON.stringify({
-          servers: {
-            'test': { type: 'invalid-type' }
-          }
-        }));
+        fs.readFile.mockResolvedValue(
+          JSON.stringify({
+            servers: {
+              test: { type: 'invalid-type' },
+            },
+          }),
+        );
 
         const loader = new MCPConfigLoader();
 
@@ -420,7 +433,7 @@ describe('MCP Configuration Loader', () => {
 
         expect(reloadedSpy).toHaveBeenCalledWith({
           previous: expect.any(Object),
-          current: expect.any(Object)
+          current: expect.any(Object),
         });
       });
 
@@ -498,8 +511,8 @@ describe('MCP Configuration Loader', () => {
         const config = {
           servers: {
             'enabled-server': { type: 'stdio', command: 'test', enabled: true },
-            'disabled-server': { type: 'stdio', command: 'test', enabled: false }
-          }
+            'disabled-server': { type: 'stdio', command: 'test', enabled: false },
+          },
         };
         fs.readFile.mockResolvedValue(JSON.stringify(config));
 
@@ -525,8 +538,8 @@ describe('MCP Configuration Loader', () => {
         const config = {
           servers: {
             'ai-server': { type: 'stdio', command: 'test', tags: ['ai', 'local'] },
-            'other-server': { type: 'stdio', command: 'test', tags: ['tools'] }
-          }
+            'other-server': { type: 'stdio', command: 'test', tags: ['tools'] },
+          },
         };
         fs.readFile.mockResolvedValue(JSON.stringify(config));
 
@@ -550,14 +563,14 @@ describe('MCP Configuration Loader', () => {
       it('should return servers in group', async () => {
         const config = {
           servers: {
-            'server1': { type: 'stdio', command: 'test' },
-            'server2': { type: 'stdio', command: 'test' },
-            'server3': { type: 'stdio', command: 'test' }
+            server1: { type: 'stdio', command: 'test' },
+            server2: { type: 'stdio', command: 'test' },
+            server3: { type: 'stdio', command: 'test' },
           },
           groups: {
-            'production': ['server1', 'server2'],
-            'development': ['server3']
-          }
+            production: ['server1', 'server2'],
+            development: ['server3'],
+          },
         };
         fs.readFile.mockResolvedValue(JSON.stringify(config));
 
@@ -574,11 +587,11 @@ describe('MCP Configuration Loader', () => {
       it('should handle non-existent server in group', async () => {
         const config = {
           servers: {
-            'server1': { type: 'stdio', command: 'test' }
+            server1: { type: 'stdio', command: 'test' },
           },
           groups: {
-            'test': ['server1', 'non-existent']
-          }
+            test: ['server1', 'non-existent'],
+          },
         };
         fs.readFile.mockResolvedValue(JSON.stringify(config));
 
@@ -595,11 +608,11 @@ describe('MCP Configuration Loader', () => {
     describe('interpolateEnvVars()', () => {
       it('should interpolate string values', () => {
         const loader = new MCPConfigLoader({
-          envOverrides: { API_KEY: 'secret123' }
+          envOverrides: { API_KEY: 'secret123' },
         });
 
         const result = loader.interpolateEnvVars({
-          key: '${API_KEY}'
+          key: '${API_KEY}',
         });
 
         expect(result.key).toBe('secret123');
@@ -607,13 +620,13 @@ describe('MCP Configuration Loader', () => {
 
       it('should interpolate nested objects', () => {
         const loader = new MCPConfigLoader({
-          envOverrides: { HOST: 'localhost', PORT: '8080' }
+          envOverrides: { HOST: 'localhost', PORT: '8080' },
         });
 
         const result = loader.interpolateEnvVars({
           server: {
-            url: 'http://${HOST}:${PORT}'
-          }
+            url: 'http://${HOST}:${PORT}',
+          },
         });
 
         expect(result.server.url).toBe('http://localhost:8080');
@@ -621,11 +634,11 @@ describe('MCP Configuration Loader', () => {
 
       it('should interpolate arrays', () => {
         const loader = new MCPConfigLoader({
-          envOverrides: { ARG: 'value' }
+          envOverrides: { ARG: 'value' },
         });
 
         const result = loader.interpolateEnvVars({
-          args: ['--option', '${ARG}']
+          args: ['--option', '${ARG}'],
         });
 
         expect(result.args).toEqual(['--option', 'value']);
@@ -635,7 +648,7 @@ describe('MCP Configuration Loader', () => {
         const loader = new MCPConfigLoader();
 
         const result = loader.interpolateEnvVars({
-          key: '${MISSING_VAR}'
+          key: '${MISSING_VAR}',
         });
 
         expect(result.key).toBe('');
@@ -647,7 +660,7 @@ describe('MCP Configuration Loader', () => {
         const result = loader.interpolateEnvVars({
           number: 42,
           bool: true,
-          nullValue: null
+          nullValue: null,
         });
 
         expect(result.number).toBe(42);
@@ -661,11 +674,11 @@ describe('MCP Configuration Loader', () => {
         const loader = new MCPConfigLoader();
         const config = {
           servers: {
-            'test': { type: 'stdio', command: 'test' }
+            test: { type: 'stdio', command: 'test' },
           },
           defaults: {
-            timeout: 60000
-          }
+            timeout: 60000,
+          },
         };
 
         const result = loader.applyDefaults(config);
@@ -677,11 +690,11 @@ describe('MCP Configuration Loader', () => {
         const loader = new MCPConfigLoader();
         const config = {
           servers: {
-            'test': { type: 'stdio', command: 'test' }
+            test: { type: 'stdio', command: 'test' },
           },
           defaults: {
-            healthCheck: { interval: 120000 }
-          }
+            healthCheck: { interval: 120000 },
+          },
         };
 
         const result = loader.applyDefaults(config);
@@ -694,17 +707,17 @@ describe('MCP Configuration Loader', () => {
         const loader = new MCPConfigLoader();
         const config = {
           servers: {
-            'test': {
+            test: {
               type: 'stdio',
               command: 'test',
               timeout: 90000,
-              healthCheck: { interval: 30000 }
-            }
+              healthCheck: { interval: 30000 },
+            },
           },
           defaults: {
             timeout: 60000,
-            healthCheck: { interval: 120000 }
-          }
+            healthCheck: { interval: 120000 },
+          },
         };
 
         const result = loader.applyDefaults(config);
@@ -737,7 +750,7 @@ describe('MCP Configuration Loader', () => {
       it('should return valid true for valid config', () => {
         const result = MCPConfigLoader.validateServer({
           type: 'stdio',
-          command: 'test'
+          command: 'test',
         });
 
         expect(result.valid).toBe(true);
@@ -746,7 +759,7 @@ describe('MCP Configuration Loader', () => {
 
       it('should return valid false with errors for invalid config', () => {
         const result = MCPConfigLoader.validateServer({
-          type: 'stdio'
+          type: 'stdio',
           // missing command
         });
 
@@ -766,7 +779,7 @@ describe('MCP Configuration Loader', () => {
         expect(fs.mkdir).toHaveBeenCalledWith('/path/to', { recursive: true });
         expect(fs.writeFile).toHaveBeenCalledWith(
           '/path/to/config.json',
-          expect.stringContaining('"version"')
+          expect.stringContaining('"version"'),
         );
       });
     });
@@ -794,9 +807,7 @@ describe('MCP Configuration Loader', () => {
 
   describe('ConfigValidationError', () => {
     it('should have correct name and format errors', () => {
-      const errors = [
-        { path: ['servers', 'test', 'type'], message: 'Invalid enum value' }
-      ];
+      const errors = [{ path: ['servers', 'test', 'type'], message: 'Invalid enum value' }];
       const error = new ConfigValidationError(errors);
 
       expect(error.name).toBe('ConfigValidationError');
@@ -829,7 +840,7 @@ describe('MCP Configuration Loader', () => {
 
       it('should accept options on first call', () => {
         const loader = getConfigLoader({
-          configPath: '/custom/path.json'
+          configPath: '/custom/path.json',
         });
 
         expect(loader.configPath).toBe('/custom/path.json');

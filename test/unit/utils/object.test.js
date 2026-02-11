@@ -3,16 +3,16 @@
  * @module test/unit/utils/object.test
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  deepMerge,
-  pick,
-  omit,
-  flatten,
   deepClone,
   deepEqual,
+  deepMerge,
+  flatten,
   get,
-  set
+  omit,
+  pick,
+  set,
 } from '../../../src/utils/object.js';
 
 describe('Object Utilities', () => {
@@ -104,7 +104,7 @@ describe('Object Utilities', () => {
       expect(flatten(obj)).toEqual({
         'items[0]': 1,
         'items[1]': 2,
-        'items[2]': 3
+        'items[2]': 3,
       });
     });
 

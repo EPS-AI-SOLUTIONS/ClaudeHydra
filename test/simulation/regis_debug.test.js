@@ -3,7 +3,7 @@
  * Tests the HydraSwarmTool and SwarmStatusTool classes
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Import the tools and processor
 import { tools } from '../../src/tools/swarm-bridge.js';
@@ -50,7 +50,7 @@ describe('Swarm Bridge Tool', () => {
 
     it('should fail gracefully when swarm engine is unavailable', async () => {
       const result = await tools.hydraSwarm.execute({
-        prompt: 'Test task for the swarm'
+        prompt: 'Test task for the swarm',
       });
 
       // Should fail gracefully since swarm.js doesn't exist

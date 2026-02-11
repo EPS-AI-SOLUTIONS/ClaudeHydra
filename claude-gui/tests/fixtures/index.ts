@@ -2,43 +2,42 @@
  * Central export barrel for all test fixtures.
  */
 
-// Test framework
-export { test, expect, setupTest, setupThemeTest } from './test-setup';
+// Stream simulator
+export { createStreamSimulator, StreamSimulator } from './stream-simulator';
 
 // Tauri mocks
 export {
-  DEFAULT_MOCK_RESPONSES,
-  injectTauriMocks,
-  emitTauriEvent,
-  setMockInvokeResult,
-  getInvokeHistory,
   clearInvokeHistory,
+  createMockKnowledgeGraph,
+  createMockMemories,
+  DEFAULT_MOCK_RESPONSES,
   emitStreamChunk,
   emitStreamError,
-  createMockMemories,
-  createMockKnowledgeGraph,
+  emitTauriEvent,
+  getInvokeHistory,
+  injectTauriMocks,
+  setMockInvokeResult,
 } from './tauri-mocks';
-
-// Stream simulator
-export { StreamSimulator, createStreamSimulator } from './stream-simulator';
+export type { ViewId } from './test-data';
 
 // Test data
 export {
-  AGENTS,
   AGENT_NAMES,
-  VIEWS,
+  AGENTS,
+  createSwarmAgentMessages,
+  createTestMessage,
+  generateTestId,
+  generateText,
+  LIMITS,
   NAV_LABELS,
   SELECTORS,
   SHORTCUTS,
-  TIMEOUTS,
   TEST_MESSAGES,
   TEST_PROMPTS,
   TEST_SETTINGS,
+  TIMEOUTS,
   UI_TEXTS,
-  LIMITS,
-  generateTestId,
-  generateText,
-  createTestMessage,
-  createSwarmAgentMessages,
+  VIEWS,
 } from './test-data';
-export type { ViewId } from './test-data';
+// Test framework
+export { expect, setupTest, setupThemeTest, test } from './test-setup';

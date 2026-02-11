@@ -276,7 +276,7 @@ export function compressContext(text: string, maxLength: number = MAX_CONTEXT_LE
     .filter((s) => s.trim().length > 0);
 
   if (sentences.length === 0) {
-    return text.substring(0, maxLength) + '...';
+    return `${text.substring(0, maxLength)}...`;
   }
 
   // Score sentences by importance
@@ -307,7 +307,7 @@ export function compressContext(text: string, maxLength: number = MAX_CONTEXT_LE
 
   // Add ellipsis if significantly shorter
   if (compressed.length < text.length * 0.5) {
-    return compressed + ' [...]';
+    return `${compressed} [...]`;
   }
 
   return compressed;
@@ -319,7 +319,7 @@ export function compressContext(text: string, maxLength: number = MAX_CONTEXT_LE
 function calculateSentenceScore(
   sentence: string,
   position: number,
-  totalSentences: number
+  totalSentences: number,
 ): number {
   let score = 0;
   const lowerSentence = sentence.toLowerCase();
@@ -361,9 +361,7 @@ function calculateSentenceScore(
  * Search GitHub code via MCP github.search_code
  * Requires GitHub MCP server to be connected
  */
-export async function searchGitHub(
-  options: GitHubSearchOptions
-): Promise<GitHubSearchResult[]> {
+export async function searchGitHub(options: GitHubSearchOptions): Promise<GitHubSearchResult[]> {
   const { query, language, repo, user, org, extension, maxResults = 10 } = options;
 
   // Build GitHub search query
@@ -432,7 +430,7 @@ export function createDocIndex(
   version: string,
   content: string,
   url: string,
-  sections?: DocSection[]
+  sections?: DocSection[],
 ): DocIndex {
   return {
     library,
@@ -450,7 +448,7 @@ export function createDocIndex(
 export function searchDocIndex(
   indices: DocIndex[],
   query: string,
-  options?: { library?: string; minScore?: number }
+  options?: { library?: string; minScore?: number },
 ): Array<DocIndex & { relevanceScore: number }> {
   const { library, minScore = 0.1 } = options ?? {};
   const queryTerms = query.toLowerCase().split(/\s+/);
@@ -514,7 +512,7 @@ function calculateDocRelevance(doc: DocIndex, queryTerms: string[]): number {
 export function getRelevantHistory(
   messages: ConversationMessage[],
   currentQuery: string,
-  options?: { maxResults?: number; minSimilarity?: number }
+  options?: { maxResults?: number; minSimilarity?: number },
 ): ConversationMessage[] {
   const { maxResults = 5, minSimilarity = 0.1 } = options ?? {};
 
@@ -611,15 +609,93 @@ function createTermFrequency(tokens: string[]): Map<string, number> {
  * Common English stop words to filter out
  */
 const STOP_WORDS = new Set([
-  'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-  'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
-  'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-  'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'it',
-  'its', 'they', 'them', 'their', 'we', 'us', 'our', 'you', 'your', 'he',
-  'him', 'his', 'she', 'her', 'i', 'me', 'my', 'what', 'which', 'who',
-  'when', 'where', 'why', 'how', 'all', 'each', 'every', 'both', 'few',
-  'more', 'most', 'other', 'some', 'such', 'no', 'not', 'only', 'same',
-  'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there', 'then',
+  'the',
+  'a',
+  'an',
+  'and',
+  'or',
+  'but',
+  'in',
+  'on',
+  'at',
+  'to',
+  'for',
+  'of',
+  'with',
+  'by',
+  'from',
+  'as',
+  'is',
+  'was',
+  'are',
+  'were',
+  'been',
+  'be',
+  'have',
+  'has',
+  'had',
+  'do',
+  'does',
+  'did',
+  'will',
+  'would',
+  'could',
+  'should',
+  'may',
+  'might',
+  'can',
+  'this',
+  'that',
+  'these',
+  'those',
+  'it',
+  'its',
+  'they',
+  'them',
+  'their',
+  'we',
+  'us',
+  'our',
+  'you',
+  'your',
+  'he',
+  'him',
+  'his',
+  'she',
+  'her',
+  'i',
+  'me',
+  'my',
+  'what',
+  'which',
+  'who',
+  'when',
+  'where',
+  'why',
+  'how',
+  'all',
+  'each',
+  'every',
+  'both',
+  'few',
+  'more',
+  'most',
+  'other',
+  'some',
+  'such',
+  'no',
+  'not',
+  'only',
+  'same',
+  'than',
+  'too',
+  'very',
+  'just',
+  'also',
+  'now',
+  'here',
+  'there',
+  'then',
 ]);
 
 // =============================================================================

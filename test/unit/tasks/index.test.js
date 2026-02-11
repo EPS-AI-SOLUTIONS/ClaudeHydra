@@ -3,7 +3,7 @@
  * @module test/unit/tasks/index.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('Tasks Module', () => {
   beforeEach(() => {
@@ -57,7 +57,9 @@ describe('Tasks Module', () => {
 
   describe('initTasks', () => {
     it('should initialize tasks system with default options', async () => {
-      const { initTasks, resetTodoStorage, resetTodoManager } = await import('../../../src/tasks/index.js');
+      const { initTasks, resetTodoStorage, resetTodoManager } = await import(
+        '../../../src/tasks/index.js'
+      );
 
       const result = await initTasks();
 
@@ -71,7 +73,9 @@ describe('Tasks Module', () => {
     });
 
     it('should accept custom storage directory option', async () => {
-      const { initTasks, resetTodoStorage, resetTodoManager } = await import('../../../src/tasks/index.js');
+      const { initTasks, resetTodoStorage, resetTodoManager } = await import(
+        '../../../src/tasks/index.js'
+      );
 
       const result = await initTasks({ storageDir: '/tmp/test-todos' });
 
@@ -85,7 +89,9 @@ describe('Tasks Module', () => {
     });
 
     it('should return storage and manager objects', async () => {
-      const { initTasks, resetTodoStorage, resetTodoManager } = await import('../../../src/tasks/index.js');
+      const { initTasks, resetTodoStorage, resetTodoManager } = await import(
+        '../../../src/tasks/index.js'
+      );
 
       const { storage, manager } = await initTasks();
 
@@ -93,7 +99,7 @@ describe('Tasks Module', () => {
       expect(storage).toHaveProperty('getById');
       expect(storage).toHaveProperty('getAll');
       expect(storage).toHaveProperty('update');
-      expect(manager).toHaveProperty('write');  // TodoManager.write() is the main method
+      expect(manager).toHaveProperty('write'); // TodoManager.write() is the main method
 
       // Cleanup
       resetTodoManager();

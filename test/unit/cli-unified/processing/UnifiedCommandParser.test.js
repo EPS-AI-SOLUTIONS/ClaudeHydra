@@ -3,30 +3,30 @@
  * @module test/unit/cli-unified/processing/UnifiedCommandParser.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
-  COMMAND_PREFIX: '/'
+  COMMAND_PREFIX: '/',
 }));
 
 vi.mock('../../../../src/cli-unified/core/EventBus.js', () => ({
   eventBus: {
-    emit: vi.fn()
+    emit: vi.fn(),
   },
   EVENT_TYPES: {
     COMMAND_EXECUTE: 'command:execute',
     COMMAND_COMPLETE: 'command:complete',
-    COMMAND_ERROR: 'command:error'
-  }
+    COMMAND_ERROR: 'command:error',
+  },
 }));
 
-import {
-  UnifiedCommandParser,
-  createCommandParser
-} from '../../../../src/cli-unified/processing/UnifiedCommandParser.js';
 import { eventBus } from '../../../../src/cli-unified/core/EventBus.js';
+import {
+  createCommandParser,
+  UnifiedCommandParser,
+} from '../../../../src/cli-unified/processing/UnifiedCommandParser.js';
 
 describe('UnifiedCommandParser Module', () => {
   beforeEach(() => {
@@ -81,7 +81,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test command',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       expect(parser.has('test')).toBe(true);
@@ -90,11 +90,13 @@ describe('UnifiedCommandParser Module', () => {
     it('should throw if missing name or handler', () => {
       const parser = new UnifiedCommandParser({ registerBuiltins: false });
 
-      expect(() => parser.register({ description: 'No name' }))
-        .toThrow('Command must have name and handler');
+      expect(() => parser.register({ description: 'No name' })).toThrow(
+        'Command must have name and handler',
+      );
 
-      expect(() => parser.register({ name: 'nohandler', description: 'No handler' }))
-        .toThrow('Command must have name and handler');
+      expect(() => parser.register({ name: 'nohandler', description: 'No handler' })).toThrow(
+        'Command must have name and handler',
+      );
     });
 
     it('should register aliases', () => {
@@ -103,7 +105,7 @@ describe('UnifiedCommandParser Module', () => {
         name: 'test',
         aliases: ['t', 'tst'],
         description: 'Test command',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       expect(parser.has('t')).toBe(true);
@@ -116,7 +118,7 @@ describe('UnifiedCommandParser Module', () => {
         name: 'test',
         category: 'testing',
         description: 'Test command',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       expect(parser.categories.get('testing')).toContain('test');
@@ -127,7 +129,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test command',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       expect(parser.categories.get('general')).toContain('test');
@@ -141,7 +143,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       expect(spy).toHaveBeenCalledWith('test');
@@ -152,7 +154,7 @@ describe('UnifiedCommandParser Module', () => {
       const result = parser.register({
         name: 'test',
         description: 'Test',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       expect(result).toBe(parser);
@@ -169,7 +171,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       const result = parser.unregister('test');
@@ -191,7 +193,7 @@ describe('UnifiedCommandParser Module', () => {
         name: 'test',
         aliases: ['t'],
         description: 'Test',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       parser.unregister('test');
@@ -205,7 +207,7 @@ describe('UnifiedCommandParser Module', () => {
         name: 'test',
         category: 'testing',
         description: 'Test',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       parser.unregister('test');
@@ -218,7 +220,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       const spy = vi.fn();
@@ -428,7 +430,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test',
-        handler
+        handler,
       });
 
       const parsed = parser.parse('/test arg');
@@ -443,7 +445,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test',
-        handler: () => 'result'
+        handler: () => 'result',
       });
 
       const beforeHook = vi.fn();
@@ -461,7 +463,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test',
-        handler
+        handler,
       });
 
       parser.addHook('before', () => false);
@@ -478,7 +480,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test',
-        handler: () => 'result'
+        handler: () => 'result',
       });
 
       const afterHook = vi.fn();
@@ -496,7 +498,9 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test',
-        handler: () => { throw error; }
+        handler: () => {
+          throw error;
+        },
       });
 
       const errorHook = vi.fn();
@@ -513,7 +517,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test',
-        handler: () => 'result'
+        handler: () => 'result',
       });
 
       const parsed = parser.parse('/test');
@@ -535,7 +539,7 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'test',
         description: 'Test',
-        handler
+        handler,
       });
 
       const result = await parser.run('/test');
@@ -569,8 +573,7 @@ describe('UnifiedCommandParser Module', () => {
     it('should throw for unknown hook type', () => {
       const parser = new UnifiedCommandParser();
 
-      expect(() => parser.addHook('unknown', vi.fn()))
-        .toThrow('Unknown hook type');
+      expect(() => parser.addHook('unknown', vi.fn())).toThrow('Unknown hook type');
     });
 
     it('should return this for chaining', () => {
@@ -614,12 +617,12 @@ describe('UnifiedCommandParser Module', () => {
         name: 'hidden',
         hidden: true,
         description: 'Hidden',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
       parser.register({
         name: 'help',
         description: 'Help',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       const completions = parser.getCompletions('/h');
@@ -634,7 +637,7 @@ describe('UnifiedCommandParser Module', () => {
         name: 'test',
         description: 'Test',
         flags: [{ name: 'verbose', long: 'verbose' }],
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       const completions = parser.getCompletions('/test --ver');
@@ -648,7 +651,7 @@ describe('UnifiedCommandParser Module', () => {
         name: 'test',
         description: 'Test',
         flags: [{ name: 'verbose', short: 'v' }],
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       const completions = parser.getCompletions('/test -');
@@ -705,7 +708,7 @@ describe('UnifiedCommandParser Module', () => {
         name: 'test',
         description: 'Test',
         args: [{ name: 'input', required: true, description: 'Input file' }],
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       const help = parser.getCommandHelp('test');
@@ -720,7 +723,7 @@ describe('UnifiedCommandParser Module', () => {
         name: 'test',
         description: 'Test',
         flags: [{ name: 'verbose', short: 'v', long: 'verbose', description: 'Verbose output' }],
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       const help = parser.getCommandHelp('test');
@@ -758,13 +761,13 @@ describe('UnifiedCommandParser Module', () => {
       parser.register({
         name: 'visible',
         description: 'Visible',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
       parser.register({
         name: 'hidden',
         hidden: true,
         description: 'Hidden',
-        handler: vi.fn()
+        handler: vi.fn(),
       });
 
       const help = parser.getFullHelp();
@@ -856,7 +859,7 @@ describe('UnifiedCommandParser Module', () => {
         let internalCtx = null;
 
         // Use after hook to capture the internal context
-        parser.addHook('after', (parsed, result, ctx) => {
+        parser.addHook('after', (_parsed, _result, ctx) => {
           internalCtx = ctx;
         });
 

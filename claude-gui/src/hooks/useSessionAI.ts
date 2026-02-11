@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { useCallback, useState } from 'react';
 import type { ChatSession, ChatSessionSummary } from './useChatHistory';
 
 // AI-generated metadata for sessions
@@ -72,14 +72,12 @@ Keywords:`,
 // Helper to truncate content for prompts
 function truncateContent(content: string, maxLength: number = 4000): string {
   if (content.length <= maxLength) return content;
-  return content.slice(0, maxLength) + '\n... [truncated]';
+  return `${content.slice(0, maxLength)}\n... [truncated]`;
 }
 
 // Helper to format session content for AI
 function formatSessionContent(session: ChatSession): string {
-  return session.messages
-    .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
-    .join('\n\n');
+  return session.messages.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n');
 }
 
 export function useSessionAI() {
@@ -123,22 +121,25 @@ export function useSessionAI() {
   }, []);
 
   // Generate text using Ollama
-  const generateText = useCallback(async (prompt: string): Promise<string> => {
-    const model = await getBestModel();
-    if (!model) throw new Error('No Ollama models available');
+  const generateText = useCallback(
+    async (prompt: string): Promise<string> => {
+      const model = await getBestModel();
+      if (!model) throw new Error('No Ollama models available');
 
-    // Use invoke to call ollama_generate
-    const response = await invoke<string>('ollama_generate_sync', {
-      model,
-      prompt,
-      options: {
-        temperature: 0.3,
-        num_predict: 256,
-      },
-    });
+      // Use invoke to call ollama_generate
+      const response = await invoke<string>('ollama_generate_sync', {
+        model,
+        prompt,
+        options: {
+          temperature: 0.3,
+          num_predict: 256,
+        },
+      });
 
-    return response.trim();
-  }, [getBestModel]);
+      return response.trim();
+    },
+    [getBestModel],
+  );
 
   // Generate smart title for a session
   const generateSmartTitle = useCallback(
@@ -165,7 +166,7 @@ export function useSessionAI() {
         setProcessingTask(null);
       }
     },
-    [generateText]
+    [generateText],
   );
 
   // Generate summary for a session
@@ -187,7 +188,7 @@ export function useSessionAI() {
         setProcessingTask(null);
       }
     },
-    [generateText]
+    [generateText],
   );
 
   // Generate tags for a session
@@ -218,7 +219,7 @@ export function useSessionAI() {
         setProcessingTask(null);
       }
     },
-    [generateText]
+    [generateText],
   );
 
   // Generate keywords for embedding/search
@@ -247,7 +248,7 @@ export function useSessionAI() {
         setProcessingTask(null);
       }
     },
-    [generateText]
+    [generateText],
   );
 
   // Process all AI metadata for a session
@@ -261,20 +262,24 @@ export function useSessionAI() {
       };
 
       try {
-        // Generate all in sequence (to avoid overwhelming Ollama)
-        setProcessingTask('Generating title...');
-        metadata.smartTitle = await generateSmartTitle(session);
+        // Generate title + tags in parallel (independent operations)
+        setProcessingTask('Generating title & tags...');
+        const [smartTitle, tags] = await Promise.all([
+          generateSmartTitle(session),
+          generateTags(session),
+        ]);
+        metadata.smartTitle = smartTitle;
+        metadata.tags = tags;
 
-        setProcessingTask('Generating summary...');
-        metadata.summary = await generateSummary(session);
-
-        setProcessingTask('Generating tags...');
-        metadata.tags = await generateTags(session);
-
-        setProcessingTask('Extracting keywords...');
-        const keywords = await generateKeywords(session);
-        // Store keywords for text-based search (embedding not needed for current implementation)
-        metadata.embedding = keywords.slice(0, 10).map((_, i) => i / 10); // Placeholder for future vector embeddings
+        // Generate summary + keywords in parallel
+        setProcessingTask('Generating summary & keywords...');
+        const [summary, keywords] = await Promise.all([
+          generateSummary(session),
+          generateKeywords(session),
+        ]);
+        metadata.summary = summary;
+        // Store keyword indices for text-based search (placeholder until real vector embeddings)
+        metadata.embedding = keywords.slice(0, 10).map((_, i) => i / 10);
 
         return metadata;
       } catch (e) {
@@ -285,7 +290,7 @@ export function useSessionAI() {
         setProcessingTask(null);
       }
     },
-    [generateSmartTitle, generateSummary, generateTags, generateKeywords]
+    [generateSmartTitle, generateSummary, generateTags, generateKeywords],
   );
 
   // Semantic search in sessions
@@ -293,7 +298,7 @@ export function useSessionAI() {
     async (
       query: string,
       sessions: ChatSessionSummary[],
-      sessionDetails: Map<string, ChatSession>
+      sessionDetails: Map<string, ChatSession>,
     ): Promise<EnhancedSession[]> => {
       setIsProcessing(true);
       setProcessingTask('Searching...');
@@ -357,14 +362,14 @@ export function useSessionAI() {
         setProcessingTask(null);
       }
     },
-    []
+    [],
   );
 
   // Find related sessions
   const findRelatedSessions = useCallback(
     async (
       currentSession: ChatSession,
-      allSessions: ChatSessionSummary[]
+      allSessions: ChatSessionSummary[],
     ): Promise<EnhancedSession[]> => {
       setIsProcessing(true);
       setProcessingTask('Finding related sessions...');
@@ -388,7 +393,7 @@ export function useSessionAI() {
           .filter((s) => s.id !== currentSession.id)
           .map((session) => {
             let score = 0;
-            const sessionText = (session.title + ' ' + (session.preview || '')).toLowerCase();
+            const sessionText = `${session.title} ${session.preview || ''}`.toLowerCase();
 
             for (const [word, freq] of wordFreq) {
               if (sessionText.includes(word)) {
@@ -414,7 +419,7 @@ export function useSessionAI() {
         setProcessingTask(null);
       }
     },
-    []
+    [],
   );
 
   return {

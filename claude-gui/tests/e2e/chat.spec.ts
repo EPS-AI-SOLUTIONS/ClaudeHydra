@@ -5,11 +5,11 @@
  * model selection, empty state, markdown rendering, and code blocks.
  */
 
-import { test, expect } from '../fixtures/test-setup';
+import { setMockInvokeResult } from '../fixtures/tauri-mocks';
+import { SELECTORS, TEST_MESSAGES } from '../fixtures/test-data';
+import { expect, test } from '../fixtures/test-setup';
 import { ChatPage } from '../page-objects/ChatPage';
 import { SessionSidebar } from '../page-objects/SessionSidebar';
-import { SELECTORS, UI_TEXTS, TEST_MESSAGES, TIMEOUTS } from '../fixtures/test-data';
-import { setMockInvokeResult } from '../fixtures/tauri-mocks';
 
 test.describe('Ollama Chat', () => {
   let chat: ChatPage;
@@ -59,7 +59,7 @@ test.describe('Ollama Chat', () => {
     await chat.sendMessage(TEST_MESSAGES.simple);
     await page.waitForTimeout(300);
 
-    const userMsgs = await chat.getUserMessages();
+    const _userMsgs = await chat.getUserMessages();
     // May or may not have added depending on store logic
     // At minimum the input should be cleared
     const inputVal = await chat.getChatInputValue();

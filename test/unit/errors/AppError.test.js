@@ -3,37 +3,37 @@
  * @module test/unit/errors/AppError.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  AppError,
-  ValidationError,
   APIError,
-  NetworkError,
-  TimeoutError,
-  ConfigError,
-  FileSystemError,
-  RateLimitError,
+  AppError,
   AuthenticationError,
   AuthorizationError,
-  FileNotFoundError,
-  PermissionError,
-  SecurityError,
-  NotFoundError,
-  ConnectionError,
+  ConfigError,
   ConfigurationError,
-  SwarmError,
-  ToolError,
-  ToolNotFoundError,
-  ToolLoadError,
-  ToolValidationError,
-  ToolExecutionError,
-  ToolTimeoutError,
-  ToolRegistrationError,
-  ToolHookError,
+  ConnectionError,
   ErrorCode,
   ErrorSeverity,
+  FileNotFoundError,
+  FileSystemError,
   isOperationalError,
-  wrapAsync
+  NetworkError,
+  NotFoundError,
+  PermissionError,
+  RateLimitError,
+  SecurityError,
+  SwarmError,
+  TimeoutError,
+  ToolError,
+  ToolExecutionError,
+  ToolHookError,
+  ToolLoadError,
+  ToolNotFoundError,
+  ToolRegistrationError,
+  ToolTimeoutError,
+  ToolValidationError,
+  ValidationError,
+  wrapAsync,
 } from '../../../src/errors/AppError.js';
 
 describe('AppError', () => {
@@ -100,7 +100,7 @@ describe('AppError', () => {
         code: ErrorCode.VALIDATION_ERROR,
         isOperational: false,
         severity: ErrorSeverity.HIGH,
-        context: { field: 'email' }
+        context: { field: 'email' },
       });
 
       expect(error.statusCode).toBe(400);
@@ -119,7 +119,7 @@ describe('AppError', () => {
 
     it('should extract requestId from context', () => {
       const error = new AppError('Test', {
-        context: { requestId: 'req-123' }
+        context: { requestId: 'req-123' },
       });
 
       expect(error.requestId).toBe('req-123');
@@ -129,7 +129,7 @@ describe('AppError', () => {
       it('should serialize error without stack', () => {
         const error = new AppError('Test error', {
           code: ErrorCode.VALIDATION_ERROR,
-          statusCode: 400
+          statusCode: 400,
         });
         const json = error.toJSON();
 
@@ -149,7 +149,7 @@ describe('AppError', () => {
 
       it('should include requestId if present', () => {
         const error = new AppError('Test', {
-          context: { requestId: 'req-456' }
+          context: { requestId: 'req-456' },
         });
         const json = error.toJSON();
 
@@ -179,7 +179,7 @@ describe('AppError', () => {
       it('should return sanitized response for operational errors', () => {
         const error = new AppError('User message', {
           isOperational: true,
-          context: { requestId: 'req-789' }
+          context: { requestId: 'req-789' },
         });
         const response = error.toClientResponse();
 
@@ -189,7 +189,7 @@ describe('AppError', () => {
 
       it('should hide message for non-operational errors', () => {
         const error = new AppError('Internal details', {
-          isOperational: false
+          isOperational: false,
         });
         const response = error.toClientResponse();
 
@@ -201,7 +201,7 @@ describe('AppError', () => {
       it('should create from AppError with overrides', () => {
         const original = new AppError('Original', {
           statusCode: 400,
-          code: ErrorCode.VALIDATION_ERROR
+          code: ErrorCode.VALIDATION_ERROR,
         });
         const newError = AppError.from(original, { message: 'New message' });
 
@@ -253,8 +253,8 @@ describe('AppError', () => {
         const zodError = {
           errors: [
             { path: ['email'], message: 'Invalid email', code: 'invalid_string' },
-            { path: ['age'], message: 'Must be positive', code: 'too_small' }
-          ]
+            { path: ['age'], message: 'Must be positive', code: 'too_small' },
+          ],
         };
         const error = ValidationError.fromZod(zodError);
 
@@ -278,7 +278,7 @@ describe('AppError', () => {
       const error = new APIError('API failed', {
         service: 'stripe',
         endpoint: '/v1/charges',
-        responseStatus: 500
+        responseStatus: 500,
       });
 
       expect(error.service).toBe('stripe');
@@ -300,7 +300,7 @@ describe('AppError', () => {
       const error = new NetworkError('Connection refused', {
         host: 'api.example.com',
         port: 443,
-        protocol: 'https'
+        protocol: 'https',
       });
 
       expect(error.host).toBe('api.example.com');
@@ -320,7 +320,7 @@ describe('AppError', () => {
     it('should accept timeout and operation', () => {
       const error = new TimeoutError('Request timed out', {
         timeoutMs: 5000,
-        operation: 'fetchData'
+        operation: 'fetchData',
       });
 
       expect(error.timeoutMs).toBe(5000);
@@ -342,7 +342,7 @@ describe('AppError', () => {
       const error = new ConfigError('Missing API key', {
         configKey: 'API_KEY',
         expectedType: 'string',
-        actualValue: undefined
+        actualValue: undefined,
       });
 
       expect(error.configKey).toBe('API_KEY');
@@ -360,7 +360,7 @@ describe('AppError', () => {
     it('should accept path and operation', () => {
       const error = new FileSystemError('Cannot write', {
         path: '/tmp/test.txt',
-        operation: 'write'
+        operation: 'write',
       });
 
       expect(error.path).toBe('/tmp/test.txt');
@@ -398,7 +398,7 @@ describe('AppError', () => {
       const error = new RateLimitError('Too many requests', {
         retryAfter: 60,
         limit: 100,
-        remaining: 0
+        remaining: 0,
       });
 
       expect(error.retryAfter).toBe(60);
@@ -427,7 +427,7 @@ describe('AppError', () => {
     it('should accept resource and action', () => {
       const error = new AuthorizationError('Cannot delete', {
         resource: 'user',
-        action: 'delete'
+        action: 'delete',
       });
 
       expect(error.context.resource).toBe('user');
@@ -462,7 +462,7 @@ describe('AppError', () => {
     it('should accept path and operation', () => {
       const error = new PermissionError('Cannot write', {
         path: '/protected/file',
-        operation: 'write'
+        operation: 'write',
       });
 
       expect(error.path).toBe('/protected/file');
@@ -482,7 +482,7 @@ describe('AppError', () => {
     it('should accept violation type', () => {
       const error = new SecurityError('XSS detected', {
         violationType: 'XSS_ATTEMPT',
-        resource: '/api/comments'
+        resource: '/api/comments',
       });
 
       expect(error.violationType).toBe('XSS_ATTEMPT');
@@ -501,7 +501,7 @@ describe('AppError', () => {
     it('should accept resource info', () => {
       const error = new NotFoundError('User not found', {
         resourceType: 'User',
-        resourceId: '123'
+        resourceId: '123',
       });
 
       expect(error.resourceType).toBe('User');
@@ -521,7 +521,7 @@ describe('AppError', () => {
     it('should accept host and port', () => {
       const error = new ConnectionError('Cannot connect', {
         host: 'localhost',
-        port: 5432
+        port: 5432,
       });
 
       expect(error.host).toBe('localhost');
@@ -559,7 +559,7 @@ describe('AppError', () => {
       const error = new SwarmError('Agent failed', {
         agentName: 'Geralt',
         phase: 'execution',
-        failedAgents: ['Geralt', 'Yennefer']
+        failedAgents: ['Geralt', 'Yennefer'],
       });
 
       expect(error.agentName).toBe('Geralt');
@@ -580,7 +580,7 @@ describe('AppError', () => {
       it('should accept tool name and details', () => {
         const error = new ToolError('Failed', {
           toolName: 'read_file',
-          details: { path: '/test.txt' }
+          details: { path: '/test.txt' },
         });
 
         expect(error.toolName).toBe('read_file');
@@ -730,15 +730,21 @@ describe('AppError', () => {
     it('should pass through AppError', async () => {
       const appError = new AppError('App error');
 
-      await expect(wrapAsync(async () => { throw appError; }))
-        .rejects.toBe(appError);
+      await expect(
+        wrapAsync(async () => {
+          throw appError;
+        }),
+      ).rejects.toBe(appError);
     });
 
     it('should wrap regular Error in AppError', async () => {
       const nativeError = new Error('Native');
 
-      await expect(wrapAsync(async () => { throw nativeError; }))
-        .rejects.toBeInstanceOf(AppError);
+      await expect(
+        wrapAsync(async () => {
+          throw nativeError;
+        }),
+      ).rejects.toBeInstanceOf(AppError);
     });
 
     it('should apply error options', async () => {
@@ -746,8 +752,10 @@ describe('AppError', () => {
 
       try {
         await wrapAsync(
-          async () => { throw error; },
-          { statusCode: 400, code: ErrorCode.VALIDATION_ERROR }
+          async () => {
+            throw error;
+          },
+          { statusCode: 400, code: ErrorCode.VALIDATION_ERROR },
         );
       } catch (e) {
         expect(e.statusCode).toBe(400);

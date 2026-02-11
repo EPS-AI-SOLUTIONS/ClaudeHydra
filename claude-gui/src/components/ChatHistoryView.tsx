@@ -1,32 +1,31 @@
-import { useEffect, useState, useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import {
-  Trash2,
-  MessageSquare,
-  Plus,
-  Edit2,
+  Brain,
   Check,
-  X,
-  ChevronRight,
-  Search,
   Download,
+  Edit2,
   FileJson,
-  FileText,
-  XCircle,
-  Sparkles,
-  Tag,
   FileSearch,
+  FileText,
   Link2,
   Loader2,
+  MessageSquare,
+  Plus,
+  Search,
+  Sparkles,
+  Tag,
+  Trash2,
   Wand2,
-  Brain,
+  X,
+  XCircle,
 } from 'lucide-react';
-import { useChatHistory, type ChatSessionSummary, type ChatSession } from '../hooks/useChatHistory';
-import { useSessionAI, type SessionAIMetadata, type EnhancedSession } from '../hooks/useSessionAI';
-import { CodeBlock, InlineCode } from './CodeBlock';
+import { useEffect, useMemo, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
+import remarkGfm from 'remark-gfm';
+import { type ChatSession, type ChatSessionSummary, useChatHistory } from '../hooks/useChatHistory';
+import { type EnhancedSession, type SessionAIMetadata, useSessionAI } from '../hooks/useSessionAI';
 import { formatSimilarity } from '../utils/format';
+import { CodeBlock, InlineCode } from './CodeBlock';
 
 // Local storage key for AI metadata
 const AI_METADATA_KEY = 'claude-gui-session-ai-metadata';
@@ -153,7 +152,7 @@ function TagBadge({ tag, onRemove }: { tag: string; onRemove?: () => void }) {
       <Tag size={10} />
       {tag}
       {onRemove && (
-        <button onClick={onRemove} className="hover:text-white">
+        <button type="button" onClick={onRemove} className="hover:text-white">
           <X size={10} />
         </button>
       )}
@@ -253,7 +252,7 @@ export function ChatHistoryView() {
     await createSession(title);
   };
 
-  const handleSelect = async (session: ChatSessionSummary) => {
+  const _handleSelect = async (session: ChatSessionSummary) => {
     await loadSession(session.id);
   };
 
@@ -390,6 +389,7 @@ export function ChatHistoryView() {
           <h2 className="text-lg font-semibold text-matrix-accent">Chat History</h2>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={handleNewChat}
               className="glass-button flex items-center gap-1.5 text-sm px-3 py-1.5"
               title="New Chat"
@@ -487,11 +487,15 @@ export function ChatHistoryView() {
           ) : (
             <div className="space-y-1">
               {filteredSessions.map((session) => {
-                const sessionAI = getSessionAI(session.id);
+                const _sessionAI = getSessionAI(session.id);
                 return (
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: interactive list item */}
                   <div
+                    role="button"
+                    tabIndex={0}
                     key={session.id}
                     onClick={() => handleSelect(session)}
+                    onKeyDown={(_e) => { if (e.key === 'Enter' || e.key === ' ') handleSelect(session); }}
                     className={`p-3 rounded-lg cursor-pointer transition-all duration-200 group ${
                       currentSession?.id === session.id
                         ? 'bg-matrix-accent/20 border border-matrix-accent/40'
@@ -509,6 +513,7 @@ export function ChatHistoryView() {
                             if (e.key === 'Escape') handleCancelEdit();
                           }}
                           className="flex-1 bg-matrix-bg-primary/50 border border-matrix-accent/30 rounded px-2 py-1 text-sm text-matrix-text-primary focus:outline-none focus:border-matrix-accent"
+                          {/* biome-ignore lint/a11y/noAutofocus: inline edit requires focus */}
                           autoFocus
                           onClick={(e) => e.stopPropagation()}
                         />
@@ -596,27 +601,21 @@ export function ChatHistoryView() {
           )}
         </div>
       </div>
-
-      {/* Chat Content */}
       <div className="flex-1 flex flex-col">
         {currentSession ? (
           <>
             {/* Chat Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-matrix-accent flex items-center gap-2">
-                  <MessageSquare size={20} />
+            <_div _className="flex items-center justify-between mb-4">
+              <_div>
+                <_h3 _className="text-lg font-semibold text-matrix-accent flex items-center gap-2">
+                  <_MessageSquare _size={20} />
                   {currentSession.title}
-                </h3>
-                <p className="text-xs text-matrix-text-dim mt-0.5">
-                  {currentSession.message_count} messages
-                  {currentSession.model && ` • ${currentSession.model}`}
-                  {` • Created ${new Date(currentSession.created_at).toLocaleDateString('pl-PL')}`}
+                </_h3>
+                <_p _className="text-xs text-matrix-text-dim mt-0.5">
+                  {currentSession.message_count} messagescurrentSession.model && ` • ${currentSession.model}`` • Created ${new Date(currentSession.created_at).toLocaleDateString('pl-PL')}`
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {/* AI Actions */}
-                {ollamaAvailable && (
+              <div className="flex items-center gap-2">ollamaAvailable && (
                   <div className="flex items-center gap-1 mr-2 border-r border-matrix-border pr-2">
                     <button
                       onClick={handleProcessAll}
@@ -632,9 +631,7 @@ export function ChatHistoryView() {
                       AI
                     </button>
                   </div>
-                )}
-
-                {/* Export Buttons */}
+                )
                 <div className="flex items-center gap-1 mr-2">
                   <button
                     onClick={handleExportJson}
@@ -660,18 +657,12 @@ export function ChatHistoryView() {
                   Close
                 </button>
               </div>
-            </div>
-
-            {/* AI Processing Status */}
-            {isProcessing && processingTask && (
+            </div>isProcessing && processingTask && (
               <div className="mb-3 flex items-center gap-2 text-xs text-purple-400 bg-purple-500/10 px-3 py-2 rounded">
                 <Loader2 size={14} className="animate-spin" />
                 {processingTask}
               </div>
-            )}
-
-            {/* AI Metadata Panel */}
-            {currentAI && (
+            )currentAI && (
               <div className="mb-4 glass-card p-3 space-y-3">
                 <div className="flex items-center gap-2 text-sm font-semibold text-purple-400">
                   <Brain size={16} />
@@ -734,10 +725,7 @@ export function ChatHistoryView() {
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Generate AI button if no metadata */}
-            {!currentAI && ollamaAvailable && (
+            )!currentAI && ollamaAvailable && (
               <div className="mb-4">
                 <button
                   onClick={handleProcessAll}
@@ -752,10 +740,7 @@ export function ChatHistoryView() {
                   Generate AI Summary & Tags
                 </button>
               </div>
-            )}
-
-            {/* Related Sessions */}
-            {relatedSessions.length > 0 && (
+            )relatedSessions.length > 0 && (
               <div className="mb-4">
                 <button
                   onClick={() => setShowRelated(!showRelated)}
@@ -783,9 +768,7 @@ export function ChatHistoryView() {
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Messages */}
+            )
             <div className="flex-1 glass-panel p-4 overflow-y-auto">
               {currentSession.messages.length === 0 ? (
                 <div className="text-center py-8 text-matrix-text-dim">
@@ -799,22 +782,22 @@ export function ChatHistoryView() {
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] p-3 rounded-lg ${
+                        className={`max-w-[80%] p-3 rounded-xl shadow-lg ${
                           message.role === 'user'
-                            ? 'bg-matrix-accent/20 border border-matrix-accent/30'
+                            ? 'bg-white/10 border border-white/25 backdrop-blur-sm'
                             : message.role === 'system'
-                              ? 'bg-yellow-500/20 border border-yellow-500/30'
-                              : 'bg-matrix-bg-secondary border border-matrix-accent/10'
+                              ? 'bg-yellow-500/10 border border-yellow-500/20 backdrop-blur-sm'
+                              : 'bg-black/30 border border-white/10 backdrop-blur-sm'
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-1">
                           <span
                             className={`text-xs font-semibold ${
                               message.role === 'user'
-                                ? 'text-matrix-accent'
+                                ? 'text-white'
                                 : message.role === 'system'
                                   ? 'text-yellow-400'
-                                  : 'text-cyan-400'
+                                  : 'text-white/70'
                             }`}
                           >
                             {message.role.charAt(0).toUpperCase() + message.role.slice(1)}
@@ -823,7 +806,7 @@ export function ChatHistoryView() {
                             {new Date(message.timestamp).toLocaleTimeString('pl-PL')}
                           </span>
                           {message.model && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60">
                               {message.model}
                             </span>
                           )}
@@ -929,7 +912,7 @@ export function ChatHistoryView() {
         ) : (
           <div className="flex-1 glass-panel flex items-center justify-center">
             <div className="text-center text-matrix-text-dim">
-              <ChevronRight size={48} className="mx-auto mb-4 opacity-30" />
+              <ChevronRight size=48className="mx-auto mb-4 opacity-30" />
               <p>Select a chat session to view its contents</p>
               <p className="text-xs mt-2">or create a new one</p>
             </div>

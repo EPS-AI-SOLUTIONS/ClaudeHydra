@@ -3,14 +3,19 @@
  */
 
 import {
-  generateSuggestions,
+  AppError,
+  AuthenticationError,
+  ErrorCode,
+  RateLimitError,
+} from '../../../src/errors/AppError.js';
+import {
   generateDiagnostics,
-  getTroubleshootingSteps,
+  generateSuggestions,
+  getLinksForCode,
   getSuggestionsForCode,
   getTitleForCode,
-  getLinksForCode
+  getTroubleshootingSteps,
 } from '../../../src/logger/fix-suggestions.js';
-import { ErrorCode, AppError, AuthenticationError, RateLimitError } from '../../../src/errors/AppError.js';
 
 describe('FixSuggestions', () => {
   describe('generateSuggestions', () => {
@@ -35,21 +40,29 @@ describe('FixSuggestions', () => {
       const error = { message: 'connect ECONNREFUSED 127.0.0.1:3000' };
       const result = generateSuggestions(error);
 
-      expect(result.suggestions.some(s => s.toLowerCase().includes('server') || s.toLowerCase().includes('connection')));
+      expect(
+        result.suggestions.some(
+          (s) => s.toLowerCase().includes('server') || s.toLowerCase().includes('connection'),
+        ),
+      );
     });
 
     test('should generate pattern-based suggestions for ENOENT', () => {
       const error = { message: 'ENOENT: no such file or directory' };
       const result = generateSuggestions(error);
 
-      expect(result.suggestions.some(s => s.toLowerCase().includes('file') || s.toLowerCase().includes('exist')));
+      expect(
+        result.suggestions.some(
+          (s) => s.toLowerCase().includes('file') || s.toLowerCase().includes('exist'),
+        ),
+      );
     });
 
     test('should generate pattern-based suggestions for JSON parse error', () => {
       const error = { message: 'Unexpected token in JSON at position 0' };
       const result = generateSuggestions(error);
 
-      expect(result.suggestions.some(s => s.toLowerCase().includes('json')));
+      expect(result.suggestions.some((s) => s.toLowerCase().includes('json')));
     });
 
     test('should limit suggestions to maxSuggestions', () => {
@@ -72,9 +85,9 @@ describe('FixSuggestions', () => {
     test('should generate diagnostics for AppError', () => {
       const error = new AppError('Test error', {
         code: ErrorCode.AUTHENTICATION_ERROR,
-        statusCode: 401
+        statusCode: 401,
       });
-      
+
       const diagnostics = generateDiagnostics(error);
 
       expect(diagnostics.errorType).toBeDefined();
@@ -127,7 +140,7 @@ describe('FixSuggestions', () => {
   describe('getTroubleshootingSteps', () => {
     test('should return troubleshooting steps', () => {
       const error = new AppError('Test error', {
-        code: ErrorCode.AUTHENTICATION_ERROR
+        code: ErrorCode.AUTHENTICATION_ERROR,
       });
 
       const steps = getTroubleshootingSteps(error);
@@ -142,7 +155,7 @@ describe('FixSuggestions', () => {
       const steps = getTroubleshootingSteps(error);
 
       // Steps should include suggestions (numbered)
-      expect(steps.some(s => s.includes('API key') || s.includes('Verify')));
+      expect(steps.some((s) => s.includes('API key') || s.includes('Verify')));
     });
   });
 

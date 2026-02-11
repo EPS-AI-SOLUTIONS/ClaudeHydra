@@ -4,7 +4,7 @@
  * Tests Zod validation, defaults, error messages, and frozen config behavior.
  */
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Store original env to restore after tests
 const originalEnv = { ...process.env };
@@ -172,7 +172,7 @@ describe('Config Module', () => {
 
       const result = validateConfig({
         API_VERSION: 'v3',
-        DEFAULT_MODEL: 'test-model'
+        DEFAULT_MODEL: 'test-model',
       });
 
       expect(result.success).toBe(true);
@@ -183,7 +183,7 @@ describe('Config Module', () => {
 
       // QUEUE_MAX_CONCURRENT must be 1-100
       const result = validateConfig({
-        QUEUE_MAX_CONCURRENT: '500' // Will be parsed to number, then fail range check
+        QUEUE_MAX_CONCURRENT: '500', // Will be parsed to number, then fail range check
       });
 
       expect(result.success).toBe(false);
@@ -194,14 +194,13 @@ describe('Config Module', () => {
 
       // Valid hex key (64 chars)
       const validHex = validateConfig({
-        CACHE_ENCRYPTION_KEY:
-          '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+        CACHE_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       });
       expect(validHex.success).toBe(true);
 
       // Invalid key (wrong length)
       const invalidKey = validateConfig({
-        CACHE_ENCRYPTION_KEY: 'too-short'
+        CACHE_ENCRYPTION_KEY: 'too-short',
       });
       expect(invalidKey.success).toBe(false);
     });
@@ -213,7 +212,7 @@ describe('Config Module', () => {
       process.env.QUEUE_TIMEOUT_MS = '500'; // Invalid: must be >= 1000
 
       await expect(import('../../src/config.js')).rejects.toThrow(
-        /Configuration validation failed/
+        /Configuration validation failed/,
       );
     });
   });

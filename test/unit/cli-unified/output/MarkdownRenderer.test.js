@@ -3,23 +3,23 @@
  * @module test/unit/cli-unified/output/MarkdownRenderer.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock ThemeRegistry
 vi.mock('../../../../src/cli-unified/core/ThemeRegistry.js', () => ({
   themeRegistry: {
     getCurrent: vi.fn(() => ({
       colors: {
-        primary: vi.fn(s => `[primary]${s}[/primary]`),
-        secondary: vi.fn(s => `[secondary]${s}[/secondary]`),
-        highlight: vi.fn(s => `[highlight]${s}[/highlight]`),
-        dim: vi.fn(s => `[dim]${s}[/dim]`),
-        info: vi.fn(s => `[info]${s}[/info]`),
-        success: vi.fn(s => `[success]${s}[/success]`),
-        code: vi.fn(s => `[code]${s}[/code]`),
-        keyword: vi.fn(s => `[keyword]${s}[/keyword]`),
-        string: vi.fn(s => `[string]${s}[/string]`),
-        number: vi.fn(s => `[number]${s}[/number]`)
+        primary: vi.fn((s) => `[primary]${s}[/primary]`),
+        secondary: vi.fn((s) => `[secondary]${s}[/secondary]`),
+        highlight: vi.fn((s) => `[highlight]${s}[/highlight]`),
+        dim: vi.fn((s) => `[dim]${s}[/dim]`),
+        info: vi.fn((s) => `[info]${s}[/info]`),
+        success: vi.fn((s) => `[success]${s}[/success]`),
+        code: vi.fn((s) => `[code]${s}[/code]`),
+        keyword: vi.fn((s) => `[keyword]${s}[/keyword]`),
+        string: vi.fn((s) => `[string]${s}[/string]`),
+        number: vi.fn((s) => `[number]${s}[/number]`),
       },
       symbols: {
         h1: '✦',
@@ -31,15 +31,15 @@ vi.mock('../../../../src/cli-unified/core/ThemeRegistry.js', () => ({
         bullet: '•',
         quoteBar: '┃',
         taskDone: '✔',
-        taskPending: '○'
-      }
-    }))
-  }
+        taskPending: '○',
+      },
+    })),
+  },
 }));
 
 import {
+  createMarkdownRenderer,
   MarkdownRenderer,
-  createMarkdownRenderer
 } from '../../../../src/cli-unified/output/MarkdownRenderer.js';
 
 describe('MarkdownRenderer Module', () => {
@@ -62,7 +62,7 @@ describe('MarkdownRenderer Module', () => {
       const renderer = new MarkdownRenderer({
         width: 100,
         indent: 4,
-        codeHighlight: false
+        codeHighlight: false,
       });
       expect(renderer.width).toBe(100);
       expect(renderer.indent).toBe(4);
@@ -454,7 +454,10 @@ describe('MarkdownRenderer Module', () => {
     it('should render table with headers and rows', () => {
       const renderer = new MarkdownRenderer();
       const headers = ['Name', 'Age'];
-      const rows = [['Alice', '30'], ['Bob', '25']];
+      const rows = [
+        ['Alice', '30'],
+        ['Bob', '25'],
+      ];
       const result = renderer.renderTable(headers, rows);
 
       expect(result).toContain('Name');

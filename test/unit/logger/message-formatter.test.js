@@ -3,7 +3,7 @@
  * @module test/unit/logger/message-formatter.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('Message Formatter', () => {
   beforeEach(() => {
@@ -51,9 +51,17 @@ describe('Message Formatter', () => {
       const { BoxChars } = await import('../../../src/logger/message-formatter.js');
 
       const requiredChars = [
-        'topLeft', 'topRight', 'bottomLeft', 'bottomRight',
-        'horizontal', 'vertical', 'leftTee', 'rightTee',
-        'topTee', 'bottomTee', 'cross'
+        'topLeft',
+        'topRight',
+        'bottomLeft',
+        'bottomRight',
+        'horizontal',
+        'vertical',
+        'leftTee',
+        'rightTee',
+        'topTee',
+        'bottomTee',
+        'cross',
       ];
 
       for (const style of ['single', 'double', 'rounded']) {
@@ -90,8 +98,14 @@ describe('Message Formatter', () => {
       const { MessageThemes } = await import('../../../src/logger/message-formatter.js');
 
       const requiredProps = [
-        'icon', 'iconColor', 'iconBg', 'borderColor',
-        'titleColor', 'textColor', 'boxStyle', 'label'
+        'icon',
+        'iconColor',
+        'iconBg',
+        'borderColor',
+        'titleColor',
+        'textColor',
+        'boxStyle',
+        'label',
       ];
 
       for (const theme of Object.values(MessageThemes)) {
@@ -130,7 +144,7 @@ describe('Message Formatter', () => {
           maxWidth: 100,
           useColors: false,
           useIcons: false,
-          defaultBoxStyle: 'double'
+          defaultBoxStyle: 'double',
         });
 
         expect(formatter.maxWidth).toBe(100);
@@ -225,7 +239,9 @@ describe('Message Formatter', () => {
 
     describe('horizontalLine()', () => {
       it('should create horizontal line', async () => {
-        const { MessageFormatter, BoxChars } = await import('../../../src/logger/message-formatter.js');
+        const { MessageFormatter, BoxChars } = await import(
+          '../../../src/logger/message-formatter.js'
+        );
         const formatter = new MessageFormatter({ useColors: false });
 
         const line = formatter.horizontalLine(10, BoxChars.single, '');
@@ -264,8 +280,8 @@ describe('Message Formatter', () => {
         const result = formatter.formatBox('warning', 'Warning', 'Message', {
           details: {
             file: 'test.js',
-            line: 42
-          }
+            line: 42,
+          },
         });
 
         expect(result).toContain('file: test.js');
@@ -277,7 +293,7 @@ describe('Message Formatter', () => {
         const formatter = new MessageFormatter({ useColors: false, useIcons: false });
 
         const result = formatter.formatBox('error', 'Error', 'Something went wrong', {
-          suggestions: ['Try restarting', 'Check logs']
+          suggestions: ['Try restarting', 'Check logs'],
         });
 
         expect(result).toContain('Suggestions');
@@ -293,8 +309,8 @@ describe('Message Formatter', () => {
           details: {
             valid: 'value',
             nullVal: null,
-            undefinedVal: undefined
-          }
+            undefinedVal: undefined,
+          },
         });
 
         expect(result).toContain('valid: value');
@@ -423,7 +439,9 @@ describe('Message Formatter', () => {
       });
 
       it('should create new instance with options', async () => {
-        const { getFormatter, resetFormatter } = await import('../../../src/logger/message-formatter.js');
+        const { getFormatter, resetFormatter } = await import(
+          '../../../src/logger/message-formatter.js'
+        );
 
         resetFormatter();
         const formatter1 = getFormatter({ maxWidth: 100 });
@@ -434,7 +452,9 @@ describe('Message Formatter', () => {
 
     describe('resetFormatter()', () => {
       it('should reset singleton instance', async () => {
-        const { getFormatter, resetFormatter } = await import('../../../src/logger/message-formatter.js');
+        const { getFormatter, resetFormatter } = await import(
+          '../../../src/logger/message-formatter.js'
+        );
 
         const formatter1 = getFormatter();
         resetFormatter();
@@ -446,7 +466,9 @@ describe('Message Formatter', () => {
 
     describe('Convenience functions', () => {
       it('should export formatError function', async () => {
-        const { formatError, resetFormatter } = await import('../../../src/logger/message-formatter.js');
+        const { formatError, resetFormatter } = await import(
+          '../../../src/logger/message-formatter.js'
+        );
         resetFormatter();
 
         const result = formatError('Test', 'Content');
@@ -455,7 +477,9 @@ describe('Message Formatter', () => {
       });
 
       it('should export formatWarning function', async () => {
-        const { formatWarning, resetFormatter } = await import('../../../src/logger/message-formatter.js');
+        const { formatWarning, resetFormatter } = await import(
+          '../../../src/logger/message-formatter.js'
+        );
         resetFormatter();
 
         const result = formatWarning('Test', 'Content');
@@ -464,7 +488,9 @@ describe('Message Formatter', () => {
       });
 
       it('should export formatSuccess function', async () => {
-        const { formatSuccess, resetFormatter } = await import('../../../src/logger/message-formatter.js');
+        const { formatSuccess, resetFormatter } = await import(
+          '../../../src/logger/message-formatter.js'
+        );
         resetFormatter();
 
         const result = formatSuccess('Test', 'Content');
@@ -473,7 +499,9 @@ describe('Message Formatter', () => {
       });
 
       it('should export formatInfo function', async () => {
-        const { formatInfo, resetFormatter } = await import('../../../src/logger/message-formatter.js');
+        const { formatInfo, resetFormatter } = await import(
+          '../../../src/logger/message-formatter.js'
+        );
         resetFormatter();
 
         const result = formatInfo('Test', 'Content');
@@ -482,7 +510,9 @@ describe('Message Formatter', () => {
       });
 
       it('should export formatDebug function', async () => {
-        const { formatDebug, resetFormatter } = await import('../../../src/logger/message-formatter.js');
+        const { formatDebug, resetFormatter } = await import(
+          '../../../src/logger/message-formatter.js'
+        );
         resetFormatter();
 
         const result = formatDebug('Test', 'Content');
@@ -491,7 +521,9 @@ describe('Message Formatter', () => {
       });
 
       it('should export formatHint function', async () => {
-        const { formatHint, resetFormatter } = await import('../../../src/logger/message-formatter.js');
+        const { formatHint, resetFormatter } = await import(
+          '../../../src/logger/message-formatter.js'
+        );
         resetFormatter();
 
         const result = formatHint('Test', 'Content');
@@ -500,7 +532,9 @@ describe('Message Formatter', () => {
       });
 
       it('should export formatInline function', async () => {
-        const { formatInline, resetFormatter } = await import('../../../src/logger/message-formatter.js');
+        const { formatInline, resetFormatter } = await import(
+          '../../../src/logger/message-formatter.js'
+        );
         resetFormatter();
 
         const result = formatInline('error', 'Inline message');

@@ -3,16 +3,16 @@
  * @module test/unit/utils/time.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  debounce,
   formatDate,
+  formatDuration,
   formatLocalDate,
   formatRelative,
-  formatDuration,
   sleep,
+  throttle,
   timeout,
-  debounce,
-  throttle
 } from '../../../src/utils/time.js';
 
 describe('Time Utilities', () => {

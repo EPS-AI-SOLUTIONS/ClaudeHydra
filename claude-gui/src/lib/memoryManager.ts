@@ -127,16 +127,48 @@ function md5(input: string): string {
   const H = (x: number, y: number, z: number): number => x ^ y ^ z;
   const I = (x: number, y: number, z: number): number => y ^ (x | ~z);
 
-  const FF = (a: number, b: number, c: number, d: number, x: number, s: number, ac: number): number =>
+  const FF = (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    ac: number,
+  ): number =>
     addUnsigned(rotateLeft(addUnsigned(addUnsigned(a, F(b, c, d)), addUnsigned(x, ac)), s), b);
 
-  const GG = (a: number, b: number, c: number, d: number, x: number, s: number, ac: number): number =>
+  const GG = (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    ac: number,
+  ): number =>
     addUnsigned(rotateLeft(addUnsigned(addUnsigned(a, G(b, c, d)), addUnsigned(x, ac)), s), b);
 
-  const HH = (a: number, b: number, c: number, d: number, x: number, s: number, ac: number): number =>
+  const HH = (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    ac: number,
+  ): number =>
     addUnsigned(rotateLeft(addUnsigned(addUnsigned(a, H(b, c, d)), addUnsigned(x, ac)), s), b);
 
-  const II = (a: number, b: number, c: number, d: number, x: number, s: number, ac: number): number =>
+  const II = (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    x: number,
+    s: number,
+    ac: number,
+  ): number =>
     addUnsigned(rotateLeft(addUnsigned(addUnsigned(a, I(b, c, d)), addUnsigned(x, ac)), s), b);
 
   const convertToWordArray = (str: string): number[] => {
@@ -147,7 +179,8 @@ function md5(input: string): string {
     while (lByteCount < str.length) {
       const lWordPosition = (lByteCount - (lByteCount % 4)) / 4;
       const lBytePosition = (lByteCount % 4) * 8;
-      lWordArray[lWordPosition] = lWordArray[lWordPosition] | (str.charCodeAt(lByteCount) << lBytePosition);
+      lWordArray[lWordPosition] =
+        lWordArray[lWordPosition] | (str.charCodeAt(lByteCount) << lBytePosition);
       lByteCount++;
     }
 
@@ -163,7 +196,7 @@ function md5(input: string): string {
     let result = '';
     for (let lCount = 0; lCount <= 3; lCount++) {
       const lByte = (lValue >>> (lCount * 8)) & 255;
-      result += ('0' + lByte.toString(16)).slice(-2);
+      result += `0${lByte.toString(16)}`.slice(-2);
     }
     return result;
   };
@@ -174,13 +207,28 @@ function md5(input: string): string {
     c = 0x98badcfe,
     d = 0x10325476;
 
-  const S11 = 7, S12 = 12, S13 = 17, S14 = 22;
-  const S21 = 5, S22 = 9, S23 = 14, S24 = 20;
-  const S31 = 4, S32 = 11, S33 = 16, S34 = 23;
-  const S41 = 6, S42 = 10, S43 = 15, S44 = 21;
+  const S11 = 7,
+    S12 = 12,
+    S13 = 17,
+    S14 = 22;
+  const S21 = 5,
+    S22 = 9,
+    S23 = 14,
+    S24 = 20;
+  const S31 = 4,
+    S32 = 11,
+    S33 = 16,
+    S34 = 23;
+  const S41 = 6,
+    S42 = 10,
+    S43 = 15,
+    S44 = 21;
 
   for (let k = 0; k < x.length; k += 16) {
-    const AA = a, BB = b, CC = c, DD = d;
+    const AA = a,
+      BB = b,
+      CC = c,
+      DD = d;
 
     a = FF(a, b, c, d, x[k], S11, 0xd76aa478);
     d = FF(d, a, b, c, x[k + 1], S12, 0xe8c7b756);
@@ -378,7 +426,7 @@ const PROFILES_KEY = `${STORAGE_PREFIX}:profiles`;
  */
 export function pruneOldMemories(
   memories: MemoryEntry[],
-  config: PruneConfig = { maxAgeDays: 30, minScore: 0.3, minHitCount: 2 }
+  config: PruneConfig = { maxAgeDays: 30, minScore: 0.3, minHitCount: 2 },
 ): { kept: MemoryEntry[]; pruned: MemoryEntry[] } {
   const currentTime = now();
   const maxAgeMs = daysToMs(config.maxAgeDays);
@@ -413,7 +461,7 @@ export function pruneOldMemories(
  */
 export function clusterAndMerge(
   memories: MemoryEntry[],
-  similarityThreshold: number = 0.9
+  similarityThreshold: number = 0.9,
 ): ClusterMergeResult {
   if (memories.length < 2) {
     return {
@@ -554,13 +602,13 @@ const FRAMEWORK_PATTERNS: Record<string, RegExp[]> = {
 
 const CODE_STYLE_PATTERNS = {
   tabs: /^\t+/m,
-  spaces2: /^  [^ ]/m,
-  spaces4: /^    [^ ]/m,
+  spaces2: /^ {2}[^ ]/m,
+  spaces4: /^ {4}[^ ]/m,
   semicolons: /;\s*$/m,
   noSemicolons: /[^;]\s*$/m,
   singleQuotes: /'/,
   doubleQuotes: /"/,
-  trailingComma: /,\s*[\]\}]/,
+  trailingComma: /,\s*[\]}]/,
 };
 
 const RESPONSE_LENGTH_PATTERNS = {
@@ -574,7 +622,7 @@ const RESPONSE_LENGTH_PATTERNS = {
  */
 export function extractPreferences(
   text: string,
-  existingPrefs: UserPreferences = createDefaultPreferences()
+  existingPrefs: UserPreferences = createDefaultPreferences(),
 ): UserPreferences {
   const newPrefs = { ...existingPrefs, lastUpdated: now() };
   const confidenceIncrement = 0.1;
@@ -593,7 +641,7 @@ export function extractPreferences(
         }
         newPrefs.confidenceScores.preferredLanguage = Math.min(
           newPrefs.confidenceScores.preferredLanguage + confidenceIncrement,
-          maxConfidence
+          maxConfidence,
         );
         break;
       }
@@ -609,7 +657,7 @@ export function extractPreferences(
         }
         newPrefs.confidenceScores.frameworks = Math.min(
           newPrefs.confidenceScores.frameworks + confidenceIncrement,
-          maxConfidence
+          maxConfidence,
         );
         break;
       }
@@ -621,21 +669,21 @@ export function extractPreferences(
     newPrefs.codeStyle.indentation = 'tabs';
     newPrefs.confidenceScores.codeStyle = Math.min(
       newPrefs.confidenceScores.codeStyle + confidenceIncrement,
-      maxConfidence
+      maxConfidence,
     );
   } else if (CODE_STYLE_PATTERNS.spaces4.test(text)) {
     newPrefs.codeStyle.indentation = 'spaces';
     newPrefs.codeStyle.indentSize = 4;
     newPrefs.confidenceScores.codeStyle = Math.min(
       newPrefs.confidenceScores.codeStyle + confidenceIncrement,
-      maxConfidence
+      maxConfidence,
     );
   } else if (CODE_STYLE_PATTERNS.spaces2.test(text)) {
     newPrefs.codeStyle.indentation = 'spaces';
     newPrefs.codeStyle.indentSize = 2;
     newPrefs.confidenceScores.codeStyle = Math.min(
       newPrefs.confidenceScores.codeStyle + confidenceIncrement,
-      maxConfidence
+      maxConfidence,
     );
   }
 
@@ -668,7 +716,7 @@ export function extractPreferences(
       newPrefs.responseLength = 'concise';
       newPrefs.confidenceScores.responseLength = Math.min(
         newPrefs.confidenceScores.responseLength + confidenceIncrement,
-        maxConfidence
+        maxConfidence,
       );
       break;
     }
@@ -678,7 +726,7 @@ export function extractPreferences(
       newPrefs.responseLength = 'verbose';
       newPrefs.confidenceScores.responseLength = Math.min(
         newPrefs.confidenceScores.responseLength + confidenceIncrement,
-        maxConfidence
+        maxConfidence,
       );
       break;
     }
@@ -697,7 +745,7 @@ export function extractPreferences(
 export function createTextEmbedding(
   embedding: number[],
   source?: string,
-  model?: string
+  model?: string,
 ): MultiModalEmbedding {
   return {
     type: 'text',
@@ -719,7 +767,7 @@ export function createImageEmbedding(
   mimeType: string,
   originalSize: { width: number; height: number },
   source?: string,
-  model?: string
+  model?: string,
 ): MultiModalEmbedding {
   return {
     type: 'image',
@@ -838,7 +886,7 @@ export function updateProjectProfile(profile: ProjectProfile): void {
  */
 export function addMemoryToProfile(
   workingDirectory: string,
-  memory: Omit<MemoryEntry, 'id' | 'createdAt' | 'updatedAt'>
+  memory: Omit<MemoryEntry, 'id' | 'createdAt' | 'updatedAt'>,
 ): MemoryEntry {
   const profile = getProjectProfile(workingDirectory);
 
@@ -861,7 +909,7 @@ export function addMemoryToProfile(
  */
 export function pruneProjectMemories(
   workingDirectory: string,
-  config?: PruneConfig
+  config?: PruneConfig,
 ): { kept: number; pruned: number } {
   const profile = getProjectProfile(workingDirectory);
   const result = pruneOldMemories(profile.memories, config);
@@ -881,7 +929,7 @@ export function pruneProjectMemories(
  */
 export function clusterProjectMemories(
   workingDirectory: string,
-  similarityThreshold?: number
+  similarityThreshold?: number,
 ): ClusterMergeResult {
   const profile = getProjectProfile(workingDirectory);
   const result = clusterAndMerge(profile.memories, similarityThreshold);
@@ -898,7 +946,7 @@ export function clusterProjectMemories(
  */
 export function updateProjectPreferences(
   workingDirectory: string,
-  interactionText: string
+  interactionText: string,
 ): UserPreferences {
   const profile = getProjectProfile(workingDirectory);
   profile.preferences = extractPreferences(interactionText, profile.preferences);
@@ -937,7 +985,7 @@ export function deleteProjectProfile(workingDirectory: string): boolean {
  */
 export function searchMemoriesGlobal(
   query: string,
-  limit: number = 10
+  limit: number = 10,
 ): Array<{ memory: MemoryEntry; profile: ProjectProfile }> {
   const profiles = loadProfiles();
   const results: Array<{ memory: MemoryEntry; profile: ProjectProfile; relevance: number }> = [];

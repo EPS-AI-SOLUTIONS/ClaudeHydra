@@ -3,16 +3,16 @@
  * @module test/unit/utils/string.test
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   generateId,
-  shortId,
   normalize,
   sanitize,
-  truncate,
-  toTitleCase,
+  shortId,
   toCamelCase,
-  toSnakeCase
+  toSnakeCase,
+  toTitleCase,
+  truncate,
 } from '../../../src/utils/string.js';
 
 describe('String Utilities', () => {

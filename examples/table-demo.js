@@ -4,16 +4,8 @@
  * Demonstrates all available styles and features
  */
 
-import {
-  TableRenderer,
-  ListRenderer,
-  TABLE_STYLES,
-  LIST_STYLES,
-  ALIGNMENT,
-  createTableRenderer,
-  createListRenderer
-} from '../src/cli/TableRenderer.js';
-import { cyan, bold, yellow, green, dim } from '../src/logger/colors.js';
+import { ALIGNMENT, createListRenderer, createTableRenderer } from '../src/cli/TableRenderer.js';
+import { bold, cyan, dim, green, yellow } from '../src/logger/colors.js';
 
 // ============================================================================
 // Demo Data
@@ -24,7 +16,7 @@ const users = [
   { id: 2, name: 'Bob Smith', age: 34, city: 'Los Angeles', active: false },
   { id: 3, name: 'Charlie Brown', age: 22, city: 'Chicago', active: true },
   { id: 4, name: 'Diana Prince', age: 30, city: 'Seattle', active: true },
-  { id: 5, name: 'Edward Norton', age: 45, city: 'Boston', active: false }
+  { id: 5, name: 'Edward Norton', age: 45, city: 'Boston', active: false },
 ];
 
 const tasks = [
@@ -32,34 +24,26 @@ const tasks = [
   'Review pull requests',
   'Write documentation',
   'Run test suite',
-  'Deploy to staging'
+  'Deploy to staging',
 ];
 
 const checklistItems = [
   { text: 'Install dependencies', checked: true },
   { text: 'Configure environment', checked: true },
   { text: 'Write tests', checked: false },
-  { text: 'Submit PR', checked: false }
+  { text: 'Submit PR', checked: false },
 ];
 
 const nestedItems = [
   {
     text: 'Frontend',
-    children: [
-      { text: 'React components' },
-      { text: 'CSS styling' },
-      { text: 'State management' }
-    ]
+    children: [{ text: 'React components' }, { text: 'CSS styling' }, { text: 'State management' }],
   },
   {
     text: 'Backend',
-    children: [
-      { text: 'API endpoints' },
-      { text: 'Database schema' },
-      { text: 'Authentication' }
-    ]
+    children: [{ text: 'API endpoints' }, { text: 'Database schema' }, { text: 'Authentication' }],
   },
-  { text: 'Deployment' }
+  { text: 'Deployment' },
 ];
 
 // ============================================================================
@@ -67,11 +51,20 @@ const nestedItems = [
 // ============================================================================
 
 function demoTableStyles() {
-  console.log('\n' + bold(cyan('=' .repeat(60))));
+  console.log(`\n${bold(cyan('='.repeat(60)))}`);
   console.log(bold(cyan('  TABLE STYLES DEMO')));
-  console.log(bold(cyan('=' .repeat(60))) + '\n');
+  console.log(`${bold(cyan('='.repeat(60)))}\n`);
 
-  const tableStyles = ['simple', 'grid', 'outline', 'borderless', 'unicode', 'double', 'rounded', 'heavy'];
+  const tableStyles = [
+    'simple',
+    'grid',
+    'outline',
+    'borderless',
+    'unicode',
+    'double',
+    'rounded',
+    'heavy',
+  ];
 
   for (const style of tableStyles) {
     console.log(yellow(`\n>>> ${style.toUpperCase()} STYLE <<<\n`));
@@ -85,9 +78,9 @@ function demoTableStyles() {
 // ============================================================================
 
 function demoTableFeatures() {
-  console.log('\n' + bold(cyan('=' .repeat(60))));
+  console.log(`\n${bold(cyan('='.repeat(60)))}`);
   console.log(bold(cyan('  TABLE FEATURES DEMO')));
-  console.log(bold(cyan('=' .repeat(60))) + '\n');
+  console.log(`${bold(cyan('='.repeat(60)))}\n`);
 
   // Zebra striping
   console.log(yellow('\n>>> ZEBRA STRIPING <<<\n'));
@@ -100,7 +93,7 @@ function demoTableFeatures() {
     { key: 'id', header: 'ID', align: ALIGNMENT.CENTER, width: 5 },
     { key: 'name', header: 'Full Name', align: ALIGNMENT.LEFT },
     { key: 'age', header: 'Age', align: ALIGNMENT.RIGHT, width: 8 },
-    { key: 'city', header: 'Location', align: ALIGNMENT.CENTER }
+    { key: 'city', header: 'Location', align: ALIGNMENT.CENTER },
   ];
   const alignRenderer = createTableRenderer({ style: 'unicode' });
   alignRenderer.print(users.slice(0, 3), alignedColumns);
@@ -109,16 +102,16 @@ function demoTableFeatures() {
   console.log(yellow('\n>>> CUSTOM FORMATTERS <<<\n'));
   const formattedColumns = [
     { key: 'name', header: 'User' },
-    { 
-      key: 'age', 
+    {
+      key: 'age',
       header: 'Age Category',
-      formatter: (val) => val < 25 ? 'Young' : val < 35 ? 'Adult' : 'Senior'
+      formatter: (val) => (val < 25 ? 'Young' : val < 35 ? 'Adult' : 'Senior'),
     },
-    { 
-      key: 'active', 
+    {
+      key: 'active',
       header: 'Status',
-      formatter: (val) => val ? 'Active' : 'Inactive'
-    }
+      formatter: (val) => (val ? 'Active' : 'Inactive'),
+    },
   ];
   const formatRenderer = createTableRenderer({ style: 'rounded' });
   formatRenderer.print(users, formattedColumns);
@@ -139,9 +132,9 @@ function demoTableFeatures() {
 // ============================================================================
 
 function demoListStyles() {
-  console.log('\n' + bold(cyan('=' .repeat(60))));
+  console.log(`\n${bold(cyan('='.repeat(60)))}`);
   console.log(bold(cyan('  LIST STYLES DEMO')));
-  console.log(bold(cyan('=' .repeat(60))) + '\n');
+  console.log(`${bold(cyan('='.repeat(60)))}\n`);
 
   const listStyles = ['bullet', 'dash', 'arrow', 'star', 'numbered', 'lettered', 'roman'];
 
@@ -157,9 +150,9 @@ function demoListStyles() {
 // ============================================================================
 
 function demoListFeatures() {
-  console.log('\n' + bold(cyan('=' .repeat(60))));
+  console.log(`\n${bold(cyan('='.repeat(60)))}`);
   console.log(bold(cyan('  LIST FEATURES DEMO')));
-  console.log(bold(cyan('=' .repeat(60))) + '\n');
+  console.log(`${bold(cyan('='.repeat(60)))}\n`);
 
   // Checkbox list
   console.log(yellow('\n>>> CHECKBOX LIST <<<\n'));
@@ -190,7 +183,7 @@ function main() {
   demoListStyles();
   demoListFeatures();
 
-  console.log('\n' + bold(green('  Demo complete!')) + '\n');
+  console.log(`\n${bold(green('  Demo complete!'))}\n`);
 }
 
 main();

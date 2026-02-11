@@ -5,24 +5,32 @@
  * Escape to cancel rename, and keyboard focus management.
  */
 
-import { test, expect } from '../fixtures/test-setup';
-import { TerminalPage } from '../page-objects/TerminalPage';
-import { SessionSidebar } from '../page-objects/SessionSidebar';
-import { SELECTORS, TIMEOUTS, SHORTCUTS } from '../fixtures/test-data';
 import { setMockInvokeResult } from '../fixtures/tauri-mocks';
+import { SELECTORS, SHORTCUTS, TIMEOUTS } from '../fixtures/test-data';
+import { expect, test } from '../fixtures/test-setup';
+import { SessionSidebar } from '../page-objects/SessionSidebar';
+import { TerminalPage } from '../page-objects/TerminalPage';
 
 test.describe('Keyboard Shortcuts', () => {
   test('Enter submits terminal input', async ({ page }) => {
-    const terminal = new TerminalPage(page);
+    const _terminal = new TerminalPage(page);
 
     // Make session active
     await setMockInvokeResult(page, 'get_session_status', {
-      running: true, session_id: 'kb-test', is_active: true,
-      pending_approval: false, auto_approve_all: false,
-      approved_count: 0, denied_count: 0, auto_approved_count: 0,
+      running: true,
+      session_id: 'kb-test',
+      is_active: true,
+      pending_approval: false,
+      auto_approve_all: false,
+      approved_count: 0,
+      denied_count: 0,
+      auto_approved_count: 0,
     });
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     // Focus terminal input and type
     const input = page.locator(SELECTORS.terminal.input).first();
@@ -53,14 +61,17 @@ test.describe('Keyboard Shortcuts', () => {
   });
 
   test('Escape cancels session rename', async ({ page }) => {
-    const sidebar = new SessionSidebar(page);
+    const _sidebar = new SessionSidebar(page);
 
     // Add a session to rename
     await setMockInvokeResult(page, 'list_chat_sessions', [
       { id: 's1', title: 'Original Title', message_count: 0, created_at: new Date().toISOString() },
     ]);
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     // Double-click to start rename
     const session = page.locator(SELECTORS.sidebar.sessionItem).first();
@@ -83,12 +94,20 @@ test.describe('Keyboard Shortcuts', () => {
   test('focus returns to input after sending message', async ({ page }) => {
     // Make session active
     await setMockInvokeResult(page, 'get_session_status', {
-      running: true, session_id: 'focus-test', is_active: true,
-      pending_approval: false, auto_approve_all: false,
-      approved_count: 0, denied_count: 0, auto_approved_count: 0,
+      running: true,
+      session_id: 'focus-test',
+      is_active: true,
+      pending_approval: false,
+      auto_approve_all: false,
+      approved_count: 0,
+      denied_count: 0,
+      auto_approved_count: 0,
     });
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     const input = page.locator(SELECTORS.terminal.input).first();
     await input.fill('test');

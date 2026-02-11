@@ -15,7 +15,7 @@ const MICRO_BATCH_SIZE = 10;
 async function simulateAvallach(prompt) {
   console.log(`\n🧙 [AVALLAC'H] Researching: "${prompt.slice(0, 40)}..."`);
   // Simulate research delay
-  await new Promise(r => setTimeout(r, 100));
+  await new Promise((r) => setTimeout(r, 100));
   return { context: ['[SO] Example result', '[Web] Documentation snippet'] };
 }
 
@@ -28,8 +28,8 @@ async function simulateOllama(prompt) {
       body: JSON.stringify({
         model: 'llama3.2:1b',
         prompt: prompt,
-        stream: false
-      })
+        stream: false,
+      }),
     });
     const data = await response.json();
     console.log(`   ✅ Response: ${data.response?.slice(0, 60)}...`);
@@ -50,7 +50,9 @@ async function simulateAlzur(prompt, response) {
   // Add to buffer
   trainingBuffer.push({ prompt, completion: response });
 
-  console.log(`⚗️ [ALZUR] Sample #${trainingSampleCount} collected (buffer: ${trainingBuffer.length}/${MICRO_BATCH_SIZE})`);
+  console.log(
+    `⚗️ [ALZUR] Sample #${trainingSampleCount} collected (buffer: ${trainingBuffer.length}/${MICRO_BATCH_SIZE})`,
+  );
 
   // Check if micro-batch ready
   if (trainingBuffer.length >= MICRO_BATCH_SIZE && !isTraining) {
@@ -65,7 +67,7 @@ async function simulateAlzur(prompt, response) {
     console.log(`${'═'.repeat(60)}\n`);
 
     // Simulate training time
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 500));
 
     console.log(`✅ [ALZUR] Training complete! Model alzur-v${currentModelVersion} ready.`);
     isTraining = false;
@@ -103,7 +105,7 @@ async function runTest() {
     'How does Git work?',
     'Explain microservices',
     'What is CI/CD?',
-    'How to write tests?',  // <- Training should trigger here!
+    'How to write tests?', // <- Training should trigger here!
     'What is Kubernetes?',
     'Explain WebSockets',
     'What is Redis?',
@@ -119,7 +121,7 @@ async function runTest() {
     await runFullPipeline(prompts[i]);
 
     // Small delay between prompts
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 200));
   }
 
   console.log('\n═══════════════════════════════════════════════════════════════');

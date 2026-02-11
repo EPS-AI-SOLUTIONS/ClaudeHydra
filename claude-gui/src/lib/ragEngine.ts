@@ -108,7 +108,8 @@ const CODE_BLOCK_PATTERN = /```(\w+)?\n([\s\S]*?)```/g;
 /** Function/class patterns for code splitting */
 const CODE_SPLIT_PATTERNS = {
   javascript: /(?=(?:export\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+\w+)/g,
-  typescript: /(?=(?:export\s+)?(?:async\s+)?(?:function|class|interface|type|const|let|var)\s+\w+)/g,
+  typescript:
+    /(?=(?:export\s+)?(?:async\s+)?(?:function|class|interface|type|const|let|var)\s+\w+)/g,
   python: /(?=(?:def|class|async def)\s+\w+)/g,
   rust: /(?=(?:pub\s+)?(?:fn|struct|enum|impl|trait|mod)\s+)/g,
   go: /(?=(?:func|type|var|const)\s+)/g,
@@ -132,7 +133,7 @@ async function hashContent(content: string): Promise<string> {
   const data = encoder.encode(content);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
@@ -149,9 +150,12 @@ async function getCachedEmbedding(contentHash: string, model: string): Promise<n
 
   // Check IndexedDB via Tauri backend
   try {
-    const cached = await invoke<{ vector: number[]; timestamp: number } | null>('get_embedding_cache', {
-      key: cacheKey,
-    });
+    const cached = await invoke<{ vector: number[]; timestamp: number } | null>(
+      'get_embedding_cache',
+      {
+        key: cacheKey,
+      },
+    );
 
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       // Populate memory cache
@@ -220,15 +224,12 @@ export function clearExpiredCache(): number {
  * @param options - Chunking configuration
  * @returns Array of text chunks with metadata
  */
-export function semanticChunk(
-  text: string,
-  options: Partial<ChunkingOptions> = {}
-): TextChunk[] {
+export function semanticChunk(text: string, options: Partial<ChunkingOptions> = {}): TextChunk[] {
   const opts = { ...DEFAULT_CHUNK_OPTIONS, ...options };
   const chunks: TextChunk[] = [];
 
   // Split on sentence boundaries
-  const sentences = text.split(SENTENCE_BOUNDARIES).filter(s => s.trim().length > 0);
+  const sentences = text.split(SENTENCE_BOUNDARIES).filter((s) => s.trim().length > 0);
 
   let currentChunk = '';
   let currentStart = 0;
@@ -239,7 +240,10 @@ export function semanticChunk(
     const trimmedSentence = sentence.trim();
 
     // Check if adding this sentence would exceed max size
-    if (currentChunk.length + trimmedSentence.length > opts.maxChunkSize && currentChunk.length >= opts.minChunkSize) {
+    if (
+      currentChunk.length + trimmedSentence.length > opts.maxChunkSize &&
+      currentChunk.length >= opts.minChunkSize
+    ) {
       // Save current chunk
       chunks.push({
         id: `chunk_${chunkIndex}`,
@@ -255,7 +259,7 @@ export function semanticChunk(
       const overlapText = currentChunk.slice(-overlapSize);
 
       // Start new chunk with overlap
-      currentChunk = overlapText + ' ' + trimmedSentence;
+      currentChunk = `${overlapText} ${trimmedSentence}`;
       currentStart = textOffset - overlapSize;
       chunkIndex++;
     } else {
@@ -292,8 +296,10 @@ function detectLanguage(code: string): string {
   if (code.includes('fn ') && code.includes('->')) return 'rust';
   if (code.includes('def ') && code.includes(':')) return 'python';
   if (code.includes('func ') && code.includes('package')) return 'go';
-  if (code.includes('interface ') || code.includes(': string') || code.includes(': number')) return 'typescript';
-  if (code.includes('function ') || code.includes('=>') || code.includes('const ')) return 'javascript';
+  if (code.includes('interface ') || code.includes(': string') || code.includes(': number'))
+    return 'typescript';
+  if (code.includes('function ') || code.includes('=>') || code.includes('const '))
+    return 'javascript';
   return 'unknown';
 }
 
@@ -305,10 +311,10 @@ function splitCodeBlocks(code: string, language: string): string[] {
 
   if (!pattern) {
     // Fallback: split on double newlines
-    return code.split(/\n\n+/).filter(b => b.trim().length > 0);
+    return code.split(/\n\n+/).filter((b) => b.trim().length > 0);
   }
 
-  const blocks = code.split(pattern).filter(b => b.trim().length > 0);
+  const blocks = code.split(pattern).filter((b) => b.trim().length > 0);
   return blocks.length > 0 ? blocks : [code];
 }
 
@@ -319,10 +325,7 @@ function splitCodeBlocks(code: string, language: string): string[] {
  * @param options - Chunking configuration
  * @returns Array of chunks with code blocks intact
  */
-export function codeAwareChunk(
-  text: string,
-  options: Partial<ChunkingOptions> = {}
-): TextChunk[] {
+export function codeAwareChunk(text: string, options: Partial<ChunkingOptions> = {}): TextChunk[] {
   const opts = { ...DEFAULT_CHUNK_OPTIONS, ...options };
   const chunks: TextChunk[] = [];
   let chunkIndex = 0;
@@ -446,7 +449,7 @@ const isTauri = (): boolean =>
  */
 export async function getEmbedding(
   text: string,
-  model: EmbeddingModel = EMBEDDING_MODELS[0]
+  model: EmbeddingModel = EMBEDDING_MODELS[0],
 ): Promise<EmbeddingResult> {
   // Generate content hash for caching
   const contentHash = await hashContent(text);
@@ -473,7 +476,9 @@ export async function getEmbedding(
         prompt: text,
       });
     } catch (error) {
-      throw new Error(`Embedding failed with ${model.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Embedding failed with ${model.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   } else {
     // Browser fallback: call Ollama API directly
@@ -491,10 +496,12 @@ export async function getEmbedding(
         throw new Error(`Ollama API error: ${response.status}`);
       }
 
-      const data = await response.json() as { embedding: number[] };
+      const data = (await response.json()) as { embedding: number[] };
       vector = data.embedding;
     } catch (error) {
-      throw new Error(`Embedding failed with ${model.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Embedding failed with ${model.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -524,7 +531,7 @@ export async function getEmbedding(
  */
 export async function embeddingWithFallback(
   text: string,
-  preferredModels: EmbeddingModel[] = EMBEDDING_MODELS
+  preferredModels: EmbeddingModel[] = EMBEDDING_MODELS,
 ): Promise<EmbeddingResult> {
   const errors: string[] = [];
 
@@ -555,7 +562,7 @@ export async function embeddingWithFallback(
  */
 export async function batchEmbed(
   chunks: TextChunk[],
-  concurrency: number = 5
+  concurrency: number = 5,
 ): Promise<(EmbeddingResult & { chunkId: string })[]> {
   const results: (EmbeddingResult & { chunkId: string })[] = [];
 
@@ -567,7 +574,7 @@ export async function batchEmbed(
       batch.map(async (chunk) => {
         const result = await embeddingWithFallback(chunk.content);
         return { ...result, chunkId: chunk.id };
-      })
+      }),
     );
 
     results.push(...batchResults);
@@ -613,16 +620,14 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 export function findSimilarChunks(
   queryEmbedding: number[],
   chunkEmbeddings: { chunkId: string; vector: number[] }[],
-  topK: number = 5
+  topK: number = 5,
 ): { chunkId: string; similarity: number }[] {
   const similarities = chunkEmbeddings.map(({ chunkId, vector }) => ({
     chunkId,
     similarity: cosineSimilarity(queryEmbedding, vector),
   }));
 
-  return similarities
-    .sort((a, b) => b.similarity - a.similarity)
-    .slice(0, topK);
+  return similarities.sort((a, b) => b.similarity - a.similarity).slice(0, topK);
 }
 
 /**
@@ -637,7 +642,7 @@ export function estimateTokens(text: string): number {
  * Get embedding model by name
  */
 export function getModelByName(name: string): EmbeddingModel | undefined {
-  return EMBEDDING_MODELS.find(m => m.name === name);
+  return EMBEDDING_MODELS.find((m) => m.name === name);
 }
 
 // ============================================================================

@@ -1,17 +1,17 @@
-import { useState, useMemo } from 'react';
 import {
+  Check,
+  Clock,
+  Cpu,
+  Edit2,
+  MessageSquare,
   Plus,
   Search,
-  MessageSquare,
-  Trash2,
-  Edit2,
-  Check,
-  X,
-  Clock,
   Sparkles,
-  Cpu,
+  Trash2,
+  X,
 } from 'lucide-react';
-import { useClaudeStore, type ChatSession } from '../stores/claudeStore';
+import { useMemo, useState } from 'react';
+import { type ChatSession, useClaudeStore } from '../stores/claudeStore';
 
 const PROVIDER_ICONS = {
   claude: Sparkles,
@@ -59,8 +59,8 @@ export function SessionManager() {
       (session: ChatSession) =>
         session.title.toLowerCase().includes(query) ||
         chatHistory[session.id]?.some((msg: { content: string }) =>
-          msg.content.toLowerCase().includes(query)
-        )
+          msg.content.toLowerCase().includes(query),
+        ),
     );
   }, [chatSessions, chatHistory, searchQuery]);
 
@@ -160,10 +160,7 @@ export function SessionManager() {
               >
                 {/* Provider icon */}
                 <div className="flex items-start gap-2">
-                  <ProviderIcon
-                    size={14}
-                    className={`mt-0.5 ${providerColor}`}
-                  />
+                  <ProviderIcon size={14} className={`mt-0.5 ${providerColor}`} />
 
                   <div className="flex-1 min-w-0">
                     {/* Title (editable) */}
@@ -178,7 +175,6 @@ export function SessionManager() {
                             if (e.key === 'Escape') cancelEdit();
                           }}
                           className="flex-1 bg-matrix-bg-primary text-matrix-text text-xs px-1.5 py-0.5 rounded border border-matrix-accent outline-none"
-                          autoFocus
                           onClick={(e) => e.stopPropagation()}
                         />
                         <button
@@ -256,7 +252,10 @@ export function SessionManager() {
 
       {/* Footer with provider selector */}
       <div className="px-3 py-2 border-t border-matrix-border text-[10px] text-matrix-text-dim">
-        Default: <span className={PROVIDER_COLORS[defaultProvider as keyof typeof PROVIDER_COLORS]}>{defaultProvider}</span>
+        Default:{' '}
+        <span className={PROVIDER_COLORS[defaultProvider as keyof typeof PROVIDER_COLORS]}>
+          {defaultProvider}
+        </span>
       </div>
     </div>
   );

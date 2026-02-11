@@ -8,31 +8,31 @@ class OllamaMock {
   }
 
   async generate(request) {
-    console.log('[Mock] Generating response for:', request.prompt.substring(0, 50) + '...');
-    
+    console.log('[Mock] Generating response for:', `${request.prompt.substring(0, 50)}...`);
+
     if (request.format === 'json') {
       return {
-        response: JSON.stringify({ mock: true, result: "Success" }),
-        done: true
+        response: JSON.stringify({ mock: true, result: 'Success' }),
+        done: true,
       };
     }
 
     return {
-      response: "This is a mock response from Ollama.",
-      done: true
+      response: 'This is a mock response from Ollama.',
+      done: true,
     };
   }
 
   async list() {
     return {
-      models: this.models.map(name => ({ name }))
+      models: this.models.map((name) => ({ name })),
     };
   }
 
-  async chat(request) {
-     return {
+  async chat(_request) {
+    return {
       message: { role: 'assistant', content: 'Mock chat response' },
-      done: true
+      done: true,
     };
   }
 }

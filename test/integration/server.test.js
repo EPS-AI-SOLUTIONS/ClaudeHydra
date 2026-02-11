@@ -1,13 +1,12 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import ToolRegistry from '../../src/tool-registry.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe('Server Integration & Tool Loading', () => {
-  const toolsDir = path.join(__dirname, '../../src/tools');
+  const _toolsDir = path.join(__dirname, '../../src/tools');
 
   // Reset registry before each test to avoid duplicate registration errors
   beforeEach(() => {
@@ -17,16 +16,16 @@ describe('Server Integration & Tool Loading', () => {
   test('ToolRegistry should load all tools from src/tools', async () => {
     await ToolRegistry.loadTools();
     const tools = ToolRegistry.getAllTools();
-    
+
     // Check if we have tools
     expect(tools.length).toBeGreaterThan(0);
-    
+
     // Check for specific tools created in previous blocks
-    const names = tools.map(t => t.name);
-    expect(names).toContain('read_file');       // Filesystem
+    const names = tools.map((t) => t.name);
+    expect(names).toContain('read_file'); // Filesystem
     expect(names).toContain('run_shell_command'); // Shell
-    expect(names).toContain('knowledge_add');   // Knowledge
-    expect(names).toContain('hydra_swarm');     // Swarm Bridge
+    expect(names).toContain('knowledge_add'); // Knowledge
+    expect(names).toContain('hydra_swarm'); // Swarm Bridge
   });
 
   test('ToolRegistry should return tool executable', async () => {

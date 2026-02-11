@@ -5,7 +5,7 @@
  */
 
 import type { Page } from '@playwright/test';
-import { emitTauriEvent, emitStreamChunk } from './tauri-mocks';
+import { emitStreamChunk, emitTauriEvent } from './tauri-mocks';
 import { AGENTS } from './test-data';
 
 export class StreamSimulator {
@@ -30,7 +30,7 @@ export class StreamSimulator {
    */
   async simulateTypingResponse(
     text: string,
-    options: { delayMs?: number; chunkSize?: number; eventType?: string } = {}
+    options: { delayMs?: number; chunkSize?: number; eventType?: string } = {},
   ): Promise<void> {
     const { delayMs = 30, chunkSize = 1, eventType = 'ollama-stream-chunk' } = options;
 
@@ -117,7 +117,7 @@ export class StreamSimulator {
     for (const agent of agentList) {
       await this.simulateAgentResponse(
         agent,
-        `Analysis complete. All checks passed for ${agent}'s domain.`
+        `Analysis complete. All checks passed for ${agent}'s domain.`,
       );
       await this.page.waitForTimeout(80);
     }
@@ -170,16 +170,13 @@ export class StreamSimulator {
    */
   async simulateTimeout(afterMs = 5000): Promise<void> {
     await this.page.waitForTimeout(afterMs);
-    await this.emitError('Connection timed out after ' + afterMs + 'ms');
+    await this.emitError(`Connection timed out after ${afterMs}ms`);
   }
 
   /**
    * Simulate partial response followed by error.
    */
-  async simulatePartialThenError(
-    partialText: string,
-    error: string
-  ): Promise<void> {
+  async simulatePartialThenError(partialText: string, error: string): Promise<void> {
     // Send partial
     await this.simulateTypingResponse(partialText, { delayMs: 20 });
     await this.page.waitForTimeout(200);

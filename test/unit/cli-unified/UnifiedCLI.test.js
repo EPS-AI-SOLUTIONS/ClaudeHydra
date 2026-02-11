@@ -3,7 +3,7 @@
  * @module test/unit/cli-unified/UnifiedCLI.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Hoist mocks to ensure they're applied before imports
 const mockConfigManager = {
@@ -17,11 +17,11 @@ const mockConfigManager = {
       'input.vimMode': false,
       'models.llamacpp.enabled': true,
       'models.llamacpp.models.main': 'main',
-      'ui.streamingEnabled': true
+      'ui.streamingEnabled': true,
     };
     return defaults[key];
   }),
-  saveConfig: vi.fn()
+  saveConfig: vi.fn(),
 };
 
 const mockTheme = {
@@ -30,8 +30,8 @@ const mockTheme = {
     highlight: (s) => s,
     dim: (s) => s,
     info: (s) => s,
-    success: (s) => s
-  }
+    success: (s) => s,
+  },
 };
 
 const mockOutput = {
@@ -41,13 +41,13 @@ const mockOutput = {
   success: vi.fn(),
   error: vi.fn(),
   renderMarkdown: vi.fn(),
-  stopSpinner: vi.fn()
+  stopSpinner: vi.fn(),
 };
 
 const mockInput = {
   read: vi.fn().mockResolvedValue({ value: '', cancelled: true }),
   readMultiline: vi.fn(),
-  close: vi.fn()
+  close: vi.fn(),
 };
 
 const mockHistory = { add: vi.fn() };
@@ -89,81 +89,81 @@ class MockSwarmMode {
 
 // Mock all dependencies
 vi.mock('../../../src/mcp/client-manager.js', () => ({
-  initializeMCPClientManager: vi.fn().mockRejectedValue(new Error('MCP not configured'))
+  initializeMCPClientManager: vi.fn().mockRejectedValue(new Error('MCP not configured')),
 }));
 
 vi.mock('../../../src/hydra/providers/llamacpp-bridge.js', () => ({
-  getLlamaCppBridge: vi.fn(() => mockBridge)
+  getLlamaCppBridge: vi.fn(() => mockBridge),
 }));
 
 vi.mock('../../../src/cli-unified/core/ConfigManager.js', () => ({
   getConfigManager: vi.fn(() => mockConfigManager),
-  ConfigManager: vi.fn()
+  ConfigManager: vi.fn(),
 }));
 
 vi.mock('../../../src/cli-unified/core/ThemeRegistry.js', () => ({
   themeRegistry: {
     set: vi.fn(),
-    getCurrent: vi.fn(() => mockTheme)
+    getCurrent: vi.fn(() => mockTheme),
   },
-  getAutoTheme: vi.fn(() => 'hydra')
+  getAutoTheme: vi.fn(() => 'hydra'),
 }));
 
 vi.mock('../../../src/cli-unified/output/UnifiedOutputRenderer.js', () => ({
   createOutputRenderer: vi.fn(() => mockOutput),
-  UnifiedOutputRenderer: vi.fn()
+  UnifiedOutputRenderer: vi.fn(),
 }));
 
 vi.mock('../../../src/cli-unified/input/UnifiedInputHandler.js', () => ({
   createInputHandler: vi.fn(() => mockInput),
-  UnifiedInputHandler: vi.fn()
+  UnifiedInputHandler: vi.fn(),
 }));
 
 vi.mock('../../../src/cli-unified/history/UnifiedHistoryManager.js', () => ({
   createHistoryManager: vi.fn(() => mockHistory),
-  UnifiedHistoryManager: vi.fn()
+  UnifiedHistoryManager: vi.fn(),
 }));
 
 vi.mock('../../../src/cli-unified/processing/UnifiedCommandParser.js', () => ({
   createCommandParser: vi.fn(() => mockCommandParser),
-  UnifiedCommandParser: vi.fn()
+  UnifiedCommandParser: vi.fn(),
 }));
 
 vi.mock('../../../src/cli-unified/processing/AgentRouter.js', () => ({
   createAgentRouter: vi.fn(() => mockAgentRouter),
-  AgentRouter: vi.fn()
+  AgentRouter: vi.fn(),
 }));
 
 vi.mock('../../../src/cli-unified/processing/ContextManager.js', () => ({
   createContextManager: vi.fn(() => mockContext),
-  ContextManager: vi.fn()
+  ContextManager: vi.fn(),
 }));
 
 vi.mock('../../../src/cli-unified/processing/CacheManager.js', () => ({
   createCacheManager: vi.fn(() => mockCache),
-  CacheManager: vi.fn()
+  CacheManager: vi.fn(),
 }));
 
 vi.mock('../../../src/cli-unified/processing/QueryProcessor.js', () => ({
   createQueryProcessor: vi.fn(() => mockQueryProcessor),
-  QueryProcessor: vi.fn()
+  QueryProcessor: vi.fn(),
 }));
 
 vi.mock('../../../src/cli-unified/session/SessionManager.js', () => ({
   createSessionManager: vi.fn(() => mockSession),
-  SessionManager: vi.fn()
+  SessionManager: vi.fn(),
 }));
 
 vi.mock('../../../src/cli-unified/modes/BasicMode.js', () => ({
-  BasicMode: MockBasicMode
+  BasicMode: MockBasicMode,
 }));
 
 vi.mock('../../../src/cli-unified/modes/EnhancedMode.js', () => ({
-  EnhancedMode: MockEnhancedMode
+  EnhancedMode: MockEnhancedMode,
 }));
 
 vi.mock('../../../src/cli-unified/modes/SwarmMode.js', () => ({
-  SwarmMode: MockSwarmMode
+  SwarmMode: MockSwarmMode,
 }));
 
 describe('UnifiedCLI', () => {

@@ -271,10 +271,7 @@ export function generateText(length: number): string {
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
-export function createTestMessage(
-  role: 'user' | 'assistant' | 'system',
-  content: string
-) {
+export function createTestMessage(role: 'user' | 'assistant' | 'system', content: string) {
   return {
     id: generateTestId(),
     role,

@@ -11,7 +11,10 @@ interface SuspenseFallbackProps {
  * @param message - Optional custom loading message
  * @param size - Size variant: sm (12px), md (16px), lg (20px)
  */
-export function SuspenseFallback({ message = 'Loading module...', size = 'md' }: SuspenseFallbackProps) {
+export function SuspenseFallback({
+  message = 'Loading module...',
+  size = 'md',
+}: SuspenseFallbackProps) {
   const sizeMap = {
     sm: 'w-8 h-8',
     md: 'w-12 h-12',

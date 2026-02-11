@@ -1,12 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
-import type {
-  ApprovalHistoryEntry,
-  ApprovalRule,
-  SessionStatus,
-} from '../types/claude';
+import type { ApprovalHistoryEntry, ApprovalRule, SessionStatus } from '../types/claude';
 
 // Check if running in Tauri (v2 uses __TAURI_INTERNALS__)
-const isTauri = () => typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+const isTauri = () =>
+  typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
 // Safe invoke that returns mock data in browser mode
 const safeInvoke = async <T>(cmd: string, args?: Record<string, unknown>): Promise<T> => {
@@ -20,11 +17,7 @@ const safeInvoke = async <T>(cmd: string, args?: Record<string, unknown>): Promi
 // Claude IPC wrapper for Tauri commands
 export const claudeIpc = {
   // Session management
-  startSession: (
-    workingDir: string,
-    cliPath: string,
-    initialPrompt?: string
-  ): Promise<string> =>
+  startSession: (workingDir: string, cliPath: string, initialPrompt?: string): Promise<string> =>
     safeInvoke('start_claude_session', {
       workingDir,
       cliPath,
@@ -56,8 +49,7 @@ export const claudeIpc = {
   },
 
   // Input/Output
-  sendInput: (input: string): Promise<void> =>
-    safeInvoke('send_input', { input }),
+  sendInput: (input: string): Promise<void> => safeInvoke('send_input', { input }),
 
   // Approval actions
   approve: (): Promise<void> => safeInvoke('approve_action'),
@@ -112,9 +104,8 @@ export const parallelIpc = {
   batchGenerate: (
     model: string,
     prompts: string[],
-    options?: Record<string, unknown>
-  ): Promise<BatchResult[]> =>
-    safeInvoke('ollama_batch_generate', { model, prompts, options }),
+    options?: Record<string, unknown>,
+  ): Promise<BatchResult[]> => safeInvoke('ollama_batch_generate', { model, prompts, options }),
 };
 
 // ============================================================================
@@ -205,9 +196,7 @@ export const debugIpc = {
 
   // Get IPC call history
   getIpcHistory: (limit?: number): Promise<IpcCall[]> =>
-    isTauri()
-      ? safeInvoke('debug_get_ipc_history', { limit })
-      : Promise.resolve([]),
+    isTauri() ? safeInvoke('debug_get_ipc_history', { limit }) : Promise.resolve([]),
 
   // Get full debug snapshot
   getSnapshot: (): Promise<DebugSnapshot> =>
@@ -236,19 +225,15 @@ export const debugIpc = {
         }),
 
   // Clear all logs
-  clearLogs: (): Promise<void> =>
-    safeInvoke('debug_clear_logs'),
+  clearLogs: (): Promise<void> => safeInvoke('debug_clear_logs'),
 
   // Add a log entry from frontend
   addLog: (level: LogLevel, source: string, message: string, details?: string): Promise<void> =>
     safeInvoke('debug_add_log', { level, source, message, details }),
 
   // Start real-time streaming
-  startStreaming: (): Promise<void> =>
-    safeInvoke('debug_start_streaming'),
+  startStreaming: (): Promise<void> => safeInvoke('debug_start_streaming'),
 
   // Stop streaming
-  stopStreaming: (): Promise<void> =>
-    safeInvoke('debug_stop_streaming'),
+  stopStreaming: (): Promise<void> => safeInvoke('debug_stop_streaming'),
 };
-

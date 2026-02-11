@@ -3,24 +3,24 @@
  * @module test/unit/utils/array.test
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
+  average,
   chunk,
-  unique,
-  groupBy,
-  shuffle,
+  compact,
+  difference,
+  find,
   flatten,
+  groupBy,
+  intersection,
+  partition,
+  shuffle,
+  sortBy,
+  sum,
   take,
   takeLast,
-  compact,
-  intersection,
-  difference,
   union,
-  partition,
-  find,
-  sum,
-  average,
-  sortBy
+  unique,
 } from '../../../src/utils/array.js';
 
 describe('Array Utilities', () => {
@@ -34,7 +34,10 @@ describe('Array Utilities', () => {
     });
 
     it('should handle exact division', () => {
-      expect(chunk([1, 2, 3, 4], 2)).toEqual([[1, 2], [3, 4]]);
+      expect(chunk([1, 2, 3, 4], 2)).toEqual([
+        [1, 2],
+        [3, 4],
+      ]);
     });
 
     it('should return empty array for non-array input', () => {
@@ -61,11 +64,11 @@ describe('Array Utilities', () => {
       const users = [
         { id: 1, name: 'John' },
         { id: 2, name: 'Jane' },
-        { id: 1, name: 'Johnny' }
+        { id: 1, name: 'Johnny' },
       ];
-      expect(unique(users, u => u.id)).toEqual([
+      expect(unique(users, (u) => u.id)).toEqual([
         { id: 1, name: 'John' },
-        { id: 2, name: 'Jane' }
+        { id: 2, name: 'Jane' },
       ]);
     });
 
@@ -80,24 +83,27 @@ describe('Array Utilities', () => {
       const items = [
         { category: 'A', value: 1 },
         { category: 'B', value: 2 },
-        { category: 'A', value: 3 }
+        { category: 'A', value: 3 },
       ];
 
       const grouped = groupBy(items, 'category');
 
       expect(grouped).toEqual({
-        A: [{ category: 'A', value: 1 }, { category: 'A', value: 3 }],
-        B: [{ category: 'B', value: 2 }]
+        A: [
+          { category: 'A', value: 1 },
+          { category: 'A', value: 3 },
+        ],
+        B: [{ category: 'B', value: 2 }],
       });
     });
 
     it('should group by function', () => {
       const numbers = [1, 2, 3, 4, 5, 6];
-      const grouped = groupBy(numbers, n => n % 2 === 0 ? 'even' : 'odd');
+      const grouped = groupBy(numbers, (n) => (n % 2 === 0 ? 'even' : 'odd'));
 
       expect(grouped).toEqual({
         odd: [1, 3, 5],
-        even: [2, 4, 6]
+        even: [2, 4, 6],
       });
     });
 
@@ -137,7 +143,12 @@ describe('Array Utilities', () => {
 
   describe('flatten()', () => {
     it('should flatten one level by default', () => {
-      expect(flatten([[1, 2], [3, 4]])).toEqual([1, 2, 3, 4]);
+      expect(
+        flatten([
+          [1, 2],
+          [3, 4],
+        ]),
+      ).toEqual([1, 2, 3, 4]);
     });
 
     it('should flatten to specified depth', () => {
@@ -191,8 +202,7 @@ describe('Array Utilities', () => {
 
   describe('compact()', () => {
     it('should remove falsy values', () => {
-      expect(compact([0, 1, false, 2, '', 3, null, undefined, NaN]))
-        .toEqual([1, 2, 3]);
+      expect(compact([0, 1, false, 2, '', 3, null, undefined, NaN])).toEqual([1, 2, 3]);
     });
 
     it('should keep truthy values', () => {
@@ -253,7 +263,7 @@ describe('Array Utilities', () => {
 
   describe('partition()', () => {
     it('should split array by predicate', () => {
-      const [even, odd] = partition([1, 2, 3, 4, 5], n => n % 2 === 0);
+      const [even, odd] = partition([1, 2, 3, 4, 5], (n) => n % 2 === 0);
 
       expect(even).toEqual([2, 4]);
       expect(odd).toEqual([1, 3, 5]);
@@ -266,15 +276,15 @@ describe('Array Utilities', () => {
 
   describe('find()', () => {
     it('should find first matching element', () => {
-      expect(find([1, 2, 3], n => n > 1)).toBe(2);
+      expect(find([1, 2, 3], (n) => n > 1)).toBe(2);
     });
 
     it('should return default value when not found', () => {
-      expect(find([1, 2, 3], n => n > 10, 'default')).toBe('default');
+      expect(find([1, 2, 3], (n) => n > 10, 'default')).toBe('default');
     });
 
     it('should return undefined as default when not found', () => {
-      expect(find([1, 2, 3], n => n > 10)).toBeUndefined();
+      expect(find([1, 2, 3], (n) => n > 10)).toBeUndefined();
     });
 
     it('should return default for non-array input', () => {

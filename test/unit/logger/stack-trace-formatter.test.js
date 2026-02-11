@@ -3,13 +3,12 @@
  */
 
 import {
-  StackTraceFormatter,
-  parseStackTrace,
-  parseStackFrame,
-  getStackFormatter,
-  resetStackFormatter,
   formatStackTrace,
-  getErrorLocation
+  getStackFormatter,
+  parseStackFrame,
+  parseStackTrace,
+  resetStackFormatter,
+  StackTraceFormatter,
 } from '../../../src/logger/stack-trace-formatter.js';
 
 describe('StackTraceFormatter', () => {
@@ -21,7 +20,7 @@ describe('StackTraceFormatter', () => {
       useColors: false,
       showNodeModules: false,
       showInternals: false,
-      maxFrames: 10
+      maxFrames: 10,
     });
   });
 

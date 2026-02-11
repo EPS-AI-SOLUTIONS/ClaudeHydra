@@ -3,24 +3,24 @@
  * @module test/unit/utils/env.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  deleteEnv,
   getEnv,
-  requireEnv,
+  getEnvironment,
+  getEnvMultiple,
+  hasEnv,
+  isDevelopment,
+  isProduction,
+  isTest,
   parseEnvBool,
-  parseEnvNumber,
+  parseEnvCustom,
   parseEnvInt,
   parseEnvJson,
   parseEnvList,
-  isProduction,
-  isDevelopment,
-  isTest,
-  getEnvironment,
+  parseEnvNumber,
+  requireEnv,
   setEnv,
-  deleteEnv,
-  hasEnv,
-  getEnvMultiple,
-  parseEnvCustom
 } from '../../../src/utils/env.js';
 
 describe('Environment Utilities', () => {
@@ -61,20 +61,21 @@ describe('Environment Utilities', () => {
 
     it('should throw if variable is not set', () => {
       delete process.env.MISSING_VAR;
-      expect(() => requireEnv('MISSING_VAR'))
-        .toThrow("Required environment variable 'MISSING_VAR' is not set");
+      expect(() => requireEnv('MISSING_VAR')).toThrow(
+        "Required environment variable 'MISSING_VAR' is not set",
+      );
     });
 
     it('should throw if variable is empty string', () => {
       process.env.EMPTY_VAR = '';
-      expect(() => requireEnv('EMPTY_VAR'))
-        .toThrow("Required environment variable 'EMPTY_VAR' is not set");
+      expect(() => requireEnv('EMPTY_VAR')).toThrow(
+        "Required environment variable 'EMPTY_VAR' is not set",
+      );
     });
 
     it('should throw with custom error message', () => {
       delete process.env.MISSING_VAR;
-      expect(() => requireEnv('MISSING_VAR', 'Custom error'))
-        .toThrow('Custom error');
+      expect(() => requireEnv('MISSING_VAR', 'Custom error')).toThrow('Custom error');
     });
   });
 
@@ -332,21 +333,25 @@ describe('Environment Utilities', () => {
   describe('parseEnvCustom()', () => {
     it('should parse with custom parser', () => {
       process.env.CUSTOM_VAR = 'hello';
-      const result = parseEnvCustom('CUSTOM_VAR', v => v.toUpperCase());
+      const result = parseEnvCustom('CUSTOM_VAR', (v) => v.toUpperCase());
       expect(result).toBe('HELLO');
     });
 
     it('should return default if parser throws', () => {
       process.env.CUSTOM_VAR = 'invalid';
-      const result = parseEnvCustom('CUSTOM_VAR', () => {
-        throw new Error('Parse error');
-      }, 'default');
+      const result = parseEnvCustom(
+        'CUSTOM_VAR',
+        () => {
+          throw new Error('Parse error');
+        },
+        'default',
+      );
       expect(result).toBe('default');
     });
 
     it('should return default for missing variable', () => {
       delete process.env.MISSING_VAR;
-      const result = parseEnvCustom('MISSING_VAR', v => v, 'default');
+      const result = parseEnvCustom('MISSING_VAR', (v) => v, 'default');
       expect(result).toBe('default');
     });
   });

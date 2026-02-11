@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TerminalView } from './TerminalView';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useClaudeStore } from '../stores/claudeStore';
-import { mockInvoke } from '../test/setup';
+import { TerminalView } from './TerminalView';
 
 // Mutable mock object that can be modified per test
 const mockUseClaude = {
@@ -52,8 +51,8 @@ describe('TerminalView', () => {
   describe('Rendering', () => {
     it('renders empty state correctly', () => {
       render(<TerminalView />);
-      expect(screen.getByText('No output yet.')).toBeInTheDocument();
-      expect(screen.getByText('Start a session to begin.')).toBeInTheDocument();
+      expect(screen.getByText('Brak wiadomości.')).toBeInTheDocument();
+      expect(screen.getByText('Rozpocznij rozmowę poniżej.')).toBeInTheDocument();
     });
 
     it('renders output lines correctly', () => {
@@ -119,7 +118,7 @@ describe('TerminalView', () => {
       await user.type(input, 'test message');
 
       const form = input.closest('form');
-      fireEvent.submit(form!);
+      fireEvent.submit(form as HTMLFormElement);
 
       await waitFor(() => {
         expect(input).toHaveValue('');
@@ -127,14 +126,14 @@ describe('TerminalView', () => {
     });
 
     it('does not submit empty input', async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       render(<TerminalView />);
 
       const input = screen.getByPlaceholderText('Type a message or command...');
       const form = input.closest('form');
 
       // Submit empty form
-      fireEvent.submit(form!);
+      fireEvent.submit(form as HTMLFormElement);
 
       // Input should remain empty and no error
       expect(input).toHaveValue('');
@@ -150,13 +149,10 @@ describe('TerminalView', () => {
       await user.type(input, '  test with spaces  ');
 
       const form = input.closest('form');
-      fireEvent.submit(form!);
+      fireEvent.submit(form as HTMLFormElement);
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith(
-          '[INPUT] Sending:',
-          'test with spaces'
-        );
+        expect(consoleSpy).toHaveBeenCalledWith('[INPUT] Sending:', 'test with spaces');
       });
 
       consoleSpy.mockRestore();
@@ -189,62 +185,36 @@ describe('TerminalView', () => {
   });
 
   describe('Clear output', () => {
-    it('clears output when trash button is clicked', async () => {
-      const user = userEvent.setup();
-
+    it('clears output via store action', async () => {
       useClaudeStore.setState({
-        outputLines: [
-          { id: '1', timestamp: new Date(), type: 'system', content: 'Test message' },
-        ],
+        outputLines: [{ id: '1', timestamp: new Date(), type: 'system', content: 'Test message' }],
       });
 
-      render(<TerminalView />);
+      const { rerender } = render(<TerminalView />);
       expect(screen.getByText('Test message')).toBeInTheDocument();
 
-      const clearButton = screen.getByTitle('Clear output');
-      await user.click(clearButton);
+      // Clear via store (clear button was removed in UI refactor)
+      useClaudeStore.getState().clearOutput();
+      rerender(<TerminalView />);
 
       await waitFor(() => {
-        expect(screen.getByText('No output yet.')).toBeInTheDocument();
+        expect(screen.getByText('Brak wiadomości.')).toBeInTheDocument();
       });
     });
   });
 
-  describe('Direct test button', () => {
-    it('renders direct test button (Zap icon)', () => {
+  describe('Submit button', () => {
+    it('renders submit button with Send icon', () => {
       render(<TerminalView />);
-      const testButton = screen.getByTitle('Direct IPC Test');
-      expect(testButton).toBeInTheDocument();
+      const submitButton = screen.getByRole('button', { name: '' });
+      expect(submitButton).toBeInTheDocument();
+      expect(submitButton).toHaveAttribute('type', 'submit');
     });
 
-    it('calls IPC directly when test button is clicked', async () => {
-      const user = userEvent.setup();
-      const consoleSpy = vi.spyOn(console, 'log');
-
-      mockInvoke.mockImplementation((cmd: string) => {
-        if (cmd === 'get_session_status') {
-          return Promise.resolve({
-            is_active: true,
-            pending_approval: false,
-            auto_approve_all: false,
-            approved_count: 0,
-            denied_count: 0,
-            auto_approved_count: 0,
-          });
-        }
-        return Promise.resolve();
-      });
-
+    it('disables submit button when input is empty', () => {
       render(<TerminalView />);
-
-      const testButton = screen.getByTitle('Direct IPC Test');
-      await user.click(testButton);
-
-      await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith('[DIRECT TEST] Starting...');
-      });
-
-      consoleSpy.mockRestore();
+      const submitButton = document.querySelector('button[type="submit"]');
+      expect(submitButton).toBeDisabled();
     });
   });
 
@@ -303,21 +273,17 @@ describe('TerminalView - Output line styling', () => {
 
   it('applies correct CSS classes for assistant messages', () => {
     useClaudeStore.setState({
-      outputLines: [
-        { id: '1', timestamp: new Date(), type: 'assistant', content: 'AI response' },
-      ],
+      outputLines: [{ id: '1', timestamp: new Date(), type: 'assistant', content: 'AI response' }],
     });
 
     render(<TerminalView />);
     const content = screen.getByText('AI response');
-    expect(content).toHaveClass('text-matrix-accent');
+    expect(content).toHaveClass('text-matrix-text');
   });
 
   it('applies correct CSS classes for error messages', () => {
     useClaudeStore.setState({
-      outputLines: [
-        { id: '1', timestamp: new Date(), type: 'error', content: 'Error message' },
-      ],
+      outputLines: [{ id: '1', timestamp: new Date(), type: 'error', content: 'Error message' }],
     });
 
     render(<TerminalView />);
@@ -327,26 +293,22 @@ describe('TerminalView - Output line styling', () => {
 
   it('applies correct CSS classes for tool messages', () => {
     useClaudeStore.setState({
-      outputLines: [
-        { id: '1', timestamp: new Date(), type: 'tool', content: 'Tool: Bash' },
-      ],
+      outputLines: [{ id: '1', timestamp: new Date(), type: 'tool', content: 'Tool: Bash' }],
     });
 
     render(<TerminalView />);
     const content = screen.getByText('Tool: Bash');
-    expect(content).toHaveClass('text-blue-400');
+    expect(content).toHaveClass('text-blue-300');
   });
 
   it('applies correct CSS classes for system messages', () => {
     useClaudeStore.setState({
-      outputLines: [
-        { id: '1', timestamp: new Date(), type: 'system', content: 'System info' },
-      ],
+      outputLines: [{ id: '1', timestamp: new Date(), type: 'system', content: 'System info' }],
     });
 
     render(<TerminalView />);
     const content = screen.getByText('System info');
-    expect(content).toHaveClass('text-yellow-400');
+    expect(content).toHaveClass('text-matrix-text-dim');
   });
 
   it('applies correct CSS classes for approval messages', () => {
@@ -358,7 +320,7 @@ describe('TerminalView - Output line styling', () => {
 
     render(<TerminalView />);
     const content = screen.getByText('Needs approval');
-    expect(content).toHaveClass('text-orange-400');
+    expect(content).toHaveClass('text-orange-300');
     expect(content).toHaveClass('font-semibold');
   });
 });

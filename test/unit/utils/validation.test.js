@@ -3,31 +3,31 @@
  * @module test/unit/utils/validation.test
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  isString,
-  isNumber,
-  isInteger,
-  isPositive,
-  isNonNegative,
-  isObject,
+  assert,
+  hasMaxLength,
+  hasMinLength,
+  inRange,
   isArray,
-  isEmpty,
-  isFunction,
   isBoolean,
-  isNil,
+  isDate,
   isDefined,
   isEmail,
+  isEmpty,
+  isFunction,
+  isInteger,
+  isJson,
+  isNil,
+  isNonNegative,
+  isNumber,
+  isObject,
+  isPositive,
+  isString,
   isUrl,
   isUuid,
-  isJson,
-  isDate,
   matches,
-  inRange,
-  hasMinLength,
-  hasMaxLength,
-  assert,
-  validate
+  validate,
 } from '../../../src/utils/validation.js';
 
 describe('Validation Utilities', () => {
@@ -183,7 +183,7 @@ describe('Validation Utilities', () => {
   describe('isFunction()', () => {
     it('should return true for functions', () => {
       expect(isFunction(() => {})).toBe(true);
-      expect(isFunction(function() {})).toBe(true);
+      expect(isFunction(() => {})).toBe(true);
       expect(isFunction(async () => {})).toBe(true);
     });
 
@@ -425,7 +425,7 @@ describe('Validation Utilities', () => {
   describe('validate()', () => {
     it('should validate required fields', () => {
       const schema = {
-        name: { required: true }
+        name: { required: true },
       };
 
       const valid = validate({ name: 'John' }, schema);
@@ -441,7 +441,7 @@ describe('Validation Utilities', () => {
       const schema = {
         name: { type: 'string' },
         age: { type: 'number' },
-        active: { type: 'boolean' }
+        active: { type: 'boolean' },
       };
 
       const valid = validate({ name: 'John', age: 30, active: true }, schema);
@@ -456,7 +456,7 @@ describe('Validation Utilities', () => {
 
     it('should validate minLength', () => {
       const schema = {
-        name: { minLength: 3 }
+        name: { minLength: 3 },
       };
 
       const valid = validate({ name: 'John' }, schema);
@@ -469,7 +469,7 @@ describe('Validation Utilities', () => {
 
     it('should validate maxLength', () => {
       const schema = {
-        name: { maxLength: 5 }
+        name: { maxLength: 5 },
       };
 
       const valid = validate({ name: 'John' }, schema);
@@ -482,7 +482,7 @@ describe('Validation Utilities', () => {
 
     it('should validate min and max for numbers', () => {
       const schema = {
-        age: { min: 0, max: 120 }
+        age: { min: 0, max: 120 },
       };
 
       const valid = validate({ age: 30 }, schema);
@@ -499,7 +499,7 @@ describe('Validation Utilities', () => {
 
     it('should validate pattern', () => {
       const schema = {
-        code: { pattern: /^[A-Z]{3}$/ }
+        code: { pattern: /^[A-Z]{3}$/ },
       };
 
       const valid = validate({ code: 'ABC' }, schema);
@@ -513,8 +513,8 @@ describe('Validation Utilities', () => {
     it('should support custom validation', () => {
       const schema = {
         age: {
-          custom: (value) => value >= 18 ? true : 'Must be 18 or older'
-        }
+          custom: (value) => (value >= 18 ? true : 'Must be 18 or older'),
+        },
       };
 
       const valid = validate({ age: 25 }, schema);
@@ -528,7 +528,7 @@ describe('Validation Utilities', () => {
     it('should skip validation for optional fields when not present', () => {
       const schema = {
         name: { required: true },
-        nickname: { type: 'string' }
+        nickname: { type: 'string' },
       };
 
       const result = validate({ name: 'John' }, schema);

@@ -5,11 +5,10 @@
  * persistence after reload, and CSS class verification.
  */
 
-import { test, expect } from '../fixtures/test-setup';
-import { setupThemeTest } from '../fixtures/test-setup';
-import { SettingsView } from '../page-objects/SettingsView';
+import { SELECTORS, TIMEOUTS, UI_TEXTS } from '../fixtures/test-data';
+import { expect, setupThemeTest, test } from '../fixtures/test-setup';
 import { SessionSidebar } from '../page-objects/SessionSidebar';
-import { UI_TEXTS, SELECTORS, TIMEOUTS } from '../fixtures/test-data';
+import { SettingsView } from '../page-objects/SettingsView';
 
 test.describe('Theme', () => {
   test('default theme is dark', async ({ page }) => {
@@ -28,7 +27,9 @@ test.describe('Theme', () => {
     // Expand Appearance section if needed
     try {
       await settings.expandSection(UI_TEXTS.settings.appearance);
-    } catch { /* may already be expanded */ }
+    } catch {
+      /* may already be expanded */
+    }
 
     await settings.toggleTheme();
     await page.waitForTimeout(300);
@@ -46,7 +47,9 @@ test.describe('Theme', () => {
     await sidebar.navigateTo('settings');
     try {
       await settings.expandSection(UI_TEXTS.settings.appearance);
-    } catch { /* may already be expanded */ }
+    } catch {
+      /* may already be expanded */
+    }
 
     // Toggle to light
     await settings.toggleTheme();
@@ -69,7 +72,9 @@ test.describe('Theme', () => {
     await sidebar.navigateTo('settings');
     try {
       await settings.expandSection(UI_TEXTS.settings.appearance);
-    } catch { /* may already be expanded */ }
+    } catch {
+      /* may already be expanded */
+    }
 
     // Switch to light
     await settings.toggleTheme();
@@ -77,7 +82,10 @@ test.describe('Theme', () => {
 
     // Reload page
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     const themeAfterReload = await page.evaluate(() => {
       return document.documentElement.getAttribute('data-theme') || 'dark';
@@ -87,7 +95,7 @@ test.describe('Theme', () => {
   });
 
   test('fresh localStorage defaults to dark theme', async ({ page }) => {
-    const stream = await setupThemeTest(page);
+    const _stream = await setupThemeTest(page);
     // setupThemeTest clears localStorage before loading
 
     const theme = await page.evaluate(() => {

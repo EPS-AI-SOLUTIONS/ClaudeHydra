@@ -194,7 +194,7 @@ function createTauriMockScript(overrides: Record<string, unknown> = {}): string 
  */
 export async function injectTauriMocks(
   page: Page,
-  overrides: Record<string, unknown> = {}
+  overrides: Record<string, unknown> = {},
 ): Promise<void> {
   await page.addInitScript(createTauriMockScript(overrides));
 }
@@ -205,7 +205,7 @@ export async function injectTauriMocks(
 export async function emitTauriEvent(
   page: Page,
   eventName: string,
-  payload: unknown
+  payload: unknown,
 ): Promise<void> {
   await page.evaluate(
     ({ event, data }) => {
@@ -214,7 +214,7 @@ export async function emitTauriEvent(
         handler({ event, payload: data, id: Date.now() });
       });
     },
-    { event: eventName, data: payload }
+    { event: eventName, data: payload },
   );
 }
 
@@ -224,13 +224,13 @@ export async function emitTauriEvent(
 export async function setMockInvokeResult(
   page: Page,
   command: string,
-  result: unknown
+  result: unknown,
 ): Promise<void> {
   await page.evaluate(
     ({ cmd, res }) => {
       (window as any).__TAURI_MOCK__.mockResponses[cmd] = res;
     },
-    { cmd: command, res: result }
+    { cmd: command, res: result },
   );
 }
 
@@ -238,7 +238,7 @@ export async function setMockInvokeResult(
  * Get the invoke history (all IPC calls made by the app).
  */
 export async function getInvokeHistory(
-  page: Page
+  page: Page,
 ): Promise<Array<{ cmd: string; args: unknown; timestamp: number }>> {
   return page.evaluate(() => {
     return (window as any).__TAURI_MOCK__?.invokeHistory || [];
@@ -263,7 +263,7 @@ export async function emitStreamChunk(
   page: Page,
   token: string,
   done: boolean,
-  eventType = 'ollama-stream-chunk'
+  eventType = 'ollama-stream-chunk',
 ): Promise<void> {
   await emitTauriEvent(page, eventType, {
     id: `chunk-${Date.now()}`,
@@ -279,7 +279,7 @@ export async function emitStreamChunk(
 export async function emitStreamError(
   page: Page,
   error: string,
-  eventType = 'ollama-stream-error'
+  eventType = 'ollama-stream-error',
 ): Promise<void> {
   await emitTauriEvent(page, eventType, { error });
 }

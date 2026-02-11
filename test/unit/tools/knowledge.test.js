@@ -3,7 +3,7 @@
  * @module test/unit/tools/knowledge.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock vector store
 const mockVectorStore = {
@@ -12,30 +12,25 @@ const mockVectorStore = {
   exists: vi.fn(),
   deleteDocument: vi.fn(),
   delete: vi.fn(),
-  getStats: vi.fn()
+  getStats: vi.fn(),
 };
 
 // Mock the vector-store module
 vi.mock('../../../src/memory/vector-store.js', () => ({
   default: mockVectorStore,
-  VectorStore: mockVectorStore
+  VectorStore: mockVectorStore,
 }));
 
 // Mock audit logger
 vi.mock('../../../src/security/audit-logger.js', () => ({
   default: {
-    logCommand: vi.fn()
-  }
+    logCommand: vi.fn(),
+  },
 }));
 
 // Dynamic import after mocks are set up
-const {
-  tools,
-  KnowledgeAddTool,
-  KnowledgeSearchTool,
-  KnowledgeDeleteTool,
-  SearchResultFormatter
-} = await import('../../../src/tools/knowledge.js');
+const { tools, KnowledgeAddTool, KnowledgeSearchTool, KnowledgeDeleteTool, SearchResultFormatter } =
+  await import('../../../src/tools/knowledge.js');
 
 describe('Knowledge Tools', () => {
   beforeEach(() => {
@@ -50,7 +45,7 @@ describe('Knowledge Tools', () => {
       documentCount: 10,
       totalSize: 1024,
       lastUpdated: '2024-01-01T00:00:00Z',
-      indexStatus: 'healthy'
+      indexStatus: 'healthy',
     });
 
     // Clear search cache between tests
@@ -69,14 +64,14 @@ describe('Knowledge Tools', () => {
             id: 'doc-1',
             content: 'Test content 1',
             score: 0.95,
-            metadata: { tags: ['test'], createdAt: '2024-01-01' }
+            metadata: { tags: ['test'], createdAt: '2024-01-01' },
           },
           {
             id: 'doc-2',
             content: 'Test content 2',
             score: 0.85,
-            metadata: { tags: ['example'], createdAt: '2024-01-02' }
-          }
+            metadata: { tags: ['example'], createdAt: '2024-01-02' },
+          },
         ];
 
         const formatted = SearchResultFormatter.format(results);
@@ -94,11 +89,13 @@ describe('Knowledge Tools', () => {
 
       it('should truncate long content', () => {
         const longContent = 'a'.repeat(600);
-        const results = [{
-          id: 'doc-1',
-          content: longContent,
-          score: 0.9
-        }];
+        const results = [
+          {
+            id: 'doc-1',
+            content: longContent,
+            score: 0.9,
+          },
+        ];
 
         const formatted = SearchResultFormatter.format(results);
 
@@ -108,11 +105,13 @@ describe('Knowledge Tools', () => {
 
       it('should respect custom truncation length', () => {
         const longContent = 'a'.repeat(200);
-        const results = [{
-          id: 'doc-1',
-          content: longContent,
-          score: 0.9
-        }];
+        const results = [
+          {
+            id: 'doc-1',
+            content: longContent,
+            score: 0.9,
+          },
+        ];
 
         const formatted = SearchResultFormatter.format(results, { truncateContent: 100 });
 
@@ -120,12 +119,14 @@ describe('Knowledge Tools', () => {
       });
 
       it('should exclude metadata when option is false', () => {
-        const results = [{
-          id: 'doc-1',
-          content: 'Test',
-          score: 0.9,
-          metadata: { tags: ['test'] }
-        }];
+        const results = [
+          {
+            id: 'doc-1',
+            content: 'Test',
+            score: 0.9,
+            metadata: { tags: ['test'] },
+          },
+        ];
 
         const formatted = SearchResultFormatter.format(results, { includeMetadata: false });
 
@@ -133,11 +134,13 @@ describe('Knowledge Tools', () => {
       });
 
       it('should handle results without metadata', () => {
-        const results = [{
-          id: 'doc-1',
-          content: 'Test',
-          score: 0.9
-        }];
+        const results = [
+          {
+            id: 'doc-1',
+            content: 'Test',
+            score: 0.9,
+          },
+        ];
 
         const formatted = SearchResultFormatter.format(results);
 
@@ -145,11 +148,13 @@ describe('Knowledge Tools', () => {
       });
 
       it('should round scores to 3 decimal places', () => {
-        const results = [{
-          id: 'doc-1',
-          content: 'Test',
-          score: 0.123456789
-        }];
+        const results = [
+          {
+            id: 'doc-1',
+            content: 'Test',
+            score: 0.123456789,
+          },
+        ];
 
         const formatted = SearchResultFormatter.format(results);
 
@@ -161,7 +166,7 @@ describe('Knowledge Tools', () => {
       it('should format results as plain text', () => {
         const formatted = [
           { rank: 1, score: 0.95, content: 'First result', id: 'doc-1' },
-          { rank: 2, score: 0.85, content: 'Second result', id: 'doc-2' }
+          { rank: 2, score: 0.85, content: 'Second result', id: 'doc-2' },
         ];
 
         const text = SearchResultFormatter.toText(formatted);
@@ -193,7 +198,7 @@ describe('Knowledge Tools', () => {
 
         const result = await tools.knowledgeAdd.run({
           content,
-          tags: ['test', 'example']
+          tags: ['test', 'example'],
         });
 
         expect(result.id).toBe('doc-123');
@@ -208,7 +213,7 @@ describe('Knowledge Tools', () => {
 
         await tools.knowledgeAdd.run({
           content,
-          metadata: { source: 'unit-test', version: '1.0' }
+          metadata: { source: 'unit-test', version: '1.0' },
         });
 
         expect(mockVectorStore.addDocument).toHaveBeenCalledWith(
@@ -216,8 +221,8 @@ describe('Knowledge Tools', () => {
           expect.objectContaining({
             source: 'unit-test',
             version: '1.0',
-            contentLength: content.length
-          })
+            contentLength: content.length,
+          }),
         );
       });
 
@@ -229,8 +234,8 @@ describe('Knowledge Tools', () => {
         expect(mockVectorStore.addDocument).toHaveBeenCalledWith(
           content,
           expect.objectContaining({
-            wordCount: 10
-          })
+            wordCount: 10,
+          }),
         );
       });
 
@@ -266,13 +271,13 @@ describe('Knowledge Tools', () => {
       it('should search vector store', async () => {
         mockVectorStore.search.mockResolvedValue([
           { id: 'doc-1', content: 'Result 1', score: 0.95 },
-          { id: 'doc-2', content: 'Result 2', score: 0.85 }
+          { id: 'doc-2', content: 'Result 2', score: 0.85 },
         ]);
 
         const result = await tools.knowledgeSearch.run({
           query: 'test query',
           limit: 10,
-          threshold: 0.5
+          threshold: 0.5,
         });
 
         expect(result.query).toBe('test query');
@@ -284,13 +289,13 @@ describe('Knowledge Tools', () => {
       it('should filter results by threshold', async () => {
         mockVectorStore.search.mockResolvedValue([
           { id: 'doc-1', content: 'Result 1', score: 0.95 },
-          { id: 'doc-2', content: 'Result 2', score: 0.3 }
+          { id: 'doc-2', content: 'Result 2', score: 0.3 },
         ]);
 
         const result = await tools.knowledgeSearch.run({
           query: 'test query',
           limit: 10,
-          threshold: 0.5
+          threshold: 0.5,
         });
 
         expect(result.resultCount).toBe(1);
@@ -301,32 +306,32 @@ describe('Knowledge Tools', () => {
         mockVectorStore.search.mockResolvedValue([
           { id: 'doc-1', content: 'Result 1', score: 0.9, metadata: { tags: ['api'] } },
           { id: 'doc-2', content: 'Result 2', score: 0.85, metadata: { tags: ['docs'] } },
-          { id: 'doc-3', content: 'Result 3', score: 0.8, metadata: { tags: ['api', 'v2'] } }
+          { id: 'doc-3', content: 'Result 3', score: 0.8, metadata: { tags: ['api', 'v2'] } },
         ]);
 
         const result = await tools.knowledgeSearch.run({
           query: 'test query',
           limit: 10,
           threshold: 0.5,
-          tags: ['api']
+          tags: ['api'],
         });
 
         expect(result.resultCount).toBe(2);
-        expect(result.results.map(r => r.id)).toContain('doc-1');
-        expect(result.results.map(r => r.id)).toContain('doc-3');
+        expect(result.results.map((r) => r.id)).toContain('doc-1');
+        expect(result.results.map((r) => r.id)).toContain('doc-3');
       });
 
       it('should handle results without metadata tags', async () => {
         mockVectorStore.search.mockResolvedValue([
           { id: 'doc-1', content: 'Result 1', score: 0.9 },
-          { id: 'doc-2', content: 'Result 2', score: 0.85, metadata: {} }
+          { id: 'doc-2', content: 'Result 2', score: 0.85, metadata: {} },
         ]);
 
         const result = await tools.knowledgeSearch.run({
           query: 'test query',
           limit: 10,
           threshold: 0.5,
-          tags: ['api']
+          tags: ['api'],
         });
 
         // Neither result has matching tags
@@ -334,15 +339,13 @@ describe('Knowledge Tools', () => {
       });
 
       it('should return cached results when available', async () => {
-        mockVectorStore.search.mockResolvedValue([
-          { id: 'doc-1', content: 'Result', score: 0.9 }
-        ]);
+        mockVectorStore.search.mockResolvedValue([{ id: 'doc-1', content: 'Result', score: 0.9 }]);
 
         // First call - populates cache
         await tools.knowledgeSearch.run({
           query: 'cached query',
           limit: 10,
-          threshold: 0.5
+          threshold: 0.5,
         });
 
         // Clear mock to verify it's not called again
@@ -352,7 +355,7 @@ describe('Knowledge Tools', () => {
         const result = await tools.knowledgeSearch.run({
           query: 'cached query',
           limit: 10,
-          threshold: 0.5
+          threshold: 0.5,
         });
 
         expect(mockVectorStore.search).not.toHaveBeenCalled();
@@ -362,15 +365,13 @@ describe('Knowledge Tools', () => {
       it('should not use expired cache', async () => {
         vi.useFakeTimers();
 
-        mockVectorStore.search.mockResolvedValue([
-          { id: 'doc-1', content: 'Result', score: 0.9 }
-        ]);
+        mockVectorStore.search.mockResolvedValue([{ id: 'doc-1', content: 'Result', score: 0.9 }]);
 
         // First call
         await tools.knowledgeSearch.run({
           query: 'expiring query',
           limit: 10,
-          threshold: 0.5
+          threshold: 0.5,
         });
 
         // Advance time past TTL (5 minutes + buffer)
@@ -380,7 +381,7 @@ describe('Knowledge Tools', () => {
         const result = await tools.knowledgeSearch.run({
           query: 'expiring query',
           limit: 10,
-          threshold: 0.5
+          threshold: 0.5,
         });
 
         expect(mockVectorStore.search).toHaveBeenCalledTimes(2);
@@ -395,9 +396,7 @@ describe('Knowledge Tools', () => {
         // Set small max size for testing
         tools.knowledgeSearch.cacheMaxSize = 3;
 
-        mockVectorStore.search.mockResolvedValue([
-          { id: 'doc-1', content: 'Result', score: 0.9 }
-        ]);
+        mockVectorStore.search.mockResolvedValue([{ id: 'doc-1', content: 'Result', score: 0.9 }]);
 
         // Fill cache with 3 entries
         await tools.knowledgeSearch.run({ query: 'query 1', limit: 10, threshold: 0.5 });
@@ -414,7 +413,11 @@ describe('Knowledge Tools', () => {
         expect(mockVectorStore.search).toHaveBeenCalledTimes(2); // query 4 and query 1
 
         // Query 3 should still be cached
-        const result3 = await tools.knowledgeSearch.run({ query: 'query 3', limit: 10, threshold: 0.5 });
+        const result3 = await tools.knowledgeSearch.run({
+          query: 'query 3',
+          limit: 10,
+          threshold: 0.5,
+        });
         expect(result3.fromCache).toBe(true);
 
         // Reset max size
@@ -422,9 +425,7 @@ describe('Knowledge Tools', () => {
       });
 
       it('should clear cache when clearCache() is called', async () => {
-        mockVectorStore.search.mockResolvedValue([
-          { id: 'doc-1', content: 'Result', score: 0.9 }
-        ]);
+        mockVectorStore.search.mockResolvedValue([{ id: 'doc-1', content: 'Result', score: 0.9 }]);
 
         // Populate cache
         await tools.knowledgeSearch.run({ query: 'clear test', limit: 10, threshold: 0.5 });
@@ -435,15 +436,17 @@ describe('Knowledge Tools', () => {
         mockVectorStore.search.mockClear();
 
         // Should not use cache
-        const result = await tools.knowledgeSearch.run({ query: 'clear test', limit: 10, threshold: 0.5 });
+        const result = await tools.knowledgeSearch.run({
+          query: 'clear test',
+          limit: 10,
+          threshold: 0.5,
+        });
         expect(result.fromCache).toBeUndefined();
         expect(mockVectorStore.search).toHaveBeenCalled();
       });
 
       it('should generate case-insensitive cache keys', async () => {
-        mockVectorStore.search.mockResolvedValue([
-          { id: 'doc-1', content: 'Result', score: 0.9 }
-        ]);
+        mockVectorStore.search.mockResolvedValue([{ id: 'doc-1', content: 'Result', score: 0.9 }]);
 
         // First call with uppercase
         await tools.knowledgeSearch.run({ query: 'TEST Query', limit: 10, threshold: 0.5 });
@@ -451,7 +454,11 @@ describe('Knowledge Tools', () => {
         mockVectorStore.search.mockClear();
 
         // Second call with lowercase - should use cache
-        const result = await tools.knowledgeSearch.run({ query: 'test query', limit: 10, threshold: 0.5 });
+        const result = await tools.knowledgeSearch.run({
+          query: 'test query',
+          limit: 10,
+          threshold: 0.5,
+        });
         expect(result.fromCache).toBe(true);
       });
     });
@@ -474,21 +481,25 @@ describe('Knowledge Tools', () => {
         mockVectorStore.exists.mockResolvedValue(true);
 
         const result = await tools.knowledgeDelete.run({
-          id: '123e4567-e89b-12d3-a456-426614174000'
+          id: '123e4567-e89b-12d3-a456-426614174000',
         });
 
         expect(result.id).toBe('123e4567-e89b-12d3-a456-426614174000');
         expect(result.deleted).toBe(true);
         expect(result.deletedAt).toBeDefined();
-        expect(mockVectorStore.deleteDocument).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000');
+        expect(mockVectorStore.deleteDocument).toHaveBeenCalledWith(
+          '123e4567-e89b-12d3-a456-426614174000',
+        );
       });
 
       it('should throw NotFoundError for non-existent document', async () => {
         mockVectorStore.exists.mockResolvedValue(false);
 
-        await expect(tools.knowledgeDelete.run({
-          id: '123e4567-e89b-12d3-a456-426614174000'
-        })).rejects.toThrow('Document not found');
+        await expect(
+          tools.knowledgeDelete.run({
+            id: '123e4567-e89b-12d3-a456-426614174000',
+          }),
+        ).rejects.toThrow('Document not found');
       });
 
       it('should use fallback delete method if deleteDocument not available', async () => {
@@ -500,7 +511,7 @@ describe('Knowledge Tools', () => {
         mockVectorStore.deleteDocument = vi.fn().mockResolvedValue(false);
 
         const result = await tools.knowledgeDelete.run({
-          id: '123e4567-e89b-12d3-a456-426614174000'
+          id: '123e4567-e89b-12d3-a456-426614174000',
         });
 
         expect(result.deleted).toBe(true);
@@ -515,7 +526,7 @@ describe('Knowledge Tools', () => {
         mockVectorStore.exists = undefined;
 
         const result = await tools.knowledgeDelete.run({
-          id: '123e4567-e89b-12d3-a456-426614174000'
+          id: '123e4567-e89b-12d3-a456-426614174000',
         });
 
         // Should not throw, should proceed with delete

@@ -3,9 +3,9 @@
  * @module test/unit/tools/filesystem.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import fs from 'fs/promises';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs module
 vi.mock('fs/promises', () => ({
@@ -17,7 +17,7 @@ vi.mock('fs/promises', () => ({
     unlink: vi.fn(),
     rm: vi.fn(),
     access: vi.fn(),
-    mkdir: vi.fn()
+    mkdir: vi.fn(),
   },
   stat: vi.fn(),
   readdir: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock('fs/promises', () => ({
   unlink: vi.fn(),
   rm: vi.fn(),
   access: vi.fn(),
-  mkdir: vi.fn()
+  mkdir: vi.fn(),
 }));
 
 // Mock fs utils
@@ -35,19 +35,19 @@ vi.mock('../../../src/utils/fs.js', () => ({
   ensureParentDir: vi.fn().mockResolvedValue(undefined),
   exists: vi.fn().mockResolvedValue(true),
   isDirectory: vi.fn().mockResolvedValue(false),
-  isFile: vi.fn().mockResolvedValue(true)
+  isFile: vi.fn().mockResolvedValue(true),
 }));
 
+import { FileNotFoundError, ValidationError } from '../../../src/errors/AppError.js';
 import {
-  ListDirectoryTool,
-  ReadFileTool,
-  WriteFileTool,
   DeleteFileTool,
+  ListDirectoryTool,
   PathResolver,
-  tools
+  ReadFileTool,
+  tools,
+  WriteFileTool,
 } from '../../../src/tools/filesystem.js';
 import { ensureDir, exists } from '../../../src/utils/fs.js';
-import { ValidationError, FileNotFoundError } from '../../../src/errors/AppError.js';
 
 describe('Filesystem Tools', () => {
   beforeEach(() => {
@@ -78,13 +78,11 @@ describe('Filesystem Tools', () => {
       });
 
       it('should throw ValidationError for path traversal attempt', () => {
-        expect(() => resolver.resolve('../../../etc/passwd'))
-          .toThrow(ValidationError);
+        expect(() => resolver.resolve('../../../etc/passwd')).toThrow(ValidationError);
       });
 
       it('should throw ValidationError for absolute path outside root', () => {
-        expect(() => resolver.resolve('/etc/passwd'))
-          .toThrow(ValidationError);
+        expect(() => resolver.resolve('/etc/passwd')).toThrow(ValidationError);
       });
 
       it('should allow resolving root path itself', () => {
@@ -136,14 +134,14 @@ describe('Filesystem Tools', () => {
         fs.stat.mockResolvedValue({ isDirectory: () => true });
         fs.readdir.mockResolvedValue([
           { name: 'file1.js', isDirectory: () => false },
-          { name: 'folder', isDirectory: () => true }
+          { name: 'folder', isDirectory: () => true },
         ]);
         fs.stat.mockImplementation((path) => {
           if (path.includes('file1')) {
             return Promise.resolve({
               isDirectory: () => false,
               size: 1024,
-              mtime: new Date('2024-01-01')
+              mtime: new Date('2024-01-01'),
             });
           }
           return Promise.resolve({ isDirectory: () => true });
@@ -153,7 +151,7 @@ describe('Filesystem Tools', () => {
           path: '.',
           recursive: false,
           includeHidden: false,
-          maxDepth: 3
+          maxDepth: 3,
         });
 
         expect(result.path).toBe('.');
@@ -166,23 +164,27 @@ describe('Filesystem Tools', () => {
         error.code = 'ENOENT';
         fs.stat.mockRejectedValue(error);
 
-        await expect(tool.run({
-          path: 'nonexistent',
-          recursive: false,
-          includeHidden: false,
-          maxDepth: 3
-        })).rejects.toThrow(FileNotFoundError);
+        await expect(
+          tool.run({
+            path: 'nonexistent',
+            recursive: false,
+            includeHidden: false,
+            maxDepth: 3,
+          }),
+        ).rejects.toThrow(FileNotFoundError);
       });
 
       it('should throw ValidationError for file path', async () => {
         fs.stat.mockResolvedValue({ isDirectory: () => false });
 
-        await expect(tool.run({
-          path: 'file.txt',
-          recursive: false,
-          includeHidden: false,
-          maxDepth: 3
-        })).rejects.toThrow(ValidationError);
+        await expect(
+          tool.run({
+            path: 'file.txt',
+            recursive: false,
+            includeHidden: false,
+            maxDepth: 3,
+          }),
+        ).rejects.toThrow(ValidationError);
       });
 
       it('should skip hidden files when includeHidden is false', async () => {
@@ -196,22 +198,22 @@ describe('Filesystem Tools', () => {
           return Promise.resolve({
             isDirectory: () => false,
             size: 100,
-            mtime: new Date()
+            mtime: new Date(),
           });
         });
         fs.readdir.mockResolvedValue([
           { name: '.hidden', isDirectory: () => false },
-          { name: 'visible.js', isDirectory: () => false }
+          { name: 'visible.js', isDirectory: () => false },
         ]);
 
         const result = await tool.run({
           path: '.',
           recursive: false,
           includeHidden: false,
-          maxDepth: 3
+          maxDepth: 3,
         });
 
-        const names = result.items.map(i => i.name);
+        const names = result.items.map((i) => i.name);
         expect(names).not.toContain('.hidden');
         expect(names).toContain('visible.js');
       });
@@ -227,22 +229,22 @@ describe('Filesystem Tools', () => {
           return Promise.resolve({
             isDirectory: () => false,
             size: 100,
-            mtime: new Date()
+            mtime: new Date(),
           });
         });
         fs.readdir.mockResolvedValue([
           { name: '.hidden', isDirectory: () => false },
-          { name: 'visible.js', isDirectory: () => false }
+          { name: 'visible.js', isDirectory: () => false },
         ]);
 
         const result = await tool.run({
           path: '.',
           recursive: false,
           includeHidden: true,
-          maxDepth: 3
+          maxDepth: 3,
         });
 
-        const names = result.items.map(i => i.name);
+        const names = result.items.map((i) => i.name);
         expect(names).toContain('.hidden');
         expect(names).toContain('visible.js');
       });
@@ -259,26 +261,22 @@ describe('Filesystem Tools', () => {
           return Promise.resolve({
             isDirectory: () => false,
             size: 100,
-            mtime: new Date()
+            mtime: new Date(),
           });
         });
         fs.readdir.mockImplementation(() => {
           readdirCallCount++;
           if (readdirCallCount === 1) {
-            return Promise.resolve([
-              { name: 'subdir', isDirectory: () => true }
-            ]);
+            return Promise.resolve([{ name: 'subdir', isDirectory: () => true }]);
           }
-          return Promise.resolve([
-            { name: 'nested.js', isDirectory: () => false }
-          ]);
+          return Promise.resolve([{ name: 'nested.js', isDirectory: () => false }]);
         });
 
         const result = await tool.run({
           path: '.',
           recursive: true,
           includeHidden: false,
-          maxDepth: 3
+          maxDepth: 3,
         });
 
         expect(result.items.length).toBeGreaterThan(0);
@@ -312,7 +310,7 @@ describe('Filesystem Tools', () => {
         const result = await tool.run({
           path: 'test.txt',
           encoding: 'utf8',
-          maxSize: 1000000
+          maxSize: 1000000,
         });
 
         expect(result.path).toBe('test.txt');
@@ -326,21 +324,25 @@ describe('Filesystem Tools', () => {
         error.code = 'ENOENT';
         fs.stat.mockRejectedValue(error);
 
-        await expect(tool.run({
-          path: 'nonexistent.txt',
-          encoding: 'utf8',
-          maxSize: 1000000
-        })).rejects.toThrow(FileNotFoundError);
+        await expect(
+          tool.run({
+            path: 'nonexistent.txt',
+            encoding: 'utf8',
+            maxSize: 1000000,
+          }),
+        ).rejects.toThrow(FileNotFoundError);
       });
 
       it('should throw ValidationError for directory path', async () => {
         fs.stat.mockResolvedValue({ isDirectory: () => true });
 
-        await expect(tool.run({
-          path: 'some-dir',
-          encoding: 'utf8',
-          maxSize: 1000000
-        })).rejects.toThrow(ValidationError);
+        await expect(
+          tool.run({
+            path: 'some-dir',
+            encoding: 'utf8',
+            maxSize: 1000000,
+          }),
+        ).rejects.toThrow(ValidationError);
       });
 
       it('should truncate content exceeding maxSize', async () => {
@@ -350,7 +352,7 @@ describe('Filesystem Tools', () => {
         const result = await tool.run({
           path: 'large.txt',
           encoding: 'utf8',
-          maxSize: 100
+          maxSize: 100,
         });
 
         expect(result.truncated).toBe(true);
@@ -364,7 +366,7 @@ describe('Filesystem Tools', () => {
         const result = await tool.run({
           path: 'binary.bin',
           encoding: 'binary',
-          maxSize: 1000000
+          maxSize: 1000000,
         });
 
         expect(result.encoding).toBe('binary');
@@ -377,11 +379,13 @@ describe('Filesystem Tools', () => {
         error.code = 'EPERM';
         fs.stat.mockRejectedValue(error);
 
-        await expect(tool.run({
-          path: 'forbidden.txt',
-          encoding: 'utf8',
-          maxSize: 1000000
-        })).rejects.toThrow('Permission denied');
+        await expect(
+          tool.run({
+            path: 'forbidden.txt',
+            encoding: 'utf8',
+            maxSize: 1000000,
+          }),
+        ).rejects.toThrow('Permission denied');
       });
     });
   });
@@ -412,14 +416,14 @@ describe('Filesystem Tools', () => {
         fs.writeFile.mockResolvedValue(undefined);
         fs.stat.mockResolvedValue({
           size: 12,
-          mtime: new Date('2024-01-01')
+          mtime: new Date('2024-01-01'),
         });
 
         const result = await tool.run({
           path: 'new-file.txt',
           content: 'file content',
           createDirs: false,
-          overwrite: false
+          overwrite: false,
         });
 
         expect(result.path).toBe('new-file.txt');
@@ -430,12 +434,14 @@ describe('Filesystem Tools', () => {
       it('should throw ValidationError when file exists and overwrite is false', async () => {
         fs.access.mockResolvedValue(undefined);
 
-        await expect(tool.run({
-          path: 'existing.txt',
-          content: 'new content',
-          createDirs: false,
-          overwrite: false
-        })).rejects.toThrow(ValidationError);
+        await expect(
+          tool.run({
+            path: 'existing.txt',
+            content: 'new content',
+            createDirs: false,
+            overwrite: false,
+          }),
+        ).rejects.toThrow(ValidationError);
       });
 
       it('should overwrite file when overwrite is true', async () => {
@@ -443,14 +449,14 @@ describe('Filesystem Tools', () => {
         fs.writeFile.mockResolvedValue(undefined);
         fs.stat.mockResolvedValue({
           size: 11,
-          mtime: new Date('2024-01-01')
+          mtime: new Date('2024-01-01'),
         });
 
         const result = await tool.run({
           path: 'existing.txt',
           content: 'new content',
           createDirs: false,
-          overwrite: true
+          overwrite: true,
         });
 
         expect(result.path).toBe('existing.txt');
@@ -464,14 +470,14 @@ describe('Filesystem Tools', () => {
         fs.writeFile.mockResolvedValue(undefined);
         fs.stat.mockResolvedValue({
           size: 7,
-          mtime: new Date('2024-01-01')
+          mtime: new Date('2024-01-01'),
         });
 
         await tool.run({
           path: 'new/dir/file.txt',
           content: 'content',
           createDirs: true,
-          overwrite: false
+          overwrite: false,
         });
 
         expect(ensureDir).toHaveBeenCalled();
@@ -483,12 +489,14 @@ describe('Filesystem Tools', () => {
         fs.access.mockRejectedValue(error);
         exists.mockResolvedValue(false);
 
-        await expect(tool.run({
-          path: 'nonexistent/file.txt',
-          content: 'content',
-          createDirs: false,
-          overwrite: false
-        })).rejects.toThrow(ValidationError);
+        await expect(
+          tool.run({
+            path: 'nonexistent/file.txt',
+            content: 'content',
+            createDirs: false,
+            overwrite: false,
+          }),
+        ).rejects.toThrow(ValidationError);
       });
 
       it('should rethrow non-ENOENT errors from access check', async () => {
@@ -496,12 +504,14 @@ describe('Filesystem Tools', () => {
         error.code = 'EPERM';
         fs.access.mockRejectedValue(error);
 
-        await expect(tool.run({
-          path: 'file.txt',
-          content: 'content',
-          createDirs: false,
-          overwrite: false
-        })).rejects.toThrow('Permission denied');
+        await expect(
+          tool.run({
+            path: 'file.txt',
+            content: 'content',
+            createDirs: false,
+            overwrite: false,
+          }),
+        ).rejects.toThrow('Permission denied');
       });
     });
   });
@@ -531,7 +541,7 @@ describe('Filesystem Tools', () => {
 
         const result = await tool.run({
           path: 'file.txt',
-          recursive: false
+          recursive: false,
         });
 
         expect(result.path).toBe('file.txt');
@@ -545,19 +555,23 @@ describe('Filesystem Tools', () => {
         error.code = 'ENOENT';
         fs.stat.mockRejectedValue(error);
 
-        await expect(tool.run({
-          path: 'nonexistent.txt',
-          recursive: false
-        })).rejects.toThrow(FileNotFoundError);
+        await expect(
+          tool.run({
+            path: 'nonexistent.txt',
+            recursive: false,
+          }),
+        ).rejects.toThrow(FileNotFoundError);
       });
 
       it('should throw ValidationError for directory without recursive flag', async () => {
         fs.stat.mockResolvedValue({ isDirectory: () => true });
 
-        await expect(tool.run({
-          path: 'some-dir',
-          recursive: false
-        })).rejects.toThrow(ValidationError);
+        await expect(
+          tool.run({
+            path: 'some-dir',
+            recursive: false,
+          }),
+        ).rejects.toThrow(ValidationError);
       });
 
       it('should delete directory recursively when recursive is true', async () => {
@@ -566,16 +580,13 @@ describe('Filesystem Tools', () => {
 
         const result = await tool.run({
           path: 'some-dir',
-          recursive: true
+          recursive: true,
         });
 
         expect(result.path).toBe('some-dir');
         expect(result.type).toBe('directory');
         expect(result.deleted).toBe(true);
-        expect(fs.rm).toHaveBeenCalledWith(
-          expect.any(String),
-          { recursive: true, force: true }
-        );
+        expect(fs.rm).toHaveBeenCalledWith(expect.any(String), { recursive: true, force: true });
       });
 
       it('should rethrow non-ENOENT errors', async () => {
@@ -583,10 +594,12 @@ describe('Filesystem Tools', () => {
         error.code = 'EPERM';
         fs.stat.mockRejectedValue(error);
 
-        await expect(tool.run({
-          path: 'forbidden.txt',
-          recursive: false
-        })).rejects.toThrow('Permission denied');
+        await expect(
+          tool.run({
+            path: 'forbidden.txt',
+            recursive: false,
+          }),
+        ).rejects.toThrow('Permission denied');
       });
     });
   });

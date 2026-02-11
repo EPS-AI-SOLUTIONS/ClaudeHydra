@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the hooks before importing the component
 const mockLoadSessions = vi.fn();
@@ -198,7 +198,8 @@ describe('ChatHistoryView', () => {
         render(<ChatHistoryView />);
       });
 
-      const searchInput = screen.queryByPlaceholderText(/search/i) || screen.queryByRole('searchbox');
+      const searchInput =
+        screen.queryByPlaceholderText(/search/i) || screen.queryByRole('searchbox');
       expect(searchInput).toBeTruthy();
     });
   });

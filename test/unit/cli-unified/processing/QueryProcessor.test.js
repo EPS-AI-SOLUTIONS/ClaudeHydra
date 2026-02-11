@@ -3,18 +3,18 @@
  * @module test/unit/cli-unified/processing/QueryProcessor.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Create mock bridge that will be shared across all tests
 const mockBridge = {
   generate: vi.fn(),
   generateFast: vi.fn(),
-  info: vi.fn()
+  info: vi.fn(),
 };
 
 // Mock the bridge before importing QueryProcessor
 vi.mock('../../../../src/hydra/providers/llamacpp-bridge.js', () => ({
-  getLlamaCppBridge: vi.fn(() => mockBridge)
+  getLlamaCppBridge: vi.fn(() => mockBridge),
 }));
 
 // Mock llamacpp-models for agent maxTokens resolution
@@ -26,7 +26,7 @@ vi.mock('../../../../src/hydra/providers/llamacpp-models.js', () => ({
       Ciri: { model: 'qwen3:1.7b', maxTokens: 512 },
     };
     return configs[name] || null;
-  })
+  }),
 }));
 
 describe('QueryProcessor', () => {
@@ -69,7 +69,7 @@ describe('QueryProcessor', () => {
         defaultModel: 'draft',
         streaming: false,
         timeout: 30000,
-        concurrency: 3
+        concurrency: 3,
       });
 
       expect(processor.llamacppEnabled).toBe(false);
@@ -103,7 +103,7 @@ describe('QueryProcessor', () => {
       // process() without onToken uses executeQuery which calls bridge.generate
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Response'
+        content: 'Response',
       });
     });
 
@@ -111,7 +111,7 @@ describe('QueryProcessor', () => {
       const mockCache = {
         isEnabled: true,
         get: vi.fn().mockReturnValue('Cached response'),
-        set: vi.fn()
+        set: vi.fn(),
       };
       processor.cacheManager = mockCache;
 
@@ -126,12 +126,12 @@ describe('QueryProcessor', () => {
       const mockCache = {
         isEnabled: true,
         get: vi.fn().mockReturnValue('Cached response'),
-        set: vi.fn()
+        set: vi.fn(),
       };
       processor.cacheManager = mockCache;
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Fresh response'
+        content: 'Fresh response',
       });
 
       const result = await processor.process('Test prompt', { noCache: true });
@@ -143,12 +143,12 @@ describe('QueryProcessor', () => {
     it('should add context to prompt when context manager has content', async () => {
       const mockContext = {
         isEmpty: false,
-        getContextString: vi.fn().mockReturnValue('Some context')
+        getContextString: vi.fn().mockReturnValue('Some context'),
       };
       processor.contextManager = mockContext;
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Response'
+        content: 'Response',
       });
 
       await processor.process('Test prompt');
@@ -161,15 +161,15 @@ describe('QueryProcessor', () => {
         select: vi.fn().mockReturnValue({
           name: 'Geralt',
           model: 'main',
-          temperature: 0.5
+          temperature: 0.5,
         }),
         buildPrompt: vi.fn().mockReturnValue('Agent prompt'),
-        recordExecution: vi.fn()
+        recordExecution: vi.fn(),
       };
       processor.agentRouter = mockRouter;
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Response'
+        content: 'Response',
       });
 
       await processor.process('Test prompt');
@@ -180,7 +180,7 @@ describe('QueryProcessor', () => {
     it('should emit complete event on success', async () => {
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Response'
+        content: 'Response',
       });
 
       const completeSpy = vi.fn();
@@ -191,8 +191,8 @@ describe('QueryProcessor', () => {
       expect(completeSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           prompt: 'Test prompt',
-          response: 'Response'
-        })
+          response: 'Response',
+        }),
       );
     });
 
@@ -212,10 +212,10 @@ describe('QueryProcessor', () => {
         select: vi.fn().mockReturnValue({
           name: 'Triss',
           model: 'qwen3:4b',
-          temperature: 0.5
+          temperature: 0.5,
         }),
-        buildPrompt: vi.fn((agent, prompt) => `wrapped: ${prompt}`),
-        recordExecution: vi.fn()
+        buildPrompt: vi.fn((_agent, prompt) => `wrapped: ${prompt}`),
+        recordExecution: vi.fn(),
       };
       processor.agentRouter = mockRouter;
       mockBridge.generate.mockResolvedValue({ success: true, content: 'Response' });
@@ -225,7 +225,7 @@ describe('QueryProcessor', () => {
       // Triss has maxTokens: 4096 in EXECUTOR_AGENT_MODELS
       expect(mockBridge.generate).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({ maxTokens: 4096 })
+        expect.objectContaining({ maxTokens: 4096 }),
       );
     });
 
@@ -234,10 +234,10 @@ describe('QueryProcessor', () => {
         select: vi.fn().mockReturnValue({
           name: 'UnknownAgent',
           model: 'qwen3:4b',
-          temperature: 0.5
+          temperature: 0.5,
         }),
-        buildPrompt: vi.fn((agent, prompt) => `wrapped: ${prompt}`),
-        recordExecution: vi.fn()
+        buildPrompt: vi.fn((_agent, prompt) => `wrapped: ${prompt}`),
+        recordExecution: vi.fn(),
       };
       processor.agentRouter = mockRouter;
       mockBridge.generate.mockResolvedValue({ success: true, content: 'Response' });
@@ -246,7 +246,7 @@ describe('QueryProcessor', () => {
 
       expect(mockBridge.generate).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({ maxTokens: 1024 })
+        expect.objectContaining({ maxTokens: 1024 }),
       );
     });
 
@@ -254,21 +254,17 @@ describe('QueryProcessor', () => {
       const mockCache = {
         isEnabled: true,
         get: vi.fn().mockReturnValue(null),
-        set: vi.fn()
+        set: vi.fn(),
       };
       processor.cacheManager = mockCache;
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Response'
+        content: 'Response',
       });
 
       await processor.process('Test prompt');
 
-      expect(mockCache.set).toHaveBeenCalledWith(
-        'Test prompt',
-        'Response',
-        expect.any(Object)
-      );
+      expect(mockCache.set).toHaveBeenCalledWith('Test prompt', 'Response', expect.any(Object));
     });
   });
 
@@ -282,41 +278,47 @@ describe('QueryProcessor', () => {
     it('should call bridge.generate with correct options', async () => {
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Generated content'
+        content: 'Generated content',
       });
 
       const result = await processor.executeQuery('Test prompt', {
         maxTokens: 1024,
-        temperature: 0.5
+        temperature: 0.5,
       });
 
-      expect(mockBridge.generate).toHaveBeenCalledWith('Test prompt', expect.objectContaining({
-        maxTokens: 1024,
-        temperature: 0.5,
-        stop: expect.any(Array)
-      }));
+      expect(mockBridge.generate).toHaveBeenCalledWith(
+        'Test prompt',
+        expect.objectContaining({
+          maxTokens: 1024,
+          temperature: 0.5,
+          stop: expect.any(Array),
+        }),
+      );
       expect(result).toBe('Generated content');
     });
 
     it('should use default options when not provided', async () => {
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Content'
+        content: 'Content',
       });
 
       await processor.executeQuery('Test prompt');
 
-      expect(mockBridge.generate).toHaveBeenCalledWith('Test prompt', expect.objectContaining({
-        maxTokens: 1024,
-        temperature: 0.7,
-        stop: expect.any(Array)
-      }));
+      expect(mockBridge.generate).toHaveBeenCalledWith(
+        'Test prompt',
+        expect.objectContaining({
+          maxTokens: 1024,
+          temperature: 0.7,
+          stop: expect.any(Array),
+        }),
+      );
     });
 
     it('should throw error when generation fails', async () => {
       mockBridge.generate.mockResolvedValue({
         success: false,
-        error: 'Generation error'
+        error: 'Generation error',
       });
 
       await expect(processor.executeQuery('Test')).rejects.toThrow('Generation error');
@@ -324,11 +326,11 @@ describe('QueryProcessor', () => {
 
     it('should provide user-friendly error for MCP invoker not set', async () => {
       mockBridge.generate.mockRejectedValue(
-        new Error('MCP invoker not set. Call setMcpInvoker() first.')
+        new Error('MCP invoker not set. Call setMcpInvoker() first.'),
       );
 
       await expect(processor.executeQuery('Test')).rejects.toThrow(
-        'AI not available. Ensure llama-cpp MCP server is running and configured.'
+        'AI not available. Ensure llama-cpp MCP server is running and configured.',
       );
     });
   });
@@ -343,22 +345,25 @@ describe('QueryProcessor', () => {
     it('should call bridge.generate with stop tokens', async () => {
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Streamed content'
+        content: 'Streamed content',
       });
 
       const result = await processor.streamQuery('Test prompt');
 
-      expect(mockBridge.generate).toHaveBeenCalledWith('Test prompt', expect.objectContaining({
-        maxTokens: 1024,
-        stop: expect.any(Array)
-      }));
+      expect(mockBridge.generate).toHaveBeenCalledWith(
+        'Test prompt',
+        expect.objectContaining({
+          maxTokens: 1024,
+          stop: expect.any(Array),
+        }),
+      );
       expect(result).toBe('Streamed content');
     });
 
     it('should call onToken callback with line-based chunks', async () => {
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Hello World'
+        content: 'Hello World',
       });
 
       const onToken = vi.fn();
@@ -372,7 +377,7 @@ describe('QueryProcessor', () => {
     it('should handle onToken callback errors gracefully', async () => {
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Test content'
+        content: 'Test content',
       });
 
       const onToken = vi.fn().mockImplementation(() => {
@@ -385,11 +390,11 @@ describe('QueryProcessor', () => {
 
     it('should provide user-friendly error for MCP invoker not set', async () => {
       mockBridge.generate.mockRejectedValue(
-        new Error('MCP invoker not set. Call setMcpInvoker() first.')
+        new Error('MCP invoker not set. Call setMcpInvoker() first.'),
       );
 
       await expect(processor.streamQuery('Test')).rejects.toThrow(
-        'AI not available. Ensure llama-cpp MCP server is running and configured.'
+        'AI not available. Ensure llama-cpp MCP server is running and configured.',
       );
     });
   });
@@ -402,7 +407,7 @@ describe('QueryProcessor', () => {
       // enqueue calls process which calls executeQuery -> bridge.generate
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Response'
+        content: 'Response',
       });
     });
 
@@ -415,7 +420,7 @@ describe('QueryProcessor', () => {
     it('should process multiple queries in order', async () => {
       const results = await Promise.all([
         processor.enqueue('Query 1'),
-        processor.enqueue('Query 2')
+        processor.enqueue('Query 2'),
       ]);
 
       expect(results).toHaveLength(2);
@@ -430,16 +435,12 @@ describe('QueryProcessor', () => {
       // processParallel calls process which calls executeQuery -> bridge.generate
       mockBridge.generate.mockResolvedValue({
         success: true,
-        content: 'Response'
+        content: 'Response',
       });
     });
 
     it('should process multiple queries in parallel', async () => {
-      const queries = [
-        { prompt: 'Query 1' },
-        { prompt: 'Query 2' },
-        { prompt: 'Query 3' }
-      ];
+      const queries = [{ prompt: 'Query 1' }, { prompt: 'Query 2' }, { prompt: 'Query 3' }];
 
       const { results, errors } = await processor.processParallel(queries);
 
@@ -453,11 +454,7 @@ describe('QueryProcessor', () => {
         .mockRejectedValueOnce(new Error('Failed'))
         .mockResolvedValueOnce({ success: true, content: 'OK' });
 
-      const queries = [
-        { prompt: 'Query 1' },
-        { prompt: 'Query 2' },
-        { prompt: 'Query 3' }
-      ];
+      const queries = [{ prompt: 'Query 1' }, { prompt: 'Query 2' }, { prompt: 'Query 3' }];
 
       const { results, errors } = await processor.processParallel(queries);
 
@@ -476,7 +473,7 @@ describe('QueryProcessor', () => {
     it('should return healthy status when bridge info succeeds', async () => {
       mockBridge.info.mockResolvedValue({
         success: true,
-        availableModels: ['main', 'draft']
+        availableModels: ['main', 'draft'],
       });
 
       const health = await processor.checkHealth();

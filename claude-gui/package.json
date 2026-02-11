@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
+    "tauri:rebuild": "rebuild.bat",
+    "tauri:rebuild:release": "rebuild.bat --release",
     "tauri:build": "build-fast.bat --release",
     "tauri:build-fast": "build-fast.bat",
     "test": "vitest run",

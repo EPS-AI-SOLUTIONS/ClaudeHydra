@@ -6,16 +6,11 @@
  * API keys, collapsible sections, and persistence.
  */
 
-import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
+import { NAV_LABELS, SELECTORS } from '../fixtures/test-data';
 import { BasePage } from './BasePage';
-import { SELECTORS, NAV_LABELS, TIMEOUTS } from '../fixtures/test-data';
 
 export class SettingsView extends BasePage {
-  constructor(page: Page) {
-    super(page);
-  }
-
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   /**

@@ -3,21 +3,21 @@
  * @module test/unit/cli-unified/core/ThemeRegistry.test
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  CyberpunkTheme,
+  DraculaTheme,
+  getAutoTheme,
+  getAvailableThemes,
+  getTheme,
   HydraTheme,
   MinimalTheme,
-  NeonTheme,
   MonokaiTheme,
-  DraculaTheme,
-  WitcherTheme,
-  CyberpunkTheme,
-  ThemeRegistry,
-  getTheme,
-  getAvailableThemes,
+  NeonTheme,
   supportsUnicode,
-  getAutoTheme,
-  themeRegistry
+  ThemeRegistry,
+  themeRegistry,
+  WitcherTheme,
 } from '../../../../src/cli-unified/core/ThemeRegistry.js';
 
 describe('Theme Registry', () => {
@@ -39,7 +39,7 @@ describe('Theme Registry', () => {
       ['MonokaiTheme', MonokaiTheme, 'monokai'],
       ['DraculaTheme', DraculaTheme, 'dracula'],
       ['WitcherTheme', WitcherTheme, 'witcher'],
-      ['CyberpunkTheme', CyberpunkTheme, 'cyberpunk']
+      ['CyberpunkTheme', CyberpunkTheme, 'cyberpunk'],
     ];
 
     themes.forEach(([themeName, theme, expectedName]) => {
@@ -184,7 +184,7 @@ describe('Theme Registry', () => {
         const customTheme = {
           name: 'myTheme',
           colors: { primary: 'red' },
-          symbols: { prompt: '>' }
+          symbols: { prompt: '>' },
         };
 
         registry.register('myTheme', customTheme);
@@ -195,7 +195,7 @@ describe('Theme Registry', () => {
       it('should merge with HydraTheme by default', () => {
         const customTheme = {
           name: 'myTheme',
-          colors: { primary: 'red' }
+          colors: { primary: 'red' },
         };
 
         registry.register('myTheme', customTheme);
@@ -211,7 +211,7 @@ describe('Theme Registry', () => {
         const customTheme = {
           name: 'myTheme',
           extends: 'minimal',
-          colors: { primary: 'blue' }
+          colors: { primary: 'blue' },
         };
 
         registry.register('myTheme', customTheme);

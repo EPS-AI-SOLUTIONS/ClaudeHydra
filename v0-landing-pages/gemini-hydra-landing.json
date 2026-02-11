@@ -31,7 +31,12 @@
     "title": "The Witcher Swarm",
     "subtitle": "12 Specialized Agents for Every Task",
     "list": [
-      { "name": "Dijkstra", "role": "Master Strategist", "model": "gemini-3-pro", "color": "#ffd700" },
+      {
+        "name": "Dijkstra",
+        "role": "Master Strategist",
+        "model": "gemini-3-pro",
+        "color": "#ffd700"
+      },
       { "name": "Yennefer", "role": "Architect", "model": "qwen2.5-coder", "color": "#9b59b6" },
       { "name": "Geralt", "role": "Security", "model": "llama3.2:3b", "color": "#c0c0c0" },
       { "name": "Triss", "role": "QA/Testing", "model": "qwen2.5-coder", "color": "#e74c3c" },

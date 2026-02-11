@@ -1,16 +1,17 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { Toaster } from 'sonner';
-import { CpuDashboard } from './components/CpuDashboard';
+import { ChatTabBar } from './components/ChatTabBar';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Header } from './components/Header';
 import {
+  ChatHistoryViewLazy,
   LazyComponentWrapper,
   SettingsViewLazy,
   SidebarLazy,
   WelcomeViewLazy,
 } from './components/LazyComponents';
-import { MatrixRain } from './components/MatrixRain';
-import { StatusLine } from './components/StatusLine';
+import { RuneRain } from './components/RuneRain';
 import { SuspenseFallback } from './components/SuspenseFallback';
 import { TerminalView } from './components/TerminalView';
 import { claudeIpc } from './lib/ipc';
@@ -22,8 +23,16 @@ const isTauri = () =>
   typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
 function App() {
-  const { currentView, workingDir, cliPath, initPrompt, setStatus, setConnecting, addOutputLine } =
-    useClaudeStore();
+  const {
+    currentView,
+    theme,
+    workingDir,
+    cliPath,
+    initPrompt,
+    setStatus,
+    setConnecting,
+    addOutputLine,
+  } = useClaudeStore();
   const autoStarted = useRef(false);
   const [debugMsg, setDebugMsg] = useState<string>('[AUTO-START] Loading...');
 
@@ -95,9 +104,12 @@ function App() {
         const newStatus = await claudeIpc.getStatus();
         updateDebug(`[AUTO-START] Status: is_active=${newStatus.is_active}`);
 
-        // Force set active if session started successfully
         if (!newStatus.is_active) {
-          newStatus.is_active = true;
+          console.warn('[AUTO-START] Backend reports inactive after start attempt');
+          addOutputLine({
+            type: 'error',
+            content: '[AUTO-START] Sesja nie odpowiada — sprawdź konfigurację Claude CLI',
+          });
         }
         setStatus(newStatus);
 
@@ -131,8 +143,8 @@ function App() {
           top: 10,
           left: '50%',
           transform: 'translateX(-50%)',
-          background: '#00ff41',
-          color: '#000',
+          background: '#ffffff',
+          color: '#0f1419',
           padding: '10px 20px',
           borderRadius: 5,
           zIndex: 99999,
@@ -154,6 +166,19 @@ function App() {
         );
       case 'terminal':
         return <TerminalView />;
+      case 'history':
+        return (
+          <LazyComponentWrapper>
+            <ChatHistoryViewLazy />
+          </LazyComponentWrapper>
+        );
+      case 'agents':
+        // TODO: Create dedicated AgentsView component
+        return (
+          <LazyComponentWrapper>
+            <WelcomeViewLazy />
+          </LazyComponentWrapper>
+        );
       case 'settings':
         return (
           <LazyComponentWrapper>
@@ -170,35 +195,36 @@ function App() {
   };
 
   return (
-    <div className="h-screen w-screen flex bg-matrix-bg-primary overflow-hidden">
+    <div className="h-screen w-screen flex bg-matrix-bg-primary bg-grid-pattern overflow-hidden">
       {/* Debug Banner */}
       <DebugBanner />
 
       {/* Background layers */}
       <div className="fixed inset-0 pointer-events-none">
-        {/* Matrix Rain - animowany deszcz */}
-        <MatrixRain opacity={0.12} />
+        {/* Rune Rain - spadające białe runy (tylko dark mode) */}
+        {theme === 'dark' && <RuneRain opacity={0.1} />}
 
-        {/* Background image - Cyberpunk Witcher */}
+        {/* Background image - switches per theme */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
           style={{
-            backgroundImage: 'url(/background.webp)',
-            opacity: 0.2,
+            backgroundImage:
+              theme === 'light' ? 'url(/backgroundlight.webp)' : 'url(/background.webp)',
+            opacity: theme === 'light' ? 0.4 : 0.3,
           }}
         />
 
-        {/* Dark overlay gradient - zwiększony blur */}
+        {/* Overlay gradient */}
         <div
-          className="absolute inset-0 bg-gradient-to-br from-matrix-bg-primary/85 via-matrix-bg-secondary/75 to-matrix-bg-primary/85"
-          style={{ backdropFilter: 'blur(4px)' }}
+          className="absolute inset-0 bg-gradient-to-b from-matrix-bg-primary/50 via-transparent to-matrix-bg-primary/70"
+          style={{ backdropFilter: 'blur(2px)' }}
         />
 
-        {/* Radial glow from center - intensywniejszy */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,255,65,0.12)_0%,transparent_60%)]" />
+        {/* Radial glow from center */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,255,65,0.04)_0%,transparent_60%)]" />
 
         {/* Vignette effect */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.5)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.4)_100%)]" />
       </div>
 
       {/* Main content */}
@@ -209,12 +235,15 @@ function App() {
         </Suspense>
 
         {/* Main area */}
-        <main className="flex-1 flex flex-col gap-3 min-w-0">
+        <main className="flex-1 flex flex-col min-w-0">
           {/* Header */}
           <Header />
 
+          {/* Chat Tab Bar */}
+          <ChatTabBar />
+
           {/* Content with view transition animation */}
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 overflow-hidden relative mt-1">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentView}
@@ -224,17 +253,13 @@ function App() {
                 transition={{ duration: 0.2, ease: 'easeInOut' }}
                 className="h-full w-full"
               >
-                <Suspense fallback={<SuspenseFallback />}>{renderView()}</Suspense>
+                <ErrorBoundary>
+                  <Suspense fallback={<SuspenseFallback />}>{renderView()}</Suspense>
+                </ErrorBoundary>
               </motion.div>
             </AnimatePresence>
           </div>
-
-          {/* Status Line */}
-          <StatusLine />
         </main>
-
-        {/* CPU Performance Dashboard - floating */}
-        <CpuDashboard />
       </div>
 
       {/* Toast Notifications */}
@@ -242,9 +267,9 @@ function App() {
         position="bottom-right"
         toastOptions={{
           style: {
-            background: '#0a1f0a',
-            border: '1px solid rgba(0, 255, 65, 0.3)',
-            color: '#c0ffc0',
+            background: 'var(--matrix-glass-bg)',
+            border: '1px solid var(--matrix-border)',
+            color: 'var(--matrix-text-primary)',
           },
         }}
       />

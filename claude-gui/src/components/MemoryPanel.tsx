@@ -1,17 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   BrainCircuit,
-  User,
-  Share2,
-  RefreshCw,
-  Search,
-  Trash2,
   ChevronDown,
   ChevronRight,
   Database,
   Loader2,
+  RefreshCw,
+  Search,
+  Share2,
+  Trash2,
+  User,
 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface MemoryEntry {
   id: string;
@@ -221,7 +221,7 @@ export function MemoryPanel() {
   const filteredMemories = memories.filter(
     (m) =>
       m.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.tags.toLowerCase().includes(searchQuery.toLowerCase())
+      m.tags.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const selectedAgentInfo = AGENTS.find((a) => a.name === selectedAgent);
@@ -274,7 +274,10 @@ export function MemoryPanel() {
 
         {/* Search */}
         <div className="relative">
-          <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-matrix-text-dim" />
+          <Search
+            size={12}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-matrix-text-dim"
+          />
           <input
             type="text"
             value={searchQuery}
@@ -286,9 +289,7 @@ export function MemoryPanel() {
       </div>
 
       {/* Error display */}
-      {error && (
-        <div className="px-3 py-2 bg-red-500/10 text-xs text-red-400">{error}</div>
-      )}
+      {error && <div className="px-3 py-2 bg-red-500/10 text-xs text-red-400">{error}</div>}
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-2 space-y-3">
@@ -326,7 +327,9 @@ export function MemoryPanel() {
                   className="p-2 bg-black/20 rounded border border-matrix-border/50 text-xs"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${TYPE_COLORS[memory.type]}`}>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] ${TYPE_COLORS[memory.type]}`}
+                    >
                       {memory.type}
                     </span>
                     <span className="text-[10px] text-matrix-text-dim">

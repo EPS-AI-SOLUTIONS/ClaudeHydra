@@ -3,30 +3,30 @@
  * @module test/unit/hydra/pipeline/router.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the dependencies
 vi.mock('../../../../src/hydra/providers/llamacpp-bridge.js', () => ({
   getLlamaCppBridge: vi.fn(() => ({
-    generateFast: vi.fn().mockResolvedValue({ content: 'simple' })
-  }))
+    generateFast: vi.fn().mockResolvedValue({ content: 'simple' }),
+  })),
 }));
 
 vi.mock('../../../../src/hydra/providers/llamacpp-models.js', () => ({
-  getModelForTask: vi.fn((task) => ({
+  getModelForTask: vi.fn((_task) => ({
     model: 'draft',
-    tool: 'llama_generate_fast'
+    tool: 'llama_generate_fast',
   })),
-  TASK_MODEL_MAP: {}
+  TASK_MODEL_MAP: {},
 }));
 
 import {
+  analyzeComplexity,
+  detectCategory,
   route,
   routeWithCost,
   routeWithThinking,
   TASK_CATEGORIES,
-  analyzeComplexity,
-  detectCategory
 } from '../../../../src/hydra/pipeline/router.js';
 import { getLlamaCppBridge } from '../../../../src/hydra/providers/llamacpp-bridge.js';
 
@@ -47,20 +47,20 @@ describe('HYDRA Router', () => {
     });
 
     it('should have patterns for each category', () => {
-      for (const [name, config] of Object.entries(TASK_CATEGORIES)) {
+      for (const [_name, config] of Object.entries(TASK_CATEGORIES)) {
         expect(config.patterns).toBeInstanceOf(Array);
         expect(config.patterns.length).toBeGreaterThan(0);
       }
     });
 
     it('should have provider for each category', () => {
-      for (const [name, config] of Object.entries(TASK_CATEGORIES)) {
+      for (const [_name, config] of Object.entries(TASK_CATEGORIES)) {
         expect(['llamacpp', 'gemini', 'auto']).toContain(config.provider);
       }
     });
 
     it('should have maxComplexity for each category', () => {
-      for (const [name, config] of Object.entries(TASK_CATEGORIES)) {
+      for (const [_name, config] of Object.entries(TASK_CATEGORIES)) {
         expect(typeof config.maxComplexity).toBe('number');
         expect(config.maxComplexity).toBeGreaterThanOrEqual(1);
         expect(config.maxComplexity).toBeLessThanOrEqual(5);
@@ -77,25 +77,33 @@ describe('HYDRA Router', () => {
 
     it('should increase complexity for longer prompts', () => {
       const shortPrompt = 'What is JavaScript?';
-      const longPrompt = 'Explain JavaScript in detail. ' + 'This is a longer prompt. '.repeat(10);
+      const longPrompt = `Explain JavaScript in detail. ${'This is a longer prompt. '.repeat(10)}`;
       expect(analyzeComplexity(longPrompt)).toBeGreaterThan(analyzeComplexity(shortPrompt));
     });
 
     it('should return high complexity for architecture keywords', () => {
-      expect(analyzeComplexity('Design the architecture for a microservices system')).toBeGreaterThanOrEqual(4);
-      expect(analyzeComplexity('Build a comprehensive deployment strategy')).toBeGreaterThanOrEqual(4);
-      expect(analyzeComplexity('Create an enterprise-level distributed system')).toBeGreaterThanOrEqual(4);
+      expect(
+        analyzeComplexity('Design the architecture for a microservices system'),
+      ).toBeGreaterThanOrEqual(4);
+      expect(analyzeComplexity('Build a comprehensive deployment strategy')).toBeGreaterThanOrEqual(
+        4,
+      );
+      expect(
+        analyzeComplexity('Create an enterprise-level distributed system'),
+      ).toBeGreaterThanOrEqual(4);
     });
 
     it('should increase complexity for medium indicators', () => {
       const simple = 'Create a function';
-      const withIndicators = 'Create multiple functions with detailed error handling and database integration';
+      const withIndicators =
+        'Create multiple functions with detailed error handling and database integration';
       expect(analyzeComplexity(withIndicators)).toBeGreaterThan(analyzeComplexity(simple));
     });
 
     it('should increase complexity for code with multiple requirements', () => {
       const simple = 'Write a function';
-      const complex = 'Write a function with test coverage, error handling, async operations, and database integration';
+      const complex =
+        'Write a function with test coverage, error handling, async operations, and database integration';
       expect(analyzeComplexity(complex)).toBeGreaterThan(analyzeComplexity(simple));
     });
 
@@ -106,7 +114,8 @@ describe('HYDRA Router', () => {
     });
 
     it('should cap complexity at 5', () => {
-      const superComplex = 'Design comprehensive enterprise microservices architecture ' +
+      const superComplex =
+        'Design comprehensive enterprise microservices architecture ' +
         'with multiple detailed components, integration, security, performance, ' +
         'database, api, authentication, and deployment strategy';
       expect(analyzeComplexity(superComplex)).toBeLessThanOrEqual(5);
@@ -189,23 +198,26 @@ describe('HYDRA Router', () => {
 
     it('should use LLM routing for complex prompts', async () => {
       const mockBridge = {
-        generateFast: vi.fn().mockResolvedValue({ content: 'complex' })
+        generateFast: vi.fn().mockResolvedValue({ content: 'complex' }),
       };
       getLlamaCppBridge.mockReturnValue(mockBridge);
 
-      const result = await route('Design a comprehensive microservices architecture for an e-commerce platform');
+      const result = await route(
+        'Design a comprehensive microservices architecture for an e-commerce platform',
+      );
       expect(mockBridge.generateFast).toHaveBeenCalled();
       expect(result.category).toBe('complex');
     });
 
     it('should fallback to heuristic on LLM error', async () => {
       const mockBridge = {
-        generateFast: vi.fn().mockRejectedValue(new Error('LLM unavailable'))
+        generateFast: vi.fn().mockRejectedValue(new Error('LLM unavailable')),
       };
       getLlamaCppBridge.mockReturnValue(mockBridge);
 
       // Use a long, complex prompt that will trigger LLM routing
-      const complexPrompt = 'Design and implement a comprehensive system architecture ' +
+      const complexPrompt =
+        'Design and implement a comprehensive system architecture ' +
         'with multiple microservices, database integration, API gateway, and detailed ' +
         'error handling across all components for a large-scale enterprise application';
       const result = await route(complexPrompt);
@@ -221,7 +233,7 @@ describe('HYDRA Router', () => {
 
     it('should auto-route based on complexity', async () => {
       const mockBridge = {
-        generateFast: vi.fn().mockResolvedValue({ content: 'code' })
+        generateFast: vi.fn().mockResolvedValue({ content: 'code' }),
       };
       getLlamaCppBridge.mockReturnValue(mockBridge);
 
@@ -231,7 +243,9 @@ describe('HYDRA Router', () => {
 
       // High complexity code task should use gemini
       mockBridge.generateFast.mockResolvedValue({ content: 'code' });
-      const highComplexResult = await route('design comprehensive microservices architecture with api, database, security, and deployment');
+      const highComplexResult = await route(
+        'design comprehensive microservices architecture with api, database, security, and deployment',
+      );
       expect(highComplexResult.complexity).toBeGreaterThan(3);
     });
   });
@@ -251,7 +265,7 @@ describe('HYDRA Router', () => {
 
     it('should show positive cost for gemini', async () => {
       const mockBridge = {
-        generateFast: vi.fn().mockResolvedValue({ content: 'complex' })
+        generateFast: vi.fn().mockResolvedValue({ content: 'complex' }),
       };
       getLlamaCppBridge.mockReturnValue(mockBridge);
 
@@ -267,7 +281,7 @@ describe('HYDRA Router', () => {
     it('should use fast path for simple short prompts on first iteration', async () => {
       const result = await routeWithThinking('hello', {
         iteration: 1,
-        accumulatedKnowledge: ''
+        accumulatedKnowledge: '',
       });
       expect(result.category).toBe('simple');
       expect(result.usedThinkingModel).toBe(false);
@@ -282,9 +296,9 @@ describe('HYDRA Router', () => {
             provider: 'gemini',
             model: null,
             tool: null,
-            reasoning: 'Complex architecture task'
-          })
-        })
+            reasoning: 'Complex architecture task',
+          }),
+        }),
       };
 
       const result = await routeWithThinking(
@@ -292,8 +306,8 @@ describe('HYDRA Router', () => {
         {
           gemini: mockGemini,
           thinkingModel: 'gemini-thinking',
-          iteration: 1
-        }
+          iteration: 1,
+        },
       );
 
       expect(mockGemini.generate).toHaveBeenCalled();
@@ -310,42 +324,40 @@ describe('HYDRA Router', () => {
             provider: 'llamacpp',
             model: 'main',
             tool: 'llama_generate',
-            reasoning: 'Test'
-          })
-        })
+            reasoning: 'Test',
+          }),
+        }),
       };
 
       await routeWithThinking('explain something', {
         gemini: mockGemini,
         thinkingModel: 'gemini-thinking',
         accumulatedKnowledge: 'Previous iteration found: X, Y, Z',
-        iteration: 2
+        iteration: 2,
       });
 
       expect(mockGemini.generate).toHaveBeenCalledWith(
         expect.stringContaining('Previous Iterations Knowledge'),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
     it('should fallback to heuristic on Gemini error', async () => {
       const mockGemini = {
-        generate: vi.fn().mockRejectedValue(new Error('Gemini unavailable'))
+        generate: vi.fn().mockRejectedValue(new Error('Gemini unavailable')),
       };
 
       // Use a long complex prompt to bypass fast path
-      const complexPrompt = 'Design and implement a comprehensive distributed system architecture ' +
+      const complexPrompt =
+        'Design and implement a comprehensive distributed system architecture ' +
         'with microservices, database integration, API gateway, authentication, and caching layer ' +
         'for a large-scale enterprise application with high availability requirements';
 
-      const result = await routeWithThinking(
-        complexPrompt,
-        {
-          gemini: mockGemini,
-          thinkingModel: 'gemini-thinking',
-          iteration: 1
-        }
-      );
+      const result = await routeWithThinking(complexPrompt, {
+        gemini: mockGemini,
+        thinkingModel: 'gemini-thinking',
+        iteration: 1,
+      });
 
       expect(result.category).toBeDefined();
       expect(result.estimatedCost).toBeDefined();
@@ -357,15 +369,15 @@ describe('HYDRA Router', () => {
           content: JSON.stringify({
             category: 'research',
             complexity: 2,
-            provider: 'llamacpp'
-          })
-        })
+            provider: 'llamacpp',
+          }),
+        }),
       };
 
       const result = await routeWithThinking('explain something', {
         gemini: mockGemini,
         thinkingModel: 'gemini-thinking',
-        iteration: 3
+        iteration: 3,
       });
 
       expect(result.iteration).toBe(3);

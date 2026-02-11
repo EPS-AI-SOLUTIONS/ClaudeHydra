@@ -5,10 +5,10 @@
  * deleting, empty state, and session count.
  */
 
-import { test, expect } from '../fixtures/test-setup';
-import { SessionSidebar } from '../page-objects/SessionSidebar';
-import { SELECTORS, UI_TEXTS, TIMEOUTS } from '../fixtures/test-data';
 import { setMockInvokeResult } from '../fixtures/tauri-mocks';
+import { SELECTORS, TIMEOUTS } from '../fixtures/test-data';
+import { expect, test } from '../fixtures/test-setup';
+import { SessionSidebar } from '../page-objects/SessionSidebar';
 
 test.describe('Session Management', () => {
   let sidebar: SessionSidebar;
@@ -35,7 +35,12 @@ test.describe('Session Management', () => {
 
     // Mock list_chat_sessions to return the new session
     await setMockInvokeResult(page, 'list_chat_sessions', [
-      { id: 'session-new-1', title: 'Nowa rozmowa', message_count: 0, created_at: new Date().toISOString() },
+      {
+        id: 'session-new-1',
+        title: 'Nowa rozmowa',
+        message_count: 0,
+        created_at: new Date().toISOString(),
+      },
     ]);
 
     await sidebar.createNewSession();
@@ -53,7 +58,10 @@ test.describe('Session Management', () => {
     ]);
 
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     // Click the first session
     await sidebar.selectSession('Session Alpha');
@@ -68,7 +76,10 @@ test.describe('Session Management', () => {
     ]);
 
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     // Should show "7 wiadomości" or similar
     const sessionText = await page.locator(SELECTORS.sidebar.sessionItem).first().innerText();
@@ -84,7 +95,10 @@ test.describe('Session Management', () => {
 
     await setMockInvokeResult(page, 'list_chat_sessions', sessions);
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
 
     const count = await sidebar.getSessionCount();
     expect(count).toBe(3);

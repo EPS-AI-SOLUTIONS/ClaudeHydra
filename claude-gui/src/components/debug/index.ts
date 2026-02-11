@@ -3,7 +3,7 @@
  * Centralized exports for all debug-related components
  */
 
-export { NetworkPanel } from './NetworkPanel';
-export { TaskQueuePanel } from './TaskQueuePanel';
 export { LogDetailModal } from './LogDetailModal';
+export { NetworkPanel } from './NetworkPanel';
 export { PerformanceHeatmap } from './PerformanceHeatmap';
+export { TaskQueuePanel } from './TaskQueuePanel';

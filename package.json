@@ -52,9 +52,9 @@
     "test:e2e": "playwright test",
     "verify": "node scripts/verify-integrity.js && npm run test:coverage && npm run test:e2e",
     "audit": "npm audit",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
-    "format": "biome format --write .",
+    "lint": "npx @biomejs/biome check .",
+    "lint:fix": "npx @biomejs/biome check --write .",
+    "format": "npx @biomejs/biome format --write .",
     "prepare": "husky install",
     "shortcut": "node scripts/create-shortcut-node.js",
     "shortcut:both": "node scripts/create-both-shortcuts-node.js",
@@ -94,7 +94,7 @@
     "vitest": "^4.0.18"
   },
   "lint-staged": {
-    "*.{js,ts,tsx,json}": "biome check --write"
+    "*.{js,ts,tsx,json}": "npx @biomejs/biome check --write"
   },
   "engines": {
     "node": ">=20"

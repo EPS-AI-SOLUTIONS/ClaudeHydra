@@ -28,10 +28,30 @@
   "workflow": {
     "title": "4-Step Restoration Process",
     "steps": [
-      { "number": 1, "name": "Upload", "description": "Drag & drop your damaged photo", "icon": "upload" },
-      { "number": 2, "name": "Analyze", "description": "AI detects scratches, fading, tears", "icon": "scan" },
-      { "number": 3, "name": "Restore", "description": "Configure enhancement options", "icon": "wand-2" },
-      { "number": 4, "name": "Download", "description": "Get your restored photo", "icon": "download" }
+      {
+        "number": 1,
+        "name": "Upload",
+        "description": "Drag & drop your damaged photo",
+        "icon": "upload"
+      },
+      {
+        "number": 2,
+        "name": "Analyze",
+        "description": "AI detects scratches, fading, tears",
+        "icon": "scan"
+      },
+      {
+        "number": 3,
+        "name": "Restore",
+        "description": "Configure enhancement options",
+        "icon": "wand-2"
+      },
+      {
+        "number": 4,
+        "name": "Download",
+        "description": "Get your restored photo",
+        "icon": "download"
+      }
     ]
   },
   "features": [

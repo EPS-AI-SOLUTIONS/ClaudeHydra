@@ -3,13 +3,23 @@
  * @module test/unit/cli-unified/processing/AgentRouter
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock constants
 vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
   AGENT_NAMES: [
-    'Geralt', 'Yennefer', 'Triss', 'Jaskier', 'Vesemir', 'Ciri',
-    'Eskel', 'Lambert', 'Zoltan', 'Regis', 'Dijkstra', 'Philippa'
+    'Geralt',
+    'Yennefer',
+    'Triss',
+    'Jaskier',
+    'Vesemir',
+    'Ciri',
+    'Eskel',
+    'Lambert',
+    'Zoltan',
+    'Regis',
+    'Dijkstra',
+    'Philippa',
   ],
   AGENT_AVATARS: {
     Geralt: 'G',
@@ -23,8 +33,8 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
     Zoltan: 'Z',
     Regis: 'R',
     Dijkstra: 'D',
-    Philippa: 'P'
-  }
+    Philippa: 'P',
+  },
 }));
 
 // Mock EventBus
@@ -33,8 +43,8 @@ vi.mock('../../../../src/cli-unified/core/EventBus.js', () => ({
   EVENT_TYPES: {
     AGENT_SELECT: 'agent:select',
     AGENT_COMPLETE: 'agent:complete',
-    AGENT_ERROR: 'agent:error'
-  }
+    AGENT_ERROR: 'agent:error',
+  },
 }));
 
 // Mock AGENT_TIERS from swarm/agents
@@ -51,12 +61,16 @@ vi.mock('../../../../src/swarm/agents.js', () => ({
     Eskel: 'executor',
     Lambert: 'executor',
     Zoltan: 'executor',
-    Philippa: 'executor'
-  }
+    Philippa: 'executor',
+  },
 }));
 
-import { AgentRouter, AGENT_SPECS, createAgentRouter } from '../../../../src/cli-unified/processing/AgentRouter.js';
-import { eventBus, EVENT_TYPES } from '../../../../src/cli-unified/core/EventBus.js';
+import { EVENT_TYPES, eventBus } from '../../../../src/cli-unified/core/EventBus.js';
+import {
+  AGENT_SPECS,
+  AgentRouter,
+  createAgentRouter,
+} from '../../../../src/cli-unified/processing/AgentRouter.js';
 
 describe('AgentRouter Module', () => {
   describe('AGENT_SPECS', () => {
@@ -201,7 +215,7 @@ describe('AgentRouter Module', () => {
 
         expect(eventBus.emit).toHaveBeenCalledWith(
           EVENT_TYPES.AGENT_SELECT,
-          expect.objectContaining({ auto: true })
+          expect.objectContaining({ auto: true }),
         );
       });
 
@@ -210,7 +224,7 @@ describe('AgentRouter Module', () => {
 
         expect(eventBus.emit).toHaveBeenCalledWith(
           EVENT_TYPES.AGENT_SELECT,
-          expect.objectContaining({ agent: 'Geralt', auto: false })
+          expect.objectContaining({ agent: 'Geralt', auto: false }),
         );
       });
     });
@@ -359,7 +373,7 @@ describe('AgentRouter Module', () => {
 
         expect(eventBus.emit).toHaveBeenCalledWith(
           EVENT_TYPES.AGENT_COMPLETE,
-          expect.objectContaining({ agent: 'Geralt', duration: 1000 })
+          expect.objectContaining({ agent: 'Geralt', duration: 1000 }),
         );
       });
 
@@ -369,7 +383,7 @@ describe('AgentRouter Module', () => {
 
         expect(eventBus.emit).toHaveBeenCalledWith(
           EVENT_TYPES.AGENT_ERROR,
-          expect.objectContaining({ agent: 'Geralt', error })
+          expect.objectContaining({ agent: 'Geralt', error }),
         );
       });
 
@@ -380,7 +394,7 @@ describe('AgentRouter Module', () => {
         expect(router.stats.NewAgent).toEqual({
           calls: 1,
           totalTime: 1000,
-          errors: 0
+          errors: 0,
         });
       });
     });

@@ -3,8 +3,8 @@
  * @module test/unit/cli-unified/history/UnifiedHistoryManager.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs module
 vi.mock('fs', () => ({
@@ -13,36 +13,36 @@ vi.mock('fs', () => ({
   readFileSync: vi.fn(() => ''),
   writeFileSync: vi.fn(),
   appendFileSync: vi.fn(),
-  readdirSync: vi.fn(() => [])
+  readdirSync: vi.fn(() => []),
 }));
 
 // Mock path module
 vi.mock('path', () => ({
-  dirname: vi.fn(p => p.split('/').slice(0, -1).join('/')),
-  join: vi.fn((...args) => args.join('/'))
+  dirname: vi.fn((p) => p.split('/').slice(0, -1).join('/')),
+  join: vi.fn((...args) => args.join('/')),
 }));
 
 // Mock os module
 vi.mock('os', () => ({
-  homedir: vi.fn(() => '/home/test')
+  homedir: vi.fn(() => '/home/test'),
 }));
 
 // Mock EventBus
 vi.mock('../../../../src/cli-unified/core/EventBus.js', () => ({
   eventBus: {
-    emit: vi.fn()
+    emit: vi.fn(),
   },
   EVENT_TYPES: {
     HISTORY_LOAD: 'history:load',
     HISTORY_ADD: 'history:add',
-    HISTORY_CLEAR: 'history:clear'
-  }
+    HISTORY_CLEAR: 'history:clear',
+  },
 }));
 
 // Mock constants
 vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
   DATA_DIR: '.claude-hydra',
-  MAX_HISTORY_SIZE: 1000
+  MAX_HISTORY_SIZE: 1000,
 }));
 
 // Mock FuzzySearchEngine as a real class
@@ -60,13 +60,13 @@ vi.mock('../../../../src/cli-unified/history/FuzzySearchEngine.js', () => {
 
   return {
     FuzzySearchEngine: MockFuzzySearchEngine,
-    createFuzzySearchEngine: vi.fn(() => new MockFuzzySearchEngine())
+    createFuzzySearchEngine: vi.fn(() => new MockFuzzySearchEngine()),
   };
 });
 
 import {
+  createHistoryManager,
   UnifiedHistoryManager,
-  createHistoryManager
 } from '../../../../src/cli-unified/history/UnifiedHistoryManager.js';
 
 describe('UnifiedHistoryManager Module', () => {
@@ -89,7 +89,7 @@ describe('UnifiedHistoryManager Module', () => {
     it('should accept custom options', () => {
       const manager = new UnifiedHistoryManager({
         maxSize: 500,
-        historyDir: '/custom/path'
+        historyDir: '/custom/path',
       });
       expect(manager.maxSize).toBe(500);
       expect(manager.historyDir).toBe('/custom/path');
@@ -445,8 +445,8 @@ describe('UnifiedHistoryManager Module', () => {
         const bookmarks = manager.listBookmarks();
 
         expect(bookmarks.length).toBe(2);
-        expect(bookmarks.some(b => b.name === 'bookmark1')).toBe(true);
-        expect(bookmarks.some(b => b.name === 'bookmark2')).toBe(true);
+        expect(bookmarks.some((b) => b.name === 'bookmark1')).toBe(true);
+        expect(bookmarks.some((b) => b.name === 'bookmark2')).toBe(true);
       });
     });
   });

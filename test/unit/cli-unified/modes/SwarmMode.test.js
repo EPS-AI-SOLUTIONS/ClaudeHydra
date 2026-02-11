@@ -3,18 +3,15 @@
  * @module test/unit/cli-unified/modes/SwarmMode.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock constants
 vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
-  AGENT_NAMES: ['Geralt', 'Yennefer', 'Triss', 'Ciri', 'Vesemir']
+  AGENT_NAMES: ['Geralt', 'Yennefer', 'Triss', 'Ciri', 'Vesemir'],
 }));
 
-import {
-  SwarmMode,
-  createSwarmMode
-} from '../../../../src/cli-unified/modes/SwarmMode.js';
+import { createSwarmMode, SwarmMode } from '../../../../src/cli-unified/modes/SwarmMode.js';
 
 describe('SwarmMode Module', () => {
   let mockCli;
@@ -32,22 +29,21 @@ describe('SwarmMode Module', () => {
     mockCommandParser = {
       register: vi.fn(),
       isCommand: vi.fn(() => false),
-      run: vi.fn()
+      run: vi.fn(),
     };
 
     // Create mock query processor (with EventEmitter methods for agentic iteration listeners)
     mockQueryProcessor = {
       defaultModel: 'test-model',
       process: vi.fn(() => Promise.resolve({ text: 'response', response: 'AI response' })),
-      processParallel: vi.fn(() => Promise.resolve({
-        results: [
-          { response: 'Response 1' },
-          { response: 'Response 2' }
-        ],
-        errors: []
-      })),
+      processParallel: vi.fn(() =>
+        Promise.resolve({
+          results: [{ response: 'Response 1' }, { response: 'Response 2' }],
+          errors: [],
+        }),
+      ),
       on: vi.fn(),
-      off: vi.fn()
+      off: vi.fn(),
     };
 
     // Create mock output
@@ -64,14 +60,14 @@ describe('SwarmMode Module', () => {
       createProgressIndicator: vi.fn(() => ({
         start: vi.fn(),
         advance: vi.fn(),
-        complete: vi.fn()
-      }))
+        complete: vi.fn(),
+      })),
     };
 
     // Create mock history
     mockHistory = {
       getRecent: vi.fn(() => []),
-      count: 5
+      count: 5,
     };
 
     // Create mock agent router
@@ -80,12 +76,12 @@ describe('SwarmMode Module', () => {
       list: vi.fn(() => [
         { name: 'Geralt', avatar: '🐺', role: 'Leader' },
         { name: 'Yennefer', avatar: '🔮', role: 'Architect' },
-        { name: 'Triss', avatar: '🔥', role: 'Implementer' }
+        { name: 'Triss', avatar: '🔥', role: 'Implementer' },
       ]),
       select: vi.fn((name) => ({ name, avatar: '🐺', role: 'Selected Agent' })),
       getStats: vi.fn(() => ({
-        Geralt: { calls: 5, avgTime: 100, successRate: 100 }
-      }))
+        Geralt: { calls: 5, avgTime: 100, successRate: 100 },
+      })),
     };
 
     // Create mock input manager
@@ -96,17 +92,17 @@ describe('SwarmMode Module', () => {
       macros: {
         list: vi.fn(() => [
           { key: 'macro1', actionCount: 5 },
-          { key: 'macro2', actionCount: 3 }
-        ])
+          { key: 'macro2', actionCount: 3 },
+        ]),
       },
       templates: {
         list: vi.fn(() => []),
         apply: vi.fn(),
         listVariables: vi.fn(() => ({})),
         getVariable: vi.fn(),
-        setVariable: vi.fn()
+        setVariable: vi.fn(),
       },
-      toggleVimMode: vi.fn(() => true)
+      toggleVimMode: vi.fn(() => true),
     };
 
     // Create mock CLI
@@ -122,18 +118,31 @@ describe('SwarmMode Module', () => {
         addFile: vi.fn(() => ({ name: 'test.js', language: 'javascript', size: 1024 })),
         addUrl: vi.fn(() => Promise.resolve({ size: 2048 })),
         clear: vi.fn(),
-        getSummary: vi.fn(() => ({ files: [], urls: [], totalSize: 0, maxSize: 100000 }))
+        getSummary: vi.fn(() => ({ files: [], urls: [], totalSize: 0, maxSize: 100000 })),
       },
       cache: {
-        getStats: vi.fn(() => ({ hits: 10, misses: 5, hitRate: '66.7%', size: 50, maxSize: 100, totalTokensSaved: 1000 })),
+        getStats: vi.fn(() => ({
+          hits: 10,
+          misses: 5,
+          hitRate: '66.7%',
+          size: 50,
+          maxSize: 100,
+          totalTokensSaved: 1000,
+        })),
         clear: vi.fn(),
         enable: vi.fn(),
         disable: vi.fn(),
         isEnabled: true,
-        size: 50
+        size: 50,
       },
       session: {
-        getCurrent: vi.fn(() => ({ id: 'session-1', name: 'Test', messages: [], metadata: { totalTokens: 5000 }, created: Date.now() })),
+        getCurrent: vi.fn(() => ({
+          id: 'session-1',
+          name: 'Test',
+          messages: [],
+          metadata: { totalTokens: 5000 },
+          created: Date.now(),
+        })),
         create: vi.fn(),
         save: vi.fn(() => true),
         load: vi.fn(),
@@ -141,12 +150,12 @@ describe('SwarmMode Module', () => {
         list: vi.fn(() => []),
         delete: vi.fn(() => true),
         rename: vi.fn(),
-        export: vi.fn(() => '# Export')
+        export: vi.fn(() => '# Export'),
       },
       themeRegistry: {
         list: vi.fn(() => ['default', 'dark', 'light']),
-        getCurrent: vi.fn(() => ({ name: 'default' }))
-      }
+        getCurrent: vi.fn(() => ({ name: 'default' })),
+      },
     };
   });
 
@@ -205,7 +214,7 @@ describe('SwarmMode Module', () => {
       await mode.init();
 
       const agentCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'agent'
+        (call) => call[0].name === 'agent',
       );
       expect(agentCmd).toBeDefined();
       expect(agentCmd[0].aliases).toContain('a');
@@ -217,7 +226,7 @@ describe('SwarmMode Module', () => {
       await mode.init();
 
       const agentsCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'agents'
+        (call) => call[0].name === 'agents',
       );
       expect(agentsCmd).toBeDefined();
     });
@@ -227,7 +236,7 @@ describe('SwarmMode Module', () => {
       await mode.init();
 
       const statsCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'stats'
+        (call) => call[0].name === 'stats',
       );
       expect(statsCmd).toBeDefined();
     });
@@ -237,7 +246,7 @@ describe('SwarmMode Module', () => {
       await mode.init();
 
       const chainCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'chain'
+        (call) => call[0].name === 'chain',
       );
       expect(chainCmd).toBeDefined();
     });
@@ -247,7 +256,7 @@ describe('SwarmMode Module', () => {
       await mode.init();
 
       const parCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'parallel'
+        (call) => call[0].name === 'parallel',
       );
       expect(parCmd).toBeDefined();
       expect(parCmd[0].aliases).toContain('par');
@@ -258,7 +267,7 @@ describe('SwarmMode Module', () => {
       await mode.init();
 
       const macroCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'macro'
+        (call) => call[0].name === 'macro',
       );
       expect(macroCmd).toBeDefined();
       expect(macroCmd[0].category).toBe('automation');
@@ -269,7 +278,7 @@ describe('SwarmMode Module', () => {
       await mode.init();
 
       const swarmCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'swarm'
+        (call) => call[0].name === 'swarm',
       );
       expect(swarmCmd).toBeDefined();
     });
@@ -278,9 +287,7 @@ describe('SwarmMode Module', () => {
       const mode = new SwarmMode(mockCli);
       await mode.init();
 
-      const yoloCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'yolo'
-      );
+      const yoloCmd = mockCommandParser.register.mock.calls.find((call) => call[0].name === 'yolo');
       expect(yoloCmd).toBeDefined();
     });
 
@@ -289,7 +296,7 @@ describe('SwarmMode Module', () => {
       await mode.init();
 
       const geraltCmd = mockCommandParser.register.mock.calls.find(
-        call => call[0].name === 'geralt'
+        (call) => call[0].name === 'geralt',
       );
       expect(geraltCmd).toBeDefined();
       expect(geraltCmd[0].hidden).toBe(true);
@@ -307,7 +314,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const agentCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'agent'
+          (call) => call[0].name === 'agent',
         );
         const result = await agentCmd[0].handler([]);
 
@@ -320,7 +327,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const agentCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'agent'
+          (call) => call[0].name === 'agent',
         );
         const result = await agentCmd[0].handler(['Yennefer']);
 
@@ -335,7 +342,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const agentsCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'agents'
+          (call) => call[0].name === 'agents',
         );
         const result = await agentsCmd[0].handler();
 
@@ -351,7 +358,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const statsCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'stats'
+          (call) => call[0].name === 'stats',
         );
         const result = await statsCmd[0].handler();
 
@@ -367,7 +374,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const statsCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'stats'
+          (call) => call[0].name === 'stats',
         );
         const result = await statsCmd[0].handler();
 
@@ -381,7 +388,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const chainCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'chain'
+          (call) => call[0].name === 'chain',
         );
         const result = await chainCmd[0].handler(['Geralt', 'Yennefer']);
 
@@ -393,7 +400,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const chainCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'chain'
+          (call) => call[0].name === 'chain',
         );
         const result = await chainCmd[0].handler(['Geralt', 'Yennefer', '--']);
 
@@ -407,9 +414,9 @@ describe('SwarmMode Module', () => {
         vi.spyOn(mode, 'executeChain').mockResolvedValue('Chain result');
 
         const chainCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'chain'
+          (call) => call[0].name === 'chain',
         );
-        const result = await chainCmd[0].handler(['Geralt', 'Yennefer', '--', 'test', 'prompt']);
+        const _result = await chainCmd[0].handler(['Geralt', 'Yennefer', '--', 'test', 'prompt']);
 
         expect(mode.executeChain).toHaveBeenCalledWith(['Geralt', 'Yennefer'], 'test prompt');
       });
@@ -421,7 +428,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const parCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'parallel'
+          (call) => call[0].name === 'parallel',
         );
         const result = await parCmd[0].handler(['Geralt,Yennefer']);
 
@@ -435,7 +442,7 @@ describe('SwarmMode Module', () => {
         vi.spyOn(mode, 'executeParallel').mockResolvedValue('Parallel result');
 
         const parCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'parallel'
+          (call) => call[0].name === 'parallel',
         );
         await parCmd[0].handler(['Geralt,Yennefer', 'test', 'prompt']);
 
@@ -449,7 +456,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const macroCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'macro'
+          (call) => call[0].name === 'macro',
         );
         const result = await macroCmd[0].handler([]);
 
@@ -462,7 +469,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const macroCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'macro'
+          (call) => call[0].name === 'macro',
         );
         const result = await macroCmd[0].handler(['record', 'my-macro']);
 
@@ -475,7 +482,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const macroCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'macro'
+          (call) => call[0].name === 'macro',
         );
         const result = await macroCmd[0].handler(['stop']);
 
@@ -488,7 +495,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const macroCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'macro'
+          (call) => call[0].name === 'macro',
         );
         const result = await macroCmd[0].handler(['run', 'my-macro']);
 
@@ -503,7 +510,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const swarmCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'swarm'
+          (call) => call[0].name === 'swarm',
         );
         const result = await swarmCmd[0].handler([]);
 
@@ -517,7 +524,7 @@ describe('SwarmMode Module', () => {
         vi.spyOn(mode, 'executeSwarmProtocol').mockResolvedValue('Swarm result');
 
         const swarmCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'swarm'
+          (call) => call[0].name === 'swarm',
         );
         await swarmCmd[0].handler(['test', 'prompt']);
 
@@ -531,7 +538,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const yoloCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'yolo'
+          (call) => call[0].name === 'yolo',
         );
         const result = await yoloCmd[0].handler([], {});
 
@@ -545,7 +552,7 @@ describe('SwarmMode Module', () => {
         vi.spyOn(mode, 'queryAgent').mockResolvedValue('YOLO result');
 
         const yoloCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'yolo'
+          (call) => call[0].name === 'yolo',
         );
         const ctx = {};
         await yoloCmd[0].handler(['test', 'prompt'], ctx);
@@ -563,7 +570,7 @@ describe('SwarmMode Module', () => {
         vi.spyOn(mode, 'queryAgent').mockResolvedValue('Agent response');
 
         const geraltCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'geralt'
+          (call) => call[0].name === 'geralt',
         );
         await geraltCmd[0].handler(['test', 'query']);
 
@@ -575,7 +582,7 @@ describe('SwarmMode Module', () => {
         await mode.init();
 
         const geraltCmd = mockCommandParser.register.mock.calls.find(
-          call => call[0].name === 'geralt'
+          (call) => call[0].name === 'geralt',
         );
         const result = await geraltCmd[0].handler([]);
 
@@ -606,7 +613,7 @@ describe('SwarmMode Module', () => {
 
     it('should handle streaming mode', async () => {
       mockCli.streaming = true;
-      mockQueryProcessor.process.mockImplementation(async (input, options) => {
+      mockQueryProcessor.process.mockImplementation(async (_input, options) => {
         if (options.onToken) {
           options.onToken('Hello');
           options.onToken(' world');
@@ -659,7 +666,7 @@ describe('SwarmMode Module', () => {
       expect(mode.queryAgent).toHaveBeenNthCalledWith(
         2,
         'Yennefer',
-        expect.stringContaining('First response')
+        expect.stringContaining('First response'),
       );
     });
   });
@@ -687,11 +694,8 @@ describe('SwarmMode Module', () => {
 
     it('should handle errors in results', async () => {
       mockQueryProcessor.processParallel.mockResolvedValue({
-        results: [
-          { error: 'Agent failed' },
-          { response: 'Success' }
-        ],
-        errors: []
+        results: [{ error: 'Agent failed' }, { response: 'Success' }],
+        errors: [],
       });
 
       const mode = new SwarmMode(mockCli);
@@ -719,9 +723,12 @@ describe('SwarmMode Module', () => {
 
     it('should delegate to enhanced mode for normal input', async () => {
       const mode = new SwarmMode(mockCli);
-      vi.spyOn(mode.enhancedMode, 'processInput').mockResolvedValue({ type: 'command', result: 'ok' });
+      vi.spyOn(mode.enhancedMode, 'processInput').mockResolvedValue({
+        type: 'command',
+        result: 'ok',
+      });
 
-      const result = await mode.processInput('/help');
+      const _result = await mode.processInput('/help');
 
       expect(mode.enhancedMode.processInput).toHaveBeenCalledWith('/help', {});
     });

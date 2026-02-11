@@ -3,12 +3,12 @@
  * @module test/unit/hydra/providers/llamacpp-bridge.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  LlamaCppBridge,
   getLlamaCppBridge,
+  LlamaCppBridge,
+  MCP_TOOLS,
   resetLlamaCppBridge,
-  MCP_TOOLS
 } from '../../../../src/hydra/providers/llamacpp-bridge.js';
 
 describe('LlamaCppBridge', () => {
@@ -38,7 +38,7 @@ describe('LlamaCppBridge', () => {
       const customInvoker = vi.fn();
       const b = new LlamaCppBridge({
         mcpInvoker: customInvoker,
-        defaultTimeout: 60000
+        defaultTimeout: 60000,
       });
 
       expect(b.mcpInvoker).toBe(customInvoker);
@@ -88,10 +88,7 @@ describe('LlamaCppBridge', () => {
 
       await bridge.callTool('llama_generate', { prompt: 'test' });
 
-      expect(mockInvoker).toHaveBeenCalledWith(
-        MCP_TOOLS.GENERATE,
-        { prompt: 'test' }
-      );
+      expect(mockInvoker).toHaveBeenCalledWith(MCP_TOOLS.GENERATE, { prompt: 'test' });
     });
 
     it('should return result with duration', async () => {
@@ -114,7 +111,7 @@ describe('LlamaCppBridge', () => {
       // Since we can't mock fetch easily here, just verify mode switches
       try {
         await bridge.callTool('llama_generate', {});
-      } catch (e) {
+      } catch (_e) {
         // After MCP failure in auto mode, bridge switches to HTTP mode
         expect(bridge._mode).toBe('http');
       }
@@ -126,7 +123,7 @@ describe('LlamaCppBridge', () => {
       mockInvoker.mockResolvedValue({
         response: 'Generated text',
         eval_count: 100,
-        model: 'llama3.2:1b'
+        model: 'llama3.2:1b',
       });
       bridge.setMcpInvoker(mockInvoker);
     });
@@ -146,7 +143,7 @@ describe('LlamaCppBridge', () => {
           frequency_penalty: 1.0,
           top_k: 30,
           top_p: 0.9,
-        })
+        }),
       );
     });
 
@@ -154,7 +151,7 @@ describe('LlamaCppBridge', () => {
       await bridge.generate('Test prompt', {
         maxTokens: 512,
         temperature: 0.5,
-        stop: ['END']
+        stop: ['END'],
       });
 
       expect(mockInvoker).toHaveBeenCalledWith(
@@ -162,8 +159,8 @@ describe('LlamaCppBridge', () => {
         expect.objectContaining({
           num_predict: 512,
           temperature: 0.5,
-          stop: ['END']
-        })
+          stop: ['END'],
+        }),
       );
     });
 
@@ -190,7 +187,7 @@ describe('LlamaCppBridge', () => {
         expect.objectContaining({
           prompt: 'Test prompt',
           num_predict: 512,
-        })
+        }),
       );
     });
 
@@ -204,14 +201,15 @@ describe('LlamaCppBridge', () => {
 
   describe('chat', () => {
     beforeEach(() => {
-      mockInvoker.mockResolvedValue({ message: { content: 'Chat response' }, model: 'llama3.2:1b' });
+      mockInvoker.mockResolvedValue({
+        message: { content: 'Chat response' },
+        model: 'llama3.2:1b',
+      });
       bridge.setMcpInvoker(mockInvoker);
     });
 
     it('should call chat with messages and model', async () => {
-      const messages = [
-        { role: 'user', content: 'Hello' }
-      ];
+      const messages = [{ role: 'user', content: 'Hello' }];
 
       await bridge.chat(messages);
 
@@ -219,8 +217,8 @@ describe('LlamaCppBridge', () => {
         MCP_TOOLS.CHAT,
         expect.objectContaining({
           messages,
-          model: 'llama3.2:1b'
-        })
+          model: 'llama3.2:1b',
+        }),
       );
     });
 
@@ -236,9 +234,9 @@ describe('LlamaCppBridge', () => {
           model: 'llama3.2:1b',
           options: expect.objectContaining({
             temperature: 0.3,
-            num_predict: 512
-          })
-        })
+            num_predict: 512,
+          }),
+        }),
       );
     });
   });
@@ -252,7 +250,7 @@ describe('LlamaCppBridge', () => {
     it('should emulate code via generate with prompt engineering', async () => {
       await bridge.code('generate', {
         description: 'Create a test function',
-        language: 'javascript'
+        language: 'javascript',
       });
 
       // code() routes through generate → ollama_generate
@@ -262,7 +260,7 @@ describe('LlamaCppBridge', () => {
           prompt: expect.stringContaining('javascript'),
           temperature: 0.4,
           num_predict: 4096,
-        })
+        }),
       );
     });
 
@@ -289,7 +287,7 @@ describe('LlamaCppBridge', () => {
         MCP_TOOLS.GENERATE,
         expect.objectContaining({
           prompt: expect.stringContaining('Generate JSON'),
-        })
+        }),
       );
     });
 
@@ -316,20 +314,20 @@ describe('LlamaCppBridge', () => {
           prompt: expect.stringContaining('sentiment'),
           temperature: 0.3,
           num_predict: 1024,
-        })
+        }),
       );
     });
 
     it('should accept custom targetLanguage for translate', async () => {
       await bridge.analyze('Text', 'translate', {
-        targetLanguage: 'pl'
+        targetLanguage: 'pl',
       });
 
       expect(mockInvoker).toHaveBeenCalledWith(
         MCP_TOOLS.GENERATE,
         expect.objectContaining({
           prompt: expect.stringContaining('pl'),
-        })
+        }),
       );
     });
   });
@@ -343,19 +341,19 @@ describe('LlamaCppBridge', () => {
     it('should call embed with input and model', async () => {
       await bridge.embed('Text to embed');
 
-      expect(mockInvoker).toHaveBeenCalledWith(
-        MCP_TOOLS.EMBED,
-        { input: 'Text to embed', model: 'llama3.2:1b' }
-      );
+      expect(mockInvoker).toHaveBeenCalledWith(MCP_TOOLS.EMBED, {
+        input: 'Text to embed',
+        model: 'llama3.2:1b',
+      });
     });
 
     it('should join multiple texts into single input', async () => {
       await bridge.embed(['Text 1', 'Text 2']);
 
-      expect(mockInvoker).toHaveBeenCalledWith(
-        MCP_TOOLS.EMBED,
-        { input: 'Text 1\nText 2', model: 'llama3.2:1b' }
-      );
+      expect(mockInvoker).toHaveBeenCalledWith(MCP_TOOLS.EMBED, {
+        input: 'Text 1\nText 2',
+        model: 'llama3.2:1b',
+      });
     });
   });
 
@@ -380,7 +378,7 @@ describe('LlamaCppBridge', () => {
     beforeEach(() => {
       mockInvoker.mockResolvedValue({
         message: { content: JSON.stringify({ tool: 'test_function', arguments: {} }) },
-        model: 'llama3.2:1b'
+        model: 'llama3.2:1b',
       });
       bridge.setMcpInvoker(mockInvoker);
     });
@@ -395,11 +393,14 @@ describe('LlamaCppBridge', () => {
         MCP_TOOLS.CHAT,
         expect.objectContaining({
           messages: expect.arrayContaining([
-            expect.objectContaining({ role: 'system', content: expect.stringContaining('test_function') }),
-            ...messages
+            expect.objectContaining({
+              role: 'system',
+              content: expect.stringContaining('test_function'),
+            }),
+            ...messages,
           ]),
-          model: 'llama3.2:1b'
-        })
+          model: 'llama3.2:1b',
+        }),
       );
     });
   });
@@ -457,11 +458,11 @@ describe('LlamaCppBridge', () => {
       expect(mockInvoker).toHaveBeenCalledTimes(2);
       expect(mockInvoker).toHaveBeenCalledWith(
         MCP_TOOLS.EMBED,
-        expect.objectContaining({ input: 'text1' })
+        expect.objectContaining({ input: 'text1' }),
       );
       expect(mockInvoker).toHaveBeenCalledWith(
         MCP_TOOLS.EMBED,
-        expect.objectContaining({ input: 'text2' })
+        expect.objectContaining({ input: 'text2' }),
       );
       expect(result.operation).toBe('similarity');
     });
@@ -481,10 +482,7 @@ describe('LlamaCppBridge', () => {
 
       const result = await bridge.getInfo();
 
-      expect(mockInvoker).toHaveBeenCalledWith(
-        MCP_TOOLS.LIST,
-        {}
-      );
+      expect(mockInvoker).toHaveBeenCalledWith(MCP_TOOLS.LIST, {});
       expect(result.operation).toBe('info');
     });
   });

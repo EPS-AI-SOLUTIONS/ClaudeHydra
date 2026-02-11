@@ -3,28 +3,28 @@
  * @module test/unit/cli-unified/processing/CacheManager
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock crypto - generate consistent hashes based on input
 vi.mock('crypto', () => ({
   createHash: vi.fn(() => {
     let data = '';
     return {
-      update: vi.fn(function(input) {
+      update: vi.fn(function (input) {
         data = input;
         return this;
       }),
-      digest: vi.fn(function() {
+      digest: vi.fn(() => {
         // Simple hash based on input string - consistent for same input
         let hash = 0;
         for (let i = 0; i < data.length; i++) {
-          hash = ((hash << 5) - hash) + data.charCodeAt(i);
+          hash = (hash << 5) - hash + data.charCodeAt(i);
           hash = hash & hash;
         }
         return `hash_${Math.abs(hash)}`;
-      })
+      }),
     };
-  })
+  }),
 }));
 
 // Mock EventBus
@@ -33,13 +33,17 @@ vi.mock('../../../../src/cli-unified/core/EventBus.js', () => ({
   EVENT_TYPES: {
     CACHE_HIT: 'cache:hit',
     CACHE_MISS: 'cache:miss',
-    CACHE_CLEAR: 'cache:clear'
-  }
+    CACHE_CLEAR: 'cache:clear',
+  },
 }));
 
-import { CacheManager, TokenUtils, createCacheManager } from '../../../../src/cli-unified/processing/CacheManager.js';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import { eventBus } from '../../../../src/cli-unified/core/EventBus.js';
+import {
+  CacheManager,
+  createCacheManager,
+  TokenUtils,
+} from '../../../../src/cli-unified/processing/CacheManager.js';
 
 describe('CacheManager Module', () => {
   describe('TokenUtils', () => {
@@ -105,7 +109,7 @@ describe('CacheManager Module', () => {
           misses: 0,
           sets: 0,
           evictions: 0,
-          totalTokensSaved: 0
+          totalTokensSaved: 0,
         });
       });
 
@@ -113,7 +117,7 @@ describe('CacheManager Module', () => {
         const custom = new CacheManager({
           maxSize: 50,
           ttl: 1800000,
-          enabled: false
+          enabled: false,
         });
 
         expect(custom.ttl).toBe(1800000);
@@ -143,7 +147,7 @@ describe('CacheManager Module', () => {
           model: 'gpt-4',
           cli: { some: 'ref' },
           onToken: () => {},
-          callback: () => {}
+          callback: () => {},
         };
 
         // Should not throw
@@ -153,7 +157,7 @@ describe('CacheManager Module', () => {
       it('should filter out objects with circular references', () => {
         const options = {
           model: 'gpt-4',
-          context: { cli: {}, mode: {} }
+          context: { cli: {}, mode: {} },
         };
 
         // Should not throw
@@ -235,8 +239,8 @@ describe('CacheManager Module', () => {
         expect(spy).toHaveBeenCalledWith(
           expect.any(String),
           expect.objectContaining({
-            metadata: { source: 'test' }
-          })
+            metadata: { source: 'test' },
+          }),
         );
       });
 
@@ -335,7 +339,7 @@ describe('CacheManager Module', () => {
           misses: 0,
           sets: 0,
           evictions: 0,
-          totalTokensSaved: 0
+          totalTokensSaved: 0,
         });
       });
     });
@@ -369,7 +373,7 @@ describe('CacheManager Module', () => {
         cache.set('prompt2', 'response2');
 
         // Backdate entries to simulate expiry
-        for (const [key, entry] of cache.cache.entries()) {
+        for (const [_key, entry] of cache.cache.entries()) {
           entry.timestamp = Date.now() - 100; // 100ms ago
         }
 
@@ -384,7 +388,7 @@ describe('CacheManager Module', () => {
         cache.set('prompt', 'response');
 
         // Backdate entry
-        for (const [key, entry] of cache.cache.entries()) {
+        for (const [_key, entry] of cache.cache.entries()) {
           entry.timestamp = Date.now() - 100;
         }
 
@@ -429,7 +433,7 @@ describe('CacheManager Module', () => {
       let hashCounter = 0;
       vi.mocked(createHash).mockImplementation(() => ({
         update: vi.fn().mockReturnThis(),
-        digest: vi.fn(() => `hash${hashCounter++}`)
+        digest: vi.fn(() => `hash${hashCounter++}`),
       }));
 
       cache.set('prompt1', 'response1');
@@ -446,7 +450,7 @@ describe('CacheManager Module', () => {
       let hashCounter = 0;
       vi.mocked(createHash).mockImplementation(() => ({
         update: vi.fn().mockReturnThis(),
-        digest: vi.fn(() => `hash${hashCounter++}`)
+        digest: vi.fn(() => `hash${hashCounter++}`),
       }));
 
       cache.set('prompt1', 'response1');

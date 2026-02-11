@@ -42,6 +42,16 @@ const WelcomeViewLazy = lazy(() =>
   })),
 );
 
+/**
+ * Lazy-loaded ChatHistoryView component
+ * Session history browser with search and preview
+ */
+const ChatHistoryViewLazy = lazy(() =>
+  import('./ChatHistoryView').then((m) => ({
+    default: m.ChatHistoryView,
+  })),
+);
+
 interface LazyComponentWrapperProps {
   children: ReactNode;
   fallback?: ReactNode;
@@ -75,6 +85,7 @@ function WithSuspense({ component: Component, fallback, ...props }: WithSuspense
 
 export {
   // Lazy components
+  ChatHistoryViewLazy,
   SettingsViewLazy,
   SidebarLazy,
   WelcomeViewLazy,

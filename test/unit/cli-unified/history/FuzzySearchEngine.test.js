@@ -3,11 +3,11 @@
  * @module test/unit/cli-unified/history/FuzzySearchEngine.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  createFuzzySearchEngine,
   FuzzySearchEngine,
-  createFuzzySearchEngine
 } from '../../../../src/cli-unified/history/FuzzySearchEngine.js';
 
 describe('FuzzySearchEngine Module', () => {
@@ -30,7 +30,7 @@ describe('FuzzySearchEngine Module', () => {
     it('should accept custom options', () => {
       const engine = new FuzzySearchEngine({
         minScore: 0.5,
-        caseSensitive: true
+        caseSensitive: true,
       });
       expect(engine.minScore).toBe(0.5);
       expect(engine.caseSensitive).toBe(true);
@@ -229,8 +229,8 @@ describe('FuzzySearchEngine Module', () => {
       const results = engine.search('hello');
 
       expect(results.length).toBeGreaterThan(0);
-      expect(results.some(r => r.id === 'doc1')).toBe(true);
-      expect(results.some(r => r.id === 'doc3')).toBe(true);
+      expect(results.some((r) => r.id === 'doc1')).toBe(true);
+      expect(results.some((r) => r.id === 'doc3')).toBe(true);
     });
 
     it('should return empty array for no matches', () => {
@@ -357,8 +357,8 @@ describe('FuzzySearchEngine Module', () => {
       const results = engine.prefixSearch('hel');
 
       expect(results.length).toBe(2);
-      expect(results.some(r => r.id === 'doc1')).toBe(true);
-      expect(results.some(r => r.id === 'doc2')).toBe(true);
+      expect(results.some((r) => r.id === 'doc1')).toBe(true);
+      expect(results.some((r) => r.id === 'doc2')).toBe(true);
     });
 
     it('should return empty for no matches', () => {
@@ -501,7 +501,7 @@ describe('FuzzySearchEngine Module', () => {
 
     it('should handle very long documents', () => {
       const engine = new FuzzySearchEngine();
-      const longText = 'word '.repeat(100) + 'unique';
+      const longText = `${'word '.repeat(100)}unique`;
       engine.addDocument('doc1', longText);
 
       expect(engine.count).toBe(1);

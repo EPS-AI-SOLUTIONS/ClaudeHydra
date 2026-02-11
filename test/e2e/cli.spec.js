@@ -3,9 +3,9 @@
  * Tests for ClaudeHydra CLI functionality
  */
 
-import { test, expect } from '@playwright/test';
-import { spawn, execSync } from 'child_process';
-import { join } from 'path';
+import { spawn } from 'node:child_process';
+import { join } from 'node:path';
+import { expect, test } from '@playwright/test';
 
 const ROOT_DIR = join(import.meta.dirname, '..', '..');
 const CLI_PATH = join(ROOT_DIR, 'src', 'cli-unified', 'index.js');
@@ -22,7 +22,7 @@ function runCLI(args = [], options = {}) {
     const proc = spawn('node', [CLI_PATH, ...args], {
       cwd: ROOT_DIR,
       env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
-      timeout
+      timeout,
     });
 
     proc.stdout.on('data', (data) => {

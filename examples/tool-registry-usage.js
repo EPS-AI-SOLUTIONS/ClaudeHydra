@@ -10,8 +10,7 @@
  * - Statistics and monitoring
  */
 
-import registry, { ToolRegistry, ToolCategory } from '../src/tool-registry.js';
-import Logger from '../src/logger.js';
+import registry, { ToolCategory, ToolRegistry } from '../src/tool-registry.js';
 
 // ============================================================================
 // Example 1: Basic Tool Registration and Execution
@@ -28,20 +27,20 @@ async function basicUsageExample() {
     metadata: {
       version: '1.0.0',
       author: 'Example Author',
-      tags: ['greeting', 'utility', 'user']
+      tags: ['greeting', 'utility', 'user'],
     },
     inputSchema: {
       type: 'object',
       required: ['name'],
       properties: {
         name: { type: 'string', minLength: 1, description: 'Name of the user' },
-        formal: { type: 'boolean', default: false, description: 'Use formal greeting' }
-      }
+        formal: { type: 'boolean', default: false, description: 'Use formal greeting' },
+      },
     },
     execute: async ({ name, formal = false }) => {
       const greeting = formal ? `Good day, ${name}.` : `Hey ${name}!`;
       return { greeting, formal };
-    }
+    },
   };
 
   // Register the tool
@@ -55,7 +54,7 @@ async function basicUsageExample() {
   // Execute with different input
   const formalResult = await registry.executeTool('greet_user', {
     name: 'Dr. Smith',
-    formal: true
+    formal: true,
   });
   console.log('Formal result:', formalResult);
 }
@@ -79,23 +78,23 @@ async function cachingExample() {
       type: 'object',
       required: ['city'],
       properties: {
-        city: { type: 'string', description: 'City name' }
-      }
+        city: { type: 'string', description: 'City name' },
+      },
     },
     execute: async ({ city }) => {
       apiCallCount++;
       console.log(`  [API Call #${apiCallCount}] Fetching weather for ${city}...`);
 
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       return {
         city,
         temperature: Math.round(15 + Math.random() * 20),
         condition: ['Sunny', 'Cloudy', 'Rainy'][Math.floor(Math.random() * 3)],
-        fetchedAt: new Date().toISOString()
+        fetchedAt: new Date().toISOString(),
       };
-    }
+    },
   };
 
   await registry.registerTool(cachedApiTool);
@@ -143,18 +142,23 @@ async function hooksExample() {
       properties: {
         a: { type: 'number' },
         b: { type: 'number' },
-        operation: { type: 'string', enum: ['add', 'subtract', 'multiply', 'divide'] }
-      }
+        operation: { type: 'string', enum: ['add', 'subtract', 'multiply', 'divide'] },
+      },
     },
     execute: async ({ a, b, operation }) => {
       switch (operation) {
-        case 'add': return a + b;
-        case 'subtract': return a - b;
-        case 'multiply': return a * b;
-        case 'divide': return b !== 0 ? a / b : 'Error: Division by zero';
-        default: throw new Error(`Unknown operation: ${operation}`);
+        case 'add':
+          return a + b;
+        case 'subtract':
+          return a - b;
+        case 'multiply':
+          return a * b;
+        case 'divide':
+          return b !== 0 ? a / b : 'Error: Division by zero';
+        default:
+          throw new Error(`Unknown operation: ${operation}`);
       }
-    }
+    },
   });
 
   // Global logging hook
@@ -177,8 +181,8 @@ async function hooksExample() {
       modifiedInput: {
         ...context.input,
         _auditId: context.executionId,
-        _timestamp: context.startTime
-      }
+        _timestamp: context.startTime,
+      },
     };
   });
 
@@ -187,7 +191,7 @@ async function hooksExample() {
   const result = await hookRegistry.executeTool('calculate', {
     a: 10,
     b: 5,
-    operation: 'multiply'
+    operation: 'multiply',
   });
   console.log('Final result:', result);
 
@@ -198,7 +202,7 @@ async function hooksExample() {
     if (context.input.operation === 'divide' && context.input.b === 0) {
       return {
         abort: true,
-        abortReason: 'Division by zero detected - operation blocked'
+        abortReason: 'Division by zero detected - operation blocked',
       };
     }
   });
@@ -228,14 +232,14 @@ async function categoriesExample() {
       name: 'read_json',
       description: 'Reads and parses a JSON file from disk',
       category: ToolCategory.FILESYSTEM,
-      execute: async () => ({})
+      execute: async () => ({}),
     },
     {
       name: 'write_json',
       description: 'Writes data to a JSON file on disk',
       category: ToolCategory.FILESYSTEM,
       dangerous: true,
-      execute: async () => ({})
+      execute: async () => ({}),
     },
     {
       name: 'run_command',
@@ -243,20 +247,20 @@ async function categoriesExample() {
       category: ToolCategory.SHELL,
       dangerous: true,
       requiresConfirmation: true,
-      execute: async () => ({})
+      execute: async () => ({}),
     },
     {
       name: 'http_get',
       description: 'Makes an HTTP GET request to a URL',
       category: ToolCategory.NETWORK,
-      execute: async () => ({})
+      execute: async () => ({}),
     },
     {
       name: 'generate_text',
       description: 'Generates text using AI model',
       category: ToolCategory.AI,
-      execute: async () => ({})
-    }
+      execute: async () => ({}),
+    },
   ];
 
   for (const tool of tools) {
@@ -275,13 +279,13 @@ async function categoriesExample() {
   // Get tools by category
   console.log('\nFilesystem tools:');
   const fsTools = catRegistry.getToolsByCategory(ToolCategory.FILESYSTEM);
-  fsTools.forEach(t => console.log(`  - ${t.name}: ${t.description}`));
+  fsTools.forEach((t) => console.log(`  - ${t.name}: ${t.description}`));
 
   // Get dangerous tools
   console.log('\nDangerous tools (require caution):');
   const allTools = catRegistry.getAllTools();
-  const dangerousTools = allTools.filter(t => t.dangerous);
-  dangerousTools.forEach(t => console.log(`  - ${t.name} [${t.category}]`));
+  const dangerousTools = allTools.filter((t) => t.dangerous);
+  dangerousTools.forEach((t) => console.log(`  - ${t.name} [${t.category}]`));
 
   catRegistry.shutdown();
 }
@@ -301,9 +305,9 @@ async function statisticsExample() {
     description: 'A fast operation for testing',
     category: ToolCategory.UTILITY,
     execute: async () => {
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       return 'fast';
-    }
+    },
   });
 
   // Slow tool
@@ -312,9 +316,9 @@ async function statisticsExample() {
     description: 'A slow operation for testing',
     category: ToolCategory.UTILITY,
     execute: async () => {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       return 'slow';
-    }
+    },
   });
 
   // Sometimes failing tool
@@ -329,7 +333,7 @@ async function statisticsExample() {
         throw new Error('Random failure');
       }
       return 'success';
-    }
+    },
   });
 
   // Execute multiple times
@@ -346,7 +350,9 @@ async function statisticsExample() {
   for (let i = 0; i < 6; i++) {
     try {
       await statsRegistry.executeTool('flaky_operation', {});
-    } catch { /* expected failures */ }
+    } catch {
+      /* expected failures */
+    }
   }
 
   // Display statistics
@@ -391,7 +397,7 @@ async function retryExample() {
       }
 
       return { status: 'success', attempts };
-    }
+    },
   });
 
   console.log('Calling unreliable API (will retry on failure):');
@@ -467,10 +473,9 @@ async function runAllExamples() {
     await retryExample();
     await integrationExample();
 
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${'='.repeat(60)}`);
     console.log('  All examples completed successfully!');
     console.log('='.repeat(60));
-
   } catch (error) {
     console.error('Example failed:', error);
   } finally {

@@ -6,10 +6,10 @@
  * and localStorage persistence.
  */
 
-import { test, expect } from '../fixtures/test-setup';
-import { SettingsView } from '../page-objects/SettingsView';
+import { SELECTORS, TEST_SETTINGS, UI_TEXTS } from '../fixtures/test-data';
+import { expect, test } from '../fixtures/test-setup';
 import { SessionSidebar } from '../page-objects/SessionSidebar';
-import { SELECTORS, UI_TEXTS, TEST_SETTINGS } from '../fixtures/test-data';
+import { SettingsView } from '../page-objects/SettingsView';
 
 test.describe('Settings View', () => {
   let settings: SettingsView;
@@ -45,7 +45,9 @@ test.describe('Settings View', () => {
     // Expand General Settings if needed
     try {
       await settings.expandSection(UI_TEXTS.settings.generalSettings);
-    } catch { /* may already be expanded */ }
+    } catch {
+      /* may already be expanded */
+    }
 
     await settings.setWorkingDir(TEST_SETTINGS.workingDir);
     const value = await settings.getWorkingDir();
@@ -56,7 +58,9 @@ test.describe('Settings View', () => {
     await sidebar.navigateTo('settings');
     try {
       await settings.expandSection(UI_TEXTS.settings.generalSettings);
-    } catch { /* may already be expanded */ }
+    } catch {
+      /* may already be expanded */
+    }
 
     await expect(settings.page.locator(SELECTORS.settings.cliPathInput).first()).toBeVisible();
   });
@@ -71,7 +75,9 @@ test.describe('Settings View', () => {
     // Expand Appearance section if needed
     try {
       await settings.expandSection(UI_TEXTS.settings.appearance);
-    } catch { /* may already be expanded */ }
+    } catch {
+      /* may already be expanded */
+    }
 
     // Toggle to light
     await settings.toggleTheme();
@@ -92,7 +98,9 @@ test.describe('Settings View', () => {
     // Expand provider keys section
     try {
       await settings.expandSection(UI_TEXTS.settings.providerKeys);
-    } catch { /* may already be expanded */ }
+    } catch {
+      /* may already be expanded */
+    }
 
     const anthropicExists = await settings.elementExists(SELECTORS.settings.apiKeyAnthropicInput);
     expect(anthropicExists).toBeTruthy();
@@ -103,7 +111,9 @@ test.describe('Settings View', () => {
 
     try {
       await settings.expandSection(UI_TEXTS.settings.providerKeys);
-    } catch { /* may already be expanded */ }
+    } catch {
+      /* may already be expanded */
+    }
 
     const masked = await settings.isApiKeyMasked('anthropic');
     expect(masked).toBe(true);
@@ -124,7 +134,9 @@ test.describe('Settings View', () => {
     // Scroll down or expand About section
     try {
       await settings.expandSection(UI_TEXTS.settings.about);
-    } catch { /* may already be visible */ }
+    } catch {
+      /* may already be visible */
+    }
 
     await settings.assertVersionVisible();
   });

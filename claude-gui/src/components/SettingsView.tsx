@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  FolderOpen,
-  FileCode,
-  Save,
-  Key,
-  Globe,
+  Bot,
+  Brain,
+  ChevronRight,
+  Code2,
   Eye,
   EyeOff,
-  Shield,
-  ChevronRight,
-  Bot,
-  Sparkles,
-  Brain,
-  Zap,
-  Search,
+  FileCode,
+  FolderOpen,
   Github,
-  Code2,
-  Sun,
+  Globe,
+  Key,
   Moon,
   Palette,
+  Save,
+  Search,
+  Shield,
+  Sparkles,
+  Sun,
+  Zap,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useClaudeStore } from '../stores/claudeStore';
 
 interface ApiKeyInputProps {
@@ -32,25 +32,17 @@ interface ApiKeyInputProps {
   description?: string;
 }
 
-function ApiKeyInput({
-  label,
-  icon,
-  value,
-  onChange,
-  placeholder,
-  description,
-}: ApiKeyInputProps) {
+function ApiKeyInput({ label, icon, value, onChange, placeholder, description }: ApiKeyInputProps) {
   const [showKey, setShowKey] = useState(false);
   const hasValue = value.length > 0;
 
   return (
     <div className="space-y-1">
+      {/* biome-ignore lint/a11y/noLabelWithoutControl: label and input are siblings in visual layout */}
       <label className="flex items-center gap-2 text-sm text-matrix-text">
         {icon}
         {label}
-        {hasValue && (
-          <span className="ml-auto text-xs text-matrix-accent">Configured</span>
-        )}
+        {hasValue && <span className="ml-auto text-xs text-matrix-accent">Configured</span>}
       </label>
       <div className="relative">
         <input
@@ -68,9 +60,7 @@ function ApiKeyInput({
           {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
-      {description && (
-        <p className="text-xs text-matrix-text-dim">{description}</p>
-      )}
+      {description && <p className="text-xs text-matrix-text-dim">{description}</p>}
     </div>
   );
 }
@@ -98,17 +88,13 @@ function CollapsibleSection({
       transition={{ duration: 0.2 }}
     >
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center gap-3 p-4 hover:bg-matrix-accent/5 transition-colors"
       >
         {icon}
-        <span className="text-sm font-semibold text-matrix-accent flex-1 text-left">
-          {title}
-        </span>
-        <motion.div
-          animate={{ rotate: isOpen ? 90 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
+        <span className="text-sm font-semibold text-matrix-text flex-1 text-left">{title}</span>
+        <motion.div animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
           <ChevronRight size={16} className="text-matrix-text-dim" />
         </motion.div>
       </button>
@@ -121,9 +107,7 @@ function CollapsibleSection({
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="p-4 pt-0 border-t border-matrix-border space-y-4">
-              {children}
-            </div>
+            <div className="p-4 pt-0 border-t border-matrix-border space-y-4">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -152,7 +136,7 @@ export function SettingsView() {
 
   return (
     <div className="h-full flex flex-col overflow-auto">
-      <h2 className="text-lg font-semibold text-matrix-accent mb-4">Settings</h2>
+      <h2 className="text-lg font-semibold text-matrix-text mb-4">Settings</h2>
 
       <div className="space-y-4">
         {/* General Settings */}
@@ -163,6 +147,7 @@ export function SettingsView() {
         >
           {/* Working Directory */}
           <div>
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: visual label with sibling input */}
             <label className="block text-sm text-matrix-text mb-2">
               <FolderOpen size={14} className="inline mr-2" />
               Working Directory
@@ -181,6 +166,7 @@ export function SettingsView() {
 
           {/* CLI Path */}
           <div>
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: visual label with sibling input */}
             <label className="block text-sm text-matrix-text mb-2">
               <FileCode size={14} className="inline mr-2" />
               Claude CLI Path
@@ -252,6 +238,7 @@ export function SettingsView() {
         >
           <div className="space-y-4">
             <div>
+              {/* biome-ignore lint/a11y/noLabelWithoutControl: visual label with sibling input */}
               <label className="flex items-center gap-2 text-sm text-matrix-text mb-2">
                 <Bot size={14} />
                 Ollama URL
@@ -269,6 +256,7 @@ export function SettingsView() {
             </div>
 
             <div>
+              {/* biome-ignore lint/a11y/noLabelWithoutControl: visual label with sibling input */}
               <label className="flex items-center gap-2 text-sm text-matrix-text mb-2">
                 <Sparkles size={14} />
                 Anthropic API URL
@@ -286,6 +274,7 @@ export function SettingsView() {
             </div>
 
             <div>
+              {/* biome-ignore lint/a11y/noLabelWithoutControl: visual label with sibling input */}
               <label className="flex items-center gap-2 text-sm text-matrix-text mb-2">
                 <Brain size={14} />
                 OpenAI API URL
@@ -396,25 +385,23 @@ export function SettingsView() {
         <div className="glass-card p-4">
           <div className="flex items-center gap-2 text-xs text-matrix-text-dim">
             <Save size={14} />
-            <span>
-              Settings are automatically saved to local storage.
-            </span>
+            <span>Settings are automatically saved to local storage.</span>
           </div>
           <p className="text-xs text-yellow-400/70 mt-2">
-            Note: API keys are stored locally. For production use, consider using
-            environment variables or a secure vault.
+            Note: API keys are stored locally. For production use, consider using environment
+            variables or a secure vault.
           </p>
         </div>
 
         {/* Info Section */}
         <div className="glass-card p-4">
-          <h3 className="text-sm font-semibold text-matrix-accent mb-2">About</h3>
+          <h3 className="text-sm font-semibold text-matrix-text mb-2">About</h3>
           <div className="text-xs text-matrix-text-dim space-y-1">
             <p>Claude HYDRA v0.1.0</p>
             <p>AI Swarm Control Center</p>
             <p className="pt-2">
-              This GUI allows you to automatically approve or deny actions requested
-              by Claude Code based on configurable rules.
+              This GUI allows you to automatically approve or deny actions requested by Claude Code
+              based on configurable rules.
             </p>
           </div>
         </div>

@@ -5,13 +5,7 @@
  */
 
 import chalk from 'chalk';
-import {
-  BorderRenderer,
-  createBorderRenderer,
-  BORDER_STYLES,
-  quickBox,
-  quickPanel
-} from '../src/cli/Borders.js';
+import { createBorderRenderer, quickBox, quickPanel } from '../src/cli/Borders.js';
 
 // Demo all border styles
 console.log(chalk.bold.cyan('\n=== Unicode Box-Drawing Styles Demo ===\n'));
@@ -32,7 +26,9 @@ console.log(chalk.bold.cyan('\n=== Themed Panels ===\n'));
 const renderer = createBorderRenderer('rounded', { color: chalk.gray });
 
 console.log(chalk.green('Info Panel:'));
-renderer.print(renderer.infoPanel('This is an informational message.\nIt can have multiple lines.'));
+renderer.print(
+  renderer.infoPanel('This is an informational message.\nIt can have multiple lines.'),
+);
 
 console.log(chalk.green('\nSuccess Panel:'));
 renderer.print(renderer.successPanel('Operation completed successfully!'));
@@ -49,30 +45,38 @@ console.log(chalk.bold.cyan('\n=== Section Headers ===\n'));
 const boldRenderer = createBorderRenderer('bold');
 
 console.log(boldRenderer.sectionHeader('Left Aligned Section', { width: 60, position: 'left' }));
-console.log(boldRenderer.sectionHeader('Center Aligned Section', { width: 60, position: 'center' }));
+console.log(
+  boldRenderer.sectionHeader('Center Aligned Section', { width: 60, position: 'center' }),
+);
 console.log(boldRenderer.sectionHeader('Right Aligned Section', { width: 60, position: 'right' }));
 
 // Demo side by side boxes
 console.log(chalk.bold.cyan('\n=== Side-by-Side Layout ===\n'));
 
 const sideRenderer = createBorderRenderer('single');
-const sideBySide = sideRenderer.sideBySide([
-  { content: 'Box 1\nLeft column', title: 'First', width: 25 },
-  { content: 'Box 2\nMiddle column', title: 'Second', width: 25 },
-  { content: 'Box 3\nRight column', title: 'Third', width: 25 }
-], { gap: 2 });
+const sideBySide = sideRenderer.sideBySide(
+  [
+    { content: 'Box 1\nLeft column', title: 'First', width: 25 },
+    { content: 'Box 2\nMiddle column', title: 'Second', width: 25 },
+    { content: 'Box 3\nRight column', title: 'Third', width: 25 },
+  ],
+  { gap: 2 },
+);
 sideRenderer.print(sideBySide);
 
 // Demo grid layout
 console.log(chalk.bold.cyan('\n=== Grid Layout ===\n'));
 
 const gridRenderer = createBorderRenderer('rounded');
-const grid = gridRenderer.grid([
-  { content: 'Item 1', title: 'A' },
-  { content: 'Item 2', title: 'B' },
-  { content: 'Item 3', title: 'C' },
-  { content: 'Item 4', title: 'D' }
-], { columns: 2, gap: 2 });
+const grid = gridRenderer.grid(
+  [
+    { content: 'Item 1', title: 'A' },
+    { content: 'Item 2', title: 'B' },
+    { content: 'Item 3', title: 'C' },
+    { content: 'Item 4', title: 'D' },
+  ],
+  { columns: 2, gap: 2 },
+);
 gridRenderer.print(grid);
 
 // Demo table
@@ -82,9 +86,11 @@ const tableRenderer = createBorderRenderer('single');
 const colWidths = [15, 10, 20];
 
 console.log(tableRenderer.tableDivider(colWidths, 'top'));
-console.log(tableRenderer.tableRow(['Name', 'Age', 'City'], colWidths, {
-  cellColor: chalk.bold
-}));
+console.log(
+  tableRenderer.tableRow(['Name', 'Age', 'City'], colWidths, {
+    cellColor: chalk.bold,
+  }),
+);
 console.log(tableRenderer.tableDivider(colWidths, 'middle'));
 console.log(tableRenderer.tableRow(['Alice', '28', 'New York'], colWidths));
 console.log(tableRenderer.tableRow(['Bob', '35', 'Los Angeles'], colWidths));
@@ -97,13 +103,20 @@ console.log(chalk.bold.cyan('\n=== Decorative Elements ===\n'));
 const decoRenderer = createBorderRenderer('rounded');
 
 console.log(chalk.yellow('Callout:'));
-decoRenderer.print(decoRenderer.callout('\u2139', 'This is an important callout!\nPay attention to this information.'));
+decoRenderer.print(
+  decoRenderer.callout(
+    '\u2139',
+    'This is an important callout!\nPay attention to this information.',
+  ),
+);
 
 console.log(chalk.yellow('\nQuote:'));
-decoRenderer.print(decoRenderer.quote(
-  'The best time to plant a tree was 20 years ago.\nThe second best time is now.',
-  'Chinese Proverb'
-));
+decoRenderer.print(
+  decoRenderer.quote(
+    'The best time to plant a tree was 20 years ago.\nThe second best time is now.',
+    'Chinese Proverb',
+  ),
+);
 
 // Demo banner
 console.log(chalk.bold.cyan('\n=== Banner ===\n'));

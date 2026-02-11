@@ -3,8 +3,8 @@
  * @module test/unit/security/audit-logger.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs modules
 vi.mock('node:fs', () => ({
@@ -17,9 +17,9 @@ vi.mock('node:fs', () => ({
   createWriteStream: vi.fn(() => ({
     write: vi.fn(),
     end: vi.fn(),
-    on: vi.fn()
+    on: vi.fn(),
   })),
-  appendFileSync: vi.fn()
+  appendFileSync: vi.fn(),
 }));
 
 vi.mock('node:fs/promises', () => ({
@@ -28,7 +28,7 @@ vi.mock('node:fs/promises', () => ({
   stat: vi.fn().mockResolvedValue({ size: 0 }),
   readdir: vi.fn().mockResolvedValue([]),
   unlink: vi.fn().mockResolvedValue(undefined),
-  rename: vi.fn().mockResolvedValue(undefined)
+  rename: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock constants
@@ -38,7 +38,7 @@ vi.mock('../../../src/constants.js', () => ({
       INFO: 'info',
       WARN: 'warn',
       ERROR: 'error',
-      CRITICAL: 'critical'
+      CRITICAL: 'critical',
     },
     EVENT_TYPES: {
       SHELL_COMMAND: 'shell_command',
@@ -47,16 +47,16 @@ vi.mock('../../../src/constants.js', () => ({
       API_CALL: 'api_call',
       TOOL_EXECUTION: 'tool_execution',
       CONFIG_CHANGE: 'config_change',
-      AUTH_EVENT: 'auth_event'
-    }
+      AUTH_EVENT: 'auth_event',
+    },
   },
   Paths: {
-    AUDIT_DIR: '/tmp/audit'
+    AUDIT_DIR: '/tmp/audit',
   },
   SizeLimits: {
-    MAX_LOG_SIZE: 10 * 1024 * 1024
+    MAX_LOG_SIZE: 10 * 1024 * 1024,
   },
-  resolvePath: vi.fn(p => p)
+  resolvePath: vi.fn((p) => p),
 }));
 
 // Mock logger
@@ -65,22 +65,19 @@ vi.mock('../../../src/logger.js', () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-    debug: vi.fn()
+    debug: vi.fn(),
   },
   createLogger: vi.fn(() => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-    debug: vi.fn()
-  }))
+    debug: vi.fn(),
+  })),
 }));
 
 // Mock patterns
 vi.mock('../../../src/security/patterns.js', () => ({
-  DANGEROUS_PATTERNS: [
-    /rm\s+-rf/i,
-    /chmod\s+777/i
-  ]
+  DANGEROUS_PATTERNS: [/rm\s+-rf/i, /chmod\s+777/i],
 }));
 
 describe('AuditLogger', () => {
@@ -120,7 +117,7 @@ describe('AuditLogger', () => {
         maxFiles: 5,
         flushInterval: 10000,
         bufferSize: 50,
-        syncMode: true
+        syncMode: true,
       });
 
       expect(logger.logDir).toBe('/custom/logs');
@@ -224,7 +221,9 @@ describe('AuditLogger', () => {
     it('should log security event', () => {
       const logger = new AuditLogger();
 
-      logger.logSecurityEvent('Unauthorized access attempt', 'warn', { details: { ip: '1.2.3.4' } });
+      logger.logSecurityEvent('Unauthorized access attempt', 'warn', {
+        details: { ip: '1.2.3.4' },
+      });
 
       expect(logger._buffer.length).toBe(1);
       expect(logger._buffer[0].type).toBe('security_event');
@@ -309,7 +308,7 @@ describe('AuditLogger', () => {
       logger.logToolExecution('api_call', {
         url: '/api',
         apiKey: 'secret-key-123',
-        password: 'mypassword'
+        password: 'mypassword',
       });
 
       expect(logger._buffer[0].data.input.apiKey).toBe('[REDACTED]');
@@ -373,7 +372,7 @@ describe('AuditLogger', () => {
         password: 'secret',
         apiKey: 'key123',
         token: 'abc',
-        auth: 'bearer xyz'
+        auth: 'bearer xyz',
       });
 
       expect(result.name).toBe('test');
@@ -388,8 +387,8 @@ describe('AuditLogger', () => {
 
       const result = logger._sanitizeInput({
         config: {
-          apiKey: 'secret'
-        }
+          apiKey: 'secret',
+        },
       });
 
       expect(result.config.apiKey).toBe('[REDACTED]');
@@ -514,10 +513,15 @@ describe('AuditLogger', () => {
     it('should include context data', () => {
       const logger = new AuditLogger();
 
-      const entry = logger._createEntry('test', 'info', {}, {
-        user: 'admin',
-        requestId: 'req-123'
-      });
+      const entry = logger._createEntry(
+        'test',
+        'info',
+        {},
+        {
+          user: 'admin',
+          requestId: 'req-123',
+        },
+      );
 
       expect(entry.user).toBe('admin');
       expect(entry.requestId).toBe('req-123');

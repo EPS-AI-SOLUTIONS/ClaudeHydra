@@ -3,7 +3,7 @@
  * @module test/unit/tools/base-tool.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 // Mock logger
@@ -12,8 +12,8 @@ vi.mock('../../../src/logger.js', () => ({
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
-    debug: vi.fn()
-  }))
+    debug: vi.fn(),
+  })),
 }));
 
 describe('BaseTool', () => {
@@ -31,11 +31,13 @@ describe('BaseTool', () => {
         super({
           name: options.name || 'test_tool',
           description: options.description || 'A test tool',
-          inputSchema: options.inputSchema || z.object({
-            message: z.string()
-          }),
+          inputSchema:
+            options.inputSchema ||
+            z.object({
+              message: z.string(),
+            }),
           timeoutMs: options.timeoutMs || 5000,
-          requiredPermissions: options.requiredPermissions || []
+          requiredPermissions: options.requiredPermissions || [],
         });
         this.runImpl = options.runImpl || (async (input) => input);
       }
@@ -72,7 +74,7 @@ describe('BaseTool', () => {
       const result = new ToolResult({
         success: true,
         data: 'test',
-        metadata: { custom: 'value' }
+        metadata: { custom: 'value' },
       });
 
       expect(result.metadata.custom).toBe('value');
@@ -141,11 +143,14 @@ describe('BaseTool', () => {
   describe('BaseTool class', () => {
     describe('constructor', () => {
       it('should throw when instantiated directly', () => {
-        expect(() => new BaseTool({
-          name: 'test',
-          description: 'test',
-          inputSchema: z.object({})
-        })).toThrow('BaseTool is abstract');
+        expect(
+          () =>
+            new BaseTool({
+              name: 'test',
+              description: 'test',
+              inputSchema: z.object({}),
+            }),
+        ).toThrow('BaseTool is abstract');
       });
 
       it('should throw when name is empty string', () => {
@@ -156,10 +161,12 @@ describe('BaseTool', () => {
             super({
               name: options.name,
               description: options.description || 'A test tool',
-              inputSchema: z.object({ message: z.string() })
+              inputSchema: z.object({ message: z.string() }),
             });
           }
-          async run(input) { return input; }
+          async run(input) {
+            return input;
+          }
         };
         expect(() => new NoDefaultTool({ name: '' })).toThrow('Tool name is required');
       });
@@ -170,20 +177,27 @@ describe('BaseTool', () => {
             super({
               name: options.name || 'test',
               description: options.description,
-              inputSchema: z.object({ message: z.string() })
+              inputSchema: z.object({ message: z.string() }),
             });
           }
-          async run(input) { return input; }
+          async run(input) {
+            return input;
+          }
         };
-        expect(() => new NoDefaultTool({ description: '' })).toThrow('Tool description is required');
+        expect(() => new NoDefaultTool({ description: '' })).toThrow(
+          'Tool description is required',
+        );
       });
 
       it('should throw when inputSchema is not Zod schema', () => {
-        expect(() => new TestTool({
-          name: 'test',
-          description: 'test',
-          inputSchema: { type: 'object' }
-        })).toThrow('inputSchema must be a Zod schema');
+        expect(
+          () =>
+            new TestTool({
+              name: 'test',
+              description: 'test',
+              inputSchema: { type: 'object' },
+            }),
+        ).toThrow('inputSchema must be a Zod schema');
       });
 
       it('should create tool with valid config', () => {
@@ -222,8 +236,8 @@ describe('BaseTool', () => {
         const tool = new TestTool({
           inputSchema: z.object({
             name: z.string(),
-            age: z.number().optional()
-          })
+            age: z.number().optional(),
+          }),
         });
 
         const schema = tool.getJsonSchema();
@@ -237,8 +251,8 @@ describe('BaseTool', () => {
       it('should handle string constraints', () => {
         const tool = new TestTool({
           inputSchema: z.object({
-            text: z.string().min(1).max(100)
-          })
+            text: z.string().min(1).max(100),
+          }),
         });
 
         const schema = tool.getJsonSchema();
@@ -258,8 +272,8 @@ describe('BaseTool', () => {
       it('should handle number constraints', () => {
         const tool = new TestTool({
           inputSchema: z.object({
-            count: z.number().min(0).max(10)
-          })
+            count: z.number().min(0).max(10),
+          }),
         });
 
         const schema = tool.getJsonSchema();
@@ -278,8 +292,8 @@ describe('BaseTool', () => {
       it('should handle boolean type', () => {
         const tool = new TestTool({
           inputSchema: z.object({
-            enabled: z.boolean()
-          })
+            enabled: z.boolean(),
+          }),
         });
 
         const schema = tool.getJsonSchema();
@@ -290,8 +304,8 @@ describe('BaseTool', () => {
       it('should handle array type', () => {
         const tool = new TestTool({
           inputSchema: z.object({
-            items: z.array(z.string())
-          })
+            items: z.array(z.string()),
+          }),
         });
 
         const schema = tool.getJsonSchema();
@@ -302,8 +316,8 @@ describe('BaseTool', () => {
       it('should handle enum type', () => {
         const tool = new TestTool({
           inputSchema: z.object({
-            status: z.enum(['active', 'inactive'])
-          })
+            status: z.enum(['active', 'inactive']),
+          }),
         });
 
         const schema = tool.getJsonSchema();
@@ -331,7 +345,7 @@ describe('BaseTool', () => {
     describe('execute()', () => {
       it('should execute tool with valid input', async () => {
         const tool = new TestTool({
-          runImpl: async (input) => ({ processed: input.message })
+          runImpl: async (input) => ({ processed: input.message }),
         });
 
         const result = await tool.execute({ message: 'Hello' });
@@ -350,7 +364,9 @@ describe('BaseTool', () => {
 
       it('should handle execution errors', async () => {
         const tool = new TestTool({
-          runImpl: async () => { throw new Error('Execution failed'); }
+          runImpl: async () => {
+            throw new Error('Execution failed');
+          },
         });
 
         const result = await tool.execute({ message: 'test' });
@@ -361,7 +377,7 @@ describe('BaseTool', () => {
 
       it('should include duration in metadata', async () => {
         const tool = new TestTool({
-          runImpl: async (input) => input
+          runImpl: async (input) => input,
         });
 
         const result = await tool.execute({ message: 'test' });
@@ -374,9 +390,9 @@ describe('BaseTool', () => {
         const tool = new TestTool({
           timeoutMs: 50,
           runImpl: async () => {
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
             return 'done';
-          }
+          },
         });
 
         const result = await tool.execute({ message: 'test' });
@@ -394,7 +410,7 @@ describe('BaseTool', () => {
             super({
               name: 'incomplete',
               description: 'test',
-              inputSchema: z.object({})
+              inputSchema: z.object({}),
             });
           }
         };
@@ -416,7 +432,7 @@ describe('BaseTool', () => {
 
       it('should reject when promise times out', async () => {
         const tool = new TestTool();
-        const promise = new Promise(resolve => setTimeout(() => resolve('late'), 200));
+        const promise = new Promise((resolve) => setTimeout(() => resolve('late'), 200));
 
         await expect(tool.withTimeout(promise, 50)).rejects.toThrow('timed out');
       });
@@ -436,7 +452,7 @@ describe('BaseTool', () => {
           username: 'user',
           password: 'secret123',
           apiToken: 'abc123',
-          secretKey: 'key456'
+          secretKey: 'key456',
         };
 
         const sanitized = tool.sanitizeForLog(input);

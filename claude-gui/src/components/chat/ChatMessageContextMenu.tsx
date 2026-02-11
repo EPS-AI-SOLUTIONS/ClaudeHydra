@@ -6,8 +6,9 @@
  * Ported from GeminiHydra.
  */
 
-import React, { useEffect, useRef } from 'react';
-import { Copy, Trash2, RefreshCw, X } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, X } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useRef } from 'react';
 
 interface ChatMessageContextMenuProps {
   x: number;

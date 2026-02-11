@@ -3,25 +3,25 @@
  * @module test/unit/cli-unified/input/MacroRecorder.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs
 vi.mock('fs', () => ({
   existsSync: vi.fn(),
   readFileSync: vi.fn(),
   writeFileSync: vi.fn(),
-  mkdirSync: vi.fn()
+  mkdirSync: vi.fn(),
 }));
 
 // Mock constants
 vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
-  DATA_DIR: '.claude-test'
+  DATA_DIR: '.claude-test',
 }));
 
 import {
+  createMacroRecorder,
   MacroRecorder,
-  createMacroRecorder
 } from '../../../../src/cli-unified/input/MacroRecorder.js';
 
 describe('MacroRecorder', () => {
@@ -48,13 +48,15 @@ describe('MacroRecorder', () => {
 
     it('should load existing macros from file', () => {
       existsSync.mockReturnValue(true);
-      readFileSync.mockReturnValue(JSON.stringify({
-        testMacro: {
-          name: 'testMacro',
-          actions: [{ type: 'input', data: 'test' }],
-          createdAt: '2024-01-01T00:00:00Z'
-        }
-      }));
+      readFileSync.mockReturnValue(
+        JSON.stringify({
+          testMacro: {
+            name: 'testMacro',
+            actions: [{ type: 'input', data: 'test' }],
+            createdAt: '2024-01-01T00:00:00Z',
+          },
+        }),
+      );
 
       const rec = new MacroRecorder({ macrosFile: '/test/macros.json' });
 
@@ -100,8 +102,7 @@ describe('MacroRecorder', () => {
     it('should throw when already recording', () => {
       recorder.startRecording('first');
 
-      expect(() => recorder.startRecording('second'))
-        .toThrow('Already recording a macro');
+      expect(() => recorder.startRecording('second')).toThrow('Already recording a macro');
     });
   });
 
@@ -298,8 +299,9 @@ describe('MacroRecorder', () => {
     });
 
     it('should throw when source macro not found', () => {
-      expect(() => recorder.rename('nonexistent', 'newName'))
-        .toThrow('Macro not found: nonexistent');
+      expect(() => recorder.rename('nonexistent', 'newName')).toThrow(
+        'Macro not found: nonexistent',
+      );
     });
 
     it('should throw when target name already exists', () => {
@@ -308,8 +310,7 @@ describe('MacroRecorder', () => {
       recorder.startRecording('macro2');
       recorder.stopRecording();
 
-      expect(() => recorder.rename('macro1', 'macro2'))
-        .toThrow('Macro already exists: macro2');
+      expect(() => recorder.rename('macro1', 'macro2')).toThrow('Macro already exists: macro2');
     });
 
     it('should emit macroRenamed event', () => {
@@ -386,8 +387,7 @@ describe('MacroRecorder', () => {
     });
 
     it('should throw for non-existent macro', async () => {
-      await expect(recorder.execute('nonexistent'))
-        .rejects.toThrow('Macro not found: nonexistent');
+      await expect(recorder.execute('nonexistent')).rejects.toThrow('Macro not found: nonexistent');
     });
 
     it('should emit events during execution', async () => {
@@ -426,7 +426,10 @@ describe('MacroRecorder', () => {
 
     it('should handle template action', async () => {
       recorder.startRecording('myMacro');
-      recorder.recordAction({ type: 'template', data: { name: 'greeting', vars: { name: 'World' } } });
+      recorder.recordAction({
+        type: 'template',
+        data: { name: 'greeting', vars: { name: 'World' } },
+      });
       recorder.stopRecording();
 
       const results = await recorder.execute('myMacro');

@@ -53,7 +53,7 @@ export function WelcomeView() {
         <div className="w-24 h-24 rounded-2xl overflow-hidden bg-matrix-accent/10 shadow-lg shadow-matrix-accent/30">
           <img src="/logodark.webp" alt="Claude HYDRA" className="w-full h-full object-cover" />
         </div>
-        <h1 className="text-3xl font-bold text-matrix-accent text-glow">Claude HYDRA</h1>
+        <h1 className="text-3xl font-bold text-matrix-text">Claude HYDRA</h1>
         <p className="text-sm text-matrix-text-dim text-center max-w-md">
           AI Swarm Control Center — rozpocznij nowy czat lub kontynuuj poprzednią rozmowę.
         </p>

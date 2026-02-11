@@ -3,14 +3,14 @@
  * @module test/unit/schemas/tool-schema.test
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  ToolCategory,
-  toolMetadataSchema,
-  toolDefinitionSchema,
   SchemaValidator,
+  ToolCategory,
+  toolDefinitionSchema,
+  toolMetadataSchema,
   validateToolDefinition,
-  validateToolInput
+  validateToolInput,
 } from '../../../src/schemas/tool-schema.js';
 
 describe('Tool Schema', () => {
@@ -211,7 +211,7 @@ describe('Tool Schema', () => {
       it('should validate items schema', () => {
         const schema = {
           type: 'array',
-          items: { type: 'string' }
+          items: { type: 'string' },
         };
         expect(SchemaValidator.validate(['a', 'b'], schema).valid).toBe(true);
         expect(SchemaValidator.validate(['a', 123], schema).valid).toBe(false);
@@ -225,8 +225,8 @@ describe('Tool Schema', () => {
           required: ['name', 'age'],
           properties: {
             name: { type: 'string' },
-            age: { type: 'number' }
-          }
+            age: { type: 'number' },
+          },
         };
 
         expect(SchemaValidator.validate({ name: 'John', age: 30 }, schema).valid).toBe(true);
@@ -240,10 +240,10 @@ describe('Tool Schema', () => {
             user: {
               type: 'object',
               properties: {
-                name: { type: 'string' }
-              }
-            }
-          }
+                name: { type: 'string' },
+              },
+            },
+          },
         };
 
         expect(SchemaValidator.validate({ user: { name: 'John' } }, schema).valid).toBe(true);
@@ -254,9 +254,9 @@ describe('Tool Schema', () => {
         const schema = {
           type: 'object',
           properties: {
-            name: { type: 'string' }
+            name: { type: 'string' },
           },
-          additionalProperties: false
+          additionalProperties: false,
         };
 
         expect(SchemaValidator.validate({ name: 'John' }, schema).valid).toBe(true);
@@ -309,43 +309,43 @@ describe('Tool Schema', () => {
     it('should require valid name', () => {
       const result = validateToolDefinition({ description: 'test', execute: () => {} });
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.includes('name'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('name'))).toBe(true);
     });
 
     it('should require snake_case name', () => {
       const result = validateToolDefinition({
         name: 'InvalidName',
         description: 'A valid description for testing',
-        execute: () => {}
+        execute: () => {},
       });
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.includes('snake_case'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('snake_case'))).toBe(true);
     });
 
     it('should require description at least 10 characters', () => {
       const result = validateToolDefinition({
         name: 'my_tool',
         description: 'short',
-        execute: () => {}
+        execute: () => {},
       });
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.includes('10 characters'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('10 characters'))).toBe(true);
     });
 
     it('should require execute function', () => {
       const result = validateToolDefinition({
         name: 'my_tool',
-        description: 'A valid description for testing'
+        description: 'A valid description for testing',
       });
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.includes('execute'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('execute'))).toBe(true);
     });
 
     it('should validate valid tool definition', () => {
       const result = validateToolDefinition({
         name: 'my_tool',
         description: 'A valid description for testing',
-        execute: () => {}
+        execute: () => {},
       });
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -356,10 +356,10 @@ describe('Tool Schema', () => {
         name: 'my_tool',
         description: 'A valid description for testing',
         execute: () => {},
-        category: 'invalid_category'
+        category: 'invalid_category',
       });
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.includes('Invalid category'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('Invalid category'))).toBe(true);
     });
 
     it('should accept valid category', () => {
@@ -367,7 +367,7 @@ describe('Tool Schema', () => {
         name: 'my_tool',
         description: 'A valid description for testing',
         execute: () => {},
-        category: 'filesystem'
+        category: 'filesystem',
       });
       expect(result.valid).toBe(true);
     });
@@ -377,10 +377,10 @@ describe('Tool Schema', () => {
         name: 'my_tool',
         description: 'A valid description for testing',
         execute: () => {},
-        timeout: 50
+        timeout: 50,
       });
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.includes('timeout'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('timeout'))).toBe(true);
     });
   });
 
@@ -398,9 +398,9 @@ describe('Tool Schema', () => {
           type: 'object',
           required: ['path'],
           properties: {
-            path: { type: 'string' }
-          }
-        }
+            path: { type: 'string' },
+          },
+        },
       };
 
       const validResult = validateToolInput(tool, { path: '/test' });

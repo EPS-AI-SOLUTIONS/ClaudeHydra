@@ -7,7 +7,7 @@ const OLLAMA_URL = 'http://localhost:11434';
 
 // Simulated RAG store (in real app uses Tauri invoke)
 const ragStore = new Map();
-let ragIdCounter = 0;
+const _ragIdCounter = 0;
 
 // Alzur state
 let sampleCount = 0;
@@ -26,11 +26,11 @@ function ragAdd(id, content, metadata) {
 function ragSearch(query, topK = 3) {
   const queryEmbed = simpleEmbed(query);
   const results = [...ragStore.values()]
-    .map(doc => ({
+    .map((doc) => ({
       ...doc,
-      score: cosineSimilarity(queryEmbed, doc.embedding)
+      score: cosineSimilarity(queryEmbed, doc.embedding),
     }))
-    .filter(doc => doc.score > 0.1) // Lower threshold for simple embeddings
+    .filter((doc) => doc.score > 0.1) // Lower threshold for simple embeddings
     .sort((a, b) => b.score - a.score)
     .slice(0, topK);
   return results;
@@ -40,13 +40,17 @@ function ragSearch(query, topK = 3) {
 function simpleEmbed(text) {
   const words = text.toLowerCase().split(/\s+/);
   const freq = {};
-  words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+  words.forEach((w) => {
+    freq[w] = (freq[w] || 0) + 1;
+  });
   return freq;
 }
 
 function cosineSimilarity(a, b) {
   const allKeys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  let dotProduct = 0, normA = 0, normB = 0;
+  let dotProduct = 0,
+    normA = 0,
+    normB = 0;
 
   for (const key of allKeys) {
     const valA = a[key] || 0;
@@ -86,10 +90,9 @@ async function avallachPreProcess(prompt) {
   context.push(`[Web] Simulated search results for "${prompt.slice(0, 20)}..."`);
 
   return {
-    enrichedPrompt: context.length > 0
-      ? `[Context]\n${context.join('\n')}\n\n[Query]\n${prompt}`
-      : prompt,
-    context
+    enrichedPrompt:
+      context.length > 0 ? `[Context]\n${context.join('\n')}\n\n[Query]\n${prompt}` : prompt,
+    context,
   };
 }
 
@@ -102,14 +105,15 @@ async function ollamaGenerate(prompt) {
       body: JSON.stringify({
         model: 'llama3.2:1b',
         prompt: prompt,
-        stream: false
-      })
+        stream: false,
+      }),
     });
     const data = await response.json();
     console.log(`   ✅ Response: ${data.response?.slice(0, 60)}...`);
     return data.response || 'Mock response';
   } catch {
-    const mock = 'This is a detailed mock response about the topic. It includes technical information and code examples. The response is comprehensive and educational.';
+    const mock =
+      'This is a detailed mock response about the topic. It includes technical information and code examples. The response is comprehensive and educational.';
     console.log(`   ⚠️ Mock response (Ollama offline)`);
     return mock;
   }
@@ -183,9 +187,9 @@ async function runTest() {
     'Explain Docker containers',
 
     // Round 2: Should find relevant RAG memories!
-    'Tell me about TypeScript features',  // Should find "What is TypeScript?"
-    'How do React hooks work?',           // Should find "Explain React hooks"
-    'Async programming in JavaScript',    // Should find "How to use async/await?"
+    'Tell me about TypeScript features', // Should find "What is TypeScript?"
+    'How do React hooks work?', // Should find "Explain React hooks"
+    'Async programming in JavaScript', // Should find "How to use async/await?"
   ];
 
   for (let i = 0; i < prompts.length; i++) {
@@ -196,7 +200,7 @@ async function runTest() {
     await runPipeline(prompts[i]);
 
     // Small delay
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 300));
   }
 
   console.log('\n═══════════════════════════════════════════════════════════════');

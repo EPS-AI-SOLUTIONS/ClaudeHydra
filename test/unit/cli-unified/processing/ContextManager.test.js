@@ -3,14 +3,14 @@
  * @module test/unit/cli-unified/processing/ContextManager
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs module
 vi.mock('fs', () => ({
   readFileSync: vi.fn(),
   existsSync: vi.fn(),
   statSync: vi.fn(),
-  watch: vi.fn()
+  watch: vi.fn(),
 }));
 
 // Mock path module
@@ -20,7 +20,7 @@ vi.mock('path', () => ({
     const match = p.match(/\.[^.]+$/);
     return match ? match[0] : '';
   }),
-  resolve: vi.fn((...args) => args.join('/').replace(/\\/g, '/'))
+  resolve: vi.fn((...args) => args.join('/').replace(/\\/g, '/')),
 }));
 
 // Mock EventBus
@@ -29,13 +29,16 @@ vi.mock('../../../../src/cli-unified/core/EventBus.js', () => ({
   EVENT_TYPES: {
     CONTEXT_ADD: 'context:add',
     CONTEXT_REMOVE: 'context:remove',
-    CONTEXT_CLEAR: 'context:clear'
-  }
+    CONTEXT_CLEAR: 'context:clear',
+  },
 }));
 
-import { ContextManager, createContextManager } from '../../../../src/cli-unified/processing/ContextManager.js';
-import { readFileSync, existsSync, statSync, watch } from 'fs';
+import { existsSync, readFileSync, statSync, watch } from 'node:fs';
 import { eventBus } from '../../../../src/cli-unified/core/EventBus.js';
+import {
+  ContextManager,
+  createContextManager,
+} from '../../../../src/cli-unified/processing/ContextManager.js';
 
 describe('ContextManager Module', () => {
   let manager;
@@ -46,7 +49,7 @@ describe('ContextManager Module', () => {
     manager = new ContextManager();
 
     mockWatcher = {
-      close: vi.fn()
+      close: vi.fn(),
     };
     watch.mockReturnValue(mockWatcher);
   });
@@ -68,7 +71,7 @@ describe('ContextManager Module', () => {
     it('should accept custom options', () => {
       const custom = new ContextManager({
         maxFileSize: 50 * 1024,
-        maxTotalSize: 200 * 1024
+        maxTotalSize: 200 * 1024,
       });
 
       expect(custom.maxFileSize).toBe(50 * 1024);
@@ -87,7 +90,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('file content');
 
@@ -111,7 +114,7 @@ describe('ContextManager Module', () => {
       existsSync.mockReturnValue(true);
       statSync.mockReturnValue({
         isFile: () => false,
-        size: 100
+        size: 100,
       });
 
       expect(() => manager.addFile('/directory')).toThrow('Not a file');
@@ -121,7 +124,7 @@ describe('ContextManager Module', () => {
       existsSync.mockReturnValue(true);
       statSync.mockReturnValue({
         isFile: () => true,
-        size: 200 * 1024 // Larger than default max
+        size: 200 * 1024, // Larger than default max
       });
 
       expect(() => manager.addFile('/large.js')).toThrow('File too large');
@@ -133,7 +136,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 80 * 1024,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('x'.repeat(80 * 1024));
 
@@ -146,7 +149,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 50 * 1024,
-        mtime: new Date()
+        mtime: new Date(),
       });
 
       expect(() => manager.addFile('/file2.js')).toThrow('Total context size exceeded');
@@ -157,7 +160,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
@@ -178,7 +181,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
@@ -193,7 +196,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
@@ -212,9 +215,9 @@ describe('ContextManager Module', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: {
-          get: () => 'text/html'
+          get: () => 'text/html',
         },
-        text: () => Promise.resolve('<html>content</html>')
+        text: () => Promise.resolve('<html>content</html>'),
       });
 
       const result = await manager.addUrl('https://example.com');
@@ -229,9 +232,9 @@ describe('ContextManager Module', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: {
-          get: () => 'application/json'
+          get: () => 'application/json',
         },
-        json: () => Promise.resolve({ key: 'value' })
+        json: () => Promise.resolve({ key: 'value' }),
       });
 
       const result = await manager.addUrl('https://api.example.com/data');
@@ -244,11 +247,12 @@ describe('ContextManager Module', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 404,
-        statusText: 'Not Found'
+        statusText: 'Not Found',
       });
 
-      await expect(manager.addUrl('https://example.com/notfound'))
-        .rejects.toThrow('Failed to fetch URL');
+      await expect(manager.addUrl('https://example.com/notfound')).rejects.toThrow(
+        'Failed to fetch URL',
+      );
     });
 
     it('should truncate large content', async () => {
@@ -256,9 +260,9 @@ describe('ContextManager Module', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: {
-          get: () => 'text/plain'
+          get: () => 'text/plain',
         },
-        text: () => Promise.resolve(largeContent)
+        text: () => Promise.resolve(largeContent),
       });
 
       const result = await manager.addUrl('https://example.com/large');
@@ -270,7 +274,7 @@ describe('ContextManager Module', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: { get: () => 'text/plain' },
-        text: () => Promise.resolve('content')
+        text: () => Promise.resolve('content'),
       });
 
       const urlAddedSpy = vi.fn();
@@ -339,7 +343,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('original content');
 
@@ -349,7 +353,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 150,
-        mtime: new Date()
+        mtime: new Date(),
       });
 
       const result = manager.refreshFile('/test.js');
@@ -368,7 +372,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
@@ -387,7 +391,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
@@ -413,7 +417,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
@@ -436,7 +440,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
@@ -451,7 +455,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
@@ -472,7 +476,7 @@ describe('ContextManager Module', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: { get: () => 'text/plain' },
-        text: () => Promise.resolve('content')
+        text: () => Promise.resolve('content'),
       });
 
       await manager.addUrl('https://example.com');
@@ -493,7 +497,7 @@ describe('ContextManager Module', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: { get: () => 'text/plain' },
-        text: () => Promise.resolve('content')
+        text: () => Promise.resolve('content'),
       });
 
       await manager.addUrl('https://example.com');
@@ -514,14 +518,14 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: { get: () => 'text/plain' },
-        text: () => Promise.resolve('content')
+        text: () => Promise.resolve('content'),
       });
 
       manager.addFile('/test.js', { watch: true });
@@ -552,14 +556,14 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('file content');
 
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: { get: () => 'text/plain' },
-        text: () => Promise.resolve('url content')
+        text: () => Promise.resolve('url content'),
       });
 
       manager.addFile('/test.js');
@@ -585,7 +589,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
@@ -607,7 +611,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 
@@ -625,7 +629,7 @@ describe('ContextManager Module', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: { get: () => 'text/plain' },
-        text: () => Promise.resolve('content')
+        text: () => Promise.resolve('content'),
       });
 
       await manager.addUrl('https://example1.com');
@@ -688,7 +692,7 @@ describe('ContextManager Module', () => {
       statSync.mockReturnValue({
         isFile: () => true,
         size: 100,
-        mtime: new Date()
+        mtime: new Date(),
       });
       readFileSync.mockReturnValue('content');
 

@@ -5,16 +5,11 @@
  * start/stop controls, auto-approve toggle, and connection status.
  */
 
-import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
+import { NAV_LABELS, SELECTORS, type ViewId } from '../fixtures/test-data';
 import { BasePage } from './BasePage';
-import { SELECTORS, NAV_LABELS, TIMEOUTS, type ViewId } from '../fixtures/test-data';
 
 export class SessionSidebar extends BasePage {
-  constructor(page: Page) {
-    super(page);
-  }
-
   // ── View Navigation ─────────────────────────────────────────────────────────
 
   /**
@@ -195,7 +190,7 @@ export class SessionSidebar extends BasePage {
    */
   async getConnectionStatus(): Promise<string> {
     const statusDot = this.page.locator(SELECTORS.sidebar.statusDot);
-    if (await statusDot.count() === 0) return 'unknown';
+    if ((await statusDot.count()) === 0) return 'unknown';
 
     // Check adjacent text
     const parent = statusDot.first().locator('..');

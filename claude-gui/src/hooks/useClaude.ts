@@ -1,11 +1,12 @@
-import { useEffect, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { useCallback, useEffect } from 'react';
 import { claudeIpc } from '../lib/ipc';
 import { useClaudeStore } from '../stores/claudeStore';
-import type { ClaudeEvent, AutoApprovedEvent } from '../types/claude';
+import type { AutoApprovedEvent, ClaudeEvent } from '../types/claude';
 
 // Check if running in Tauri (v2 uses __TAURI_INTERNALS__)
-const isTauri = () => typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+const isTauri = () =>
+  typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
 export function useClaude() {
   const {
@@ -28,19 +29,28 @@ export function useClaude() {
     if (!isTauri()) return;
 
     let cancelled = false;
-    const unlistenerPromises: Array<Promise<() => void>> = [];
+    const unlisteners: Array<() => void> = [];
 
-    // Regular events
-    unlistenerPromises.push(
-      listen<ClaudeEvent>('claude-event', (event) => {
+    const setup = async () => {
+      // Regular events
+      const u1 = await listen<ClaudeEvent>('claude-event', (event) => {
         if (cancelled) return;
         const claudeEvent = event.payload;
+
+        // Extract model info from event data if available
+        const eventModel =
+          typeof claudeEvent.data === 'object' && claudeEvent.data !== null
+            ? String((claudeEvent.data as Record<string, unknown>).model || '')
+            : '';
+        // Default to "Claude" for assistant messages from Claude CLI
+        const resolveModel = (fallback: string) => eventModel || fallback;
 
         switch (claudeEvent.event_type) {
           case 'assistant':
             addOutputLine({
               type: 'assistant',
               content: String(claudeEvent.data.message || ''),
+              model: resolveModel('Claude'),
               data: claudeEvent.data,
             });
             break;
@@ -48,6 +58,7 @@ export function useClaude() {
             addOutputLine({
               type: 'tool',
               content: `Tool: ${claudeEvent.data.name}`,
+              model: resolveModel('Claude'),
               data: claudeEvent.data,
             });
             break;
@@ -55,6 +66,7 @@ export function useClaude() {
             addOutputLine({
               type: 'output',
               content: String(claudeEvent.data.output || ''),
+              model: resolveModel('Claude'),
               data: claudeEvent.data,
             });
             break;
@@ -62,6 +74,7 @@ export function useClaude() {
             addOutputLine({
               type: 'output',
               content: String(claudeEvent.data.text || ''),
+              model: resolveModel('Claude'),
               data: claudeEvent.data,
             });
             break;
@@ -84,12 +97,11 @@ export function useClaude() {
             });
             break;
         }
-      })
-    );
+      });
+      unlisteners.push(u1);
 
-    // Approval required
-    unlistenerPromises.push(
-      listen<ClaudeEvent>('claude-approval-required', (event) => {
+      // Approval required
+      const u2 = await listen<ClaudeEvent>('claude-approval-required', (event) => {
         if (cancelled) return;
         setPendingApproval(event.payload);
         addOutputLine({
@@ -97,12 +109,11 @@ export function useClaude() {
           content: 'Approval required',
           data: event.payload.data,
         });
-      })
-    );
+      });
+      unlisteners.push(u2);
 
-    // Auto-approved
-    unlistenerPromises.push(
-      listen<AutoApprovedEvent>('claude-auto-approved', (event) => {
+      // Auto-approved
+      const u3 = await listen<AutoApprovedEvent>('claude-auto-approved', (event) => {
         if (cancelled) return;
         const { event: claudeEvent, matched_rule } = event.payload;
         addOutputLine({
@@ -121,31 +132,28 @@ export function useClaude() {
             matched_rule,
           });
         }
-      })
-    );
+      });
+      unlisteners.push(u3);
 
-    // Session ended
-    unlistenerPromises.push(
-      listen('claude-session-ended', () => {
+      // Session ended
+      const u4 = await listen('claude-session-ended', () => {
         if (cancelled) return;
         addOutputLine({
           type: 'system',
           content: 'Session ended',
         });
         resetSession();
-      })
-    );
+      });
+      unlisteners.push(u4);
+    };
+
+    setup();
 
     return () => {
       cancelled = true;
-      // Wait for all listener registrations to complete, then unsubscribe
-      Promise.allSettled(unlistenerPromises).then((results) => {
-        for (const result of results) {
-          if (result.status === 'fulfilled') {
-            result.value();
-          }
-        }
-      });
+      for (const unlisten of unlisteners) {
+        unlisten();
+      }
     };
   }, [addOutputLine, setPendingApproval, addHistoryEntry, resetSession]);
 
@@ -189,7 +197,7 @@ export function useClaude() {
         setConnecting(false);
       }
     },
-    [workingDir, cliPath, setConnecting, setStatus, addOutputLine]
+    [workingDir, cliPath, setConnecting, setStatus, addOutputLine],
   );
 
   // Stop session
@@ -215,7 +223,7 @@ export function useClaude() {
       console.log('[useClaude] sendInput called:', input);
       try {
         console.log('[useClaude] Calling IPC sendInput...');
-        await claudeIpc.sendInput(input + '\n');
+        await claudeIpc.sendInput(`${input}\n`);
         console.log('[useClaude] IPC sendInput SUCCESS');
         addOutputLine({
           type: 'output',
@@ -229,7 +237,7 @@ export function useClaude() {
         });
       }
     },
-    [addOutputLine]
+    [addOutputLine],
   );
 
   // Approve
@@ -298,7 +306,7 @@ export function useClaude() {
         });
       }
     },
-    [setStatus, addOutputLine]
+    [setStatus, addOutputLine],
   );
 
   return {

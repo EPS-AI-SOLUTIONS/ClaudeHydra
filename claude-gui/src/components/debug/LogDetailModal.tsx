@@ -1,4 +1,4 @@
-import { X, Copy, Check } from 'lucide-react';
+import { Check, Copy, X } from 'lucide-react';
 import { useState } from 'react';
 import type { LogEntry, LogLevel } from '../../lib/ipc';
 
@@ -18,10 +18,15 @@ export function LogDetailModal({ log, onClose }: LogDetailModalProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const formatTimestamp = (ts: number) => new Date(ts).toLocaleString('pl-PL', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-  });
+  const formatTimestamp = (ts: number) =>
+    new Date(ts).toLocaleString('pl-PL', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
 
   const levelColors: Record<LogLevel, string> = {
     debug: 'text-gray-400 bg-gray-400/10',
@@ -31,10 +36,13 @@ export function LogDetailModal({ log, onClose }: LogDetailModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      onClick={onClose}
+    >
       <div
         className="glass-panel w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col m-4"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-matrix-border">
@@ -62,7 +70,9 @@ export function LogDetailModal({ log, onClose }: LogDetailModalProps) {
             </div>
             <div>
               <div className="text-matrix-text-dim text-xs mb-1">Level</div>
-              <span className={`inline-block px-2 py-0.5 rounded text-xs uppercase ${levelColors[log.level]}`}>
+              <span
+                className={`inline-block px-2 py-0.5 rounded text-xs uppercase ${levelColors[log.level]}`}
+              >
                 {log.level}
               </span>
             </div>

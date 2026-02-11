@@ -4,11 +4,11 @@
  * Monitoruje wykorzystanie Worker Pool i wydajność CPU w czasie rzeczywistym.
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Cpu, Activity, Zap, BarChart3, Play, Square, Gauge } from 'lucide-react';
-import { getWorkerPool, WorkerTask } from '../utils/workerPool';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Activity, BarChart3, Cpu, Gauge, Play, Square, Zap } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useWorker } from '../hooks/useWorker';
+import { getWorkerPool, type WorkerTask } from '../utils/workerPool';
 
 interface WorkerStats {
   id: number;
@@ -116,9 +116,10 @@ export function CpuDashboard() {
             <div className="flex items-center justify-between p-3 border-b border-emerald-500/20">
               <div className="flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-emerald-400" />
-                <span className="text-sm font-medium text-emerald-400">CPU Dashboard</span>
+                <span className="text-sm font-medium text-matrix-text">CPU Dashboard</span>
               </div>
               <button
+                type="button"
                 onClick={() => setIsOpen(false)}
                 className="p-1 hover:bg-emerald-500/20 rounded transition-colors"
               >
@@ -131,14 +132,14 @@ export function CpuDashboard() {
               {/* CPU Info */}
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-400">Dostępne rdzenie:</span>
-                <span className="text-emerald-400 font-mono">{cpuCores}</span>
+                <span className="text-matrix-text font-mono">{cpuCores}</span>
               </div>
 
               {/* Worker Pool */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400">Worker Pool:</span>
-                  <span className="text-emerald-400 font-mono">
+                  <span className="text-matrix-text font-mono">
                     {stats?.busyWorkers ?? 0}/{stats?.poolSize ?? 0} aktywnych
                   </span>
                 </div>
@@ -171,13 +172,22 @@ export function CpuDashboard() {
                     <motion.div
                       key={w.id}
                       className={`h-6 rounded flex items-center justify-center text-xs font-mono
-                        ${w.busy
-                          ? 'bg-emerald-500/40 border border-emerald-400/50 text-emerald-300'
-                          : 'bg-gray-800 border border-gray-700 text-gray-500'
+                        ${
+                          w.busy
+                            ? 'bg-emerald-500/40 border border-emerald-400/50 text-emerald-300'
+                            : 'bg-gray-800 border border-gray-700 text-gray-500'
                         }`}
-                      animate={w.busy ? {
-                        boxShadow: ['0 0 0 0 rgba(16, 185, 129, 0)', '0 0 8px 2px rgba(16, 185, 129, 0.3)', '0 0 0 0 rgba(16, 185, 129, 0)']
-                      } : {}}
+                      animate={
+                        w.busy
+                          ? {
+                              boxShadow: [
+                                '0 0 0 0 rgba(16, 185, 129, 0)',
+                                '0 0 8px 2px rgba(16, 185, 129, 0.3)',
+                                '0 0 0 0 rgba(16, 185, 129, 0)',
+                              ],
+                            }
+                          : {}
+                      }
                       transition={{ repeat: Infinity, duration: 1.5 }}
                       title={`Worker ${w.id}: ${w.tasksCompleted} tasks, avg ${w.avgTime}ms`}
                     >
@@ -190,11 +200,12 @@ export function CpuDashboard() {
               {/* Benchmark */}
               <div className="pt-2 border-t border-emerald-500/20">
                 <button
+                  type="button"
                   onClick={runBenchmark}
                   disabled={benchmarkRunning}
                   className="w-full flex items-center justify-center gap-2 py-2 px-3
                              bg-emerald-500/20 hover:bg-emerald-500/30 disabled:opacity-50
-                             border border-emerald-500/30 rounded text-xs text-emerald-400
+                             border border-emerald-500/30 rounded text-xs text-matrix-text
                              transition-colors"
                 >
                   {benchmarkRunning ? (
@@ -219,11 +230,15 @@ export function CpuDashboard() {
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
                         <div className="text-gray-400">Sekwencyjnie:</div>
-                        <div className="text-red-400 font-mono">{benchmarkResults.sequential}ms</div>
+                        <div className="text-red-400 font-mono">
+                          {benchmarkResults.sequential}ms
+                        </div>
                       </div>
                       <div>
                         <div className="text-gray-400">Równolegle:</div>
-                        <div className="text-emerald-400 font-mono">{benchmarkResults.parallel}ms</div>
+                        <div className="text-matrix-text font-mono">
+                          {benchmarkResults.parallel}ms
+                        </div>
                       </div>
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-xs">
@@ -241,26 +256,25 @@ export function CpuDashboard() {
                 <div className="text-center">
                   <Gauge className="w-4 h-4 mx-auto text-emerald-400 mb-1" />
                   <div className="text-xs text-gray-400">Tasks</div>
-                  <div className="text-sm font-mono text-emerald-400">
+                  <div className="text-sm font-mono text-matrix-text">
                     {stats?.workers.reduce((sum, w) => sum + w.tasksCompleted, 0) ?? 0}
                   </div>
                 </div>
                 <div className="text-center">
                   <Activity className="w-4 h-4 mx-auto text-emerald-400 mb-1" />
                   <div className="text-xs text-gray-400">Avg</div>
-                  <div className="text-sm font-mono text-emerald-400">
+                  <div className="text-sm font-mono text-matrix-text">
                     {Math.round(
                       (stats?.workers.reduce((sum, w) => sum + w.avgTime, 0) ?? 0) /
-                      (stats?.poolSize ?? 1)
-                    )}ms
+                        (stats?.poolSize ?? 1),
+                    )}
+                    ms
                   </div>
                 </div>
                 <div className="text-center">
                   <BarChart3 className="w-4 h-4 mx-auto text-emerald-400 mb-1" />
                   <div className="text-xs text-gray-400">Pool</div>
-                  <div className="text-sm font-mono text-emerald-400">
-                    {stats?.poolSize ?? 0}
-                  </div>
+                  <div className="text-sm font-mono text-matrix-text">{stats?.poolSize ?? 0}</div>
                 </div>
               </div>
             </div>

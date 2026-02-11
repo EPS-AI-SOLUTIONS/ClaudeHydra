@@ -3,13 +3,13 @@
  * @module test/unit/mcp/health-checker.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  HealthStatus,
-  TTLCache,
-  HealthChecker,
   getHealthChecker,
-  resetHealthChecker
+  HealthChecker,
+  HealthStatus,
+  resetHealthChecker,
+  TTLCache,
 } from '../../../src/mcp/health-checker.js';
 
 describe('MCP Health Checker', () => {
@@ -52,7 +52,7 @@ describe('MCP Health Checker', () => {
       it('should accept custom options', () => {
         const cache = new TTLCache({
           defaultTTL: 60000,
-          maxSize: 50
+          maxSize: 50,
         });
 
         expect(cache.defaultTTL).toBe(60000);
@@ -207,13 +207,13 @@ describe('MCP Health Checker', () => {
         defaultInterval: 60000,
         defaultTimeout: 5000,
         cacheTTL: 30000,
-        degradedThreshold: 1000
+        degradedThreshold: 1000,
       });
 
       mockTransport = {
         isReady: vi.fn().mockReturnValue(true),
         request: vi.fn().mockResolvedValue({ tools: [] }),
-        getInfo: vi.fn().mockReturnValue({ type: 'stdio' })
+        getInfo: vi.fn().mockReturnValue({ type: 'stdio' }),
       };
     });
 
@@ -286,10 +286,12 @@ describe('MCP Health Checker', () => {
 
         await checker.check('test-server', mockTransport);
 
-        expect(spy).toHaveBeenCalledWith(expect.objectContaining({
-          serverId: 'test-server',
-          status: HealthStatus.HEALTHY
-        }));
+        expect(spy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            serverId: 'test-server',
+            status: HealthStatus.HEALTHY,
+          }),
+        );
       });
 
       it('should emit healthChanged event on status change', async () => {
@@ -307,7 +309,7 @@ describe('MCP Health Checker', () => {
         expect(spy).toHaveBeenCalledWith({
           serverId: 'test-server',
           previous: expect.objectContaining({ status: HealthStatus.HEALTHY }),
-          current: expect.objectContaining({ status: HealthStatus.UNHEALTHY })
+          current: expect.objectContaining({ status: HealthStatus.UNHEALTHY }),
         });
       });
 
@@ -346,7 +348,7 @@ describe('MCP Health Checker', () => {
         checker.startMonitoring('test-server', mockTransport, { interval: 60000 });
 
         // Wait for initial check
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
 
         expect(mockTransport.request).toHaveBeenCalled();
 

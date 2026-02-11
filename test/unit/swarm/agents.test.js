@@ -3,7 +3,7 @@
  * @module test/unit/swarm/agents.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the dependencies
 vi.mock('../../../src/hydra/providers/llamacpp-bridge.js', () => ({
@@ -13,8 +13,8 @@ vi.mock('../../../src/hydra/providers/llamacpp-bridge.js', () => ({
     generateCode: vi.fn().mockResolvedValue({ content: 'code response', model: 'code' }),
     generateJson: vi.fn().mockResolvedValue({ content: '{}', model: 'json' }),
     functionCall: vi.fn().mockResolvedValue({ content: 'function result', model: 'functionary' }),
-    getInfo: vi.fn().mockResolvedValue({ status: 'connected' })
-  }))
+    getInfo: vi.fn().mockResolvedValue({ status: 'connected' }),
+  })),
 }));
 
 vi.mock('../../../src/hydra/providers/llamacpp-models.js', () => ({
@@ -23,22 +23,22 @@ vi.mock('../../../src/hydra/providers/llamacpp-models.js', () => ({
     code: { model: 'main', tool: 'llama_code' },
     fast: { model: 'draft', tool: 'llama_generate_fast' },
     json: { model: 'main', tool: 'llama_json' },
-    functionary: { model: 'functionary', tool: 'llama_function_call' }
+    functionary: { model: 'functionary', tool: 'llama_function_call' },
   },
   getModelForAgent: vi.fn((agent) => {
     const models = {
       Geralt: { model: 'main', tool: 'llama_generate' },
       Ciri: { model: 'draft', tool: 'llama_generate_fast' },
-      Triss: { model: 'main', tool: 'llama_code' }
+      Triss: { model: 'main', tool: 'llama_code' },
     };
     return models[agent] || { model: 'main', tool: 'llama_generate' };
-  })
+  }),
 }));
 
 vi.mock('../../../src/hydra/providers/claude-client.js', () => ({
   generate: vi.fn().mockResolvedValue({ content: 'claude response' }),
   healthCheck: vi.fn().mockResolvedValue({ healthy: true }),
-  selectModel: vi.fn().mockReturnValue('claude-3-sonnet-20240229')
+  selectModel: vi.fn().mockReturnValue('claude-3-sonnet-20240229'),
 }));
 
 describe('Swarm Agents', () => {
@@ -107,7 +107,7 @@ describe('Swarm Agents', () => {
       });
 
       it('should have required properties for each agent', () => {
-        for (const [name, spec] of Object.entries(agents.AGENT_SPECS)) {
+        for (const [_name, spec] of Object.entries(agents.AGENT_SPECS)) {
           expect(spec.persona).toBeDefined();
           expect(spec.focus).toBeDefined();
           expect(spec.tier).toBeDefined();
@@ -298,12 +298,14 @@ describe('Swarm Agents', () => {
 
       it('should identify simple tasks', () => {
         const result = agents.analyzeComplexity('Print hello');
-        expect(['simple', 'low', 'basic']).toContain(result.level?.toLowerCase() || result.complexity?.toLowerCase());
+        expect(['simple', 'low', 'basic']).toContain(
+          result.level?.toLowerCase() || result.complexity?.toLowerCase(),
+        );
       });
 
       it('should identify complex tasks', () => {
         const result = agents.analyzeComplexity(
-          'Refactor the entire authentication system, implement OAuth2, add rate limiting, create comprehensive tests, and document the API endpoints'
+          'Refactor the entire authentication system, implement OAuth2, add rate limiting, create comprehensive tests, and document the API endpoints',
         );
         expect(result).toBeDefined();
       });

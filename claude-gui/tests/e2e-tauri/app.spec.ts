@@ -11,7 +11,6 @@
  */
 
 describe('ClaudeHydra Tauri Application', () => {
-
   it('should launch the application', async () => {
     // The app window should be open
     const title = await browser.getTitle();

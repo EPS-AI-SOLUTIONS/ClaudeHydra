@@ -111,13 +111,8 @@ function termFrequency(term: string, tokens: string[]): number {
 }
 
 /** Calculate inverse document frequency */
-function inverseDocumentFrequency(
-  term: string,
-  documents: Document[]
-): number {
-  const docsWithTerm = documents.filter((doc) =>
-    tokenize(doc.content).includes(term)
-  ).length;
+function inverseDocumentFrequency(term: string, documents: Document[]): number {
+  const docsWithTerm = documents.filter((doc) => tokenize(doc.content).includes(term)).length;
 
   if (docsWithTerm === 0) return 0;
 
@@ -130,7 +125,7 @@ export function calculateBM25Score(
   query: string,
   document: Document,
   corpus: Document[],
-  avgDocLength: number
+  avgDocLength: number,
 ): number {
   const queryTerms = tokenize(query);
   const docTokens = tokenize(document.content);
@@ -144,8 +139,7 @@ export function calculateBM25Score(
 
     // BM25 formula
     const numerator = tf * (BM25_K1 + 1);
-    const denominator =
-      tf + BM25_K1 * (1 - BM25_B + BM25_B * (docLength / avgDocLength));
+    const denominator = tf + BM25_K1 * (1 - BM25_B + BM25_B * (docLength / avgDocLength));
 
     score += idf * (numerator / denominator);
   }
@@ -158,8 +152,7 @@ function bm25Search(query: string, documents: Document[]): SearchResult[] {
   if (documents.length === 0) return [];
 
   const avgDocLength =
-    documents.reduce((sum, doc) => sum + tokenize(doc.content).length, 0) /
-    documents.length;
+    documents.reduce((sum, doc) => sum + tokenize(doc.content).length, 0) / documents.length;
 
   return documents
     .map((document) => ({
@@ -193,17 +186,11 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 /** Vector similarity search */
-function vectorSearch(
-  queryEmbedding: number[],
-  documents: Document[]
-): SearchResult[] {
+function vectorSearch(queryEmbedding: number[], documents: Document[]): SearchResult[] {
   return documents
     .filter((doc) => doc.embedding && doc.embedding.length > 0)
     .map((document) => {
-      const similarity = cosineSimilarity(
-        queryEmbedding,
-        document.embedding as number[]
-      );
+      const similarity = cosineSimilarity(queryEmbedding, document.embedding as number[]);
       return {
         document,
         score: similarity,
@@ -223,15 +210,13 @@ function vectorSearch(
  */
 function reciprocalRankFusion(
   rankings: Map<string, number>[],
-  k: number = 60
+  k: number = 60,
 ): Map<string, number> {
   const fusedScores = new Map<string, number>();
 
   for (const ranking of rankings) {
     // Convert scores to ranks (1-indexed)
-    const sortedEntries = Array.from(ranking.entries()).sort(
-      ([, a], [, b]) => b - a
-    );
+    const sortedEntries = Array.from(ranking.entries()).sort(([, a], [, b]) => b - a);
 
     sortedEntries.forEach(([docId], index) => {
       const rank = index + 1;
@@ -251,7 +236,7 @@ export async function hybridSearch(
   query: string,
   documents: Document[],
   queryEmbedding?: number[],
-  options: HybridSearchOptions = {}
+  options: HybridSearchOptions = {},
 ): Promise<SearchResult[]> {
   const {
     bm25Weight = 0.5,
@@ -265,7 +250,7 @@ export async function hybridSearch(
   } = options;
 
   // Apply metadata filtering first
-  let filteredDocs = filter ? filterByMetadata(documents, filter) : documents;
+  const filteredDocs = filter ? filterByMetadata(documents, filter) : documents;
 
   if (filteredDocs.length === 0) {
     return [];
@@ -281,16 +266,14 @@ export async function hybridSearch(
   // BM25 search
   const bm25Results = bm25Search(searchQuery, filteredDocs);
   const bm25Scores = new Map<string, number>(
-    bm25Results.map((r) => [r.document.id, r.bm25Score || 0])
+    bm25Results.map((r) => [r.document.id, r.bm25Score || 0]),
   );
 
   // Vector search (if embeddings available)
   let vectorScores = new Map<string, number>();
   if (queryEmbedding && queryEmbedding.length > 0) {
     const vectorResults = vectorSearch(queryEmbedding, filteredDocs);
-    vectorScores = new Map(
-      vectorResults.map((r) => [r.document.id, r.vectorScore || 0])
-    );
+    vectorScores = new Map(vectorResults.map((r) => [r.document.id, r.vectorScore || 0]));
   }
 
   // Apply RRF fusion
@@ -471,9 +454,8 @@ function lengthScore(length: number, preferredLength: number): number {
 /** Calculate recency score (exponential decay) */
 function recencyScore(date: Date, halfLifeDays: number = 30): number {
   const now = new Date();
-  const daysDiff =
-    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
-  return Math.pow(0.5, daysDiff / halfLifeDays);
+  const daysDiff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
+  return 0.5 ** (daysDiff / halfLifeDays);
 }
 
 /**
@@ -482,7 +464,7 @@ function recencyScore(date: Date, halfLifeDays: number = 30): number {
 export function rerank(
   results: SearchResult[],
   query: string,
-  options: RerankOptions = {}
+  options: RerankOptions = {},
 ): SearchResult[] {
   const {
     lengthWeight = 0.15,
@@ -515,7 +497,7 @@ export function rerank(
       const queryHasCodeTerms = [...queryTokens].some(
         (token) =>
           PROGRAMMING_SYNONYMS[token] ||
-          ['code', 'function', 'implement', 'bug', 'error'].includes(token)
+          ['code', 'function', 'implement', 'bug', 'error'].includes(token),
       );
       if (queryHasCodeTerms && containsCode(content)) {
         finalScore += codePresenceWeight;
@@ -523,9 +505,7 @@ export function rerank(
 
       // Tag match factor
       const tags = doc.metadata.tags || [];
-      const matchingTags = tags.filter((tag) =>
-        queryTokens.has(tag.toLowerCase())
-      );
+      const matchingTags = tags.filter((tag) => queryTokens.has(tag.toLowerCase()));
       const tagScore = Math.min(matchingTags.length / Math.max(queryTokens.size, 1), 1);
       finalScore += tagScore * tagMatchWeight;
 
@@ -545,10 +525,7 @@ export function rerank(
 /**
  * Filter documents by metadata criteria
  */
-export function filterByMetadata(
-  documents: Document[],
-  filter: MetadataFilter
-): Document[] {
+export function filterByMetadata(documents: Document[], filter: MetadataFilter): Document[] {
   return documents.filter((doc) => {
     const meta = doc.metadata;
 
@@ -574,7 +551,7 @@ export function filterByMetadata(
     if (filter.tags && filter.tags.length > 0) {
       const docTags = meta.tags || [];
       const hasMatchingTag = filter.tags.some((tag) =>
-        docTags.some((docTag) => docTag.toLowerCase() === tag.toLowerCase())
+        docTags.some((docTag) => docTag.toLowerCase() === tag.toLowerCase()),
       );
       if (!hasMatchingTag) {
         return false;
@@ -654,7 +631,7 @@ interface NormalizedSearchResult extends SearchResult {
 export function mmrDiversify(
   results: SearchResult[],
   lambda: number = 0.7,
-  topK: number = 10
+  topK: number = 10,
 ): SearchResult[] {
   if (results.length === 0) return [];
   if (results.length <= topK && lambda >= 1) return results.slice(0, topK);
@@ -689,16 +666,12 @@ export function mmrDiversify(
       // Calculate max similarity to already selected documents
       let maxSimilarity = 0;
       for (const selectedResult of selected) {
-        const similarity = documentSimilarity(
-          candidate.document,
-          selectedResult.document
-        );
+        const similarity = documentSimilarity(candidate.document, selectedResult.document);
         maxSimilarity = Math.max(maxSimilarity, similarity);
       }
 
       // MMR formula
-      const mmrScore =
-        lambda * candidate.normalizedScore - (1 - lambda) * maxSimilarity;
+      const mmrScore = lambda * candidate.normalizedScore - (1 - lambda) * maxSimilarity;
 
       if (mmrScore > bestMmrScore) {
         bestMmrScore = mmrScore;
@@ -715,14 +688,16 @@ export function mmrDiversify(
   }
 
   // Return results without the internal normalizedScore property
-  return selected.map((item): SearchResult => ({
-    document: item.document,
-    score: item.score,
-    bm25Score: item.bm25Score,
-    vectorScore: item.vectorScore,
-    rrfScore: item.rrfScore,
-    rerankScore: item.rerankScore,
-  }));
+  return selected.map(
+    (item): SearchResult => ({
+      document: item.document,
+      score: item.score,
+      bm25Score: item.bm25Score,
+      vectorScore: item.vectorScore,
+      rrfScore: item.rrfScore,
+      rerankScore: item.rerankScore,
+    }),
+  );
 }
 
 // =============================================================================
@@ -735,7 +710,7 @@ export function mmrDiversify(
 export function createDocument(
   id: string,
   content: string,
-  metadata: Partial<DocumentMetadata> = {}
+  metadata: Partial<DocumentMetadata> = {},
 ): Document {
   return {
     id,
@@ -759,18 +734,13 @@ export function createDocument(
  */
 export function calculateAvgDocLength(documents: Document[]): number {
   if (documents.length === 0) return 0;
-  return (
-    documents.reduce((sum, doc) => sum + tokenize(doc.content).length, 0) /
-    documents.length
-  );
+  return documents.reduce((sum, doc) => sum + tokenize(doc.content).length, 0) / documents.length;
 }
 
 /**
  * Get term statistics for IDF caching
  */
-export function getTermStatistics(
-  documents: Document[]
-): Map<string, { df: number; idf: number }> {
+export function getTermStatistics(documents: Document[]): Map<string, { df: number; idf: number }> {
   const stats = new Map<string, { df: number; idf: number }>();
   const N = documents.length;
 

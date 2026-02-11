@@ -6,10 +6,10 @@
  * and partial-then-error scenarios.
  */
 
-import { test, expect } from '../fixtures/test-setup';
-import { TerminalPage } from '../page-objects/TerminalPage';
+import { setMockInvokeResult } from '../fixtures/tauri-mocks';
 import { SELECTORS, TIMEOUTS } from '../fixtures/test-data';
-import { setMockInvokeResult, emitTauriEvent } from '../fixtures/tauri-mocks';
+import { expect, test } from '../fixtures/test-setup';
+import { TerminalPage } from '../page-objects/TerminalPage';
 
 test.describe('Streaming', () => {
   let terminal: TerminalPage;
@@ -30,7 +30,10 @@ test.describe('Streaming', () => {
     });
 
     await page.reload();
-    await page.waitForSelector(SELECTORS.sidebar.container, { state: 'visible', timeout: TIMEOUTS.long });
+    await page.waitForSelector(SELECTORS.sidebar.container, {
+      state: 'visible',
+      timeout: TIMEOUTS.long,
+    });
   });
 
   test('character-by-character streaming output', async ({ page, stream }) => {
@@ -51,7 +54,10 @@ test.describe('Streaming', () => {
   });
 
   test('Ollama streaming protocol works word by word', async ({ page, stream }) => {
-    await stream.simulateOllamaResponse('llama3.2:3b', 'The quick brown fox jumps over the lazy dog');
+    await stream.simulateOllamaResponse(
+      'llama3.2:3b',
+      'The quick brown fox jumps over the lazy dog',
+    );
     await page.waitForTimeout(500);
 
     // Verify something was rendered
@@ -93,7 +99,7 @@ test.describe('Streaming', () => {
   test('partial response followed by error', async ({ page, stream }) => {
     await stream.simulatePartialThenError(
       'Starting analysis...',
-      'Server disconnected unexpectedly'
+      'Server disconnected unexpectedly',
     );
     await page.waitForTimeout(500);
 

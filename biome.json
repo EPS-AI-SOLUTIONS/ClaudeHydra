@@ -5,11 +5,35 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "complexity": {
+        "noUselessLoneBlockStatements": "warn",
+        "noBannedTypes": "warn"
+      },
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noExplicitAny": "warn",
+        "noAssignInExpressions": "warn",
+        "useIterableCallbackReturn": "warn",
+        "noImplicitAnyLet": "warn",
+        "noSuspiciousSemicolonInJsx": "warn",
+        "noArrayIndexKey": "warn"
       },
       "style": {
-        "noNonNullAssertion": "warn"
+        "noNonNullAssertion": "warn",
+        "useTemplate": "warn"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "warn",
+        "useKeyWithClickEvents": "warn",
+        "noStaticElementInteractions": "warn",
+        "noAutofocus": "warn",
+        "useButtonType": "warn"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "warn",
+        "noConstantCondition": "warn",
+        "noInvalidUseBeforeDeclaration": "warn",
+        "noUnusedImports": "warn",
+        "noUnusedVariables": "warn"
       }
     }
   },

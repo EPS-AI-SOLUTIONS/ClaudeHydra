@@ -32,16 +32,12 @@ interface UseKeyboardShortcutsOptions {
  */
 export const useKeyboardShortcuts = (
   shortcuts: Record<string, () => void>,
-  options: UseKeyboardShortcutsOptions = {}
+  options: UseKeyboardShortcutsOptions = {},
 ): {
   registerShortcut: (hotkey: string, callback: () => void) => void;
   unregisterShortcut: (hotkey: string) => void;
 } => {
-  const {
-    preventDefault = true,
-    stopPropagation = false,
-    enabled = true,
-  } = options;
+  const { preventDefault = true, stopPropagation = false, enabled = true } = options;
 
   // Mutable registry to allow dynamic shortcut management
   const shortcutsRef = useRef<Record<string, () => void>>(shortcuts);

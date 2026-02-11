@@ -12,29 +12,29 @@
  * - Recent activity
  */
 
+import {
+  Activity,
+  BarChart3,
+  Brain,
+  Clock,
+  Cpu,
+  Database,
+  DollarSign,
+  Layers,
+  RefreshCw,
+  Target,
+  TrendingUp,
+  Zap,
+} from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import {
-  Brain,
-  Database,
-  Zap,
-  TrendingUp,
-  Clock,
-  DollarSign,
-  Activity,
-  RefreshCw,
-  BarChart3,
-  Layers,
-  Cpu,
-  Target,
-} from 'lucide-react';
-import {
-  useAnalyticsStore,
-  selectQueryDistribution,
-  selectTopKeywords,
-  selectCostSummary,
-  type TopicCluster,
   type ActivityEntry,
   type QueryType,
+  selectCostSummary,
+  selectQueryDistribution,
+  selectTopKeywords,
+  type TopicCluster,
+  useAnalyticsStore,
 } from '../lib/analytics';
 
 // ============================================================================
@@ -59,9 +59,7 @@ function MetricCard({ label, value, icon: Icon, color, subValue }: MetricCardPro
         <span className="text-xs text-matrix-text-dim">{label}</span>
       </div>
       <div className="text-xl font-bold text-matrix-text">{value}</div>
-      {subValue && (
-        <div className="text-[10px] text-matrix-text-dim mt-1">{subValue}</div>
-      )}
+      {subValue && <div className="text-[10px] text-matrix-text-dim mt-1">{subValue}</div>}
     </div>
   );
 }
@@ -71,13 +69,7 @@ interface TopicPieChartProps {
 }
 
 function TopicPieChart({ topics }: TopicPieChartProps) {
-  const colors = [
-    'bg-green-500',
-    'bg-blue-500',
-    'bg-purple-500',
-    'bg-yellow-500',
-    'bg-pink-500',
-  ];
+  const colors = ['bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-yellow-500', 'bg-pink-500'];
 
   if (topics.length === 0) {
     return (
@@ -95,9 +87,7 @@ function TopicPieChart({ topics }: TopicPieChartProps) {
             <span className="text-matrix-text truncate max-w-[120px]" title={topic.name}>
               {topic.name}
             </span>
-            <span className="text-matrix-text-dim">
-              {topic.percentage.toFixed(1)}%
-            </span>
+            <span className="text-matrix-text-dim">{topic.percentage.toFixed(1)}%</span>
           </div>
           <div className="h-2 bg-matrix-bg-secondary rounded-full overflow-hidden">
             <div
@@ -154,9 +144,7 @@ function QueryDistribution({ distribution, total }: QueryDistributionProps) {
           </div>
         ))}
       </div>
-      <div className="text-xs text-matrix-text-dim text-center">
-        Total: {total} queries
-      </div>
+      <div className="text-xs text-matrix-text-dim text-center">Total: {total} queries</div>
     </div>
   );
 }
@@ -269,9 +257,7 @@ function ActivityList({ activities }: ActivityListProps) {
 
   if (activities.length === 0) {
     return (
-      <div className="text-center text-matrix-text-dim text-xs py-4 italic">
-        Brak aktywnosci
-      </div>
+      <div className="text-center text-matrix-text-dim text-xs py-4 italic">Brak aktywnosci</div>
     );
   }
 
@@ -286,9 +272,7 @@ function ActivityList({ activities }: ActivityListProps) {
           <span className="text-[10px] text-matrix-text flex-1 truncate">
             {activity.description}
           </span>
-          <span className="text-[9px] text-matrix-text-dim">
-            {formatTime(activity.timestamp)}
-          </span>
+          <span className="text-[9px] text-matrix-text-dim">{formatTime(activity.timestamp)}</span>
         </div>
       ))}
     </div>
@@ -357,7 +341,7 @@ export function LearningDashboard() {
   // Memoized values
   const latestModelVersion = useMemo(
     () => modelVersions[modelVersions.length - 1] || 'v1.0.0',
-    [modelVersions]
+    [modelVersions],
   );
 
   return (
@@ -371,11 +355,7 @@ export function LearningDashboard() {
             <p className="text-xs text-matrix-text-dim">AI Learning Metrics & Monitoring</p>
           </div>
         </div>
-        <button
-          onClick={updateTopics}
-          className="glass-button p-2"
-          title="Refresh Topics"
-        >
+        <button onClick={updateTopics} className="glass-button p-2" title="Refresh Topics">
           <RefreshCw size={16} />
         </button>
       </div>
@@ -398,12 +378,7 @@ export function LearningDashboard() {
             color="text-purple-400"
             subValue={`${modelVersions.length} versions`}
           />
-          <MetricCard
-            label="RAG Entries"
-            value={ragEntries}
-            icon={Layers}
-            color="text-green-400"
-          />
+          <MetricCard label="RAG Entries" value={ragEntries} icon={Layers} color="text-green-400" />
           <MetricCard
             label="Avg Quality"
             value={`${(avgQuality * 100).toFixed(1)}%`}
@@ -453,18 +428,14 @@ export function LearningDashboard() {
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
                 <span className="text-matrix-text-dim">Session:</span>
-                <div className="text-lg font-mono text-yellow-400">
-                  ${costSummary.session}
-                </div>
+                <div className="text-lg font-mono text-yellow-400">${costSummary.session}</div>
                 <span className="text-[10px] text-matrix-text-dim">
                   {costSummary.sessionTokens.toLocaleString()} tokens
                 </span>
               </div>
               <div>
                 <span className="text-matrix-text-dim">Total:</span>
-                <div className="text-lg font-mono text-matrix-accent">
-                  ${costSummary.total}
-                </div>
+                <div className="text-lg font-mono text-matrix-accent">${costSummary.total}</div>
                 <span className="text-[10px] text-matrix-text-dim">
                   {costSummary.totalTokens.toLocaleString()} tokens
                 </span>

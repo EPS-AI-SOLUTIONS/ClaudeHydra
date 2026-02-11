@@ -5,17 +5,16 @@
  * knowledge graph, memory entries, and CRUD operations.
  */
 
-import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
+import {
+  createMockKnowledgeGraph,
+  createMockMemories,
+  setMockInvokeResult,
+} from '../fixtures/tauri-mocks';
+import { SELECTORS, TIMEOUTS } from '../fixtures/test-data';
 import { BasePage } from './BasePage';
-import { SELECTORS, TIMEOUTS, AGENT_NAMES } from '../fixtures/test-data';
-import { createMockMemories, createMockKnowledgeGraph, setMockInvokeResult } from '../fixtures/tauri-mocks';
 
 export class MemoryPanel extends BasePage {
-  constructor(page: Page) {
-    super(page);
-  }
-
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   /**
@@ -42,7 +41,10 @@ export class MemoryPanel extends BasePage {
    * Select an agent from the dropdown filter.
    */
   async filterByAgent(agentName: string): Promise<void> {
-    await this.page.locator(SELECTORS.memory.agentSelect).first().selectOption({ label: agentName });
+    await this.page
+      .locator(SELECTORS.memory.agentSelect)
+      .first()
+      .selectOption({ label: agentName });
     await this.page.waitForTimeout(200);
   }
 

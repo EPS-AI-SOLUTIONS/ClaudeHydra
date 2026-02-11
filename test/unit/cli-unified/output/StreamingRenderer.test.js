@@ -3,39 +3,39 @@
  * @module test/unit/cli-unified/output/StreamingRenderer.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock ThemeRegistry
 vi.mock('../../../../src/cli-unified/core/ThemeRegistry.js', () => ({
   themeRegistry: {
     getCurrent: vi.fn(() => ({
       colors: {
-        primary: vi.fn(s => `[primary]${s}[/primary]`),
-        secondary: vi.fn(s => `[secondary]${s}[/secondary]`),
-        highlight: vi.fn(s => `[highlight]${s}[/highlight]`),
-        dim: vi.fn(s => `[dim]${s}[/dim]`),
-        info: vi.fn(s => `[info]${s}[/info]`),
-        success: vi.fn(s => `[success]${s}[/success]`),
-        warning: vi.fn(s => `[warning]${s}[/warning]`),
-        code: vi.fn(s => `[code]${s}[/code]`)
-      }
-    }))
-  }
+        primary: vi.fn((s) => `[primary]${s}[/primary]`),
+        secondary: vi.fn((s) => `[secondary]${s}[/secondary]`),
+        highlight: vi.fn((s) => `[highlight]${s}[/highlight]`),
+        dim: vi.fn((s) => `[dim]${s}[/dim]`),
+        info: vi.fn((s) => `[info]${s}[/info]`),
+        success: vi.fn((s) => `[success]${s}[/success]`),
+        warning: vi.fn((s) => `[warning]${s}[/warning]`),
+        code: vi.fn((s) => `[code]${s}[/code]`),
+      },
+    })),
+  },
 }));
 
 // Mock constants
 vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
   ANSI: {
-    CLEAR_LINE: '\x1b[2K'
-  }
+    CLEAR_LINE: '\x1b[2K',
+  },
 }));
 
 import {
-  StreamingRenderer,
-  ProgressIndicator,
   CollapsibleSection,
+  createProgressIndicator,
   createStreamingRenderer,
-  createProgressIndicator
+  ProgressIndicator,
+  StreamingRenderer,
 } from '../../../../src/cli-unified/output/StreamingRenderer.js';
 
 describe('StreamingRenderer Module', () => {
@@ -107,7 +107,7 @@ describe('StreamingRenderer Module', () => {
         const renderer = new StreamingRenderer();
         renderer.processLine('# Header 1');
         expect(stdoutWriteSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[highlight]Header 1[/highlight]')
+          expect.stringContaining('[highlight]Header 1[/highlight]'),
         );
       });
 
@@ -116,12 +116,12 @@ describe('StreamingRenderer Module', () => {
 
         renderer.processLine('## Header 2');
         expect(stdoutWriteSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[secondary]Header 2[/secondary]')
+          expect.stringContaining('[secondary]Header 2[/secondary]'),
         );
 
         renderer.processLine('### Header 3');
         expect(stdoutWriteSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[primary]Header 3[/primary]')
+          expect.stringContaining('[primary]Header 3[/primary]'),
         );
       });
 
@@ -129,18 +129,16 @@ describe('StreamingRenderer Module', () => {
         const renderer = new StreamingRenderer();
         renderer.processLine('- List item');
         expect(stdoutWriteSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[primary]• [/primary]')
+          expect.stringContaining('[primary]• [/primary]'),
         );
       });
 
       it('should render blockquote', () => {
         const renderer = new StreamingRenderer();
         renderer.processLine('> Quote text');
+        expect(stdoutWriteSpy).toHaveBeenCalledWith(expect.stringContaining('[dim]│ [/dim]'));
         expect(stdoutWriteSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[dim]│ [/dim]')
-        );
-        expect(stdoutWriteSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[info]Quote text[/info]')
+          expect.stringContaining('[info]Quote text[/info]'),
         );
       });
 
@@ -166,7 +164,7 @@ describe('StreamingRenderer Module', () => {
         renderer.processLine('const x = 1;');
         expect(renderer.currentLine).toBe(1);
         expect(stdoutWriteSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[code]const x = 1;[/code]')
+          expect.stringContaining('[code]const x = 1;[/code]'),
         );
       });
     });
@@ -175,9 +173,7 @@ describe('StreamingRenderer Module', () => {
       it('should display formatted partial text', () => {
         const renderer = new StreamingRenderer();
         renderer.displayPartial('partial text');
-        expect(stdoutWriteSpy).toHaveBeenCalledWith(
-          expect.stringContaining('partial text')
-        );
+        expect(stdoutWriteSpy).toHaveBeenCalledWith(expect.stringContaining('partial text'));
       });
 
       it('should use code formatting in code block', () => {
@@ -185,7 +181,7 @@ describe('StreamingRenderer Module', () => {
         renderer.inCodeBlock = true;
         renderer.displayPartial('code text');
         expect(stdoutWriteSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[code]code text[/code]')
+          expect.stringContaining('[code]code text[/code]'),
         );
       });
     });
@@ -231,9 +227,7 @@ describe('StreamingRenderer Module', () => {
         renderer.inCodeBlock = true;
         renderer.flush();
         expect(renderer.inCodeBlock).toBe(false);
-        expect(stdoutWriteSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[dim]')
-        );
+        expect(stdoutWriteSpy).toHaveBeenCalledWith(expect.stringContaining('[dim]'));
       });
     });
 
@@ -341,9 +335,7 @@ describe('StreamingRenderer Module', () => {
         const indicator = new ProgressIndicator({ stages: ['Step 1'] });
         indicator.start();
         indicator.complete();
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[success]')
-        );
+        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('[success]'));
       });
     });
 

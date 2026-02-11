@@ -3,20 +3,20 @@
  * @module test/unit/cli-unified/output/BorderRenderer.test
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock ThemeRegistry
 vi.mock('../../../../src/cli-unified/core/ThemeRegistry.js', () => ({
   themeRegistry: {
     getCurrent: vi.fn(() => ({
       colors: {
-        primary: vi.fn(s => `[primary]${s}[/primary]`),
-        highlight: vi.fn(s => `[highlight]${s}[/highlight]`),
-        border: vi.fn(s => `[border]${s}[/border]`),
-        dim: vi.fn(s => `[dim]${s}[/dim]`)
-      }
-    }))
-  }
+        primary: vi.fn((s) => `[primary]${s}[/primary]`),
+        highlight: vi.fn((s) => `[highlight]${s}[/highlight]`),
+        border: vi.fn((s) => `[border]${s}[/border]`),
+        dim: vi.fn((s) => `[dim]${s}[/dim]`),
+      },
+    })),
+  },
 }));
 
 // Mock constants with BOX styles
@@ -32,7 +32,7 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => {
     teeUp: '┴',
     teeRight: '├',
     teeLeft: '┤',
-    cross: '┼'
+    cross: '┼',
   };
   const BOX_DOUBLE = {
     horizontal: '═',
@@ -45,7 +45,7 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => {
     teeUp: '╩',
     teeRight: '╠',
     teeLeft: '╣',
-    cross: '╬'
+    cross: '╬',
   };
   const BOX_ROUNDED = {
     horizontal: '─',
@@ -58,7 +58,7 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => {
     teeUp: '┴',
     teeRight: '├',
     teeLeft: '┤',
-    cross: '┼'
+    cross: '┼',
   };
   const BOX_BOLD = { ...BOX_SINGLE };
   const BOX_DASHED = { ...BOX_SINGLE };
@@ -74,7 +74,7 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => {
     teeUp: '+',
     teeRight: '+',
     teeLeft: '+',
-    cross: '+'
+    cross: '+',
   };
 
   return {
@@ -85,7 +85,7 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => {
       bold: BOX_BOLD,
       dashed: BOX_DASHED,
       dotted: BOX_DOTTED,
-      ascii: BOX_ASCII
+      ascii: BOX_ASCII,
     },
     BOX_SINGLE,
     BOX_DOUBLE,
@@ -93,23 +93,23 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => {
     BOX_BOLD,
     BOX_DASHED,
     BOX_DOTTED,
-    BOX_ASCII
+    BOX_ASCII,
   };
 });
 
 import {
-  stripAnsi,
-  visibleLength,
-  padString,
-  wordWrap,
+  ASCII,
   BorderRenderer,
+  createBorderRenderer,
+  DOUBLE,
+  padString,
   quickBox,
   quickPanel,
-  createBorderRenderer,
-  SINGLE,
-  DOUBLE,
   ROUNDED,
-  ASCII
+  SINGLE,
+  stripAnsi,
+  visibleLength,
+  wordWrap,
 } from '../../../../src/cli-unified/output/BorderRenderer.js';
 
 describe('BorderRenderer Module', () => {
@@ -186,7 +186,7 @@ describe('BorderRenderer Module', () => {
       const text = 'This is a long sentence that needs wrapping';
       const lines = wordWrap(text, 15);
       expect(lines.length).toBeGreaterThan(1);
-      lines.forEach(line => {
+      lines.forEach((line) => {
         expect(visibleLength(line)).toBeLessThanOrEqual(15);
       });
     });
@@ -249,7 +249,7 @@ describe('BorderRenderer Module', () => {
           style: 'double',
           width: 60,
           padding: 2,
-          margin: 1
+          margin: 1,
         });
         expect(renderer.style).toBe('double');
         expect(renderer.width).toBe(60);
@@ -344,7 +344,7 @@ describe('BorderRenderer Module', () => {
         const renderer = new BorderRenderer({ width: 30 });
         const sections = [
           { header: 'Section 1', content: 'Content 1' },
-          { header: 'Section 2', content: 'Content 2' }
+          { header: 'Section 2', content: 'Content 2' },
         ];
         const result = renderer.sections(sections);
 
@@ -356,9 +356,7 @@ describe('BorderRenderer Module', () => {
 
       it('should handle sections without headers', () => {
         const renderer = new BorderRenderer({ width: 30 });
-        const sections = [
-          { content: 'Just content' }
-        ];
+        const sections = [{ content: 'Just content' }];
         const result = renderer.sections(sections);
 
         expect(result).toContain('Just content');
@@ -366,9 +364,7 @@ describe('BorderRenderer Module', () => {
 
       it('should handle sections with array content', () => {
         const renderer = new BorderRenderer({ width: 30 });
-        const sections = [
-          { header: 'Multi-line', content: ['Line A', 'Line B'] }
-        ];
+        const sections = [{ header: 'Multi-line', content: ['Line A', 'Line B'] }];
         const result = renderer.sections(sections);
 
         expect(result).toContain('Line A');

@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, useCallback, DragEvent } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { type DragEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 // Check if running in Tauri (v2 uses __TAURI_INTERNALS__)
-const isTauri = () => typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+const isTauri = () =>
+  typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
 // Browser fallback API (uses Vite proxy to bypass CORS)
 const OLLAMA_PROXY = '/api/ollama';
@@ -25,7 +26,10 @@ const browserOllamaApi = {
     return data.models || [];
   },
 
-  async* streamChat(model: string, messages: Array<{role: string; content: string}>): AsyncGenerator<StreamChunk> {
+  async *streamChat(
+    model: string,
+    messages: Array<{ role: string; content: string }>,
+  ): AsyncGenerator<StreamChunk> {
     let res: Response;
     try {
       res = await fetch(`${OLLAMA_PROXY}/api/chat`, {
@@ -72,27 +76,31 @@ const browserOllamaApi = {
             model: chunk.model,
             total_tokens: chunk.eval_count,
           };
-        } catch { /* ignore parse errors */ }
+        } catch {
+          /* ignore parse errors */
+        }
       }
     }
-  }
+  },
 };
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
+
 import {
-  Send,
-  Paperclip,
-  Image as ImageIcon,
-  FileText,
-  X,
   Bot,
-  User,
+  Cpu,
+  FileText,
+  Image as ImageIcon,
   Loader2,
+  Paperclip,
+  Send,
   Trash2,
+  User,
+  X,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
+import remarkGfm from 'remark-gfm';
 import { useChatHistory } from '../hooks/useChatHistory';
-import { usePromptPipeline, getAlzurStatus } from '../hooks/usePromptPipeline';
+import { getAlzurStatus, usePromptPipeline } from '../hooks/usePromptPipeline';
 import { CodeBlock, InlineCode } from './CodeBlock';
 
 interface OllamaModel {
@@ -136,7 +144,12 @@ export function OllamaChatView() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [ollamaConnected, setOllamaConnected] = useState(false);
-  const [alzurStatus, setAlzurStatus] = useState({ samples: 0, buffer: 0, isTraining: false, modelVersion: 0 });
+  const [alzurStatus, setAlzurStatus] = useState({
+    samples: 0,
+    buffer: 0,
+    isTraining: false,
+    modelVersion: 0,
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -145,7 +158,7 @@ export function OllamaChatView() {
   const { currentSession, createSession, addMessage: saveChatMessage } = useChatHistory();
   const { processPrompt } = usePromptPipeline();
 
-  // Load models on mount - prefer Alzur-trained models
+  // Load models on mount (once only)
   // Works in both Tauri and browser mode (via proxy)
   useEffect(() => {
     const loadModels = async () => {
@@ -154,48 +167,17 @@ export function OllamaChatView() {
         let result: OllamaModel[];
 
         if (isTauri()) {
-          // Tauri mode: use IPC
           isHealthy = await invoke<boolean>('ollama_health_check');
-          if (isHealthy) {
-            result = await invoke<OllamaModel[]>('ollama_list_models');
-          } else {
-            result = [];
-          }
+          result = isHealthy ? await invoke<OllamaModel[]>('ollama_list_models') : [];
         } else {
-          // Browser mode: use fetch via Vite proxy
           console.log('[OllamaChat] Browser mode - using proxy');
           isHealthy = await browserOllamaApi.healthCheck();
-          if (isHealthy) {
-            result = await browserOllamaApi.listModels();
-          } else {
-            result = [];
-          }
+          result = isHealthy ? await browserOllamaApi.listModels() : [];
         }
 
         setOllamaConnected(isHealthy);
         if (isHealthy && result.length > 0) {
           setModels(result);
-
-          if (!selectedModel) {
-            // AUTO-SELECT: Prefer latest Alzur-trained model if available
-            const alzurModels = result
-              .filter(m => m.name.startsWith('alzur-v'))
-              .sort((a, b) => {
-                // Sort by version number descending
-                const vA = parseInt(a.name.replace('alzur-v', '')) || 0;
-                const vB = parseInt(b.name.replace('alzur-v', '')) || 0;
-                return vB - vA;
-              });
-
-            if (alzurModels.length > 0) {
-              // Use latest Alzur model (continuous learning result)
-              setSelectedModel(alzurModels[0].name);
-              console.log(`[Alzur] Auto-selected trained model: ${alzurModels[0].name}`);
-            } else {
-              // Fallback to first available model
-              setSelectedModel(result[0].name);
-            }
-          }
         }
       } catch (e) {
         console.error('Failed to load models:', e);
@@ -203,7 +185,28 @@ export function OllamaChatView() {
       }
     };
     loadModels();
-  }, [selectedModel]);
+  }, []);
+
+  // Auto-select model when models load and no model is selected yet
+  useEffect(() => {
+    if (selectedModel || models.length === 0) return;
+
+    // Prefer latest Alzur-trained model if available
+    const alzurModels = models
+      .filter((m) => m.name.startsWith('alzur-v'))
+      .sort((a, b) => {
+        const vA = parseInt(a.name.replace('alzur-v', ''), 10) || 0;
+        const vB = parseInt(b.name.replace('alzur-v', ''), 10) || 0;
+        return vB - vA;
+      });
+
+    if (alzurModels.length > 0) {
+      setSelectedModel(alzurModels[0].name);
+      console.log(`[Alzur] Auto-selected trained model: ${alzurModels[0].name}`);
+    } else {
+      setSelectedModel(models[0].name);
+    }
+  }, [models, selectedModel]);
 
   // Reference to capture final response for Vilgefortz
   const responseBufferRef = useRef<string>('');
@@ -221,7 +224,7 @@ export function OllamaChatView() {
 
       setMessages((prev) => {
         const lastMsg = prev[prev.length - 1];
-        if (lastMsg && lastMsg.streaming) {
+        if (lastMsg?.streaming) {
           return [
             ...prev.slice(0, -1),
             {
@@ -270,7 +273,7 @@ export function OllamaChatView() {
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, []);
 
   // Update Alzur status periodically
   useEffect(() => {
@@ -282,16 +285,40 @@ export function OllamaChatView() {
     return () => clearInterval(interval);
   }, []);
 
-  // Handle file drop
-  const handleDrop = useCallback(async (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
+  // Handle Ctrl+V paste for files/images
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
 
-    const files = Array.from(e.dataTransfer.files);
-    for (const file of files) {
-      await processFile(file);
-    }
-  }, []);
+      for (const item of Array.from(items)) {
+        if (item.kind === 'file') {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            await processFile(file);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [processFile]);
+
+  // Handle file drop
+  const handleDrop = useCallback(
+    async (e: DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDragging(false);
+
+      const files = Array.from(e.dataTransfer.files);
+      for (const file of files) {
+        await processFile(file);
+      }
+    },
+    [processFile],
+  );
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -348,7 +375,8 @@ export function OllamaChatView() {
   };
 
   // Send message with AI Pipeline (Avallac'h → AI → Vilgefortz)
-  const sendMessage = async () => {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: messages used inside but intentionally excluded to avoid re-creation on each message
+  const sendMessage = useCallback(async () => {
     if ((!input.trim() && attachments.length === 0) || !selectedModel || isLoading) return;
 
     // Build message content
@@ -444,7 +472,7 @@ export function OllamaChatView() {
 
           setMessages((prev) => {
             const lastMsg = prev[prev.length - 1];
-            if (lastMsg && lastMsg.streaming) {
+            if (lastMsg?.streaming) {
               return [
                 ...prev.slice(0, -1),
                 {
@@ -463,7 +491,6 @@ export function OllamaChatView() {
           }
         }
       }
-
     } catch (e) {
       console.error('Chat error:', e);
       setMessages((prev) => {
@@ -482,7 +509,16 @@ export function OllamaChatView() {
       });
       setIsLoading(false);
     }
-  };
+  }, [
+    input,
+    attachments,
+    selectedModel,
+    isLoading,
+    currentSession,
+    createSession,
+    saveChatMessage,
+    processPrompt,
+  ]);
 
   // Clear chat
   const clearChat = () => {
@@ -502,7 +538,7 @@ export function OllamaChatView() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <Bot className="text-cyan-400" size={24} />
+          <Bot className="text-white/70" size={24} />
           <div>
             <h2 className="text-lg font-semibold text-matrix-accent">Ollama Chat</h2>
             <p className="text-xs text-matrix-text-dim">
@@ -518,14 +554,16 @@ export function OllamaChatView() {
               alzurStatus.isTraining
                 ? 'bg-amber-500/20 border border-amber-500/50 text-amber-400'
                 : alzurStatus.modelVersion > 0
-                ? 'bg-green-500/20 border border-green-500/50 text-green-400'
-                : 'bg-matrix-bg-secondary border border-matrix-accent/30 text-matrix-text-dim'
+                  ? 'bg-green-500/20 border border-green-500/50 text-green-400'
+                  : 'bg-matrix-bg-secondary border border-matrix-accent/30 text-matrix-text-dim'
             }`}
             title={`Alzur: ${alzurStatus.samples} samples | Buffer: ${alzurStatus.buffer}/10 | Model: v${alzurStatus.modelVersion}`}
           >
-            <span className={`w-2 h-2 rounded-full ${
-              alzurStatus.isTraining ? 'bg-amber-400 animate-pulse' : 'bg-green-400'
-            }`} />
+            <span
+              className={`w-2 h-2 rounded-full ${
+                alzurStatus.isTraining ? 'bg-amber-400 animate-pulse' : 'bg-green-400'
+              }`}
+            />
             <span>⚗️ {alzurStatus.isTraining ? 'Training...' : `v${alzurStatus.modelVersion}`}</span>
             <span className="text-[10px] opacity-70">{alzurStatus.buffer}/10</span>
           </div>
@@ -579,12 +617,10 @@ export function OllamaChatView() {
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center text-matrix-text-dim">
             <div className="text-center">
-              <Bot size={64} className="mx-auto mb-4 opacity-30 text-cyan-400" />
+              <Bot size={64} className="mx-auto mb-4 opacity-30 text-white" />
               <p className="text-lg mb-2">Start chatting with Ollama</p>
               <p className="text-sm">Select a model and type a message</p>
-              <p className="text-xs mt-4 opacity-70">
-                Drag & drop files to include context
-              </p>
+              <p className="text-xs mt-4 opacity-70">Drag & drop files to include context</p>
             </div>
           </div>
         ) : (
@@ -597,28 +633,35 @@ export function OllamaChatView() {
                 <div
                   className={`max-w-[85%] ${
                     msg.role === 'user'
-                      ? 'bg-matrix-accent/15 border border-matrix-accent/30'
-                      : 'bg-matrix-bg-secondary border border-cyan-500/20'
-                  } rounded-lg p-3`}
+                      ? 'bg-white/10 border border-white/25 backdrop-blur-sm'
+                      : 'bg-black/30 border border-white/10 backdrop-blur-sm'
+                  } rounded-xl p-3 shadow-lg`}
                 >
-                  {/* Message header */}
+                  {/* Message header with model badge */}
                   <div className="flex items-center gap-2 mb-2">
                     {msg.role === 'user' ? (
-                      <User size={14} className="text-matrix-accent" />
+                      <User size={14} className="text-white" />
                     ) : (
-                      <Bot size={14} className="text-cyan-400" />
+                      <Bot size={14} className="text-white/70" />
                     )}
-                    <span className={`text-xs font-semibold ${
-                      msg.role === 'user' ? 'text-matrix-accent' : 'text-cyan-400'
-                    }`}>
-                      {msg.role === 'user' ? 'You' : msg.model || 'Assistant'}
+                    <span
+                      className={`text-xs font-semibold ${
+                        msg.role === 'user' ? 'text-white' : 'text-white/70'
+                      }`}
+                    >
+                      {msg.role === 'user' ? 'You' : 'Assistant'}
                     </span>
+                    {/* Model badge */}
+                    {msg.role !== 'user' && msg.model && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border text-matrix-accent bg-matrix-accent/15 border-matrix-accent/30">
+                        <Cpu size={9} />
+                        {msg.model}
+                      </span>
+                    )}
                     <span className="text-[10px] text-matrix-text-dim">
                       {msg.timestamp.toLocaleTimeString('pl-PL')}
                     </span>
-                    {msg.streaming && (
-                      <Loader2 size={12} className="animate-spin text-cyan-400" />
-                    )}
+                    {msg.streaming && <Loader2 size={12} className="animate-spin text-white/60" />}
                   </div>
 
                   {/* Attachments preview */}
@@ -648,7 +691,8 @@ export function OllamaChatView() {
                       components={{
                         code({ className, children, node }) {
                           const match = /language-(\w+)/.exec(className || '');
-                          const isInline = !node?.position ||
+                          const isInline =
+                            !node?.position ||
                             (node.position.start.line === node.position.end.line && !match);
 
                           // Get the raw code content
@@ -746,7 +790,9 @@ export function OllamaChatView() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder={ollamaConnected ? "Type a message... (Shift+Enter for newline)" : "Ollama is offline"}
+            placeholder={
+              ollamaConnected ? 'Type a message... (Shift+Enter for newline)' : 'Ollama is offline'
+            }
             disabled={!ollamaConnected || isLoading}
             rows={1}
             className="w-full glass-panel px-4 py-3 pr-12 resize-none focus:border-matrix-accent outline-none"
@@ -757,14 +803,15 @@ export function OllamaChatView() {
         {/* Send button */}
         <button
           onClick={sendMessage}
-          disabled={(!input.trim() && attachments.length === 0) || !selectedModel || isLoading || !ollamaConnected}
+          disabled={
+            (!input.trim() && attachments.length === 0) ||
+            !selectedModel ||
+            isLoading ||
+            !ollamaConnected
+          }
           className="glass-button glass-button-primary px-4"
         >
-          {isLoading ? (
-            <Loader2 size={18} className="animate-spin" />
-          ) : (
-            <Send size={18} />
-          )}
+          {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
         </button>
       </div>
     </div>

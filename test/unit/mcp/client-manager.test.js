@@ -3,8 +3,8 @@
  * @module test/unit/mcp/client-manager.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('../../../src/mcp/config-loader.js', () => ({
@@ -20,14 +20,14 @@ vi.mock('../../../src/mcp/config-loader.js', () => ({
           'test-server': {
             enabled: true,
             command: 'test-cmd',
-            timeout: 30000
-          }
-        }
+            timeout: 30000,
+          },
+        },
       }),
       reload: vi.fn().mockResolvedValue(undefined),
-      stopWatching: vi.fn()
+      stopWatching: vi.fn(),
     };
-  })
+  }),
 }));
 
 vi.mock('../../../src/mcp/server-registry.js', () => {
@@ -35,7 +35,7 @@ vi.mock('../../../src/mcp/server-registry.js', () => {
     DISCONNECTED: 'disconnected',
     CONNECTING: 'connecting',
     CONNECTED: 'connected',
-    ERROR: 'error'
+    ERROR: 'error',
   };
 
   return {
@@ -57,7 +57,7 @@ vi.mock('../../../src/mcp/server-registry.js', () => {
             isAvailable: false,
             recordSuccess: vi.fn(),
             recordFailure: vi.fn(),
-            toJSON: () => ({ id, config, state: ServerState.DISCONNECTED })
+            toJSON: () => ({ id, config, state: ServerState.DISCONNECTED }),
           });
         }),
         unregister: vi.fn((id) => servers.delete(id)),
@@ -77,9 +77,9 @@ vi.mock('../../../src/mcp/server-registry.js', () => {
         }),
         getAllTools: vi.fn(() => []),
         getByTag: vi.fn(() => []),
-        getStats: vi.fn(() => ({ total: servers.size }))
+        getStats: vi.fn(() => ({ total: servers.size })),
       };
-    })
+    }),
   };
 });
 
@@ -87,7 +87,7 @@ vi.mock('../../../src/mcp/health-checker.js', () => ({
   HealthStatus: {
     HEALTHY: 'healthy',
     UNHEALTHY: 'unhealthy',
-    UNKNOWN: 'unknown'
+    UNKNOWN: 'unknown',
   },
   HealthChecker: vi.fn(),
   getHealthChecker: vi.fn(() => {
@@ -100,9 +100,9 @@ vi.mock('../../../src/mcp/health-checker.js', () => ({
       stopAllMonitoring: vi.fn(),
       check: vi.fn().mockResolvedValue({ status: 'healthy' }),
       refresh: vi.fn().mockResolvedValue({ status: 'healthy' }),
-      getSummary: vi.fn().mockReturnValue({ healthy: 1, unhealthy: 0 })
+      getSummary: vi.fn().mockReturnValue({ healthy: 1, unhealthy: 0 }),
     };
-  })
+  }),
 }));
 
 vi.mock('../../../src/mcp/transports/index.js', () => ({
@@ -113,9 +113,9 @@ vi.mock('../../../src/mcp/transports/index.js', () => ({
       emit: emitter.emit.bind(emitter),
       start: vi.fn().mockResolvedValue(undefined),
       close: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockResolvedValue({ tools: [] })
+      request: vi.fn().mockResolvedValue({ tools: [] }),
     };
-  })
+  }),
 }));
 
 describe('MCPClientManager', () => {
@@ -135,7 +135,7 @@ describe('MCPClientManager', () => {
       emit: vi.fn(),
       start: vi.fn().mockResolvedValue(undefined),
       close: vi.fn().mockResolvedValue(undefined),
-      request: vi.fn().mockResolvedValue({ tools: [{ name: 'test_tool' }] })
+      request: vi.fn().mockResolvedValue({ tools: [{ name: 'test_tool' }] }),
     };
     transportModule.createTransport.mockReturnValue(mockTransport);
 
@@ -171,7 +171,7 @@ describe('MCPClientManager', () => {
       const manager = new MCPClientManager({
         autoConnect: false,
         watchConfig: true,
-        enableHealthChecks: false
+        enableHealthChecks: false,
       });
 
       expect(manager.options.autoConnect).toBe(false);
@@ -198,7 +198,7 @@ describe('MCPClientManager', () => {
       expect(manager.configLoader.load).toHaveBeenCalled();
       expect(manager.registry.register).toHaveBeenCalledWith(
         'test-server',
-        expect.objectContaining({ enabled: true })
+        expect.objectContaining({ enabled: true }),
       );
       expect(manager.initialized).toBe(true);
     });
@@ -219,19 +219,23 @@ describe('MCPClientManager', () => {
 
       await manager.initialize();
 
-      expect(initSpy).toHaveBeenCalledWith(expect.objectContaining({
-        serverCount: expect.any(Number)
-      }));
+      expect(initSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serverCount: expect.any(Number),
+        }),
+      );
     });
 
     it('should auto-connect when enabled', async () => {
       const manager = new MCPClientManager({ autoConnect: true });
 
       // Mock registry.list to return our test server
-      manager.registry.list.mockReturnValue([{
-        id: 'test-server',
-        config: { enabled: true }
-      }]);
+      manager.registry.list.mockReturnValue([
+        {
+          id: 'test-server',
+          config: { enabled: true },
+        },
+      ]);
 
       await manager.initialize();
 
@@ -258,7 +262,7 @@ describe('MCPClientManager', () => {
       manager.registry.get.mockReturnValue({
         id: 'test-server',
         config: { enabled: false },
-        state: 'disconnected'
+        state: 'disconnected',
       });
 
       await manager.connect('test-server');
@@ -270,7 +274,7 @@ describe('MCPClientManager', () => {
       manager.registry.get.mockReturnValue({
         id: 'test-server',
         config: { enabled: true },
-        state: 'connected'
+        state: 'connected',
       });
 
       await manager.connect('test-server');
@@ -282,7 +286,7 @@ describe('MCPClientManager', () => {
       manager.registry.get.mockReturnValue({
         id: 'test-server',
         config: { enabled: true, healthCheck: { enabled: false } },
-        state: 'disconnected'
+        state: 'disconnected',
       });
 
       await manager.connect('test-server');
@@ -291,7 +295,7 @@ describe('MCPClientManager', () => {
       expect(manager.registry.updateState).toHaveBeenCalledWith(
         'test-server',
         'connected',
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -299,7 +303,7 @@ describe('MCPClientManager', () => {
       manager.registry.get.mockReturnValue({
         id: 'test-server',
         config: { enabled: true, healthCheck: { enabled: false } },
-        state: 'disconnected'
+        state: 'disconnected',
       });
 
       await manager.connect('test-server');
@@ -312,7 +316,7 @@ describe('MCPClientManager', () => {
       manager.registry.get.mockReturnValue({
         id: 'test-server',
         config: { enabled: true },
-        state: 'disconnected'
+        state: 'disconnected',
       });
       mockTransport.start.mockRejectedValue(new Error('Connection failed'));
 
@@ -320,7 +324,7 @@ describe('MCPClientManager', () => {
       expect(manager.registry.updateState).toHaveBeenCalledWith(
         'test-server',
         'error',
-        expect.objectContaining({ error: expect.any(Error) })
+        expect.objectContaining({ error: expect.any(Error) }),
       );
     });
   });
@@ -335,13 +339,21 @@ describe('MCPClientManager', () => {
 
     it('should connect to all enabled servers', async () => {
       manager.registry.list.mockReturnValue([
-        { id: 'server1', config: { enabled: true, healthCheck: { enabled: false } }, state: 'disconnected' },
-        { id: 'server2', config: { enabled: true, healthCheck: { enabled: false } }, state: 'disconnected' },
-        { id: 'server3', config: { enabled: false }, state: 'disconnected' }
+        {
+          id: 'server1',
+          config: { enabled: true, healthCheck: { enabled: false } },
+          state: 'disconnected',
+        },
+        {
+          id: 'server2',
+          config: { enabled: true, healthCheck: { enabled: false } },
+          state: 'disconnected',
+        },
+        { id: 'server3', config: { enabled: false }, state: 'disconnected' },
       ]);
 
       manager.registry.get.mockImplementation((id) => {
-        return manager.registry.list().find(s => s.id === id);
+        return manager.registry.list().find((s) => s.id === id);
       });
 
       const results = await manager.connectAll();
@@ -352,7 +364,7 @@ describe('MCPClientManager', () => {
     it('should collect errors without stopping', async () => {
       manager.registry.list.mockReturnValue([
         { id: 'server1', config: { enabled: true }, state: 'disconnected' },
-        { id: 'server2', config: { enabled: true }, state: 'disconnected' }
+        { id: 'server2', config: { enabled: true }, state: 'disconnected' },
       ]);
 
       manager.registry.get.mockImplementation((id) => {
@@ -388,7 +400,7 @@ describe('MCPClientManager', () => {
     it('should close transport and update state', async () => {
       manager.registry.get.mockReturnValue({
         id: 'test-server',
-        config: { enabled: true }
+        config: { enabled: true },
       });
       manager.transports.set('test-server', mockTransport);
 
@@ -411,30 +423,33 @@ describe('MCPClientManager', () => {
     it('should throw for unregistered server', async () => {
       manager.registry.get.mockReturnValue(null);
 
-      await expect(manager.executeTool('unknown', 'tool', {}))
-        .rejects.toThrow('Server not registered');
+      await expect(manager.executeTool('unknown', 'tool', {})).rejects.toThrow(
+        'Server not registered',
+      );
     });
 
     it('should throw for unavailable server', async () => {
       manager.registry.get.mockReturnValue({
         id: 'test-server',
         isAvailable: false,
-        state: 'disconnected'
+        state: 'disconnected',
       });
 
-      await expect(manager.executeTool('test-server', 'tool', {}))
-        .rejects.toThrow('Server not available');
+      await expect(manager.executeTool('test-server', 'tool', {})).rejects.toThrow(
+        'Server not available',
+      );
     });
 
     it('should throw when no transport exists', async () => {
       manager.registry.get.mockReturnValue({
         id: 'test-server',
         isAvailable: true,
-        state: 'connected'
+        state: 'connected',
       });
 
-      await expect(manager.executeTool('test-server', 'tool', {}))
-        .rejects.toThrow('No transport for server');
+      await expect(manager.executeTool('test-server', 'tool', {})).rejects.toThrow(
+        'No transport for server',
+      );
     });
 
     it('should execute tool and return result', async () => {
@@ -444,7 +459,7 @@ describe('MCPClientManager', () => {
         state: 'connected',
         config: { timeout: 30000 },
         recordSuccess: vi.fn(),
-        recordFailure: vi.fn()
+        recordFailure: vi.fn(),
       };
       manager.registry.get.mockReturnValue(mockEntry);
       manager.transports.set('test-server', mockTransport);
@@ -455,7 +470,7 @@ describe('MCPClientManager', () => {
       expect(mockTransport.request).toHaveBeenCalledWith(
         'tools/call',
         { name: 'test_tool', arguments: { arg: 'value' } },
-        30000
+        30000,
       );
       expect(result).toEqual({ result: 'success' });
       expect(mockEntry.recordSuccess).toHaveBeenCalled();
@@ -468,14 +483,15 @@ describe('MCPClientManager', () => {
         state: 'connected',
         config: { timeout: 30000 },
         recordSuccess: vi.fn(),
-        recordFailure: vi.fn()
+        recordFailure: vi.fn(),
       };
       manager.registry.get.mockReturnValue(mockEntry);
       manager.transports.set('test-server', mockTransport);
       mockTransport.request.mockRejectedValue(new Error('Tool failed'));
 
-      await expect(manager.executeTool('test-server', 'test_tool', {}))
-        .rejects.toThrow('Tool failed');
+      await expect(manager.executeTool('test-server', 'test_tool', {})).rejects.toThrow(
+        'Tool failed',
+      );
       expect(mockEntry.recordFailure).toHaveBeenCalled();
     });
   });
@@ -495,7 +511,7 @@ describe('MCPClientManager', () => {
         state: 'connected',
         config: { timeout: 30000 },
         recordSuccess: vi.fn(),
-        recordFailure: vi.fn()
+        recordFailure: vi.fn(),
       };
       manager.registry.get.mockReturnValue(mockEntry);
       manager.transports.set('test-server', mockTransport);
@@ -506,14 +522,15 @@ describe('MCPClientManager', () => {
       expect(mockTransport.request).toHaveBeenCalledWith(
         'tools/call',
         { name: 'test_tool', arguments: { arg: 1 } },
-        30000
+        30000,
       );
       expect(result).toEqual({ result: 'success' });
     });
 
     it('should throw for invalid tool ID format', async () => {
-      await expect(manager.executeToolById('invalid_format', {}))
-        .rejects.toThrow('Invalid tool ID format');
+      await expect(manager.executeToolById('invalid_format', {})).rejects.toThrow(
+        'Invalid tool ID format',
+      );
     });
   });
 
@@ -524,7 +541,7 @@ describe('MCPClientManager', () => {
 
       manager.registry.getAllTools.mockReturnValue([
         { name: 'tool1', serverId: 'server1' },
-        { name: 'tool2', serverId: 'server2' }
+        { name: 'tool2', serverId: 'server2' },
       ]);
 
       const tools = manager.listTools();
@@ -541,7 +558,7 @@ describe('MCPClientManager', () => {
 
       manager.registry.get.mockReturnValue({
         id: 'test-server',
-        tools: [{ name: 'tool1' }, { name: 'tool2' }]
+        tools: [{ name: 'tool1' }, { name: 'tool2' }],
       });
 
       const tools = manager.getServerTools('test-server');
@@ -613,7 +630,7 @@ describe('MCPClientManager', () => {
 
       manager.registry.get.mockReturnValue({
         id: 'test-server',
-        toJSON: () => ({ id: 'test-server', state: 'connected' })
+        toJSON: () => ({ id: 'test-server', state: 'connected' }),
       });
 
       const status = manager.getServerStatus('test-server');

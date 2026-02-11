@@ -2,21 +2,21 @@
  * Debug Utilities Tests
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  isTauri,
+  clearTimerResults,
+  DEVTOOLS_SHORTCUTS,
+  getDevToolsShortcut,
+  getEnv,
+  getTimerResults,
   isDev,
   isProd,
-  getEnv,
+  isTauri,
   logger,
+  printDebugInfo,
   timerStart,
   timerStop,
-  getTimerResults,
-  clearTimerResults,
   withTiming,
-  getDevToolsShortcut,
-  DEVTOOLS_SHORTCUTS,
-  printDebugInfo,
 } from './debug';
 
 describe('Debug Utilities', () => {
@@ -110,10 +110,7 @@ describe('Debug Utilities', () => {
     it('logger should handle data parameter', () => {
       const data = { foo: 'bar' };
       logger.info('test message', data);
-      expect(consoleSpy.info).toHaveBeenCalledWith(
-        expect.stringContaining('test message'),
-        data
-      );
+      expect(consoleSpy.info).toHaveBeenCalledWith(expect.stringContaining('test message'), data);
     });
 
     it('logger.warn should log even with devOnly option', () => {
@@ -178,7 +175,7 @@ describe('Debug Utilities', () => {
       const results = getTimerResults();
       const asyncResult = results.find((r) => r.name === 'async-test');
       expect(asyncResult).toBeDefined();
-      expect(asyncResult!.duration).toBeGreaterThanOrEqual(10);
+      expect(asyncResult?.duration).toBeGreaterThanOrEqual(10);
     });
 
     it('timer results should include all required fields', () => {

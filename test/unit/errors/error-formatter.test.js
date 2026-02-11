@@ -2,17 +2,15 @@
  * @fileoverview Tests for error-formatter module
  */
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
+import { APIError, AppError, ErrorCode, ValidationError } from '../../../src/errors/AppError.js';
 import {
   ErrorFormatter,
-  getErrorFormatter,
-  resetErrorFormatter,
   formatError,
   formatErrorInline,
-  printError,
-  printDiagnostic
+  getErrorFormatter,
+  resetErrorFormatter,
 } from '../../../src/errors/error-formatter.js';
-import { AppError, ValidationError, APIError, ErrorCode } from '../../../src/errors/AppError.js';
 
 describe('ErrorFormatter', () => {
   let formatter;
@@ -24,7 +22,7 @@ describe('ErrorFormatter', () => {
       useColors: false,
       showSuggestions: true,
       showStack: false,
-      showDetails: true
+      showDetails: true,
     });
     consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
@@ -37,7 +35,7 @@ describe('ErrorFormatter', () => {
     test('should format AppError', () => {
       const error = new AppError('Test error message', {
         code: ErrorCode.VALIDATION_ERROR,
-        statusCode: 400
+        statusCode: 400,
       });
 
       const formatted = formatter.format(error);
@@ -59,7 +57,7 @@ describe('ErrorFormatter', () => {
       const error = new AppError('Test', {
         code: ErrorCode.API_ERROR,
         statusCode: 502,
-        context: { service: 'api', endpoint: '/test' }
+        context: { service: 'api', endpoint: '/test' },
       });
 
       const formatted = formatter.format(error, { showDetails: true });
@@ -72,7 +70,7 @@ describe('ErrorFormatter', () => {
 
     test('should include suggestions when enabled', () => {
       const error = new AppError('Auth failed', {
-        code: ErrorCode.AUTHENTICATION_ERROR
+        code: ErrorCode.AUTHENTICATION_ERROR,
       });
 
       const formatted = formatter.format(error, { showSuggestions: true });
@@ -102,7 +100,7 @@ describe('ErrorFormatter', () => {
   describe('formatInline', () => {
     test('should format error as inline message', () => {
       const error = new AppError('Quick error', {
-        code: ErrorCode.VALIDATION_ERROR
+        code: ErrorCode.VALIDATION_ERROR,
       });
 
       const inline = formatter.formatInline(error);
@@ -152,14 +150,14 @@ describe('ErrorFormatter', () => {
 
     test('printDiagnostic() should output full diagnostics', () => {
       const error = new AppError('Test error', {
-        code: ErrorCode.NETWORK_ERROR
+        code: ErrorCode.NETWORK_ERROR,
       });
 
       formatter.printDiagnostic(error);
 
       expect(consoleSpy).toHaveBeenCalled();
       // Should contain diagnostics section
-      const output = consoleSpy.mock.calls.map(c => c[0]).join('\n');
+      const output = consoleSpy.mock.calls.map((c) => c[0]).join('\n');
       expect(output).toContain('Test error');
     });
   });
@@ -211,7 +209,7 @@ describe('ErrorFormatter', () => {
     test('AppError.prototype.getDiagnostics should be available', () => {
       const error = new AppError('Test');
       expect(typeof error.getDiagnostics).toBe('function');
-      
+
       const diagnostics = error.getDiagnostics();
       expect(diagnostics).toHaveProperty('errorType');
       expect(diagnostics).toHaveProperty('severity');
@@ -220,7 +218,7 @@ describe('ErrorFormatter', () => {
     test('AppError.prototype.getTroubleshootingSteps should be available', () => {
       const error = new AppError('Test');
       expect(typeof error.getTroubleshootingSteps).toBe('function');
-      
+
       const steps = error.getTroubleshootingSteps();
       expect(Array.isArray(steps)).toBe(true);
     });
@@ -228,7 +226,7 @@ describe('ErrorFormatter', () => {
     test('AppError.prototype.formatStackTrace should be available', () => {
       const error = new AppError('Test');
       expect(typeof error.formatStackTrace).toBe('function');
-      
+
       const stack = error.formatStackTrace();
       expect(typeof stack).toBe('string');
     });
@@ -237,7 +235,7 @@ describe('ErrorFormatter', () => {
   describe('specialized error classes', () => {
     test('ValidationError should format correctly', () => {
       const error = new ValidationError('Invalid input', {
-        errors: [{ path: 'name', message: 'Required' }]
+        errors: [{ path: 'name', message: 'Required' }],
       });
 
       const formatted = formatter.format(error);
@@ -249,7 +247,7 @@ describe('ErrorFormatter', () => {
     test('APIError should format correctly', () => {
       const error = new APIError('External service failed', {
         service: 'payments',
-        endpoint: '/charge'
+        endpoint: '/charge',
       });
 
       const formatted = formatter.format(error);

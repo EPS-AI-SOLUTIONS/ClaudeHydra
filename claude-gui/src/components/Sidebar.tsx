@@ -5,31 +5,22 @@ import {
   ClipboardCheck,
   Copy,
   Edit2,
-  Home,
+  History,
   Menu,
   MessageSquare,
   MessagesSquare,
+  Moon,
   Plus,
   Settings,
-  Terminal,
+  Sun,
   Trash2,
+  Users,
   X,
+  Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type ChatSessionSummary, useChatHistory } from '../hooks/useChatHistory';
 import { useClaudeStore } from '../stores/claudeStore';
-
-interface NavItem {
-  id: 'home' | 'terminal' | 'settings';
-  label: string;
-  icon: React.ReactNode;
-}
-
-const navItems: NavItem[] = [
-  { id: 'home', label: 'Start', icon: <Home size={18} /> },
-  { id: 'terminal', label: 'Terminal', icon: <Terminal size={18} /> },
-  { id: 'settings', label: 'Ustawienia', icon: <Settings size={18} /> },
-];
 
 function pluralizeMessages(count: number): string {
   if (count === 1) return '1 wiadomość';
@@ -74,6 +65,13 @@ function SessionItem({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
+  // Auto-reset confirmDelete after 3s with proper cleanup
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const timer = setTimeout(() => setConfirmDelete(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmDelete]);
+
   const handleSave = () => {
     if (editTitle.trim() && editTitle !== session.title) {
       onRename(editTitle.trim());
@@ -93,7 +91,6 @@ function SessionItem({
       setConfirmDelete(false);
     } else {
       setConfirmDelete(true);
-      setTimeout(() => setConfirmDelete(false), 3000);
     }
   };
 
@@ -232,10 +229,17 @@ export function Sidebar() {
     sidebarCollapsed,
     currentView,
     activeSessionId,
-    setSidebarCollapsed,
+    theme,
     setCurrentView,
     setActiveSessionId,
+    toggleTheme,
+    openTab: openTabInStore,
   } = useClaudeStore();
+
+  // Apply theme to document (globally, since Sidebar is always rendered)
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
   const {
     sessions,
     currentSession,
@@ -276,14 +280,14 @@ export function Sidebar() {
     const session = await createSession(title);
     if (session) {
       setActiveSessionId(session.id);
-      setCurrentView('terminal');
+      openTabInStore(session.id);
     }
   };
 
   const handleSelectSession = async (sessionId: string) => {
     setActiveSessionId(sessionId);
     await loadSession(sessionId);
-    setCurrentView('terminal');
+    openTabInStore(sessionId);
   };
 
   const handleDeleteSession = async (sessionId: string) => {
@@ -349,7 +353,7 @@ export function Sidebar() {
   // Desktop: inline sidebar
   return (
     <aside
-      className={`glass-panel flex flex-col transition-all duration-300 ${
+      className={`glass-panel-solid flex flex-col transition-all duration-300 border-r border-matrix-border ${
         sidebarCollapsed ? 'w-16' : 'w-60'
       }`}
     >
@@ -361,26 +365,54 @@ export function Sidebar() {
   function renderSidebarContent(collapsed: boolean) {
     return (
       <>
-        {/* Logo - click to go home */}
-        <button
-          type="button"
-          onClick={() => setCurrentView('home')}
-          className="flex flex-col items-center gap-3 p-4 border-b border-matrix-border hover:bg-matrix-accent/5 transition-colors cursor-pointer w-full"
-        >
-          <div
-            className={`rounded-xl overflow-hidden flex-shrink-0 bg-matrix-accent/10 shadow-lg shadow-matrix-accent/20 ${
-              collapsed ? 'w-12 h-12' : 'w-32 h-32'
-            } transition-all duration-300`}
-          >
-            <img src="/logodark.webp" alt="Claude HYDRA" className="w-full h-full object-cover" />
-          </div>
+        {/* Logo */}
+        <div className="p-4 flex items-center justify-between border-b border-matrix-border">
           {!collapsed && (
-            <div className="flex flex-col items-center text-center">
-              <span className="text-lg font-bold text-matrix-accent text-glow">Claude HYDRA</span>
-              <span className="text-xs text-matrix-text-dim">AI Swarm Control Center</span>
-            </div>
+            <button
+              type="button"
+              onClick={() => setCurrentView('home')}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <Zap className="w-6 h-6 text-matrix-accent" />
+              <span className="font-mono font-semibold text-matrix-accent text-glow-subtle">
+                ClaudeHydra
+              </span>
+            </button>
           )}
-        </button>
+          {collapsed && (
+            <button type="button" onClick={() => setCurrentView('home')} className="mx-auto">
+              <Zap className="w-6 h-6 text-matrix-accent" />
+            </button>
+          )}
+        </div>
+
+        {/* Navigation - GeminiHydra style */}
+        <nav className="py-3 px-2 space-y-1 border-b border-matrix-border">
+          {[
+            { id: 'terminal' as const, label: 'Chat', icon: MessageSquare },
+            { id: 'agents' as const, label: 'Agenci', icon: Users },
+            { id: 'history' as const, label: 'Historia', icon: History },
+            { id: 'settings' as const, label: 'Ustawienia', icon: Settings },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = currentView === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setCurrentView(item.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                  isActive
+                    ? 'bg-matrix-accent text-matrix-bg-primary font-medium'
+                    : 'text-matrix-text-dim hover:text-matrix-text hover:bg-matrix-accent/10'
+                }`}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                {!collapsed && <span className="text-sm whitespace-nowrap">{item.label}</span>}
+              </button>
+            );
+          })}
+        </nav>
 
         {/* Chat Manager */}
         <div className="flex-1 flex flex-col min-h-0 p-2 border-b border-matrix-border">
@@ -444,40 +476,28 @@ export function Sidebar() {
           )}
         </div>
 
-        {/* Navigation */}
-        <nav className="p-2 space-y-1">
-          {navItems.map((item) => (
-            <button
-              type="button"
-              key={item.id}
-              onClick={() => setCurrentView(item.id)}
-              className={`nav-item w-full ${currentView === item.id ? 'active' : ''}`}
-            >
-              {item.icon}
-              {!collapsed && <span className="text-sm">{item.label}</span>}
-            </button>
-          ))}
-        </nav>
-
-        {/* Collapse Toggle (desktop only) */}
-        {!isMobile && (
-          <div className="p-2 border-t border-matrix-border">
-            <button
-              type="button"
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="nav-item w-full justify-center"
-            >
-              {collapsed ? (
-                <ChevronRight size={18} />
-              ) : (
-                <>
-                  <ChevronLeft size={18} />
-                  <span className="text-sm">Zwiń</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
+        {/* Bottom actions: Theme toggle + Settings */}
+        <div className="p-2 border-t border-matrix-border flex items-center gap-1">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="flex-1 flex items-center justify-center gap-2 p-2 rounded
+                       hover:bg-matrix-accent/10 text-matrix-text-dim hover:text-matrix-accent transition-colors"
+            title={theme === 'dark' ? 'Jasny motyw' : 'Ciemny motyw'}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            {!collapsed && <span className="text-xs">{theme === 'dark' ? 'Jasny' : 'Ciemny'}</span>}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCurrentView('settings')}
+            className="flex items-center justify-center p-2 rounded
+                       hover:bg-matrix-accent/10 text-matrix-text-dim hover:text-matrix-accent transition-colors"
+            title="Ustawienia"
+          >
+            <Settings size={16} />
+          </button>
+        </div>
 
         {/* Mobile close button */}
         {isMobile && (

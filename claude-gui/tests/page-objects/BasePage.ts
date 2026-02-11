@@ -5,10 +5,16 @@
  * screenshot helpers, Tauri mock interaction, and keyboard shortcuts.
  */
 
-import type { Page, Locator } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
-import { injectTauriMocks, emitTauriEvent, setMockInvokeResult, getInvokeHistory, clearInvokeHistory } from '../fixtures/tauri-mocks';
 import { createStreamSimulator, type StreamSimulator } from '../fixtures/stream-simulator';
+import {
+  clearInvokeHistory,
+  emitTauriEvent,
+  getInvokeHistory,
+  injectTauriMocks,
+  setMockInvokeResult,
+} from '../fixtures/tauri-mocks';
 import { SELECTORS, TIMEOUTS } from '../fixtures/test-data';
 
 export class BasePage {
@@ -256,11 +262,14 @@ export class BasePage {
   /**
    * Assert that a specific IPC command was called with given args.
    */
-  async assertInvokeCalledWith(command: string, expectedArgs: Record<string, unknown>): Promise<void> {
+  async assertInvokeCalledWith(
+    command: string,
+    expectedArgs: Record<string, unknown>,
+  ): Promise<void> {
     const history = await this.getInvokeHistory();
     const call = history.find((h) => h.cmd === command);
     expect(call, `Expected IPC command "${command}" to be called`).toBeTruthy();
-    expect(call!.args).toMatchObject(expectedArgs);
+    expect(call?.args).toMatchObject(expectedArgs);
   }
 
   // ── Theme ───────────────────────────────────────────────────────────────────

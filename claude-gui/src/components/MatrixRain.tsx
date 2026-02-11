@@ -23,7 +23,8 @@ export function MatrixRain({ opacity = 0.15 }: MatrixRainProps) {
     window.addEventListener('resize', resize);
 
     // Matrix characters (katakana + numbers + symbols)
-    const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<>{}[]|/\\@#$%^&*';
+    const chars =
+      'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ<>{}[]|/\\@#$%^&*';
     const charArray = chars.split('');
 
     // Column settings
@@ -73,10 +74,6 @@ export function MatrixRain({ opacity = 0.15 }: MatrixRainProps) {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 pointer-events-none"
-      style={{ opacity }}
-    />
+    <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ opacity }} />
   );
 }

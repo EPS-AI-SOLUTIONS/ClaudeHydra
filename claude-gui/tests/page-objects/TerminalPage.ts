@@ -5,16 +5,11 @@
  * streaming, direct IPC test, and clear.
  */
 
-import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
+import { NAV_LABELS, SELECTORS, TIMEOUTS } from '../fixtures/test-data';
 import { BasePage } from './BasePage';
-import { SELECTORS, NAV_LABELS, TIMEOUTS } from '../fixtures/test-data';
 
 export class TerminalPage extends BasePage {
-  constructor(page: Page) {
-    super(page);
-  }
-
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   /**
@@ -56,7 +51,10 @@ export class TerminalPage extends BasePage {
    * Get the terminal input's placeholder text.
    */
   async getInputPlaceholder(): Promise<string> {
-    const attr = await this.page.locator(SELECTORS.terminal.input).first().getAttribute('placeholder');
+    const attr = await this.page
+      .locator(SELECTORS.terminal.input)
+      .first()
+      .getAttribute('placeholder');
     return attr ?? '';
   }
 

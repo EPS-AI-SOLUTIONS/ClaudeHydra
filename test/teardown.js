@@ -13,5 +13,5 @@ export default async function globalTeardown() {
   }
 
   // Small delay to allow cleanup
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 100));
 }

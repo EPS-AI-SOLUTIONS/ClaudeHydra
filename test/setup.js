@@ -3,7 +3,7 @@
  * @module test/setup
  */
 
-import { vi, beforeEach, afterEach, afterAll } from 'vitest';
+import { afterAll, afterEach, beforeEach, vi } from 'vitest';
 
 // Reset mocks before each test
 beforeEach(() => {

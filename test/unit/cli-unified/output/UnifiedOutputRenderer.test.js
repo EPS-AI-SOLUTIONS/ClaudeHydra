@@ -3,60 +3,60 @@
  * @module test/unit/cli-unified/output/UnifiedOutputRenderer.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock ThemeRegistry first
 vi.mock('../../../../src/cli-unified/core/ThemeRegistry.js', () => ({
   themeRegistry: {
     getCurrent: vi.fn(() => ({
       colors: {
-        primary: vi.fn(s => `[primary]${s}[/primary]`),
-        secondary: vi.fn(s => `[secondary]${s}[/secondary]`),
-        highlight: vi.fn(s => `[highlight]${s}[/highlight]`),
-        dim: vi.fn(s => `[dim]${s}[/dim]`),
-        info: vi.fn(s => `[info]${s}[/info]`),
-        success: vi.fn(s => `[success]${s}[/success]`),
-        warning: vi.fn(s => `[warning]${s}[/warning]`),
-        error: vi.fn(s => `[error]${s}[/error]`),
-        code: vi.fn(s => `[code]${s}[/code]`),
-        border: vi.fn(s => `[border]${s}[/border]`)
+        primary: vi.fn((s) => `[primary]${s}[/primary]`),
+        secondary: vi.fn((s) => `[secondary]${s}[/secondary]`),
+        highlight: vi.fn((s) => `[highlight]${s}[/highlight]`),
+        dim: vi.fn((s) => `[dim]${s}[/dim]`),
+        info: vi.fn((s) => `[info]${s}[/info]`),
+        success: vi.fn((s) => `[success]${s}[/success]`),
+        warning: vi.fn((s) => `[warning]${s}[/warning]`),
+        error: vi.fn((s) => `[error]${s}[/error]`),
+        code: vi.fn((s) => `[code]${s}[/code]`),
+        border: vi.fn((s) => `[border]${s}[/border]`),
       },
       symbols: {
         check: '✔',
         cross: '✘',
         warning: '⚠',
         info: 'ℹ',
-        bullet: '•'
-      }
+        bullet: '•',
+      },
     })),
     set: vi.fn(() => ({
       colors: {
-        primary: vi.fn(s => s),
-        secondary: vi.fn(s => s),
-        highlight: vi.fn(s => s),
-        dim: vi.fn(s => s),
-        info: vi.fn(s => s),
-        success: vi.fn(s => s),
-        warning: vi.fn(s => s),
-        error: vi.fn(s => s)
+        primary: vi.fn((s) => s),
+        secondary: vi.fn((s) => s),
+        highlight: vi.fn((s) => s),
+        dim: vi.fn((s) => s),
+        info: vi.fn((s) => s),
+        success: vi.fn((s) => s),
+        warning: vi.fn((s) => s),
+        error: vi.fn((s) => s),
       },
-      symbols: {}
-    }))
-  }
+      symbols: {},
+    })),
+  },
 }));
 
 // Mock EventBus
 vi.mock('../../../../src/cli-unified/core/EventBus.js', () => ({
   eventBus: {
-    emit: vi.fn()
+    emit: vi.fn(),
   },
   EVENT_TYPES: {
     THEME_CHANGE: 'theme:change',
     RENDER_OUTPUT: 'render:output',
     RENDER_ERROR: 'render:error',
     SPINNER_START: 'spinner:start',
-    SPINNER_STOP: 'spinner:stop'
-  }
+    SPINNER_STOP: 'spinner:stop',
+  },
 }));
 
 // Mock constants
@@ -64,7 +64,7 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
   ANSI: {
     CLEAR_SCREEN: '\x1b[2J',
     CURSOR_HOME: '\x1b[H',
-    CLEAR_LINE: '\x1b[2K'
+    CLEAR_LINE: '\x1b[2K',
   },
   BORDER_STYLES: {},
   BOX_SINGLE: {
@@ -73,7 +73,7 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
     topLeft: '┌',
     topRight: '┐',
     bottomLeft: '└',
-    bottomRight: '┘'
+    bottomRight: '┘',
   },
   BOX_DOUBLE: {},
   BOX_ROUNDED: {
@@ -82,9 +82,9 @@ vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
     topLeft: '╭',
     topRight: '╮',
     bottomLeft: '╰',
-    bottomRight: '╯'
+    bottomRight: '╯',
   },
-  BOX_ASCII: {}
+  BOX_ASCII: {},
 }));
 
 // Create mock spinner
@@ -93,7 +93,7 @@ const mockSpinner = {
   stop: vi.fn(),
   succeed: vi.fn(),
   fail: vi.fn(),
-  text: vi.fn()
+  text: vi.fn(),
 };
 
 // Mock sub-renderers with proper class implementations
@@ -104,7 +104,7 @@ vi.mock('../../../../src/cli-unified/output/SpinnerSystem.js', () => ({
   createProgressBar: vi.fn(),
   createMultiSpinner: vi.fn(),
   SpinnerTypes: {},
-  getAvailableSpinnerTypes: vi.fn()
+  getAvailableSpinnerTypes: vi.fn(),
 }));
 
 vi.mock('../../../../src/cli-unified/output/BorderRenderer.js', () => ({
@@ -118,7 +118,7 @@ vi.mock('../../../../src/cli-unified/output/BorderRenderer.js', () => ({
   },
   quickBox: vi.fn(),
   quickPanel: vi.fn(),
-  createBorderRenderer: vi.fn()
+  createBorderRenderer: vi.fn(),
 }));
 
 vi.mock('../../../../src/cli-unified/output/MarkdownRenderer.js', () => ({
@@ -127,7 +127,7 @@ vi.mock('../../../../src/cli-unified/output/MarkdownRenderer.js', () => ({
       this.render = vi.fn(() => '[markdown rendered]');
     }
   },
-  createMarkdownRenderer: vi.fn()
+  createMarkdownRenderer: vi.fn(),
 }));
 
 vi.mock('../../../../src/cli-unified/output/TableRenderer.js', () => ({
@@ -147,7 +147,7 @@ vi.mock('../../../../src/cli-unified/output/TableRenderer.js', () => ({
   renderTable: vi.fn(),
   renderList: vi.fn(),
   TABLE_STYLES: {},
-  LIST_STYLES: {}
+  LIST_STYLES: {},
 }));
 
 vi.mock('../../../../src/cli-unified/output/StreamingRenderer.js', () => ({
@@ -177,17 +177,17 @@ vi.mock('../../../../src/cli-unified/output/StreamingRenderer.js', () => ({
   createProgressIndicator: vi.fn(() => ({
     start: vi.fn(),
     advance: vi.fn(),
-    complete: vi.fn()
-  }))
+    complete: vi.fn(),
+  })),
 }));
 
-import {
-  UnifiedOutputRenderer,
-  createOutputRenderer
-} from '../../../../src/cli-unified/output/UnifiedOutputRenderer.js';
-import { eventBus, EVENT_TYPES } from '../../../../src/cli-unified/core/EventBus.js';
+import { EVENT_TYPES, eventBus } from '../../../../src/cli-unified/core/EventBus.js';
 import { createSpinner } from '../../../../src/cli-unified/output/SpinnerSystem.js';
-import { createProgressIndicator, CollapsibleSection } from '../../../../src/cli-unified/output/StreamingRenderer.js';
+import { createProgressIndicator } from '../../../../src/cli-unified/output/StreamingRenderer.js';
+import {
+  createOutputRenderer,
+  UnifiedOutputRenderer,
+} from '../../../../src/cli-unified/output/UnifiedOutputRenderer.js';
 
 describe('UnifiedOutputRenderer Module', () => {
   let stdoutWriteSpy;
@@ -259,7 +259,7 @@ describe('UnifiedOutputRenderer Module', () => {
         expect(consoleLogSpy).toHaveBeenCalled();
         expect(eventBus.emit).toHaveBeenCalledWith(
           EVENT_TYPES.RENDER_OUTPUT,
-          expect.objectContaining({ type: 'success' })
+          expect.objectContaining({ type: 'success' }),
         );
       });
     });
@@ -271,7 +271,7 @@ describe('UnifiedOutputRenderer Module', () => {
         expect(consoleLogSpy).toHaveBeenCalled();
         expect(eventBus.emit).toHaveBeenCalledWith(
           EVENT_TYPES.RENDER_ERROR,
-          expect.objectContaining({ message: 'Something went wrong' })
+          expect.objectContaining({ message: 'Something went wrong' }),
         );
       });
     });
@@ -345,13 +345,12 @@ describe('UnifiedOutputRenderer Module', () => {
     describe('startSpinner()', () => {
       it('should create and start spinner', () => {
         const renderer = new UnifiedOutputRenderer();
-        const spinner = renderer.startSpinner('Loading...');
+        const _spinner = renderer.startSpinner('Loading...');
         expect(createSpinner).toHaveBeenCalled();
         expect(mockSpinner.start).toHaveBeenCalled();
-        expect(eventBus.emit).toHaveBeenCalledWith(
-          EVENT_TYPES.SPINNER_START,
-          { text: 'Loading...' }
-        );
+        expect(eventBus.emit).toHaveBeenCalledWith(EVENT_TYPES.SPINNER_START, {
+          text: 'Loading...',
+        });
       });
 
       it('should stop previous spinner', () => {
@@ -370,7 +369,7 @@ describe('UnifiedOutputRenderer Module', () => {
         expect(renderer.activeSpinner).toBeNull();
         expect(eventBus.emit).toHaveBeenCalledWith(
           EVENT_TYPES.SPINNER_STOP,
-          expect.objectContaining({ success: true })
+          expect.objectContaining({ success: true }),
         );
       });
 
@@ -389,7 +388,7 @@ describe('UnifiedOutputRenderer Module', () => {
         expect(renderer.activeSpinner).toBeNull();
         expect(eventBus.emit).toHaveBeenCalledWith(
           EVENT_TYPES.SPINNER_STOP,
-          expect.objectContaining({ success: false })
+          expect.objectContaining({ success: false }),
         );
       });
     });
@@ -400,10 +399,7 @@ describe('UnifiedOutputRenderer Module', () => {
         renderer.startSpinner('Loading');
         renderer.stopSpinner();
         expect(renderer.activeSpinner).toBeNull();
-        expect(eventBus.emit).toHaveBeenCalledWith(
-          EVENT_TYPES.SPINNER_STOP,
-          {}
-        );
+        expect(eventBus.emit).toHaveBeenCalledWith(EVENT_TYPES.SPINNER_STOP, {});
       });
     });
 

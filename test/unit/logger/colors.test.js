@@ -3,7 +3,7 @@
  * @module test/unit/logger/colors.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Store original env
 const originalEnv = { ...process.env };
@@ -252,7 +252,9 @@ describe('Logger Colors', () => {
     describe('createColorFormatter()', () => {
       it('should create a formatter function', async () => {
         process.env.FORCE_COLOR = '1';
-        const { createColorFormatter, FgColors, RESET } = await import('../../../src/logger/colors.js');
+        const { createColorFormatter, FgColors, RESET } = await import(
+          '../../../src/logger/colors.js'
+        );
 
         const redFormatter = createColorFormatter(FgColors.RED);
         expect(typeof redFormatter).toBe('function');
@@ -638,7 +640,9 @@ describe('Logger Colors', () => {
       it('should throw error for less than 2 colors', async () => {
         const { createGradientColors } = await import('../../../src/logger/colors.js');
 
-        expect(() => createGradientColors(['#000000'], 5)).toThrow('Gradient requires at least 2 colors');
+        expect(() => createGradientColors(['#000000'], 5)).toThrow(
+          'Gradient requires at least 2 colors',
+        );
       });
 
       it('should handle multiple color stops', async () => {
@@ -713,7 +717,9 @@ describe('Logger Colors', () => {
         process.env.FORCE_COLOR = '1';
         process.stdout.isTTY = true;
         process.env.COLORTERM = 'truecolor';
-        const { createGradientFormatter, Gradients, stripAnsi } = await import('../../../src/logger/colors.js');
+        const { createGradientFormatter, Gradients, stripAnsi } = await import(
+          '../../../src/logger/colors.js'
+        );
 
         const rainbowFormatter = createGradientFormatter(Gradients.RAINBOW);
         expect(typeof rainbowFormatter).toBe('function');
@@ -897,7 +903,7 @@ describe('Logger Colors', () => {
         const result = style('Test', {
           bold: true,
           italic: true,
-          fg: '#ff0000'
+          fg: '#ff0000',
         });
 
         expect(result).toContain(Styles.BOLD);
@@ -1021,7 +1027,7 @@ describe('Logger Colors', () => {
         const result = progressBar(50, 100, {
           width: 10,
           completeColor: '#00ff00',
-          incompleteColor: '#ff0000'
+          incompleteColor: '#ff0000',
         });
 
         expect(result).toContain('\x1b[38;2;0;255;0m');

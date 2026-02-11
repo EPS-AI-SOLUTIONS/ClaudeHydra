@@ -7,7 +7,7 @@
  * Returns empty string for invalid inputs (undefined, null, NaN, <= 0)
  */
 export function formatBytes(bytes?: number | null): string {
-  if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) {
+  if (bytes === undefined || bytes === null || Number.isNaN(bytes) || bytes <= 0) {
     return '';
   }
 
@@ -28,7 +28,7 @@ export function formatBytes(bytes?: number | null): string {
  * Returns empty string for invalid inputs
  */
 export function formatSizeGB(bytes?: number | null): string {
-  if (bytes === undefined || bytes === null || isNaN(bytes) || bytes <= 0) {
+  if (bytes === undefined || bytes === null || Number.isNaN(bytes) || bytes <= 0) {
     return '';
   }
   const gb = bytes / (1024 * 1024 * 1024);
@@ -42,9 +42,9 @@ export function formatSizeGB(bytes?: number | null): string {
 export function formatNumber(
   value?: number | null,
   decimals: number = 0,
-  fallback: string = '0'
+  fallback: string = '0',
 ): string {
-  if (value === undefined || value === null || isNaN(value)) {
+  if (value === undefined || value === null || Number.isNaN(value)) {
     return fallback;
   }
   return value.toFixed(decimals);

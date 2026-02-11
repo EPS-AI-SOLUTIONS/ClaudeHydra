@@ -1,4 +1,4 @@
-import { Check, X, Terminal, FileEdit, Globe, Plug } from 'lucide-react';
+import { Check, FileEdit, Globe, Plug, Terminal, X } from 'lucide-react';
 import { useClaude } from '../hooks/useClaude';
 import { formatApprovalType } from '../types/claude';
 
@@ -88,17 +88,11 @@ export function ApprovalDialog() {
   return (
     <div className="approval-dialog glass-panel p-4 animate-slide-up border-glow">
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 p-2 rounded-lg bg-matrix-accent/10">
-          {getIcon()}
-        </div>
+        <div className="flex-shrink-0 p-2 rounded-lg bg-matrix-accent/10">{getIcon()}</div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-matrix-accent">
-            Approval Required
-          </h3>
-          <p className="text-xs text-matrix-text-dim mt-1">
-            {formatApprovalType(approval)}
-          </p>
+          <h3 className="text-sm font-semibold text-matrix-accent">Approval Required</h3>
+          <p className="text-xs text-matrix-text-dim mt-1">{formatApprovalType(approval)}</p>
 
           {getDetails()}
 

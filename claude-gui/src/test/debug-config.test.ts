@@ -8,9 +8,9 @@
  * - https://github.com/crabnebula-dev/devtools
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 // Paths relative to claude-gui directory
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
@@ -71,36 +71,26 @@ describe('Debug Configuration', () => {
       });
 
       it('should have LLDB debug configuration', () => {
-        const lldbConfig = launchConfig.configurations.find(
-          (c: any) => c.type === 'lldb'
-        );
+        const lldbConfig = launchConfig.configurations.find((c: any) => c.type === 'lldb');
         expect(lldbConfig).toBeDefined();
         expect(lldbConfig.name).toContain('Tauri');
       });
 
       it('should have cargo build args', () => {
-        const lldbConfig = launchConfig.configurations.find(
-          (c: any) => c.type === 'lldb'
-        );
+        const lldbConfig = launchConfig.configurations.find((c: any) => c.type === 'lldb');
         expect(lldbConfig.cargo).toBeDefined();
         expect(lldbConfig.cargo.args).toContain('build');
       });
 
       it('should have Windows MSVC debug configuration', () => {
-        const msvcConfig = launchConfig.configurations.find(
-          (c: any) => c.type === 'cppvsdbg'
-        );
+        const msvcConfig = launchConfig.configurations.find((c: any) => c.type === 'cppvsdbg');
         expect(msvcConfig).toBeDefined();
         expect(msvcConfig.program).toContain('claude-gui.exe');
       });
 
       it('should set RUST_BACKTRACE environment variable', () => {
-        const msvcConfig = launchConfig.configurations.find(
-          (c: any) => c.type === 'cppvsdbg'
-        );
-        const backtraceEnv = msvcConfig.environment?.find(
-          (e: any) => e.name === 'RUST_BACKTRACE'
-        );
+        const msvcConfig = launchConfig.configurations.find((c: any) => c.type === 'cppvsdbg');
+        const backtraceEnv = msvcConfig.environment?.find((e: any) => e.name === 'RUST_BACKTRACE');
         expect(backtraceEnv).toBeDefined();
         expect(backtraceEnv.value).toBe('1');
       });

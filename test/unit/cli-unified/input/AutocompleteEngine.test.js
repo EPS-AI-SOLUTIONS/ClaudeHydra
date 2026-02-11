@@ -3,24 +3,37 @@
  * @module test/unit/cli-unified/input/AutocompleteEngine.test
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { promises as fs } from 'fs';
+import { promises as fs } from 'node:fs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fs
 vi.mock('fs', () => ({
   promises: {
-    readdir: vi.fn()
-  }
+    readdir: vi.fn(),
+  },
 }));
 
 // Mock constants
 vi.mock('../../../../src/cli-unified/core/constants.js', () => ({
-  AGENT_NAMES: ['Geralt', 'Yennefer', 'Triss', 'Ciri', 'Dijkstra', 'Regis', 'Vesemir', 'Eskel', 'Lambert', 'Jaskier', 'Zoltan', 'Philippa']
+  AGENT_NAMES: [
+    'Geralt',
+    'Yennefer',
+    'Triss',
+    'Ciri',
+    'Dijkstra',
+    'Regis',
+    'Vesemir',
+    'Eskel',
+    'Lambert',
+    'Jaskier',
+    'Zoltan',
+    'Philippa',
+  ],
 }));
 
 import {
   AutocompleteEngine,
-  createAutocomplete
+  createAutocomplete,
 } from '../../../../src/cli-unified/input/AutocompleteEngine.js';
 
 describe('AutocompleteEngine', () => {
@@ -49,7 +62,7 @@ describe('AutocompleteEngine', () => {
     it('should add a valid provider', () => {
       const provider = {
         name: 'test',
-        complete: vi.fn().mockResolvedValue(null)
+        complete: vi.fn().mockResolvedValue(null),
       };
 
       const result = engine.addProvider(provider);
@@ -58,15 +71,19 @@ describe('AutocompleteEngine', () => {
     });
 
     it('should throw when provider has no name', () => {
-      expect(() => engine.addProvider({
-        complete: vi.fn()
-      })).toThrow('Provider must have name and complete function');
+      expect(() =>
+        engine.addProvider({
+          complete: vi.fn(),
+        }),
+      ).toThrow('Provider must have name and complete function');
     });
 
     it('should throw when provider has no complete function', () => {
-      expect(() => engine.addProvider({
-        name: 'test'
-      })).toThrow('Provider must have name and complete function');
+      expect(() =>
+        engine.addProvider({
+          name: 'test',
+        }),
+      ).toThrow('Provider must have name and complete function');
     });
 
     it('should sort providers by priority', async () => {
@@ -77,8 +94,8 @@ describe('AutocompleteEngine', () => {
           suggestions: ['low'],
           startIndex: 0,
           endIndex: 3,
-          prefix: 'low'
-        })
+          prefix: 'low',
+        }),
       };
 
       const highPriority = {
@@ -88,8 +105,8 @@ describe('AutocompleteEngine', () => {
           suggestions: ['high'],
           startIndex: 0,
           endIndex: 4,
-          prefix: 'high'
-        })
+          prefix: 'high',
+        }),
       };
 
       engine.addProvider(lowPriority);
@@ -105,7 +122,7 @@ describe('AutocompleteEngine', () => {
     it('should default priority to 0', () => {
       const provider = {
         name: 'test',
-        complete: vi.fn().mockResolvedValue(null)
+        complete: vi.fn().mockResolvedValue(null),
       };
 
       engine.addProvider(provider);
@@ -118,7 +135,7 @@ describe('AutocompleteEngine', () => {
     it('should remove existing provider', () => {
       engine.addProvider({
         name: 'test',
-        complete: vi.fn()
+        complete: vi.fn(),
       });
 
       const result = engine.removeProvider('test');
@@ -146,8 +163,8 @@ describe('AutocompleteEngine', () => {
           suggestions: ['first-result'],
           startIndex: 0,
           endIndex: 5,
-          prefix: 'first'
-        })
+          prefix: 'first',
+        }),
       };
 
       engine.addProvider(provider1);
@@ -165,8 +182,8 @@ describe('AutocompleteEngine', () => {
           suggestions: [],
           startIndex: 0,
           endIndex: 0,
-          prefix: ''
-        })
+          prefix: '',
+        }),
       };
 
       const filledProvider = {
@@ -176,8 +193,8 @@ describe('AutocompleteEngine', () => {
           suggestions: ['result'],
           startIndex: 0,
           endIndex: 4,
-          prefix: 'resu'
-        })
+          prefix: 'resu',
+        }),
       };
 
       engine.addProvider(emptyProvider);
@@ -192,7 +209,7 @@ describe('AutocompleteEngine', () => {
       const nullProvider = {
         name: 'null',
         priority: 100,
-        complete: vi.fn().mockResolvedValue(null)
+        complete: vi.fn().mockResolvedValue(null),
       };
 
       const validProvider = {
@@ -202,8 +219,8 @@ describe('AutocompleteEngine', () => {
           suggestions: ['valid-result'],
           startIndex: 0,
           endIndex: 5,
-          prefix: 'valid'
-        })
+          prefix: 'valid',
+        }),
       };
 
       engine.addProvider(nullProvider);
@@ -218,7 +235,7 @@ describe('AutocompleteEngine', () => {
       const errorProvider = {
         name: 'error',
         priority: 100,
-        complete: vi.fn().mockRejectedValue(new Error('Provider failed'))
+        complete: vi.fn().mockRejectedValue(new Error('Provider failed')),
       };
 
       const validProvider = {
@@ -228,8 +245,8 @@ describe('AutocompleteEngine', () => {
           suggestions: ['fallback'],
           startIndex: 0,
           endIndex: 4,
-          prefix: 'fall'
-        })
+          prefix: 'fall',
+        }),
       };
 
       engine.addProvider(errorProvider);
@@ -252,7 +269,7 @@ describe('AutocompleteEngine', () => {
     it('should use input length as cursor position if not provided', async () => {
       const provider = {
         name: 'test',
-        complete: vi.fn().mockResolvedValue(null)
+        complete: vi.fn().mockResolvedValue(null),
       };
 
       engine.addProvider(provider);
@@ -297,7 +314,7 @@ describe('AutocompleteEngine', () => {
         suggestions: [],
         startIndex: 0,
         endIndex: 4,
-        prefix: ''
+        prefix: '',
       });
 
       expect(result.text).toBe('test');
@@ -309,7 +326,7 @@ describe('AutocompleteEngine', () => {
         suggestions: ['hello', 'help'],
         startIndex: 0,
         endIndex: 3,
-        prefix: 'hel'
+        prefix: 'hel',
       });
 
       expect(result.text).toBe('hello');
@@ -317,12 +334,16 @@ describe('AutocompleteEngine', () => {
     });
 
     it('should apply selected suggestion', () => {
-      const result = AutocompleteEngine.apply('hel', {
-        suggestions: ['hello', 'help'],
-        startIndex: 0,
-        endIndex: 3,
-        prefix: 'hel'
-      }, 1);
+      const result = AutocompleteEngine.apply(
+        'hel',
+        {
+          suggestions: ['hello', 'help'],
+          startIndex: 0,
+          endIndex: 3,
+          prefix: 'hel',
+        },
+        1,
+      );
 
       expect(result.text).toBe('help');
       expect(result.cursorPos).toBe(4);
@@ -333,7 +354,7 @@ describe('AutocompleteEngine', () => {
         suggestions: ['hello'],
         startIndex: 4,
         endIndex: 7,
-        prefix: 'hel'
+        prefix: 'hel',
       });
 
       expect(result.text).toBe('say hello to him');
@@ -348,7 +369,7 @@ describe('AutocompleteEngine', () => {
   describe('CommandProvider', () => {
     it('should complete commands starting with /', async () => {
       const mockParser = {
-        getCompletions: vi.fn().mockReturnValue(['/help', '/history'])
+        getCompletions: vi.fn().mockReturnValue(['/help', '/history']),
       };
 
       const provider = AutocompleteEngine.CommandProvider(mockParser);
@@ -371,7 +392,7 @@ describe('AutocompleteEngine', () => {
 
     it('should return null when no completions', async () => {
       const mockParser = {
-        getCompletions: vi.fn().mockReturnValue([])
+        getCompletions: vi.fn().mockReturnValue([]),
       };
 
       const provider = AutocompleteEngine.CommandProvider(mockParser);
@@ -384,7 +405,7 @@ describe('AutocompleteEngine', () => {
   describe('HistoryProvider', () => {
     it('should complete from history', async () => {
       const mockHistory = {
-        searchPrefix: vi.fn().mockReturnValue(['test command', 'test query'])
+        searchPrefix: vi.fn().mockReturnValue(['test command', 'test query']),
       };
 
       const provider = AutocompleteEngine.HistoryProvider(mockHistory);
@@ -423,7 +444,7 @@ describe('AutocompleteEngine', () => {
 
     it('should limit to 10 results', async () => {
       const mockHistory = {
-        searchPrefix: vi.fn().mockReturnValue(Array(20).fill('match'))
+        searchPrefix: vi.fn().mockReturnValue(Array(20).fill('match')),
       };
 
       const provider = AutocompleteEngine.HistoryProvider(mockHistory);
@@ -497,15 +518,13 @@ describe('AutocompleteEngine', () => {
     });
 
     it('should add trailing slash for directories', async () => {
-      fs.readdir.mockResolvedValue([
-        { name: 'folder', isDirectory: () => true }
-      ]);
+      fs.readdir.mockResolvedValue([{ name: 'folder', isDirectory: () => true }]);
 
       const provider = AutocompleteEngine.FilePathProvider();
       const result = await provider.complete('cd ./', 5);
 
       if (result && result.suggestions.length > 0) {
-        const dirSuggestion = result.suggestions.find(s => s.includes('folder'));
+        const dirSuggestion = result.suggestions.find((s) => s.includes('folder'));
         expect(dirSuggestion).toMatch(/\/$/);
       }
     });
@@ -515,7 +534,7 @@ describe('AutocompleteEngine', () => {
     const templates = {
       greeting: 'Hello, {name}!',
       farewell: 'Goodbye, {name}!',
-      test: 'Test template'
+      test: 'Test template',
     };
 
     it('should complete template names', async () => {
@@ -544,11 +563,7 @@ describe('AutocompleteEngine', () => {
     const items = ['apple', 'banana', 'cherry', 'apricot'];
 
     it('should complete from static list with pattern', async () => {
-      const provider = AutocompleteEngine.StaticProvider(
-        'fruits',
-        items,
-        /--fruit=?(\S*)$/
-      );
+      const provider = AutocompleteEngine.StaticProvider('fruits', items, /--fruit=?(\S*)$/);
 
       const result = await provider.complete('--fruit=ap', 10);
 
@@ -572,11 +587,7 @@ describe('AutocompleteEngine', () => {
     });
 
     it('should return null when pattern does not match', async () => {
-      const provider = AutocompleteEngine.StaticProvider(
-        'fruits',
-        items,
-        /--fruit=(\S*)$/
-      );
+      const provider = AutocompleteEngine.StaticProvider('fruits', items, /--fruit=(\S*)$/);
 
       const result = await provider.complete('hello world', 11);
 
@@ -597,12 +608,8 @@ describe('AutocompleteEngine', () => {
       global.fetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          models: [
-            { name: 'llama3' },
-            { name: 'llama2' },
-            { name: 'mistral' }
-          ]
-        })
+          models: [{ name: 'llama3' }, { name: 'llama2' }, { name: 'mistral' }],
+        }),
       });
 
       const provider = AutocompleteEngine.DynamicModelProvider();
@@ -616,8 +623,8 @@ describe('AutocompleteEngine', () => {
       global.fetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          models: [{ name: 'mistral' }]
-        })
+          models: [{ name: 'mistral' }],
+        }),
       });
 
       const provider = AutocompleteEngine.DynamicModelProvider();
@@ -630,8 +637,8 @@ describe('AutocompleteEngine', () => {
       global.fetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          models: [{ name: 'cached-model' }]
-        })
+          models: [{ name: 'cached-model' }],
+        }),
       });
 
       const provider = AutocompleteEngine.DynamicModelProvider({ cacheTimeout: 60000 });
@@ -666,8 +673,8 @@ describe('AutocompleteEngine', () => {
       global.fetch.mockResolvedValue({
         ok: true,
         json: vi.fn().mockResolvedValue({
-          models: [{ name: 'test-model' }]
-        })
+          models: [{ name: 'test-model' }],
+        }),
       });
 
       const provider = AutocompleteEngine.DynamicModelProvider();

@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import { Grid } from 'lucide-react';
+import { useMemo } from 'react';
 
 interface HeatmapCell {
   hour: number;
@@ -13,7 +13,11 @@ interface PerformanceHeatmapProps {
   avgLatency: number;
 }
 
-export function PerformanceHeatmap({ ipcCallsPerSec, eventsPerSec, avgLatency }: PerformanceHeatmapProps) {
+export function PerformanceHeatmap({
+  ipcCallsPerSec,
+  eventsPerSec,
+  avgLatency,
+}: PerformanceHeatmapProps) {
   // Generate mock heatmap data (in real app, this would come from backend)
   const heatmapData = useMemo(() => {
     const data: HeatmapCell[] = [];
@@ -33,7 +37,7 @@ export function PerformanceHeatmap({ ipcCallsPerSec, eventsPerSec, avgLatency }:
     return data;
   }, [ipcCallsPerSec]);
 
-  const maxValue = Math.max(...heatmapData.map(d => d.value), 1);
+  const maxValue = Math.max(...heatmapData.map((d) => d.value), 1);
 
   const getColor = (value: number) => {
     const intensity = value / maxValue;

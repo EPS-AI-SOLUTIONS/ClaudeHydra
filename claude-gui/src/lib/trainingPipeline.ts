@@ -146,9 +146,7 @@ function calculateComplexity(sample: TrainingSample): number {
   const codeScore = Math.min(codeBlocks / 5, 1);
 
   return (
-    promptScore * promptWeight +
-    completionScore * completionWeight +
-    codeScore * codeBlockWeight
+    promptScore * promptWeight + completionScore * completionWeight + codeScore * codeBlockWeight
   );
 }
 
@@ -171,11 +169,12 @@ function computeStats(values: number[]): ComplexityStats {
   const sum = sorted.reduce((acc, v) => acc + v, 0);
   const mean = sum / sorted.length;
 
-  const median = sorted.length % 2 === 0
-    ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
-    : sorted[Math.floor(sorted.length / 2)];
+  const median =
+    sorted.length % 2 === 0
+      ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+      : sorted[Math.floor(sorted.length / 2)];
 
-  const variance = sorted.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / sorted.length;
+  const variance = sorted.reduce((acc, v) => acc + (v - mean) ** 2, 0) / sorted.length;
   const stdDev = Math.sqrt(variance);
 
   const q1Index = Math.floor(sorted.length * 0.25);
@@ -239,9 +238,9 @@ function shuffleWithSeed<T>(array: T[], seed: number): T[] {
  */
 export function sortByCurriculum(
   samples: TrainingSample[],
-  ascending: boolean = true
+  ascending: boolean = true,
 ): TrainingSampleWithMetrics[] {
-  const samplesWithMetrics: TrainingSampleWithMetrics[] = samples.map(sample => ({
+  const samplesWithMetrics: TrainingSampleWithMetrics[] = samples.map((sample) => ({
     ...sample,
     id: generateId(),
     complexity: calculateComplexity(sample),
@@ -251,7 +250,7 @@ export function sortByCurriculum(
   }));
 
   return samplesWithMetrics.sort((a, b) =>
-    ascending ? a.complexity - b.complexity : b.complexity - a.complexity
+    ascending ? a.complexity - b.complexity : b.complexity - a.complexity,
   );
 }
 
@@ -325,12 +324,10 @@ const BACK_TRANSLATION_TRANSFORMS: Array<(text: string) => string> = [
 export function augmentSample(
   sample: TrainingSample,
   strategies: AugmentationType[] = ['synonym_replacement', 'prompt_rephrase'],
-  count: number = 1
+  count: number = 1,
 ): AugmentedSample[] {
   const originalId = generateId();
-  const results: AugmentedSample[] = [
-    { ...sample, augmentationType: 'original', originalId },
-  ];
+  const results: AugmentedSample[] = [{ ...sample, augmentationType: 'original', originalId }];
 
   for (const strategy of strategies) {
     for (let i = 0; i < count; i++) {
@@ -477,10 +474,7 @@ export interface VarianceSignals {
  * });
  * // Returns { sampleId: 'sample_1', entropy: 0.6, variance: 0.2, ... }
  */
-export function calculateUncertainty(
-  sampleId: string,
-  signals: VarianceSignals
-): UncertaintyScore {
+export function calculateUncertainty(sampleId: string, signals: VarianceSignals): UncertaintyScore {
   let entropy = 0;
   let variance = 0;
   let confidenceGap = 0;
@@ -494,8 +488,10 @@ export function calculateUncertainty(
 
   // Calculate variance from confidence scores
   if (signals.confidenceScores && signals.confidenceScores.length > 1) {
-    const mean = signals.confidenceScores.reduce((a, b) => a + b, 0) / signals.confidenceScores.length;
-    variance = signals.confidenceScores.reduce((acc, score) => acc + Math.pow(score - mean, 2), 0) /
+    const mean =
+      signals.confidenceScores.reduce((a, b) => a + b, 0) / signals.confidenceScores.length;
+    variance =
+      signals.confidenceScores.reduce((acc, score) => acc + (score - mean) ** 2, 0) /
       signals.confidenceScores.length;
     variance = Math.sqrt(variance); // Standard deviation
   }
@@ -509,10 +505,11 @@ export function calculateUncertainty(
   // Include response length variance as additional signal
   let lengthVariance = 0;
   if (signals.responseLengths && signals.responseLengths.length > 1) {
-    const meanLength = signals.responseLengths.reduce((a, b) => a + b, 0) / signals.responseLengths.length;
+    const meanLength =
+      signals.responseLengths.reduce((a, b) => a + b, 0) / signals.responseLengths.length;
     const lengthStdDev = Math.sqrt(
-      signals.responseLengths.reduce((acc, len) => acc + Math.pow(len - meanLength, 2), 0) /
-      signals.responseLengths.length
+      signals.responseLengths.reduce((acc, len) => acc + (len - meanLength) ** 2, 0) /
+        signals.responseLengths.length,
     );
     lengthVariance = Math.min(lengthStdDev / meanLength, 1); // Coefficient of variation, capped at 1
   }
@@ -520,11 +517,13 @@ export function calculateUncertainty(
   // Include quality rating variance
   let qualityVariance = 0;
   if (signals.qualityRatings && signals.qualityRatings.length > 1) {
-    const meanQuality = signals.qualityRatings.reduce((a, b) => a + b, 0) / signals.qualityRatings.length;
-    qualityVariance = Math.sqrt(
-      signals.qualityRatings.reduce((acc, q) => acc + Math.pow(q - meanQuality, 2), 0) /
-      signals.qualityRatings.length
-    ) / 5; // Normalize by max rating
+    const meanQuality =
+      signals.qualityRatings.reduce((a, b) => a + b, 0) / signals.qualityRatings.length;
+    qualityVariance =
+      Math.sqrt(
+        signals.qualityRatings.reduce((acc, q) => acc + (q - meanQuality) ** 2, 0) /
+          signals.qualityRatings.length,
+      ) / 5; // Normalize by max rating
   }
 
   // Weighted combination of uncertainty signals
@@ -557,12 +556,10 @@ export function calculateUncertainty(
  */
 export function selectUncertainSamples(
   samples: Array<{ id: string; signals: VarianceSignals }>,
-  k: number
+  k: number,
 ): UncertaintyScore[] {
-  const scores = samples.map(s => calculateUncertainty(s.id, s.signals));
-  return scores
-    .sort((a, b) => b.overallUncertainty - a.overallUncertainty)
-    .slice(0, k);
+  const scores = samples.map((s) => calculateUncertainty(s.id, s.signals));
+  return scores.sort((a, b) => b.overallUncertainty - a.overallUncertainty).slice(0, k);
 }
 
 // ============================================================================
@@ -593,7 +590,7 @@ export function selectUncertainSamples(
 export function createPreferencePair(
   originalSample: TrainingSample,
   feedback: UserFeedback,
-  alternativeResponse?: string
+  alternativeResponse?: string,
 ): PreferencePair | null {
   // Case 1: Explicit preference from feedback
   if (feedback.preferredResponse && feedback.rejectedResponse) {
@@ -647,7 +644,7 @@ function createSyntheticRejection(response: string): string {
   // Strategy 1: Truncate response (incomplete answer)
   if (response.length > 200) {
     const truncatePoint = Math.floor(response.length * 0.4);
-    return response.slice(0, truncatePoint) + '...';
+    return `${response.slice(0, truncatePoint)}...`;
   }
 
   // Strategy 2: Remove code blocks (less helpful)
@@ -666,7 +663,7 @@ function createSyntheticRejection(response: string): string {
 export function batchCreatePreferencePairs(
   samples: TrainingSample[],
   feedbackMap: Map<string, UserFeedback>,
-  alternativeResponses?: Map<string, string>
+  alternativeResponses?: Map<string, string>,
 ): PreferencePair[] {
   const pairs: PreferencePair[] = [];
 
@@ -714,7 +711,7 @@ export function batchCreatePreferencePairs(
 export function stratifiedSplit(
   samples: TrainingSample[],
   evalRatio: number = 0.1,
-  seed: number = 42
+  seed: number = 42,
 ): StratifiedSplitResult {
   if (samples.length === 0) {
     return {
@@ -825,10 +822,12 @@ export function validateSplitQuality(result: StratifiedSplitResult): {
   const warnings: string[] = [];
 
   // Check topic distribution divergence (KL-like metric)
-  const allTopics = Array.from(new Set([
-    ...Object.keys(result.trainTopicDistribution),
-    ...Object.keys(result.evalTopicDistribution),
-  ]));
+  const allTopics = Array.from(
+    new Set([
+      ...Object.keys(result.trainTopicDistribution),
+      ...Object.keys(result.evalTopicDistribution),
+    ]),
+  );
 
   let topicDivergence = 0;
   for (const topic of allTopics) {
@@ -844,11 +843,13 @@ export function validateSplitQuality(result: StratifiedSplitResult): {
 
   // Check complexity distribution divergence
   const complexityDivergence = Math.abs(
-    result.trainComplexityStats.mean - result.evalComplexityStats.mean
+    result.trainComplexityStats.mean - result.evalComplexityStats.mean,
   );
 
   if (complexityDivergence > 0.2) {
-    warnings.push(`High complexity divergence: train=${result.trainComplexityStats.mean.toFixed(3)}, eval=${result.evalComplexityStats.mean.toFixed(3)}`);
+    warnings.push(
+      `High complexity divergence: train=${result.trainComplexityStats.mean.toFixed(3)}, eval=${result.evalComplexityStats.mean.toFixed(3)}`,
+    );
   }
 
   // Validate minimum sample counts
@@ -916,12 +917,12 @@ export function runTrainingPipeline(
   samples: TrainingSample[],
   config: Partial<PipelineConfig> = {},
   varianceSignals?: Map<string, VarianceSignals>,
-  userFeedback?: Map<string, UserFeedback>
+  userFeedback?: Map<string, UserFeedback>,
 ): PipelineResult {
   const fullConfig = { ...DEFAULT_PIPELINE_CONFIG, ...config };
 
   // Step 1: Sort by curriculum (if enabled)
-  let processedSamples: TrainingSample[] = fullConfig.curriculumEnabled
+  const processedSamples: TrainingSample[] = fullConfig.curriculumEnabled
     ? sortByCurriculum(samples)
     : samples;
 
@@ -931,7 +932,7 @@ export function runTrainingPipeline(
     const variations = augmentSample(
       sample,
       fullConfig.augmentationStrategies,
-      fullConfig.augmentationCount
+      fullConfig.augmentationCount,
     );
     augmented.push(...variations);
   }

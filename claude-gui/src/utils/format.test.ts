@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { formatBytes, formatSizeGB, formatNumber, formatSimilarity } from './format';
+import { describe, expect, it } from 'vitest';
+import { formatBytes, formatNumber, formatSimilarity, formatSizeGB } from './format';
 
 describe('format utilities', () => {
   describe('formatBytes', () => {

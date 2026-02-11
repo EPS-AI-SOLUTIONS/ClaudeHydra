@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { useCallback, useRef, useState } from 'react';
 
 /**
  * Alzur - AI Trainer Agent
@@ -96,7 +96,7 @@ function parseVilgefortzMemory(entry: MemoryEntry): TrainingEntry | null {
       id: entry.id,
       prompt: promptMatch[1].trim(),
       response: content, // Store full analysis for now
-      quality_score: responseMatch ? Math.min(100, parseInt(responseMatch[1]) / 50) : undefined,
+      quality_score: responseMatch ? Math.min(100, parseInt(responseMatch[1], 10) / 50) : undefined,
       timestamp: new Date(entry.timestamp).getTime(),
       source: 'vilgefortz',
     };
@@ -110,11 +110,13 @@ function parseVilgefortzMemory(entry: MemoryEntry): TrainingEntry | null {
  */
 function formatAsJSONL(entries: TrainingEntry[]): string {
   return entries
-    .map(entry => JSON.stringify({
-      prompt: entry.prompt,
-      completion: entry.response,
-      context: entry.context,
-    }))
+    .map((entry) =>
+      JSON.stringify({
+        prompt: entry.prompt,
+        completion: entry.response,
+        context: entry.context,
+      }),
+    )
     .join('\n');
 }
 
@@ -123,7 +125,7 @@ function formatAsJSONL(entries: TrainingEntry[]): string {
  */
 function estimateTrainingTime(
   samplesCount: number,
-  config: TrainingConfig
+  config: TrainingConfig,
 ): { totalSteps: number; estimatedMinutes: number } {
   const stepsPerEpoch = Math.ceil(samplesCount / config.batchSize);
   const totalSteps = stepsPerEpoch * config.epochs;
@@ -196,7 +198,7 @@ export function useTrainingAgent() {
       source: 'manual',
     };
 
-    setTrainingData(prev => [...prev, entry]);
+    setTrainingData((prev) => [...prev, entry]);
     return entry;
   }, []);
 
@@ -204,137 +206,148 @@ export function useTrainingAgent() {
    * Remove training entry
    */
   const removeTrainingEntry = useCallback((id: string) => {
-    setTrainingData(prev => prev.filter(e => e.id !== id));
+    setTrainingData((prev) => prev.filter((e) => e.id !== id));
   }, []);
 
   /**
    * Export training data as JSONL file
    */
-  const exportDataset = useCallback(async (filename?: string): Promise<string> => {
-    const jsonl = formatAsJSONL(trainingData);
-    const finalFilename = filename || `alzur_training_${Date.now()}.jsonl`;
+  const exportDataset = useCallback(
+    async (filename?: string): Promise<string> => {
+      const jsonl = formatAsJSONL(trainingData);
+      const finalFilename = filename || `alzur_training_${Date.now()}.jsonl`;
 
-    try {
-      // Save via Tauri backend
-      await invoke('write_training_dataset', {
-        filename: finalFilename,
-        content: jsonl,
-      });
+      try {
+        // Save via Tauri backend
+        await invoke('write_training_dataset', {
+          filename: finalFilename,
+          content: jsonl,
+        });
 
-      // Log export
-      await invoke('add_agent_memory', {
-        agent: 'Alzur',
-        entryType: 'decision',
-        content: `Exported ${trainingData.length} samples to ${finalFilename}`,
-        tags: 'export,dataset',
-      });
+        // Log export
+        await invoke('add_agent_memory', {
+          agent: 'Alzur',
+          entryType: 'decision',
+          content: `Exported ${trainingData.length} samples to ${finalFilename}`,
+          tags: 'export,dataset',
+        });
 
-      return finalFilename;
-    } catch {
-      // Fallback: return JSONL content for manual save
-      return jsonl;
-    }
-  }, [trainingData]);
+        return finalFilename;
+      } catch {
+        // Fallback: return JSONL content for manual save
+        return jsonl;
+      }
+    },
+    [trainingData],
+  );
 
   /**
    * Start fine-tuning job
    */
-  const startTraining = useCallback(async (config: Partial<TrainingConfig>): Promise<TrainingJob> => {
-    const fullConfig: TrainingConfig = {
-      baseModel: config.baseModel || 'llama3.2:3b',
-      outputModel: config.outputModel || `alzur-ft-${Date.now()}`,
-      ...DEFAULT_CONFIG,
-      ...config,
-    } as TrainingConfig;
+  const startTraining = useCallback(
+    async (config: Partial<TrainingConfig>): Promise<TrainingJob> => {
+      const fullConfig: TrainingConfig = {
+        baseModel: config.baseModel || 'llama3.2:3b',
+        outputModel: config.outputModel || `alzur-ft-${Date.now()}`,
+        ...DEFAULT_CONFIG,
+        ...config,
+      } as TrainingConfig;
 
-    const jobId = `job_${++jobIdCounter.current}_${Date.now()}`;
+      const jobId = `job_${++jobIdCounter.current}_${Date.now()}`;
 
-    const job: TrainingJob = {
-      id: jobId,
-      status: 'preparing',
-      config: fullConfig,
-      startedAt: Date.now(),
-    };
-
-    setCurrentJob(job);
-    setError(null);
-
-    try {
-      // Step 1: Export dataset
-      const datasetPath = await exportDataset(`training_${jobId}.jsonl`);
-      job.datasetPath = datasetPath;
-
-      // Step 2: Prepare training (create Modelfile)
-      const { totalSteps, estimatedMinutes } = estimateTrainingTime(trainingData.length, fullConfig);
-
-      job.metrics = {
-        epoch: 0,
-        totalEpochs: fullConfig.epochs,
-        loss: 0,
-        samplesProcessed: 0,
-        totalSamples: trainingData.length,
-        elapsedTime: 0,
-        estimatedTimeRemaining: estimatedMinutes * 60 * 1000,
+      const job: TrainingJob = {
+        id: jobId,
+        status: 'preparing',
+        config: fullConfig,
+        startedAt: Date.now(),
       };
 
-      // Log training start
-      await invoke('add_agent_memory', {
-        agent: 'Alzur',
-        entryType: 'decision',
-        content: `Starting training job ${jobId}:\n- Base model: ${fullConfig.baseModel}\n- Output: ${fullConfig.outputModel}\n- Samples: ${trainingData.length}\n- Epochs: ${fullConfig.epochs}\n- Est. steps: ${totalSteps}`,
-        tags: 'training,start',
-      });
+      setCurrentJob(job);
+      setError(null);
 
-      // Step 3: Start actual training via Ollama
-      job.status = 'training';
-      setCurrentJob({ ...job });
+      try {
+        // Step 1: Export dataset
+        const datasetPath = await exportDataset(`training_${jobId}.jsonl`);
+        job.datasetPath = datasetPath;
 
-      // Call backend training command
-      const result = await invoke<{ success: boolean; modelPath?: string; error?: string }>('start_model_training', {
-        config: {
-          base_model: fullConfig.baseModel,
-          output_model: fullConfig.outputModel,
-          dataset_path: datasetPath,
-          epochs: fullConfig.epochs,
-          learning_rate: fullConfig.learningRate,
-          batch_size: fullConfig.batchSize,
-        },
-      });
+        // Step 2: Prepare training (create Modelfile)
+        const { totalSteps, estimatedMinutes } = estimateTrainingTime(
+          trainingData.length,
+          fullConfig,
+        );
 
-      if (result.success) {
-        job.status = 'completed';
-        job.completedAt = Date.now();
-        job.modelPath = result.modelPath;
+        job.metrics = {
+          epoch: 0,
+          totalEpochs: fullConfig.epochs,
+          loss: 0,
+          samplesProcessed: 0,
+          totalSamples: trainingData.length,
+          elapsedTime: 0,
+          estimatedTimeRemaining: estimatedMinutes * 60 * 1000,
+        };
 
-        // Log success
+        // Log training start
         await invoke('add_agent_memory', {
           agent: 'Alzur',
-          entryType: 'fact',
-          content: `Training completed! Model saved: ${result.modelPath}`,
-          tags: 'training,completed,success',
+          entryType: 'decision',
+          content: `Starting training job ${jobId}:\n- Base model: ${fullConfig.baseModel}\n- Output: ${fullConfig.outputModel}\n- Samples: ${trainingData.length}\n- Epochs: ${fullConfig.epochs}\n- Est. steps: ${totalSteps}`,
+          tags: 'training,start',
         });
-      } else {
-        throw new Error(result.error || 'Training failed');
+
+        // Step 3: Start actual training via Ollama
+        job.status = 'training';
+        setCurrentJob({ ...job });
+
+        // Call backend training command
+        const result = await invoke<{ success: boolean; modelPath?: string; error?: string }>(
+          'start_model_training',
+          {
+            config: {
+              base_model: fullConfig.baseModel,
+              output_model: fullConfig.outputModel,
+              dataset_path: datasetPath,
+              epochs: fullConfig.epochs,
+              learning_rate: fullConfig.learningRate,
+              batch_size: fullConfig.batchSize,
+            },
+          },
+        );
+
+        if (result.success) {
+          job.status = 'completed';
+          job.completedAt = Date.now();
+          job.modelPath = result.modelPath;
+
+          // Log success
+          await invoke('add_agent_memory', {
+            agent: 'Alzur',
+            entryType: 'fact',
+            content: `Training completed! Model saved: ${result.modelPath}`,
+            tags: 'training,completed,success',
+          });
+        } else {
+          throw new Error(result.error || 'Training failed');
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Training failed';
+        job.status = 'failed';
+        job.error = message;
+        setError(message);
+
+        // Log failure
+        await invoke('add_agent_memory', {
+          agent: 'Alzur',
+          entryType: 'error',
+          content: `Training job ${jobId} failed: ${message}`,
+          tags: 'training,failed,error',
+        });
       }
 
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Training failed';
-      job.status = 'failed';
-      job.error = message;
-      setError(message);
-
-      // Log failure
-      await invoke('add_agent_memory', {
-        agent: 'Alzur',
-        entryType: 'error',
-        content: `Training job ${jobId} failed: ${message}`,
-        tags: 'training,failed,error',
-      });
-    }
-
-    setCurrentJob({ ...job });
-    return job;
-  }, [trainingData, exportDataset]);
+      setCurrentJob({ ...job });
+      return job;
+    },
+    [trainingData, exportDataset],
+  );
 
   /**
    * Cancel current training job
@@ -345,11 +358,15 @@ export function useTrainingAgent() {
     try {
       await invoke('cancel_model_training', { jobId: currentJob.id });
 
-      setCurrentJob(prev => prev ? {
-        ...prev,
-        status: 'cancelled',
-        completedAt: Date.now(),
-      } : null);
+      setCurrentJob((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 'cancelled',
+              completedAt: Date.now(),
+            }
+          : null,
+      );
 
       await invoke('add_agent_memory', {
         agent: 'Alzur',
@@ -366,44 +383,53 @@ export function useTrainingAgent() {
    * Get training statistics
    */
   const getStats = useCallback(() => {
-    const bySource = trainingData.reduce((acc, e) => {
-      acc[e.source] = (acc[e.source] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const bySource = trainingData.reduce(
+      (acc, e) => {
+        acc[e.source] = (acc[e.source] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
-    const avgQuality = trainingData
-      .filter(e => e.quality_score !== undefined)
-      .reduce((sum, e) => sum + (e.quality_score || 0), 0) /
-      (trainingData.filter(e => e.quality_score !== undefined).length || 1);
+    const avgQuality =
+      trainingData
+        .filter((e) => e.quality_score !== undefined)
+        .reduce((sum, e) => sum + (e.quality_score || 0), 0) /
+      (trainingData.filter((e) => e.quality_score !== undefined).length || 1);
 
     return {
       totalSamples: trainingData.length,
       bySource,
       avgQuality: Math.round(avgQuality * 100) / 100,
-      oldestSample: trainingData.length > 0
-        ? new Date(Math.min(...trainingData.map(e => e.timestamp)))
-        : null,
-      newestSample: trainingData.length > 0
-        ? new Date(Math.max(...trainingData.map(e => e.timestamp)))
-        : null,
+      oldestSample:
+        trainingData.length > 0
+          ? new Date(Math.min(...trainingData.map((e) => e.timestamp)))
+          : null,
+      newestSample:
+        trainingData.length > 0
+          ? new Date(Math.max(...trainingData.map((e) => e.timestamp)))
+          : null,
     };
   }, [trainingData]);
 
   /**
    * Auto-train when enough data collected (threshold-based)
    */
-  const checkAutoTrainThreshold = useCallback(async (threshold: number = 50): Promise<boolean> => {
-    if (trainingData.length >= threshold && !currentJob) {
-      await invoke('add_agent_memory', {
-        agent: 'Alzur',
-        entryType: 'context',
-        content: `Auto-train threshold reached: ${trainingData.length}/${threshold} samples. Ready for training.`,
-        tags: 'auto-train,threshold',
-      });
-      return true;
-    }
-    return false;
-  }, [trainingData.length, currentJob]);
+  const checkAutoTrainThreshold = useCallback(
+    async (threshold: number = 50): Promise<boolean> => {
+      if (trainingData.length >= threshold && !currentJob) {
+        await invoke('add_agent_memory', {
+          agent: 'Alzur',
+          entryType: 'context',
+          content: `Auto-train threshold reached: ${trainingData.length}/${threshold} samples. Ready for training.`,
+          tags: 'auto-train,threshold',
+        });
+        return true;
+      }
+      return false;
+    },
+    [trainingData.length, currentJob],
+  );
 
   return {
     // State

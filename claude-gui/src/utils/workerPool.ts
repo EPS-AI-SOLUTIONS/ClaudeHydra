@@ -48,10 +48,9 @@ class WorkerPool {
 
   private initializePool(): void {
     for (let i = 0; i < this.poolSize; i++) {
-      const worker = new Worker(
-        new URL('../workers/heavyComputation.worker.ts', import.meta.url),
-        { type: 'module' }
-      );
+      const worker = new Worker(new URL('../workers/heavyComputation.worker.ts', import.meta.url), {
+        type: 'module',
+      });
 
       this.workers.push({
         worker,
@@ -61,7 +60,9 @@ class WorkerPool {
         totalTime: 0,
       });
     }
-    console.log(`[WorkerPool] Initialized ${this.poolSize} workers (${navigator.hardwareConcurrency} cores available)`);
+    console.log(
+      `[WorkerPool] Initialized ${this.poolSize} workers (${navigator.hardwareConcurrency} cores available)`,
+    );
   }
 
   /**
@@ -88,7 +89,7 @@ class WorkerPool {
    * Wykonaj wiele zadań równolegle
    */
   async executeAll<T = unknown>(tasks: WorkerTask[], priority = 5): Promise<WorkerResult<T>[]> {
-    return Promise.all(tasks.map(task => this.execute<T>(task, priority)));
+    return Promise.all(tasks.map((task) => this.execute<T>(task, priority)));
   }
 
   /**
@@ -97,7 +98,7 @@ class WorkerPool {
   async executeBatch<T = unknown>(
     tasks: WorkerTask[],
     batchSize?: number,
-    onBatchProgress?: (completed: number, total: number) => void
+    onBatchProgress?: (completed: number, total: number) => void,
   ): Promise<WorkerResult<T>[]> {
     const effectiveBatchSize = batchSize ?? this.poolSize;
     const results: WorkerResult<T>[] = [];
@@ -113,7 +114,7 @@ class WorkerPool {
   }
 
   private processQueue(): void {
-    const availableWorker = this.workers.find(w => !w.busy);
+    const availableWorker = this.workers.find((w) => !w.busy);
     if (!availableWorker || this.queue.length === 0) return;
 
     const queuedTask = this.queue.shift()!;
@@ -193,9 +194,9 @@ class WorkerPool {
   } {
     return {
       poolSize: this.poolSize,
-      busyWorkers: this.workers.filter(w => w.busy).length,
+      busyWorkers: this.workers.filter((w) => w.busy).length,
       queueLength: this.queue.length,
-      workers: this.workers.map(w => ({
+      workers: this.workers.map((w) => ({
         id: w.id,
         busy: w.busy,
         tasksCompleted: w.tasksCompleted,
@@ -208,7 +209,7 @@ class WorkerPool {
    * Zakończ wszystkie workery
    */
   terminate(): void {
-    this.workers.forEach(w => w.worker.terminate());
+    this.workers.forEach((w) => w.worker.terminate());
     this.workers = [];
     this.queue = [];
     console.log('[WorkerPool] Terminated all workers');
@@ -225,7 +226,7 @@ class WorkerPool {
       for (let i = currentSize; i < newSize; i++) {
         const worker = new Worker(
           new URL('../workers/heavyComputation.worker.ts', import.meta.url),
-          { type: 'module' }
+          { type: 'module' },
         );
         this.workers.push({
           worker,
@@ -237,11 +238,9 @@ class WorkerPool {
       }
     } else if (newSize < currentSize) {
       // Usuń nadmiarowe workery (tylko te, które nie są busy)
-      const toRemove = this.workers
-        .filter(w => !w.busy)
-        .slice(0, currentSize - newSize);
+      const toRemove = this.workers.filter((w) => !w.busy).slice(0, currentSize - newSize);
 
-      toRemove.forEach(w => {
+      toRemove.forEach((w) => {
         w.worker.terminate();
         const idx = this.workers.indexOf(w);
         if (idx !== -1) this.workers.splice(idx, 1);

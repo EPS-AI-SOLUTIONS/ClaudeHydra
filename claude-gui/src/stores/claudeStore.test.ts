@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { useClaudeStore } from './claudeStore';
 
 describe('claudeStore', () => {
@@ -299,7 +299,7 @@ describe('claudeStore', () => {
       const { createChatSession, selectChatSession } = useClaudeStore.getState();
 
       const session1 = createChatSession('claude');
-      const session2 = createChatSession('claude');
+      const _session2 = createChatSession('claude');
 
       selectChatSession(session1);
       expect(useClaudeStore.getState().currentChatSessionId).toBe(session1);
@@ -311,7 +311,7 @@ describe('claudeStore', () => {
       const sessionId = createChatSession('claude');
       updateChatSessionTitle(sessionId, 'New Title');
 
-      const session = useClaudeStore.getState().chatSessions.find(s => s.id === sessionId);
+      const session = useClaudeStore.getState().chatSessions.find((s) => s.id === sessionId);
       expect(session?.title).toBe('New Title');
     });
   });
@@ -350,7 +350,8 @@ describe('claudeStore', () => {
     });
 
     it('should update last chat message (streaming append)', () => {
-      const { addChatMessage, updateLastChatMessage, getCurrentMessages } = useClaudeStore.getState();
+      const { addChatMessage, updateLastChatMessage, getCurrentMessages } =
+        useClaudeStore.getState();
 
       addChatMessage({
         role: 'assistant',
@@ -378,7 +379,8 @@ describe('claudeStore', () => {
     });
 
     it('should clear chat history for specific session', () => {
-      const { createChatSession, addChatMessage, clearChatHistory, selectChatSession } = useClaudeStore.getState();
+      const { createChatSession, addChatMessage, clearChatHistory, selectChatSession } =
+        useClaudeStore.getState();
 
       // Create and add message to first session
       const session1 = useClaudeStore.getState().currentChatSessionId!;
@@ -534,7 +536,7 @@ describe('claudeStore', () => {
 
       const types = ['output', 'assistant', 'tool', 'error', 'system', 'approval'] as const;
 
-      types.forEach(type => {
+      types.forEach((type) => {
         addOutputLine({ type, content: `${type} message` });
       });
 
@@ -591,8 +593,8 @@ describe('claudeStore', () => {
       const { workingDir, cliPath } = useClaudeStore.getState();
 
       // Extract project folder name from paths
-      const workingDirMatch = workingDir.match(/Desktop[\\\/](\w+)/);
-      const cliPathMatch = cliPath.match(/Desktop[\\\/](\w+)/);
+      const workingDirMatch = workingDir.match(/Desktop[\\/](\w+)/);
+      const cliPathMatch = cliPath.match(/Desktop[\\/](\w+)/);
 
       if (workingDirMatch && cliPathMatch) {
         expect(workingDirMatch[1]).toBe(cliPathMatch[1]);

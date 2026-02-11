@@ -74,4 +74,3 @@ export function formatApprovalType(approval: ApprovalType): string {
       return 'Unknown';
   }
 }
-

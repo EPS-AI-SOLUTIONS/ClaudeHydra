@@ -10,39 +10,33 @@
  * - Threshold alerts for CPU/Memory/IPC latency
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
-  Bug,
   Activity,
-  Cpu,
-  MemoryStick,
-  Clock,
-  Zap,
-  Terminal,
-  RefreshCw,
-  Trash2,
-  Play,
-  Pause,
-  AlertTriangle,
-  Info,
   AlertCircle,
+  AlertTriangle,
+  Bell,
+  Bug,
   ChevronDown,
+  Clock,
+  Cpu,
   Database,
   Gauge,
+  Info,
+  MemoryStick,
+  Pause,
+  Play,
+  RefreshCw,
   Search,
-  Bell,
   Settings,
+  Terminal,
+  Trash2,
   X,
+  Zap,
 } from 'lucide-react';
-import {
-  debugIpc,
-  type DebugStats,
-  type LogEntry,
-  type IpcCall,
-  type LogLevel,
-} from '../lib/ipc';
-import { NetworkPanel, TaskQueuePanel, LogDetailModal, PerformanceHeatmap } from './debug';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { type DebugStats, debugIpc, type IpcCall, type LogEntry, type LogLevel } from '../lib/ipc';
+import { LogDetailModal, NetworkPanel, PerformanceHeatmap, TaskQueuePanel } from './debug';
 
 // ============================================================================
 // Alert Types and Components
@@ -169,9 +163,7 @@ function StatCard({ label, value, subValue, icon: Icon, color }: StatCardProps) 
         <span className="text-[10px] text-matrix-text-dim">{label}</span>
       </div>
       <div className={`text-lg font-mono font-bold ${color}`}>{value}</div>
-      {subValue && (
-        <div className="text-[9px] text-matrix-text-dim">{subValue}</div>
-      )}
+      {subValue && <div className="text-[9px] text-matrix-text-dim">{subValue}</div>}
     </div>
   );
 }
@@ -191,7 +183,9 @@ function LogLevelBadge({ level }: LogLevelBadgeProps) {
   const { icon: Icon, color } = config[level] || config.info;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase font-mono ${color}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] uppercase font-mono ${color}`}
+    >
       <Icon size={10} />
       {level}
     </span>
@@ -204,9 +198,13 @@ function highlightText(text: string, query: string): React.ReactNode {
   const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const parts = text.split(new RegExp(`(${escapedQuery})`, 'gi'));
   return parts.map((part, i) =>
-    part.toLowerCase() === query.toLowerCase()
-      ? <mark key={i} className="bg-yellow-400/30 text-yellow-300 px-0.5 rounded">{part}</mark>
-      : part
+    part.toLowerCase() === query.toLowerCase() ? (
+      <mark key={i} className="bg-yellow-400/30 text-yellow-300 px-0.5 rounded">
+        {part}
+      </mark>
+    ) : (
+      part
+    ),
   );
 }
 
@@ -225,7 +223,7 @@ function LogViewer({ logs, maxHeight = '300px', searchQuery = '', onLogClick }: 
     if (autoScroll && containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
-  }, [logs, autoScroll]);
+  }, [autoScroll]);
 
   const formatTime = (ts: number) => {
     const date = new Date(ts);
@@ -267,10 +265,17 @@ function LogViewer({ logs, maxHeight = '300px', searchQuery = '', onLogClick }: 
           >
             <span className="text-matrix-text-dim shrink-0">{formatTime(log.timestamp)}</span>
             <LogLevelBadge level={log.level} />
-            <span className="text-matrix-accent shrink-0">[{highlightText(log.source, searchQuery)}]</span>
-            <span className="text-matrix-text break-all">{highlightText(log.message, searchQuery)}</span>
+            <span className="text-matrix-accent shrink-0">
+              [{highlightText(log.source, searchQuery)}]
+            </span>
+            <span className="text-matrix-text break-all">
+              {highlightText(log.message, searchQuery)}
+            </span>
             {log.details && (
-              <span className="text-matrix-text-dim text-[9px] ml-auto shrink-0" title={log.details}>
+              <span
+                className="text-matrix-text-dim text-[9px] ml-auto shrink-0"
+                title={log.details}
+              >
                 +details
               </span>
             )}
@@ -281,7 +286,10 @@ function LogViewer({ logs, maxHeight = '300px', searchQuery = '', onLogClick }: 
         <button
           onClick={() => {
             setAutoScroll(true);
-            containerRef.current?.scrollTo({ top: containerRef.current.scrollHeight, behavior: 'smooth' });
+            containerRef.current?.scrollTo({
+              top: containerRef.current.scrollHeight,
+              behavior: 'smooth',
+            });
           }}
           className="absolute bottom-2 right-2 glass-button p-1 text-[10px]"
         >
@@ -374,7 +382,8 @@ export function DebugPanel() {
   }, []);
 
   // Check if running in Tauri
-  const isTauri = typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+  const isTauri =
+    typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
   // Start streaming
   const startStreaming = useCallback(async () => {
@@ -382,7 +391,7 @@ export function DebugPanel() {
     if (!isTauri) {
       console.log('[DebugPanel] Browser mode - simulating debug streaming');
       const simulationInterval = setInterval(() => {
-        setStats(prev => ({
+        setStats((prev) => ({
           memory_used_mb: Math.random() * 500,
           memory_total_mb: 8192,
           memory_percent: Math.random() * 30,
@@ -476,7 +485,7 @@ export function DebugPanel() {
       const newLogs = await debugIpc.getLogs(
         levelFilter === 'all' ? undefined : levelFilter,
         50,
-        lastId
+        lastId,
       );
       if (newLogs.length > 0) {
         setLogs((prev) => [...newLogs, ...prev].slice(0, 200));
@@ -496,11 +505,15 @@ export function DebugPanel() {
     const newAlerts: string[] = [];
 
     if (stats.memory_percent > alertConfig.memoryPercent) {
-      newAlerts.push(`Memory usage ${stats.memory_percent.toFixed(1)}% exceeds threshold ${alertConfig.memoryPercent}%`);
+      newAlerts.push(
+        `Memory usage ${stats.memory_percent.toFixed(1)}% exceeds threshold ${alertConfig.memoryPercent}%`,
+      );
     }
 
     if (stats.ipc_avg_latency_ms > alertConfig.ipcLatencyMs) {
-      newAlerts.push(`IPC latency ${stats.ipc_avg_latency_ms.toFixed(1)}ms exceeds threshold ${alertConfig.ipcLatencyMs}ms`);
+      newAlerts.push(
+        `IPC latency ${stats.ipc_avg_latency_ms.toFixed(1)}ms exceeds threshold ${alertConfig.ipcLatencyMs}ms`,
+      );
     }
 
     // Note: CPU percent is not directly available in DebugStats, but we can add it if needed
@@ -515,7 +528,8 @@ export function DebugPanel() {
   // Filter logs by level and search query
   const filteredLogs = logs.filter((log) => {
     const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
-    const matchesSearch = !searchQuery ||
+    const matchesSearch =
+      !searchQuery ||
       log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
       log.source.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesLevel && matchesSearch;
@@ -604,20 +618,21 @@ export function DebugPanel() {
               value={`${stats.memory_used_mb.toFixed(0)}MB`}
               subValue={`${stats.memory_percent.toFixed(1)}%`}
               icon={MemoryStick}
-              color={stats.memory_percent > alertConfig.memoryPercent && alertConfig.enabled ? 'text-red-400' : 'text-blue-400'}
+              color={
+                stats.memory_percent > alertConfig.memoryPercent && alertConfig.enabled
+                  ? 'text-red-400'
+                  : 'text-blue-400'
+              }
             />
-            <StatCard
-              label="CPU Cores"
-              value={stats.cpu_cores}
-              icon={Cpu}
-              color="text-green-400"
-            />
+            <StatCard label="CPU Cores" value={stats.cpu_cores} icon={Cpu} color="text-green-400" />
             <StatCard
               label="Active Tasks"
               value={stats.active_tasks}
               subValue={`+${stats.queued_tasks} queued`}
               icon={Activity}
-              color={stats.queued_tasks > 10 && alertConfig.enabled ? 'text-red-400' : 'text-yellow-400'}
+              color={
+                stats.queued_tasks > 10 && alertConfig.enabled ? 'text-red-400' : 'text-yellow-400'
+              }
             />
             <StatCard
               label="IPC Total"
@@ -631,7 +646,11 @@ export function DebugPanel() {
               value={`${stats.ipc_avg_latency_ms.toFixed(1)}ms`}
               subValue={`${stats.ipc_calls_per_sec.toFixed(1)}/sec`}
               icon={Gauge}
-              color={stats.ipc_avg_latency_ms > alertConfig.ipcLatencyMs && alertConfig.enabled ? 'text-red-400' : 'text-pink-400'}
+              color={
+                stats.ipc_avg_latency_ms > alertConfig.ipcLatencyMs && alertConfig.enabled
+                  ? 'text-red-400'
+                  : 'text-pink-400'
+              }
             />
             <StatCard
               label="Uptime"
@@ -658,7 +677,10 @@ export function DebugPanel() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-matrix-text-dim" />
+                  <Search
+                    size={12}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-matrix-text-dim"
+                  />
                   <input
                     type="text"
                     placeholder="Search..."
@@ -680,7 +702,12 @@ export function DebugPanel() {
                 </select>
               </div>
             </div>
-            <LogViewer logs={filteredLogs} maxHeight="250px" searchQuery={searchQuery} onLogClick={setSelectedLog} />
+            <LogViewer
+              logs={filteredLogs}
+              maxHeight="250px"
+              searchQuery={searchQuery}
+              onLogClick={setSelectedLog}
+            />
           </div>
 
           {/* IPC History */}
@@ -710,7 +737,11 @@ export function DebugPanel() {
               </div>
               <div>
                 <div className="text-2xl font-mono font-bold text-blue-400">
-                  {((1 - stats.ipc_calls_failed / Math.max(stats.ipc_calls_total, 1)) * 100).toFixed(1)}%
+                  {(
+                    (1 - stats.ipc_calls_failed / Math.max(stats.ipc_calls_total, 1)) *
+                    100
+                  ).toFixed(1)}
+                  %
                 </div>
                 <div className="text-matrix-text-dim">Success Rate</div>
               </div>
@@ -767,9 +798,7 @@ export function DebugPanel() {
       {/* Footer */}
       <div className="px-4 py-2 border-t border-matrix-border text-[10px] text-matrix-text-dim flex justify-between">
         <span>Debug LiveView v1.1</span>
-        <span>
-          {stats ? `${formatUptime(stats.uptime_secs)} uptime` : 'Loading...'}
-        </span>
+        <span>{stats ? `${formatUptime(stats.uptime_secs)} uptime` : 'Loading...'}</span>
       </div>
     </div>
   );

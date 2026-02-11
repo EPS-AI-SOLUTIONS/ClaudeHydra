@@ -1,16 +1,16 @@
-import { useState, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
-  Copy,
   Check,
+  Copy,
   Download,
-  Play,
-  Terminal,
   Loader2,
-  X,
   Maximize2,
   Minimize2,
+  Play,
+  Terminal,
+  X,
 } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 interface CodeBlockProps {
   code: string;
@@ -199,11 +199,7 @@ export function CodeBlock({ code, language, className }: CodeBlockProps) {
               className="flex items-center gap-1 px-2 py-1 text-[10px] rounded hover:bg-green-500/20 text-green-400 transition-colors disabled:opacity-50"
               title={`Run ${displayName}`}
             >
-              {isRunning ? (
-                <Loader2 size={12} className="animate-spin" />
-              ) : (
-                <Play size={12} />
-              )}
+              {isRunning ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
               Run
             </button>
           )}
