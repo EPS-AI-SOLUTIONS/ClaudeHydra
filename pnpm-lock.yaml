@@ -24,7 +24,7 @@ importers:
         specifier: ^2.1.11
         version: 2.1.11
       dotenv:
-        specifier: ^17.2.3
+        specifier: ^17.2.4
         version: 17.2.4
       envalid:
         specifier: ^8.0.0
