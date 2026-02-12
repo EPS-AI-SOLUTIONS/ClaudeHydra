@@ -32,7 +32,10 @@
       "mcp__llama-cpp__llama_info",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:www.npmjs.com)",
-      "WebFetch(domain:docs.claude.com)"
+      "WebFetch(domain:docs.claude.com)",
+      "mcp__plugin_serena_serena__execute_shell_command",
+      "Skill(commit-commands:commit-push-pr)",
+      "Skill(commit-commands:commit-push-pr:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

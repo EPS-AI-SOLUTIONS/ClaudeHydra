@@ -1,5 +1,5 @@
 /**
- * @fileoverview Enhanced error class hierarchy for GeminiCLI
+ * @fileoverview Enhanced error class hierarchy for ClaudeHydra
  * Provides a structured approach to error handling with proper categorization,
  * serialization support, and integration with logging/monitoring systems.
  * @module errors/AppError

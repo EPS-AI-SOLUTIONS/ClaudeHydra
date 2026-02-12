@@ -22,15 +22,15 @@
 
 ## Agent Memories (canonical names)
 
-- Ciri: agent memory (header only).
-- Dijkstra: agent memory (header only).
-- Eskel: agent memory (header only).
-- Geralt: agent memory (timestamp entry only).
-- Jaskier: agent memory (header only).
-- Lambert: agent memory (header only).
-- Philippa: agent memory (header only).
-- Regis: agent memory (header only).
-- Triss: agent memory (header only).
-- Vesemir: agent memory (header only).
-- Yennefer: agent memory (timestamp entry only).
-- Zoltan: agent memory (header only).
+- Ciri: agent profile — Prodigy, Executor, Speed/Quick tasks.
+- Dijkstra: agent profile — Spymaster, Commander, Planning/Strategy.
+- Eskel: agent profile — Pragmatist, Executor, DevOps/Infrastructure.
+- Geralt: agent profile — White Wolf, Executor, Security/Ops.
+- Jaskier: agent profile — Bard, Executor, Documentation/Logging.
+- Lambert: agent profile — Skeptic, Executor, Debugging/Profiling.
+- Philippa: agent profile — Strategist, Executor, Integration/API.
+- Regis: agent profile — Sage, Coordinator, Research/Analysis. Has SDK settingSources fix entry.
+- Triss: agent profile — Healer, Executor, QA/Testing.
+- Vesemir: agent profile — Mentor, Executor, Code Review/Quality. Uses Sonnet 4.5 (cost-effective).
+- Yennefer: agent profile — Sorceress, Coordinator, Synthesis/Architecture. Default fallback agent.
+- Zoltan: agent profile — Craftsman, Executor, Data/Database.

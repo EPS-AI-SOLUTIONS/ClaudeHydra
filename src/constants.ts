@@ -1,5 +1,5 @@
 /**
- * @fileoverview Centralized constants for GeminiCLI (Hydra)
+ * @fileoverview Centralized constants for ClaudeHydra
  * Provides type-safe, well-organized configuration constants with JSDoc documentation.
  * @module constants
  */

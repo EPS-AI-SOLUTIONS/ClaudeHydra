@@ -93,6 +93,10 @@ ENV/
 claude-gui/src-tauri/target/
 claude-gui/coverage/
 
+# Next.js (web/)
+web/.next/
+web/node_modules/
+
 # Playwright MCP cache
 .playwright-mcp/
 

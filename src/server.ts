@@ -6,7 +6,7 @@ import Logger from './logger.js';
 import ToolRegistry from './tool-registry.js';
 
 // Initialize System
-Logger.info('Initializing GeminiCLI (HYDRA) MCP Server...');
+Logger.info('Initializing ClaudeHydra MCP Server...');
 
 // Load Tools
 await ToolRegistry.loadTools();
@@ -83,7 +83,7 @@ import { fileURLToPath } from 'node:url';
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  Logger.info('GeminiCLI MCP Server running on Stdio');
+  Logger.info('ClaudeHydra MCP Server running on Stdio');
 }
 
 // Only run if executed directly

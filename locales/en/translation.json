@@ -1,5 +1,5 @@
 {
-  "welcome": "Welcome to GeminiCLI (HYDRA)",
+  "welcome": "Welcome to ClaudeHydra",
   "error": {
     "generic": "An error occurred",
     "network": "Network connection failed"

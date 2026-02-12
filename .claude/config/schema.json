@@ -126,10 +126,7 @@
             "description": "Initialization message"
           },
           "init_command": {
-            "oneOf": [
-              { "type": "string" },
-              { "type": "null" }
-            ],
+            "oneOf": [{ "type": "string" }, { "type": "null" }],
             "description": "Initialization command or null"
           }
         }
@@ -217,17 +214,11 @@
             "required": ["primary"],
             "properties": {
               "primary": {
-                "oneOf": [
-                  { "type": "string" },
-                  { "type": "array", "items": { "type": "string" } }
-                ],
+                "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }],
                 "description": "Primary CLI(s) for this task type"
               },
               "fallback": {
-                "oneOf": [
-                  { "type": "string" },
-                  { "type": "array", "items": { "type": "string" } }
-                ],
+                "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }],
                 "description": "Fallback CLI(s)"
               },
               "threshold_tokens": {
@@ -255,17 +246,11 @@
                 "description": "Sign effect description"
               },
               "primary": {
-                "oneOf": [
-                  { "type": "string" },
-                  { "type": "array", "items": { "type": "string" } }
-                ],
+                "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }],
                 "description": "Primary CLI(s)"
               },
               "fallback": {
-                "oneOf": [
-                  { "type": "string" },
-                  { "type": "array", "items": { "type": "string" } }
-                ],
+                "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }],
                 "description": "Fallback CLI"
               },
               "timeout_ms": {
