@@ -59,7 +59,16 @@
     "sendMessage": "Wyślij wiadomość",
     "imageLoadFailed": "Nie udało się załadować obrazu",
     "userLabel": "Ty",
-    "assistantLabel": "Asystent"
+    "assistantLabel": "Asystent",
+    "suggestions": {
+      "label": "Sugerowane prompty",
+      "analyzeCode": "Przeanalizuj strukturę kodu mojego projektu",
+      "readFile": "Przeczytaj i wyjaśnij plik z mojego kodu",
+      "gitStatus": "Pokaż status git i ostatnie commity",
+      "scrapeWebpage": "Pobierz i podsumuj stronę internetową",
+      "ocrDocument": "Wyodrębnij tekst z obrazu lub PDF (OCR)",
+      "searchFiles": "Wyszukaj wzorzec w plikach projektu"
+    }
   },
   "tools": {
     "input": "Wejście",

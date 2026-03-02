@@ -7,12 +7,13 @@
  */
 
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ArrowDown, MessageSquare } from 'lucide-react';
+import { ArrowDown, Code2, FileSearch, FileText, GitBranch, Globe, MessageSquare, Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '@/components/molecules/EmptyState';
 import type { ModelOption } from '@/components/molecules/ModelSelector';
+import { type PromptSuggestion, PromptSuggestions } from '@/components/molecules/PromptSuggestions';
 import { useAutoScroll } from '@/features/chat/hooks/useAutoScroll';
 import { type ClaudeModel, FALLBACK_CLAUDE_MODELS, useClaudeModels } from '@/features/chat/hooks/useClaudeModels';
 import { useSessionSync } from '@/features/chat/hooks/useSessionSync';
@@ -25,7 +26,7 @@ import { useChatMessages } from '../hooks/useChatMessages';
 import { useChatStreaming } from '../hooks/useChatStreaming';
 import { usePromptHistory } from '../hooks/usePromptHistory';
 import { ChatHeader } from './ChatHeader';
-import { ChatInput } from './ChatInput';
+import { ChatInput, type ChatInputHandle } from './ChatInput';
 import { type ChatMessage, MessageBubble } from './MessageBubble';
 import { SearchOverlay } from './SearchOverlay';
 
@@ -47,7 +48,16 @@ function toModelOption(m: ClaudeModel): ModelOption {
 // Empty state sub-component (uses shared EmptyState molecule)
 // ---------------------------------------------------------------------------
 
-function EmptyChatState() {
+const CH_SUGGESTIONS: PromptSuggestion[] = [
+  { labelKey: 'chat.suggestions.analyzeCode', fallback: 'Analyze the code structure of my project', icon: Code2 },
+  { labelKey: 'chat.suggestions.readFile', fallback: 'Read and explain a file from my codebase', icon: FileSearch },
+  { labelKey: 'chat.suggestions.gitStatus', fallback: 'Show git status and recent commits', icon: GitBranch },
+  { labelKey: 'chat.suggestions.scrapeWebpage', fallback: 'Fetch and summarize a webpage', icon: Globe },
+  { labelKey: 'chat.suggestions.ocrDocument', fallback: 'Extract text from an image or PDF (OCR)', icon: FileText },
+  { labelKey: 'chat.suggestions.searchFiles', fallback: 'Search for a pattern across project files', icon: Search },
+];
+
+function EmptyChatState({ onSuggestionSelect }: { onSuggestionSelect: (text: string) => void }) {
   const { t } = useTranslation();
   return (
     <motion.div
@@ -55,7 +65,7 @@ function EmptyChatState() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.15 }}
       data-testid="chat-empty-state"
-      className="h-full flex items-center justify-center"
+      className="h-full flex flex-col items-center justify-center"
     >
       <EmptyState
         icon={MessageSquare}
@@ -65,6 +75,7 @@ function EmptyChatState() {
           'Select a model and type a message. Drag and drop files to add context.',
         )}
       />
+      <PromptSuggestions suggestions={CH_SUGGESTIONS} onSelect={onSuggestionSelect} />
     </motion.div>
   );
 }
@@ -86,6 +97,7 @@ interface VirtualizedMessageAreaProps {
   onSearchClose: () => void;
   showNewMessages: boolean;
   scrollToBottom: () => void;
+  onSuggestionSelect: (text: string) => void;
 }
 
 function VirtualizedMessageArea({
@@ -100,6 +112,7 @@ function VirtualizedMessageArea({
   onSearchClose,
   showNewMessages,
   scrollToBottom,
+  onSuggestionSelect,
 }: VirtualizedMessageAreaProps) {
   const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement>(null);
@@ -169,7 +182,7 @@ function VirtualizedMessageArea({
             />
           </div>
         ) : (
-          <EmptyChatState />
+          <EmptyChatState onSuggestionSelect={onSuggestionSelect} />
         )}
       </div>
     );
@@ -291,6 +304,7 @@ export function ClaudeChatView() {
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<ChatInputHandle>(null);
 
   // #20 — Auto-scroll indicator
   const { containerRef: autoScrollRef, bottomRef, showNewMessages, scrollToBottom } = useAutoScroll(messages.length);
@@ -406,6 +420,7 @@ export function ClaudeChatView() {
         }}
         showNewMessages={showNewMessages}
         scrollToBottom={scrollToBottom}
+        onSuggestionSelect={(text) => chatInputRef.current?.setValue(text)}
       />
 
       {/* Streaming indicator bar */}
@@ -421,6 +436,7 @@ export function ClaudeChatView() {
       {/* Chat input — #25 disabled when offline */}
       <div className="mt-3">
         <ChatInput
+          ref={chatInputRef}
           onSend={handleSend}
           disabled={!claudeConnected || !selectedModel || !isOnline}
           isLoading={isLoading}

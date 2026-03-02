@@ -56,9 +56,10 @@ interface ChatInputProps {
   onWorkingDirectoryChange?: (wd: string) => void;
 }
 
-interface ChatInputHandle {
+export interface ChatInputHandle {
   focus: () => void;
   clear: () => void;
+  setValue: (text: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -120,6 +121,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       clear: () => {
         setInput('');
         setAttachments([]);
+      },
+      setValue: (text: string) => {
+        setInput(text);
+        requestAnimationFrame(() => {
+          adjustHeight();
+          textareaRef.current?.focus();
+        });
       },
     }));
 

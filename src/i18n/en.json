@@ -59,7 +59,16 @@
     "sendMessage": "Send message",
     "imageLoadFailed": "Failed to load image",
     "userLabel": "You",
-    "assistantLabel": "Assistant"
+    "assistantLabel": "Assistant",
+    "suggestions": {
+      "label": "Suggested prompts",
+      "analyzeCode": "Analyze the code structure of my project",
+      "readFile": "Read and explain a file from my codebase",
+      "gitStatus": "Show git status and recent commits",
+      "scrapeWebpage": "Fetch and summarize a webpage",
+      "ocrDocument": "Extract text from an image or PDF (OCR)",
+      "searchFiles": "Search for a pattern across project files"
+    }
   },
   "tools": {
     "input": "Input",
