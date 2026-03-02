@@ -12,6 +12,7 @@ import { CompletionSoundSection } from './CompletionSoundSection';
 import { GoogleOAuthSection } from './GoogleOAuthSection';
 import { MaxIterationsSection } from './MaxIterationsSection';
 import { MaxTokensSection } from './MaxTokensSection';
+import { McpServersSection } from './McpServersSection';
 import { OAuthSection } from './OAuthSection';
 import { TemperatureSection } from './TemperatureSection';
 import { WorkingFolderSection } from './WorkingFolderSection';
@@ -82,6 +83,13 @@ export const SettingsView = memo(() => {
         <Card>
           <div className="p-6">
             <CompletionSoundSection />
+          </div>
+        </Card>
+
+        {/* MCP Servers Section */}
+        <Card>
+          <div className="p-6">
+            <McpServersSection />
           </div>
         </Card>
       </motion.div>

@@ -126,14 +126,13 @@ fn build_anthropic_request(
         .http_client
         .post("https://api.anthropic.com/v1/messages")
         .timeout(std::time::Duration::from_secs(timeout_secs))
-        .header("content-type", "application/json");
+        .header("content-type", "application/json")
+        .header("anthropic-version", "2023-06-01");
 
     if is_oauth {
         req = req.header("authorization", format!("Bearer {}", credential));
     } else {
-        req = req
-            .header("x-api-key", credential)
-            .header("anthropic-version", "2023-06-01");
+        req = req.header("x-api-key", credential);
     }
 
     req.json(body)
@@ -152,7 +151,7 @@ async fn send_to_anthropic_once(
         )
     })?;
 
-    build_anthropic_request(state, body, &credential, timeout_secs, is_oauth)
+    let resp = build_anthropic_request(state, body, &credential, timeout_secs, is_oauth)
         .send()
         .await
         .map_err(|e| {
@@ -160,7 +159,41 @@ async fn send_to_anthropic_once(
                 StatusCode::BAD_GATEWAY,
                 Json(json!({ "error": format!("Anthropic API request failed: {}", e) })),
             )
-        })
+        })?;
+
+    // If OAuth returned 401, fallback to API key
+    if is_oauth && resp.status() == reqwest::StatusCode::UNAUTHORIZED {
+        tracing::warn!("OAuth token rejected (401), falling back to API key");
+        if let Some((api_key, false)) = get_anthropic_api_key_only(state).await {
+            return build_anthropic_request(state, body, &api_key, timeout_secs, false)
+                .send()
+                .await
+                .map_err(|e| {
+                    (
+                        StatusCode::BAD_GATEWAY,
+                        Json(json!({ "error": format!("Anthropic API request failed: {}", e) })),
+                    )
+                });
+        }
+    }
+
+    Ok(resp)
+}
+
+/// Get Anthropic API key only (skip OAuth). Used as fallback.
+async fn get_anthropic_api_key_only(state: &AppState) -> Option<(String, bool)> {
+    {
+        let rt = state.runtime.read().await;
+        if let Some(key) = rt.api_keys.get("ANTHROPIC_API_KEY") {
+            if !key.is_empty() {
+                return Some((key.clone(), false));
+            }
+        }
+    }
+    std::env::var("ANTHROPIC_API_KEY")
+        .ok()
+        .filter(|k| !k.is_empty())
+        .map(|k| (k, false))
 }
 
 /// Send to Anthropic with circuit breaker + retry on 429/5xx.

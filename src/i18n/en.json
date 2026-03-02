@@ -234,5 +234,20 @@
     "hoursAgo": "{{h}}h ago",
     "yesterday": "yesterday",
     "daysAgo": "{{d}}d ago"
+  },
+  "mcp": {
+    "title": "MCP Servers",
+    "description": "Connect external MCP servers to extend agent capabilities with additional tools.",
+    "addServer": "Add Server",
+    "name": "Server Name",
+    "url": "Server URL (e.g. http://localhost:3000/mcp)",
+    "authToken": "Auth Token (optional)",
+    "timeout": "Timeout (s)",
+    "noServers": "No MCP servers configured",
+    "noTools": "No tools discovered",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "serverAdded": "MCP server added",
+    "deleted": "Server removed"
   }
 }
