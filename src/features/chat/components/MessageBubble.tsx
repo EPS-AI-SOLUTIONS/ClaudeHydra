@@ -166,32 +166,11 @@ const markdownComponents = {
   pre({ children }: { children?: ReactNode | undefined }) {
     return <>{children}</>;
   },
-  p({ children }: { children?: ReactNode | undefined }) {
-    return <p className="mb-2 last:mb-0">{children}</p>;
-  },
-  ul({ children }: { children?: ReactNode | undefined }) {
-    return <ul className="list-disc list-inside mb-2">{children}</ul>;
-  },
-  ol({ children }: { children?: ReactNode | undefined }) {
-    return <ol className="list-decimal list-inside mb-2">{children}</ol>;
-  },
   a({ href, children }: { href?: string | undefined; children?: ReactNode | undefined }) {
     return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-[var(--matrix-accent)] underline underline-offset-2 hover:text-[var(--matrix-accent-glow)] transition-colors"
-      >
+      <a href={href} target="_blank" rel="noopener noreferrer">
         {children}
       </a>
-    );
-  },
-  blockquote({ children }: { children?: ReactNode | undefined }) {
-    return (
-      <blockquote className="border-l-2 border-[var(--matrix-accent)]/40 pl-3 my-2 text-[var(--matrix-text-secondary)] italic">
-        {children}
-      </blockquote>
     );
   },
   /* #4 - Image lazy loading with skeleton placeholder */
@@ -230,7 +209,7 @@ export const MessageBubble = memo(function MessageBubble({ message, className }:
     >
       <div
         className={cn(
-          'max-w-[85%] rounded-xl p-3 shadow-lg transition-colors',
+          'max-w-[85%] rounded-xl px-4 py-3.5 shadow-lg transition-colors',
           isUser
             ? 'bg-[var(--matrix-accent)]/10 border border-[var(--matrix-accent)]/25 backdrop-blur-sm'
             : 'bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-sm',
@@ -296,7 +275,7 @@ export const MessageBubble = memo(function MessageBubble({ message, className }:
         )}
 
         {/* Content — Markdown rendered */}
-        <div className="prose prose-invert prose-sm max-w-none text-[var(--matrix-text-primary)]">
+        <div className="chat-markdown max-w-none">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[[rehypeHighlight, { languages: chatLanguages }]]}

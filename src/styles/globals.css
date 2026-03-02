@@ -4,48 +4,7 @@
 @import "tailwindcss";
 @import "./base.css";
 
-/* ============================================
-   LIGHT MODE — Chat prose overrides
-   prose-invert forces white text; undo in light mode
-   ============================================ */
-[data-theme="light"] .prose.prose-invert {
-  color: var(--matrix-text-primary);
-}
-
-[data-theme="light"] .prose.prose-invert :where(p, li, dt, dd, td, figcaption) {
-  color: var(--matrix-text-primary);
-}
-
-[data-theme="light"] .prose.prose-invert :where(h1, h2, h3, h4, h5, h6, strong, b, th, thead th) {
-  color: var(--matrix-text);
-}
-
-[data-theme="light"] .prose.prose-invert :where(a) {
-  color: var(--matrix-accent);
-}
-
-[data-theme="light"] .prose.prose-invert :where(blockquote) {
-  color: var(--matrix-text-secondary);
-  border-left-color: var(--matrix-accent-dim);
-}
-
-[data-theme="light"] .prose.prose-invert :where(code) {
-  color: var(--matrix-text);
-  background: var(--matrix-code-bg);
-}
-
-[data-theme="light"] .prose.prose-invert :where(pre) {
-  background: var(--matrix-code-bg);
-  color: var(--matrix-text);
-}
-
-[data-theme="light"] .prose.prose-invert :where(pre code) {
-  color: var(--matrix-text);
-}
-
-[data-theme="light"] .prose.prose-invert :where(hr) {
-  border-color: var(--matrix-border);
-}
+/* prose.prose-invert overrides removed — chat now uses .chat-markdown (base.css) */
 
 /* ============================================
    FOCUS VISIBLE — Keyboard Navigation
