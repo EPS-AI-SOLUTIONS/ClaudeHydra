@@ -170,7 +170,7 @@ export const HomePage = memo(() => {
   );
 
   return (
-    <div className="h-full flex flex-col items-center p-8 overflow-y-auto">
+    <div data-testid="home-view" className="h-full flex flex-col items-center p-8 overflow-y-auto">
       <div className="my-auto flex flex-col items-center w-full">
         {/* ====== Hero Card ====== */}
         <motion.div

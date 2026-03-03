@@ -34,19 +34,11 @@ export class HomePage extends BasePage {
   }
 
   get ctaStartChat(): Locator {
-    return this.page.locator(SEL.homeCtaStartChat);
-  }
-
-  get ctaSettings(): Locator {
-    return this.page.locator(SEL.homeCtaSettings);
+    return this.page.locator('[data-testid="btn-new-chat"]');
   }
 
   async clickStartChat(): Promise<void> {
     await this.ctaStartChat.click();
-  }
-
-  async clickSettings(): Promise<void> {
-    await this.ctaSettings.click();
   }
 
   async getFeatureBadgeTexts(): Promise<string[]> {

@@ -69,7 +69,16 @@ describe('Input', () => {
   // -------------------------------------------------------------------------
 
   it('renders rightElement when provided', () => {
-    render(<Input placeholder="Search" rightElement={<button data-testid="clear-btn">X</button>} />);
+    render(
+      <Input
+        placeholder="Search"
+        rightElement={
+          <button type="button" data-testid="clear-btn">
+            X
+          </button>
+        }
+      />,
+    );
     expect(screen.getByTestId('clear-btn')).toBeInTheDocument();
   });
 

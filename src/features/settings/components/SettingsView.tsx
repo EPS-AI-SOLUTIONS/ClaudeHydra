@@ -22,7 +22,7 @@ export const SettingsView = memo(() => {
   const theme = useViewTheme();
 
   return (
-    <div className="h-full flex flex-col items-center p-8 overflow-y-auto">
+    <div data-testid="settings-view" className="h-full flex flex-col items-center p-8 overflow-y-auto">
       <motion.div
         className="w-full max-w-2xl space-y-6"
         initial={{ opacity: 0, y: 12 }}

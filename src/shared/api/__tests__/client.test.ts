@@ -119,7 +119,7 @@ describe('apiGet', () => {
       expect(err.statusText).toBe('Internal Server Error');
       expect(err.message).toBe('API Error 500: Internal Server Error');
     }
-  }, { timeout: 15000 });
+  }, 15000);
 });
 
 // ===========================================================================

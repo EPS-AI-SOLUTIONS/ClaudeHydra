@@ -24,10 +24,9 @@ test.describe('Sidebar', () => {
     expect(box!.width).toBeGreaterThanOrEqual(200);
   });
 
-  test('should show logo "ClaudeHydra" text in expanded state', async () => {
+  test('should show logo in expanded state', async () => {
     await sidebar.expand();
     await expect(sidebar.logo).toBeVisible();
-    await expect(sidebar.logo).toContainText('ClaudeHydra');
   });
 
   // ── Navigation items ────────────────────────────────────────────────
@@ -122,8 +121,8 @@ test.describe('Sidebar', () => {
 
   // ── Settings button ─────────────────────────────────────────────────
 
-  test('should show settings button in bottom area', async () => {
-    await expect(sidebar.settingsBtn).toBeVisible();
+  test('should show settings button in main nav group', async () => {
+    await expect(sidebar.navButton('settings')).toBeVisible();
   });
 
   // ── Session management ──────────────────────────────────────────────

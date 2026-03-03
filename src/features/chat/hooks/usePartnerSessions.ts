@@ -14,7 +14,10 @@ export function usePartnerSessions() {
 export function usePartnerSession(id: string | null) {
   return useQuery({
     queryKey: ['partner-session', id],
-    queryFn: () => fetchPartnerSession(id!),
+    queryFn: () => {
+      if (!id) throw new Error('ID is required');
+      return fetchPartnerSession(id);
+    },
     enabled: !!id,
     retry: 1,
     staleTime: 60_000,

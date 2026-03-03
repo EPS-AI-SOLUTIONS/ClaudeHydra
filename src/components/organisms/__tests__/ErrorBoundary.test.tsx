@@ -6,10 +6,8 @@ import { ErrorBoundary } from '@/components/organisms/ErrorBoundary';
 // Helper: component that throws on render
 // ---------------------------------------------------------------------------
 
-function ThrowError({ message }: { message: string }) {
+function ThrowError({ message }: { message: string }): never {
   throw new Error(message);
-  // eslint-disable-next-line no-unreachable
-  return null;
 }
 
 // Suppress console.error noise from React's error boundary logging
