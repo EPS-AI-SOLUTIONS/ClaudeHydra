@@ -181,22 +181,41 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 
     const handleDrop = useCallback(
       async (e: DragEvent<HTMLDivElement>) => {
+        if (!e.dataTransfer?.types.includes('Files')) return;
         e.preventDefault();
         setIsDragging(false);
-        const files = Array.from(e.dataTransfer.files);
-        for (const file of files) {
-          await processFile(file);
+        
+        if (e.dataTransfer.files.length > 0) {
+          const files = Array.from(e.dataTransfer.files);
+          for (const file of files) {
+            await processFile(file);
+          }
         }
       },
       [processFile],
     );
 
+    const handleTextareaDrop = useCallback((e: DragEvent<HTMLTextAreaElement>) => {
+      const text = e.dataTransfer.getData('text/plain');
+      if (text && e.dataTransfer.files.length === 0) {
+        const lines = text.split('\n');
+        if (lines.length > 10) {
+          e.preventDefault();
+          e.stopPropagation();
+          const file = new File([text.substring(0, 50000)], `Zrzut $($lines.length) linii.txt`, { type: 'text/plain' });
+          void processFile(file);
+        }
+      }
+    }, [processFile]);
+
     const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+      if (!e.dataTransfer?.types.includes('Files')) return;
       e.preventDefault();
       setIsDragging(true);
     }, []);
 
     const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+      if (!e.dataTransfer?.types.includes('Files')) return;
       e.preventDefault();
       setIsDragging(false);
     }, []);
@@ -275,10 +294,21 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       [handleSend, input, promptHistory, historyIndex, adjustHeight],
     );
 
-    // ----- Paste handler (images from clipboard) ---------------------------
+    // ----- Paste handler (images and large text from clipboard) ------------
 
     const handlePaste = useCallback(
       (e: ClipboardEvent<HTMLTextAreaElement>) => {
+        const text = e.clipboardData?.getData('text/plain');
+        if (text) {
+          const lines = text.split('\n');
+          if (lines.length > 10) {
+            e.preventDefault();
+            const file = new File([text.substring(0, 50000)], `Wklejono $($lines.length) linii.txt`, { type: 'text/plain' });
+            void processFile(file);
+            return;
+          }
+        }
+
         const items = e.clipboardData?.items;
         if (!items) return;
         for (const item of Array.from(items)) {
@@ -372,6 +402,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               onChange={handleChange}
               onKeyDown={handleKeyDown}
               onPaste={handlePaste}
+              onDrop={handleTextareaDrop}
               placeholder={placeholder}
               disabled={disabled}
               rows={1}
@@ -411,3 +442,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
 );
 
 ChatInput.displayName = 'ChatInput';
+
+
+
