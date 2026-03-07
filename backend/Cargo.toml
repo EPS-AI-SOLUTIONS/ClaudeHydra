@@ -17,7 +17,7 @@ anyhow = "1.0.100"
 thiserror = "2.0.18"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
-sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "macros", "migrate"] }
 dotenvy = "0.15"
 sysinfo = "0.35"
 subtle = "2"
@@ -34,7 +34,7 @@ rand = "0.8"
 url = "2"
 http = "1"
 pdf-extract = "0.10"
-scraper = "0.22"
+scraper = "0.25"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 aes-gcm = "0.10"
 hex = "0.4"
