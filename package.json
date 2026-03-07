@@ -32,7 +32,7 @@
     "highlight.js": "^11.11.1",
     "i18next": "^25.8.14",
     "i18next-browser-languagedetector": "^8.2.1",
-    "lucide-react": "^0.575.0",
+    "lucide-react": "^0.577.0",
     "motion": "^12.35.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
