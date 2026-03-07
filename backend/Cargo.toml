@@ -19,7 +19,7 @@ uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "macros", "migrate"] }
 dotenvy = "0.15"
-sysinfo = "0.35"
+sysinfo = "0.38"
 subtle = "2"
 tokio-stream = "0.1"
 async-stream = "0.3"
