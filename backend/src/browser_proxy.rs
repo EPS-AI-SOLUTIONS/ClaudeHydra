@@ -135,3 +135,159 @@ pub async fn health_check(client: &reqwest::Client) -> bool {
         Err(_) => false,
     }
 }
+
+// ── HTTP handlers for browser proxy management ───────────────────────────
+
+use axum::extract::State;
+use axum::Json;
+use axum::http::StatusCode;
+
+/// GET /api/browser-proxy/status — combined health + login status
+pub async fn proxy_status(
+    State(state): State<crate::state::AppState>,
+) -> Json<serde_json::Value> {
+    if !is_enabled() {
+        return Json(json!({
+            "configured": false,
+            "error": "BROWSER_PROXY_URL not set"
+        }));
+    }
+
+    let client = &state.http_client;
+    let base = proxy_base_url();
+
+    // Fetch health
+    let health_resp = client
+        .get(format!("{}/health", base))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .ok();
+    let health = match health_resp {
+        Some(r) => r.json::<serde_json::Value>().await.ok(),
+        None => None,
+    };
+
+    // Fetch login status
+    let login_resp = client
+        .get(format!("{}/api/login/status", base))
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .ok();
+    let login = match login_resp {
+        Some(r) => r.json::<serde_json::Value>().await.ok(),
+        None => None,
+    };
+
+    let mut result = json!({ "configured": true, "proxy_url": base });
+
+    if let Some(h) = health {
+        result["health"] = h;
+        result["reachable"] = json!(true);
+    } else {
+        result["reachable"] = json!(false);
+    }
+
+    if let Some(l) = login {
+        result["login"] = l;
+    }
+
+    Json(result)
+}
+
+/// POST /api/browser-proxy/login — trigger login on proxy
+pub async fn proxy_login(
+    State(state): State<crate::state::AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    if !is_enabled() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    let url = format!("{}/api/login", proxy_base_url());
+    let resp = state
+        .http_client
+        .post(&url)
+        .timeout(Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("browser_proxy login request failed: {}", e);
+            StatusCode::BAD_GATEWAY
+        })?;
+
+    let body: serde_json::Value = resp.json().await.unwrap_or(json!({"error": "invalid response"}));
+    Ok(Json(body))
+}
+
+/// GET /api/browser-proxy/login/status — check login progress
+pub async fn proxy_login_status(
+    State(state): State<crate::state::AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    if !is_enabled() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    let url = format!("{}/api/login/status", proxy_base_url());
+    let resp = state
+        .http_client
+        .get(&url)
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("browser_proxy login status failed: {}", e);
+            StatusCode::BAD_GATEWAY
+        })?;
+
+    let body: serde_json::Value = resp.json().await.unwrap_or(json!({"error": "invalid response"}));
+    Ok(Json(body))
+}
+
+/// POST /api/browser-proxy/reinit — reinitialize proxy workers
+pub async fn proxy_reinit(
+    State(state): State<crate::state::AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    if !is_enabled() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    let url = format!("{}/api/reinit", proxy_base_url());
+    let resp = state
+        .http_client
+        .post(&url)
+        .timeout(Duration::from_secs(120))
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("browser_proxy reinit failed: {}", e);
+            StatusCode::BAD_GATEWAY
+        })?;
+
+    let body: serde_json::Value = resp.json().await.unwrap_or(json!({"error": "invalid response"}));
+    Ok(Json(body))
+}
+
+/// DELETE /api/browser-proxy/login — logout from proxy
+pub async fn proxy_logout(
+    State(state): State<crate::state::AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    if !is_enabled() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    let url = format!("{}/api/login", proxy_base_url());
+    let resp = state
+        .http_client
+        .delete(&url)
+        .timeout(Duration::from_secs(30))
+        .send()
+        .await
+        .map_err(|e| {
+            tracing::error!("browser_proxy logout failed: {}", e);
+            StatusCode::BAD_GATEWAY
+        })?;
+
+    let body: serde_json::Value = resp.json().await.unwrap_or(json!({"error": "invalid response"}));
+    Ok(Json(body))
+}

@@ -200,7 +200,13 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/auth/vercel/status", get(oauth_vercel::vercel_auth_status))
         .route("/api/auth/vercel/login", post(oauth_vercel::vercel_auth_login))
         .route("/api/auth/vercel/callback", post(oauth_vercel::vercel_auth_callback))
-        .route("/api/auth/vercel/logout", post(oauth_vercel::vercel_auth_logout));
+        .route("/api/auth/vercel/logout", post(oauth_vercel::vercel_auth_logout))
+        // Browser proxy management (public — no auth, proxy handles its own state)
+        .route("/api/browser-proxy/status", get(browser_proxy::proxy_status))
+        .route("/api/browser-proxy/login", post(browser_proxy::proxy_login))
+        .route("/api/browser-proxy/login/status", get(browser_proxy::proxy_login_status))
+        .route("/api/browser-proxy/reinit", post(browser_proxy::proxy_reinit))
+        .route("/api/browser-proxy/logout", delete(browser_proxy::proxy_logout));
 
     // ── Protected: streaming chat — 20 req/min ──────────────────────
     let chat_stream_routes = Router::new()

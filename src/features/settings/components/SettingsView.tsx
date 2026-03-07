@@ -15,6 +15,7 @@ import { MaxTokensSection } from './MaxTokensSection';
 import { McpServersSection } from './McpServersSection';
 import { OAuthSection } from './OAuthSection';
 import { TemperatureSection } from './TemperatureSection';
+import { BrowserProxySection } from './BrowserProxySection';
 import { WorkingFolderSection } from './WorkingFolderSection';
 
 export const SettingsView = memo(() => {
@@ -83,6 +84,13 @@ export const SettingsView = memo(() => {
         <Card>
           <div className="p-6">
             <CompletionSoundSection />
+          </div>
+        </Card>
+
+        {/* Browser Proxy Section */}
+        <Card>
+          <div className="p-6">
+            <BrowserProxySection />
           </div>
         </Card>
 
