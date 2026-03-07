@@ -33,6 +33,9 @@ dist-ssr
 # Claude/Serena local config
 .claude/
 
+# TypeScript build info
+*.tsbuildinfo
+
 # Playwright artifacts
 playwright-report/
 test-results/

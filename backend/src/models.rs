@@ -78,6 +78,8 @@ pub struct HealthResponse {
     pub app: String,
     pub uptime_seconds: u64,
     pub providers: Vec<ProviderInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub browser_proxy: Option<crate::browser_proxy::BrowserProxyStatus>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]

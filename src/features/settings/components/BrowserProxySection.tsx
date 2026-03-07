@@ -39,12 +39,12 @@ function formatUptime(seconds: number): string {
   return `${h}h ${m}m`;
 }
 
-function formatAge(seconds: number | null | undefined): string {
-  if (seconds == null) return 'unknown';
-  if (seconds < 60) return `${seconds}s ago`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
+function formatAge(t: (key: string, opts?: Record<string, unknown>) => string, seconds: number | null | undefined): string {
+  if (seconds == null) return t('settings.browserProxy.unknown');
+  if (seconds < 60) return t('settings.browserProxy.secondsAgo', { count: seconds });
+  if (seconds < 3600) return t('settings.browserProxy.minutesAgo', { count: Math.floor(seconds / 60) });
+  if (seconds < 86400) return t('settings.browserProxy.hoursAgo', { count: Math.floor(seconds / 3600) });
+  return t('settings.browserProxy.daysAgo', { count: Math.floor(seconds / 86400) });
 }
 
 export const BrowserProxySection = memo(() => {
@@ -74,29 +74,29 @@ export const BrowserProxySection = memo(() => {
     try {
       setPolling(true);
       await loginMutation.mutateAsync();
-      toast.success('Login started — complete Google login in the browser window');
+      toast.success(t('settings.browserProxy.loginStarted'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Login failed');
+      toast.error(err instanceof Error ? err.message : t('settings.browserProxy.loginFailed'));
     }
-  }, [loginMutation]);
+  }, [loginMutation, t]);
 
   const handleReinit = useCallback(async () => {
     try {
       await reinitMutation.mutateAsync();
-      toast.success('Workers reinitialized');
+      toast.success(t('settings.browserProxy.reinitSuccess'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Reinit failed');
+      toast.error(err instanceof Error ? err.message : t('settings.browserProxy.reinitFailed'));
     }
-  }, [reinitMutation]);
+  }, [reinitMutation, t]);
 
   const handleLogout = useCallback(async () => {
     try {
       await logoutMutation.mutateAsync();
-      toast.success('Logged out from browser proxy');
+      toast.success(t('settings.browserProxy.logoutSuccess'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Logout failed');
+      toast.error(err instanceof Error ? err.message : t('settings.browserProxy.logoutFailed'));
     }
-  }, [logoutMutation]);
+  }, [logoutMutation, t]);
 
   // Determine display state
   const configured = status?.configured ?? false;
@@ -126,61 +126,82 @@ export const BrowserProxySection = memo(() => {
             theme.text,
           )}
         >
-          Browser Proxy
+          {t('settings.browserProxy.title')}
         </h3>
       </div>
 
       <p className={cn('text-xs', theme.textMuted)}>
-        Gemini image generation via browser automation (gemini-browser-proxy).
+        {t('settings.browserProxy.description')}
       </p>
 
       {isLoading ? (
         <div className="flex items-center gap-2">
           <Loader2 size={14} className="animate-spin text-[var(--matrix-accent)]" />
-          <span className={cn('text-xs', theme.textMuted)}>Checking proxy status...</span>
+          <span className={cn('text-xs', theme.textMuted)}>
+            {t('settings.browserProxy.checking')}
+          </span>
         </div>
       ) : (
         <AnimatePresence mode="wait">
-          {/* ── Not Configured ── */}
+          {/* -- Not Configured -- */}
           {phase === 'not_configured' && (
             <motion.div key="not-configured" {...phaseVariants} className="space-y-2">
               <div className="flex items-center gap-2 text-zinc-500">
                 <Power size={14} />
-                <span className="text-xs font-mono">Not configured</span>
+                <span className="text-xs font-mono">
+                  {t('settings.browserProxy.notConfigured')}
+                </span>
               </div>
               <p className={cn('text-xs', theme.textMuted)}>
-                Set <code className="text-[var(--matrix-accent)]">BROWSER_PROXY_URL</code> env
-                var to enable.
+                {t('settings.browserProxy.notConfiguredHint').split('<code>').map((part, i) => {
+                  if (i === 0) return part;
+                  const [code, rest] = part.split('</code>');
+                  return (
+                    <span key={i}>
+                      <code className="text-[var(--matrix-accent)]">{code}</code>
+                      {rest}
+                    </span>
+                  );
+                })}
               </p>
             </motion.div>
           )}
 
-          {/* ── Unreachable ── */}
+          {/* -- Unreachable -- */}
           {phase === 'unreachable' && (
             <motion.div key="unreachable" {...phaseVariants} className="space-y-2">
               <div className="flex items-center gap-2 text-red-400">
                 <AlertTriangle size={14} />
-                <span className="text-xs font-mono">Proxy unreachable</span>
+                <span className="text-xs font-mono">
+                  {t('settings.browserProxy.unreachable')}
+                </span>
               </div>
               <p className={cn('text-xs', theme.textMuted)}>
-                Cannot connect to{' '}
-                <code className="text-[var(--matrix-accent)]">{status?.proxy_url}</code>.
-                Start the proxy first.
+                {t('settings.browserProxy.unreachableHint', { url: status?.proxy_url }).split('<code>').map((part, i) => {
+                  if (i === 0) return part;
+                  const [code, rest] = part.split('</code>');
+                  return (
+                    <span key={i}>
+                      <code className="text-[var(--matrix-accent)]">{code}</code>
+                      {rest}
+                    </span>
+                  );
+                })}
               </p>
             </motion.div>
           )}
 
-          {/* ── Logging In ── */}
+          {/* -- Logging In -- */}
           {phase === 'logging_in' && (
             <motion.div key="logging-in" {...phaseVariants} className="space-y-3">
               <div className="flex items-center gap-2 text-amber-400">
                 <Loader2 size={14} className="animate-spin" />
                 <span className="text-xs font-mono font-medium">
-                  Login in progress...
+                  {t('settings.browserProxy.loggingIn')}
                 </span>
               </div>
               <p className={cn('text-xs', theme.textMuted)}>
-                Complete Google login in the browser window that opened on the proxy machine.
+                {t('settings.browserProxy.loggingInHint')}
               </p>
               {status?.login?.last_login_error && (
                 <div className="flex items-center gap-2 text-red-400">
@@ -191,16 +212,17 @@ export const BrowserProxySection = memo(() => {
             </motion.div>
           )}
 
-          {/* ── Not Logged In ── */}
+          {/* -- Not Logged In -- */}
           {phase === 'not_logged_in' && (
             <motion.div key="not-logged-in" {...phaseVariants} className="space-y-3">
               <div className="flex items-center gap-2 text-amber-400">
                 <AlertTriangle size={14} />
-                <span className="text-xs font-mono">Not logged in</span>
+                <span className="text-xs font-mono">
+                  {t('settings.browserProxy.notLoggedIn')}
+                </span>
               </div>
               <p className={cn('text-xs', theme.textMuted)}>
-                Proxy is running but not authenticated. Login to Google to enable image
-                generation.
+                {t('settings.browserProxy.notLoggedInHint')}
               </p>
               {status?.login?.last_login_error && (
                 <div className="flex items-center gap-2 text-red-400 mt-1">
@@ -215,12 +237,12 @@ export const BrowserProxySection = memo(() => {
                 onClick={handleLogin}
                 isLoading={loginMutation.isPending}
               >
-                Login to Google
+                {t('settings.browserProxy.loginToGoogle')}
               </Button>
             </motion.div>
           )}
 
-          {/* ── Connected ── */}
+          {/* -- Connected -- */}
           {phase === 'connected' && (
             <motion.div key="connected" {...phaseVariants} className="space-y-3">
               <div className="flex items-center gap-3 flex-wrap">
@@ -229,28 +251,28 @@ export const BrowserProxySection = memo(() => {
                   size="sm"
                   icon={<CheckCircle size={12} />}
                 >
-                  {ready ? 'Ready' : 'Logged in'}
+                  {ready ? t('settings.browserProxy.ready') : t('settings.browserProxy.loggedIn')}
                 </Badge>
                 <span className={cn('text-xs font-mono', theme.textMuted)}>
-                  {workersReady}/{poolSize} workers
+                  {t('settings.browserProxy.workers', { ready: workersReady, total: poolSize })}
                 </span>
               </div>
 
               {/* Stats grid */}
               <div className="grid grid-cols-3 gap-2">
                 <StatItem
-                  label="Uptime"
+                  label={t('settings.browserProxy.uptime')}
                   value={formatUptime(status?.health?.uptime_seconds ?? 0)}
                   theme={theme}
                 />
                 <StatItem
-                  label="Requests"
+                  label={t('settings.browserProxy.requests')}
                   value={String(status?.health?.total_requests ?? 0)}
                   theme={theme}
                 />
                 <StatItem
-                  label="Auth age"
-                  value={formatAge(status?.login?.auth_file_age_seconds)}
+                  label={t('settings.browserProxy.authAge')}
+                  value={formatAge(t, status?.login?.auth_file_age_seconds)}
                   theme={theme}
                 />
               </div>
@@ -259,7 +281,7 @@ export const BrowserProxySection = memo(() => {
                 <div className="flex items-center gap-2 text-amber-400">
                   <AlertTriangle size={12} />
                   <span className="text-[10px] font-mono">
-                    {status?.health?.total_errors} errors
+                    {t('settings.browserProxy.errors', { count: status?.health?.total_errors })}
                   </span>
                 </div>
               )}
@@ -272,7 +294,7 @@ export const BrowserProxySection = memo(() => {
                   onClick={handleReinit}
                   isLoading={reinitMutation.isPending}
                 >
-                  Reinit Workers
+                  {t('settings.browserProxy.reinitWorkers')}
                 </Button>
                 <Button
                   variant="danger"
@@ -281,7 +303,7 @@ export const BrowserProxySection = memo(() => {
                   onClick={handleLogout}
                   isLoading={logoutMutation.isPending}
                 >
-                  Logout
+                  {t('settings.browserProxy.logout')}
                 </Button>
               </div>
             </motion.div>
@@ -294,7 +316,7 @@ export const BrowserProxySection = memo(() => {
 
 BrowserProxySection.displayName = 'BrowserProxySection';
 
-// ── Small stat item ─────────────────────────────────────────────────────
+// -- Small stat item --
 
 const StatItem = memo(
   ({ label, value, theme }: { label: string; value: string; theme: { textMuted: string } }) => (

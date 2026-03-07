@@ -261,6 +261,10 @@ pub struct AppState {
     pub log_buffer: Arc<LogRingBuffer>,
     /// Cached system prompts for agent warm pool (key: "{language}", value: system prompt).
     pub prompt_cache: Arc<RwLock<HashMap<String, String>>>,
+    /// Cached browser proxy health status, updated by watchdog every 30s.
+    pub browser_proxy_status: Arc<RwLock<crate::browser_proxy::BrowserProxyStatus>>,
+    /// Ring buffer of proxy health status change events (last 50).
+    pub browser_proxy_history: Arc<crate::browser_proxy::ProxyHealthHistory>,
 }
 
 // ── Shared: readiness helpers ───────────────────────────────────────────────
@@ -346,6 +350,8 @@ impl AppState {
             oauth_gemini_valid: Arc::new(AtomicBool::new(true)),
             log_buffer,
             prompt_cache: Arc::new(RwLock::new(HashMap::new())),
+            browser_proxy_status: Arc::new(RwLock::new(crate::browser_proxy::BrowserProxyStatus::default())),
+            browser_proxy_history: Arc::new(crate::browser_proxy::ProxyHealthHistory::new(50)),
         }
     }
 
@@ -383,6 +389,8 @@ impl AppState {
             oauth_gemini_valid: Arc::new(AtomicBool::new(true)),
             log_buffer: Arc::new(LogRingBuffer::new(1000)),
             prompt_cache: Arc::new(RwLock::new(HashMap::new())),
+            browser_proxy_status: Arc::new(RwLock::new(crate::browser_proxy::BrowserProxyStatus::default())),
+            browser_proxy_history: Arc::new(crate::browser_proxy::ProxyHealthHistory::new(50)),
         }
     }
 }
