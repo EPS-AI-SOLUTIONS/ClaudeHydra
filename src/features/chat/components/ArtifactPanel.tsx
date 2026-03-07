@@ -1,13 +1,11 @@
-import { Code2, Maximize2, Play, X, Download } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { Code2, Maximize2, X } from 'lucide-react';
+import { motion } from 'motion/react';
 import { memo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useViewStore } from '@/stores/viewStore';
 import { CodeBlock } from '@/components/molecules/CodeBlock';
 import { cn } from '@/shared/utils/cn';
 
 export const ArtifactPanel = memo(function ArtifactPanel() {
-  const { t } = useTranslation();
   const activeArtifact = useViewStore((s) => s.activeArtifact);
   const setActiveArtifact = useViewStore((s) => s.setActiveArtifact);
   const [isFullscreen, setIsFullscreen] = useState(false);

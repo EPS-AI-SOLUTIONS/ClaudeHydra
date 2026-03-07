@@ -170,44 +170,45 @@ export const CodeBlock = memo(function CodeBlock({
             </button>
           )}
 
-        {/* Copy button */}
-        <button
-          type="button"
-          onClick={handleCopy}
-          className={cn(
-            'flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono transition-colors',
-            'text-[var(--matrix-text-secondary)] hover:text-[var(--matrix-accent)] hover:bg-[var(--matrix-accent)]/10',
-          )}
-          aria-label={copied ? t('common.copied') : t('common.copyCode')}
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            {copied ? (
-              <motion.span
-                key="check"
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.5, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center gap-1 text-[var(--matrix-success)]"
-              >
-                <Check size={14} />
-                {t('common.copied')}
-              </motion.span>
-            ) : (
-              <motion.span
-                key="copy"
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.5, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center gap-1"
-              >
-                <Clipboard size={14} />
-                {t('common.copy')}
-              </motion.span>
+          {/* Copy button */}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className={cn(
+              'flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono transition-colors',
+              'text-[var(--matrix-text-secondary)] hover:text-[var(--matrix-accent)] hover:bg-[var(--matrix-accent)]/10',
             )}
-          </AnimatePresence>
-        </button>
+            aria-label={copied ? t('common.copied') : t('common.copyCode')}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {copied ? (
+                <motion.span
+                  key="check"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center gap-1 text-[var(--matrix-success)]"
+                >
+                  <Check size={14} />
+                  {t('common.copied')}
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="copy"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.5, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center gap-1"
+                >
+                  <Clipboard size={14} />
+                  {t('common.copy')}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
+        </div>
       </div>
 
       {/* Code content */}
