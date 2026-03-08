@@ -77,11 +77,13 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
             'vendor-motion': ['motion'],
             'vendor-i18n': ['i18next', 'react-i18next'],
             'vendor-query': ['@tanstack/react-query'],
             'vendor-ui': ['sonner', 'tailwind-merge', 'clsx', 'dompurify'],
             'vendor-zod': ['zod'],
+            'vendor-markdown': ['react-markdown', 'remark-gfm', 'rehype-highlight', 'highlight.js'],
           },
         },
       },
