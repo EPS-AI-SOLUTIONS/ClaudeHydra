@@ -6,8 +6,8 @@
  * ClaudeHydra-v4: Extracted, typed, animated, uses CodeBlock molecule.
  */
 
-import { Bot, Cpu, FileText, Image as ImageIcon, Loader2, User } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Bot, Check, Copy, Cpu, FileText, Image as ImageIcon, Loader2, User } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { isValidElement, memo, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
@@ -15,6 +15,7 @@ import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 import { Skeleton } from '@/components/atoms/Skeleton';
 import { CodeBlock } from '@/components/molecules/CodeBlock';
+import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { cn } from '@/shared/utils/cn';
 import { chatLanguages } from '@/shared/utils/highlightLanguages';
 import { getLocale } from '@/shared/utils/locale';
@@ -185,7 +186,11 @@ const markdownComponents = {
 
 export const MessageBubble = memo(function MessageBubble({ message, className }: MessageBubbleProps) {
   const { t } = useTranslation();
+  const theme = useViewTheme();
+  const [copied, setCopied] = useState(false);
+
   const isUser = message.role === 'user';
+  const isSystem = message.role === 'system';
 
   const formattedTime = useMemo(
     () =>
@@ -196,7 +201,46 @@ export const MessageBubble = memo(function MessageBubble({ message, className }:
     [message.timestamp],
   );
 
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = message.content;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [message.content]);
+
   const displayContent = message.content || (message.streaming ? '\u258C' : '');
+
+  const bubbleClass = cn(
+    'relative max-w-[85%] rounded-2xl px-5 py-4',
+    'leading-relaxed transition-colors',
+    isUser && [
+      theme.isLight
+        ? 'bg-emerald-500/15 border border-emerald-500/20 text-black'
+        : 'bg-[var(--matrix-accent)]/15 border border-[var(--matrix-accent)]/20 text-white',
+    ],
+    !isUser &&
+      !isSystem && [
+        theme.isLight
+          ? 'bg-white/50 border border-white/30 text-black shadow-sm'
+          : 'bg-black/40 border border-[var(--glass-border)] text-white shadow-lg backdrop-blur-sm',
+      ],
+    isSystem && [
+      theme.isLight
+        ? 'bg-amber-500/10 border border-amber-500/20 text-black'
+        : 'bg-amber-500/10 border border-amber-500/20 text-white',
+    ],
+    className,
+  );
 
   return (
     <motion.div
@@ -205,61 +249,77 @@ export const MessageBubble = memo(function MessageBubble({ message, className }:
       initial="hidden"
       animate="visible"
       layout
-      className={cn('flex', isUser ? 'justify-end' : 'justify-start', className)}
+      className={cn('flex items-end gap-2 py-2 px-4 group relative', isUser ? 'justify-end' : 'justify-start')}
     >
-      <div
-        className={cn(
-          'max-w-[85%] rounded-xl px-4 py-3.5 shadow-lg transition-colors',
-          isUser
-            ? 'bg-[var(--matrix-accent)]/10 border border-[var(--matrix-accent)]/25 backdrop-blur-sm'
-            : 'bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-sm',
-        )}
-      >
-        {/* Header: role icon + label + model badge + time + streaming */}
-        <div className="flex items-center gap-2 mb-2">
-          {isUser ? (
-            <User size={14} className="text-[var(--matrix-accent)]" />
-          ) : (
-            <Bot size={14} className="text-[var(--matrix-text-secondary)]" />
-          )}
-          <span
-            className={cn(
-              'text-xs font-semibold',
-              isUser ? 'text-[var(--matrix-accent)]' : 'text-[var(--matrix-text-secondary)]',
-            )}
-          >
-            {isUser ? t('chat.userLabel') : t('chat.assistantLabel')}
-          </span>
-
-          {/* Model badge (assistant only) */}
-          {!isUser && message.model && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border text-[var(--matrix-accent)] bg-[var(--matrix-accent)]/15 border-[var(--matrix-accent)]/30">
-              <Cpu size={9} />
-              {message.model}
-            </span>
-          )}
-
-          {/* Timestamp */}
-          <span className="text-[10px] text-[var(--matrix-text-secondary)]">{formattedTime}</span>
-
-          {/* Streaming indicator */}
-          {message.streaming && <Loader2 size={12} className="animate-spin text-[var(--matrix-accent)]/60" />}
+      {/* Assistant avatar */}
+      {!isUser && !isSystem && (
+        <div className={cn('flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mb-1', theme.accentBg)}>
+          <Bot size={14} className={theme.accentText} />
         </div>
+      )}
+
+      <div className={bubbleClass}>
+        {/* Copy button (top-right, revealed on hover) */}
+        <button
+          type="button"
+          onClick={handleCopy}
+          className={cn(
+            'absolute top-2 right-2 p-1.5 rounded-lg z-20',
+            'bg-black/30 text-white/80 backdrop-blur-sm shadow-sm',
+            'hover:bg-[var(--matrix-accent)] hover:text-black',
+            'opacity-0 group-hover:opacity-100 transition-all duration-200',
+            'transform hover:scale-110',
+          )}
+          title={t('chat.copyMessage', 'Copy message')}
+          aria-label={t('chat.copyMessage', 'Copy message')}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {copied ? (
+              <motion.span
+                key="check"
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.5, opacity: 0 }}
+                transition={{ duration: 0.12 }}
+              >
+                <Check size={14} className="text-green-400" />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="copy"
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.5, opacity: 0 }}
+                transition={{ duration: 0.12 }}
+              >
+                <Copy size={14} />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
+
+        {/* Model badge (assistant only) */}
+        {!isUser && !isSystem && message.model && (
+          <div className="flex items-center gap-1.5 mb-1.5 pb-1 border-b border-matrix-accent/10">
+            <Cpu size={11} className={cn(theme.accentText, 'opacity-70')} />
+            <span className={cn('text-xs font-mono tracking-wide opacity-70', theme.accentText)}>{message.model}</span>
+          </div>
+        )}
 
         {/* Attachments */}
         {message.attachments && message.attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2">
+          <div className="flex flex-wrap gap-2 mb-3">
             {message.attachments.map((att) => (
               <div
                 key={att.id}
-                className="flex items-center gap-1 px-2 py-1 bg-[var(--matrix-bg-primary)]/50 rounded text-xs text-[var(--matrix-text-secondary)]"
+                className="flex items-center gap-1.5 px-2 py-1 bg-black/20 rounded text-xs text-white/80 border border-white/5"
               >
                 {att.type === 'image' ? (
                   <ImageIcon size={12} className="text-purple-400" />
                 ) : (
                   <FileText size={12} className="text-blue-400" />
                 )}
-                <span className="truncate max-w-[100px]">{att.name}</span>
+                <span className="truncate max-w-[150px]">{att.name}</span>
               </div>
             ))}
           </div>
@@ -267,7 +327,7 @@ export const MessageBubble = memo(function MessageBubble({ message, className }:
 
         {/* Tool interactions (before text content) */}
         {message.toolInteractions && message.toolInteractions.length > 0 && (
-          <div className="mb-2">
+          <div className="mb-3">
             {message.toolInteractions.map((ti) => (
               <ToolCallBlock key={ti.id} interaction={ti} />
             ))}
@@ -275,7 +335,7 @@ export const MessageBubble = memo(function MessageBubble({ message, className }:
         )}
 
         {/* Content — Markdown rendered */}
-        <div className="chat-markdown max-w-none">
+        <div className="chat-markdown max-w-none break-words">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[[rehypeHighlight, { languages: chatLanguages }]]}
@@ -284,7 +344,25 @@ export const MessageBubble = memo(function MessageBubble({ message, className }:
             {displayContent}
           </ReactMarkdown>
         </div>
+
+        {/* Timestamp */}
+        <div className={cn('text-[10px] mt-2 flex items-center gap-2', theme.textMuted)}>
+          <span>{formattedTime}</span>
+          {message.streaming && <Loader2 size={10} className="animate-spin text-[var(--matrix-accent)]/60" />}
+        </div>
       </div>
+
+      {/* User avatar */}
+      {isUser && (
+        <div
+          className={cn(
+            'flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mb-1',
+            theme.isLight ? 'bg-emerald-500/15' : 'bg-matrix-accent/15',
+          )}
+        >
+          <User size={14} className={theme.accentText} />
+        </div>
+      )}
     </motion.div>
   );
 });
