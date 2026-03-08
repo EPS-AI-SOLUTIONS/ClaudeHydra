@@ -5,9 +5,9 @@ import { Check, ChevronLeft, ChevronRight, Code2, Copy, Download, Eye, FileDown,
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Badge } from '@/components/atoms/Badge';
-import { Button } from '@/components/atoms/Button';
-import { Card } from '@/components/atoms/Card';
+import { Badge  } from '@jaskier/ui';
+import { Button  } from '@jaskier/ui';
+import { Card  } from '@jaskier/ui';
 import { cn } from '@/shared/utils/cn';
 
 interface OcrResultPanelProps {

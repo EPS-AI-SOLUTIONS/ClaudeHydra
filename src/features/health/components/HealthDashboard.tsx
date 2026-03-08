@@ -11,7 +11,7 @@ import { Clock, Cpu, Database, RefreshCw, Shield, Wifi, WifiOff } from 'lucide-r
 import { memo, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Card } from '@/components/atoms/Card';
+import { Card  } from '@jaskier/ui';
 import { QueryError } from '@/components/molecules/QueryError';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { cn } from '@/shared/utils/cn';

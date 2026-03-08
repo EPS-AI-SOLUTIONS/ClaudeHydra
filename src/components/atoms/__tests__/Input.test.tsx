@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { Input } from '@/components/atoms/Input';
+import { Input  } from '@jaskier/ui';
 
 describe('Input', () => {
   // -------------------------------------------------------------------------

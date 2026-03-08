@@ -12,7 +12,7 @@ import { motion } from 'motion/react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Button } from '@/components/atoms/Button';
+import { Button  } from '@jaskier/ui';
 import { type ModelOption, ModelSelector } from '@/components/molecules/ModelSelector';
 import { copyToClipboard } from '@/shared/utils/clipboard';
 import { formatDateTime, formatTime } from '@/shared/utils/locale';

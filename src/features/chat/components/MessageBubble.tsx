@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
-import { Skeleton } from '@/components/atoms/Skeleton';
+import { Skeleton  } from '@jaskier/ui';
 import { CodeBlock } from '@/components/molecules/CodeBlock';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { cn } from '@/shared/utils/cn';
