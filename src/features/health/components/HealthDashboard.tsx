@@ -7,11 +7,11 @@
  * system resources, model cache size, and uptime.
  */
 
-import { Clock, Cpu, Database, RefreshCw, Shield, Wifi, WifiOff } from 'lucide-react';
+import { Clock, RefreshCw, Shield } from 'lucide-react';
 import { memo, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Card  } from '@jaskier/ui';
+import { Card, BaseMetricsDashboard } from '@jaskier/ui';
 import { QueryError } from '@/components/molecules/QueryError';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { cn } from '@/shared/utils/cn';
@@ -99,9 +99,13 @@ export const HealthDashboard = memo(() => {
     );
   }
 
+  const memoryPercent = data.memoryTotalMb && data.memoryTotalMb > 0
+    ? (data.memoryUsedMb ?? 0) / data.memoryTotalMb * 100
+    : 0;
+
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-3">
+    <div className="w-full flex flex-col gap-4">
+      <div className="flex items-center justify-between">
         <h3 className={cn('text-sm font-mono font-semibold uppercase tracking-wider', theme.textMuted)}>
           {t('health.title', 'System Health')}
         </h3>
@@ -116,15 +120,32 @@ export const HealthDashboard = memo(() => {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {/* Backend Status */}
-        <StatCard
-          icon={data.backendOnline ? <Wifi size={16} /> : <WifiOff size={16} />}
-          label={t('health.backend', 'Backend')}
-          value={data.backendOnline ? t('health.online', 'Online') : t('health.offline', 'Offline')}
-          statusColor={data.backendOnline ? 'text-emerald-400' : 'text-red-400'}
-        />
+      <BaseMetricsDashboard
+        title={t('health.metrics', 'System Metrics')}
+        cpu={data.cpuUsage !== null ? {
+          label: 'CPU',
+          value: data.cpuUsage,
+          status: data.cpuUsage > 90 ? 'error' : data.cpuUsage > 70 ? 'warning' : 'success'
+        } : undefined}
+        ram={data.memoryUsedMb !== null && data.memoryTotalMb !== null ? {
+          label: 'RAM',
+          value: memoryPercent,
+          displayValue: formatMemory(data.memoryUsedMb, data.memoryTotalMb),
+          status: memoryPercent > 90 ? 'error' : memoryPercent > 75 ? 'warning' : 'success'
+        } : undefined}
+        network={{
+          label: 'Backend',
+          status: data.backendOnline ? 'online' : 'offline',
+        }}
+        modelLoad={data.modelCount !== null ? {
+          label: 'Models Loaded',
+          value: Math.min(data.modelCount * 20, 100), // pseudo-visualization 
+          displayValue: String(data.modelCount),
+          status: 'accent'
+        } : undefined}
+      />
 
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {/* Auth Mode */}
         <StatCard
           icon={<Shield size={16} />}
@@ -136,49 +157,6 @@ export const HealthDashboard = memo(() => {
                 ? t('health.enabled', 'Enabled')
                 : t('health.devMode', 'Dev Mode')
           }
-        />
-
-        {/* CPU Usage */}
-        <StatCard
-          icon={<Cpu size={16} />}
-          label={t('health.cpu', 'CPU Usage')}
-          value={data.cpuUsage !== null ? `${String(Math.round(data.cpuUsage))}%` : '--'}
-          statusColor={
-            data.cpuUsage !== null
-              ? data.cpuUsage > 90
-                ? 'text-red-400'
-                : data.cpuUsage > 70
-                  ? 'text-yellow-400'
-                  : undefined
-              : undefined
-          }
-        />
-
-        {/* Memory */}
-        <StatCard
-          icon={<Cpu size={14} />}
-          label={t('health.memory', 'Memory')}
-          value={
-            data.memoryUsedMb !== null && data.memoryTotalMb !== null
-              ? formatMemory(data.memoryUsedMb, data.memoryTotalMb)
-              : '--'
-          }
-          statusColor={
-            data.memoryUsedMb !== null && data.memoryTotalMb !== null && data.memoryTotalMb > 0
-              ? data.memoryUsedMb / data.memoryTotalMb > 0.9
-                ? 'text-red-400'
-                : data.memoryUsedMb / data.memoryTotalMb > 0.75
-                  ? 'text-yellow-400'
-                  : undefined
-              : undefined
-          }
-        />
-
-        {/* Model Cache */}
-        <StatCard
-          icon={<Database size={16} />}
-          label={t('health.models', 'Cached Models')}
-          value={data.modelCount !== null ? String(data.modelCount) : '--'}
         />
 
         {/* Uptime */}
