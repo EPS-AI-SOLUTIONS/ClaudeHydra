@@ -80,6 +80,7 @@ async fn request_id_middleware(
         handlers::system_stats,
         // Agents
         handlers::list_agents,
+        handlers::list_delegations,
         // Chat
         handlers::claude_models,
         handlers::claude_chat,
@@ -240,6 +241,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/logs/backend", get(logs::backend_logs).delete(logs::clear_backend_logs))
         .route("/api/agents", get(handlers::list_agents))
         .route("/api/agents/refresh", post(handlers::refresh_agents))
+        .route("/api/agents/delegations", get(handlers::list_delegations))
         .route("/api/claude/models", get(handlers::claude_models))
         .route("/api/models", get(model_registry::list_models))
         .route("/api/models/refresh", post(model_registry::refresh_models))
@@ -360,6 +362,48 @@ pub fn create_router(state: AppState) -> Router {
 async fn metrics_handler(State(state): State<AppState>) -> String {
     let snapshot = state.system_monitor.read().await;
     let uptime = state.start_time.elapsed().as_secs();
+
+    // A2A delegation metrics
+    let a2a_stats: Option<(i64, i64, i64, Option<f64>)> = sqlx::query_as(
+        "SELECT COUNT(*), \
+         COUNT(*) FILTER (WHERE status = 'completed'), \
+         COUNT(*) FILTER (WHERE is_error = TRUE), \
+         AVG(duration_ms)::float8 \
+         FROM ch_a2a_tasks"
+    )
+    .fetch_optional(&state.db)
+    .await
+    .ok()
+    .flatten();
+
+    let (a2a_total, a2a_completed, a2a_errors, a2a_avg_ms) =
+        a2a_stats.unwrap_or((0, 0, 0, None));
+
+    // Per-agent duration metrics
+    let per_agent: Vec<(String, f64, i64)> = sqlx::query_as(
+        "SELECT agent_name, AVG(duration_ms)::float8, COUNT(*) \
+         FROM ch_a2a_tasks WHERE duration_ms IS NOT NULL \
+         GROUP BY agent_name ORDER BY agent_name"
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    let mut agent_lines = String::new();
+    if !per_agent.is_empty() {
+        agent_lines.push_str(
+            "# HELP a2a_delegation_duration_by_agent Average delegation duration per agent in ms\n\
+             # TYPE a2a_delegation_duration_by_agent gauge\n"
+        );
+        for (agent, avg_ms, count) in &per_agent {
+            agent_lines.push_str(&format!(
+                "a2a_delegation_duration_by_agent{{agent=\"{}\"}} {:.1}\n\
+                 a2a_delegation_count_by_agent{{agent=\"{}\"}} {}\n",
+                agent, avg_ms, agent, count
+            ));
+        }
+    }
+
     format!(
         "# HELP cpu_usage_percent CPU usage percentage\n\
          # TYPE cpu_usage_percent gauge\n\
@@ -372,10 +416,28 @@ async fn metrics_handler(State(state): State<AppState>) -> String {
          memory_total_bytes {}\n\
          # HELP uptime_seconds Backend uptime in seconds\n\
          # TYPE uptime_seconds counter\n\
-         uptime_seconds {}\n",
+         uptime_seconds {}\n\
+         # HELP a2a_delegations_total Total A2A delegations\n\
+         # TYPE a2a_delegations_total counter\n\
+         a2a_delegations_total {}\n\
+         # HELP a2a_delegations_completed Completed A2A delegations\n\
+         # TYPE a2a_delegations_completed counter\n\
+         a2a_delegations_completed {}\n\
+         # HELP a2a_delegations_errors Failed A2A delegations\n\
+         # TYPE a2a_delegations_errors counter\n\
+         a2a_delegations_errors {}\n\
+         # HELP a2a_delegation_duration_avg_ms Average delegation duration in ms\n\
+         # TYPE a2a_delegation_duration_avg_ms gauge\n\
+         a2a_delegation_duration_avg_ms {:.1}\n\
+         {}",
         snapshot.cpu_usage_percent,
         (snapshot.memory_used_mb * 1024.0 * 1024.0) as u64,
         (snapshot.memory_total_mb * 1024.0 * 1024.0) as u64,
         uptime,
+        a2a_total,
+        a2a_completed,
+        a2a_errors,
+        a2a_avg_ms.unwrap_or(0.0),
+        agent_lines,
     )
 }

@@ -3,7 +3,7 @@
  * Styled to match CodeBlock glass-panel aesthetic.
  */
 
-import { AlertCircle, Check, ChevronDown, FileSearch, FolderOpen, Loader2, Pencil, Wrench } from 'lucide-react';
+import { AlertCircle, Check, ChevronDown, FileSearch, FolderOpen, Loader2, Pencil, Users, Wrench } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +32,7 @@ const TOOL_ICONS: Record<string, typeof Wrench> = {
   list_directory: FolderOpen,
   write_file: Pencil,
   search_in_files: FileSearch,
+  call_agent: Users,
 };
 
 const TOOL_LABELS: Record<string, string> = {
@@ -39,6 +40,22 @@ const TOOL_LABELS: Record<string, string> = {
   list_directory: 'List Directory',
   write_file: 'Write File',
   search_in_files: 'Search Files',
+  call_agent: 'Agent Delegation',
+};
+
+const AGENT_NAMES: Record<string, string> = {
+  geralt: 'Geralt (Security)',
+  yennefer: 'Yennefer (Architecture)',
+  vesemir: 'Vesemir (Testing)',
+  triss: 'Triss (Data)',
+  jaskier: 'Jaskier (Docs)',
+  ciri: 'Ciri (Performance)',
+  dijkstra: 'Dijkstra (Strategy)',
+  lambert: 'Lambert (DevOps)',
+  eskel: 'Eskel (Backend)',
+  regis: 'Regis (Research)',
+  zoltan: 'Zoltan (Frontend)',
+  philippa: 'Philippa (Monitoring)',
 };
 
 function StatusIcon({ status }: { status: ToolInteraction['status'] }) {
@@ -73,11 +90,15 @@ export function ToolCallBlock({ interaction }: { interaction: ToolInteraction })
   const { t } = useTranslation();
   const isActive = interaction.status === 'pending' || interaction.status === 'running';
   const hasError = interaction.status === 'error' || interaction.isError;
+  const isAgentCall = interaction.toolName === 'call_agent';
 
   const [expanded, setExpanded] = useState(isActive || hasError);
 
   const Icon = TOOL_ICONS[interaction.toolName] ?? Wrench;
-  const label = TOOL_LABELS[interaction.toolName] ?? interaction.toolName;
+  const agentName = isAgentCall ? ((interaction.toolInput.agent_name as string)?.toLowerCase() ?? '') : '';
+  const label = isAgentCall
+    ? `Delegating to ${AGENT_NAMES[agentName] ?? agentName}`
+    : (TOOL_LABELS[interaction.toolName] ?? interaction.toolName);
 
   const resultLooksLikeCode =
     interaction.result && (interaction.result.includes('\n') || interaction.result.length > 200);
@@ -86,7 +107,11 @@ export function ToolCallBlock({ interaction }: { interaction: ToolInteraction })
     <div
       className={cn(
         'glass-panel overflow-hidden my-2 border',
-        hasError ? 'border-[var(--matrix-error,#ef4444)]/30' : 'border-[var(--matrix-accent)]/20',
+        hasError
+          ? 'border-[var(--matrix-error,#ef4444)]/30'
+          : isAgentCall
+            ? 'border-amber-500/30 bg-amber-500/5'
+            : 'border-[var(--matrix-accent)]/20',
       )}
     >
       {/* Header — clickable toggle */}
@@ -102,7 +127,9 @@ export function ToolCallBlock({ interaction }: { interaction: ToolInteraction })
         <Icon size={14} className="text-[var(--matrix-accent)] shrink-0" />
         <span className="text-xs font-semibold text-[var(--matrix-text-primary)] font-mono">{label}</span>
         <span className="text-[10px] text-[var(--matrix-text-secondary)] truncate flex-1">
-          {formatInput(interaction.toolInput)}
+          {isAgentCall
+            ? ((interaction.toolInput.task as string)?.slice(0, 120) ?? '')
+            : formatInput(interaction.toolInput)}
         </span>
         <StatusIcon status={interaction.status} />
         <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>

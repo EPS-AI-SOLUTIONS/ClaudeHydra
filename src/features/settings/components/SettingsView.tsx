@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/atoms';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { cn } from '@/shared/utils/cn';
+import { BrowserProxySection } from './BrowserProxySection';
 import { CompletionSoundSection } from './CompletionSoundSection';
 import { GoogleOAuthSection } from './GoogleOAuthSection';
 import { MaxIterationsSection } from './MaxIterationsSection';
@@ -15,7 +16,7 @@ import { MaxTokensSection } from './MaxTokensSection';
 import { McpServersSection } from './McpServersSection';
 import { OAuthSection } from './OAuthSection';
 import { TemperatureSection } from './TemperatureSection';
-import { BrowserProxySection } from './BrowserProxySection';
+import { WatchdogHistory } from './WatchdogHistory';
 import { WorkingFolderSection } from './WorkingFolderSection';
 
 export const SettingsView = memo(() => {
@@ -91,6 +92,13 @@ export const SettingsView = memo(() => {
         <Card>
           <div className="p-6">
             <BrowserProxySection />
+          </div>
+        </Card>
+
+        {/* Watchdog History */}
+        <Card>
+          <div className="p-6">
+            <WatchdogHistory />
           </div>
         </Card>
 

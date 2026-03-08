@@ -3,6 +3,7 @@
     "home": "Start",
     "chat": "Czat",
     "logs": "Logi",
+    "delegations": "Delegacje",
     "settings": "Ustawienia"
   },
   "sidebar": {
@@ -82,7 +83,8 @@
     "input": "Wejście",
     "result": "Wynik",
     "error": "Błąd",
-    "executing": "Wykonywanie\u2026"
+    "executing": "Wykonywanie\u2026",
+    "delegating": "Delegowanie do agenta\u2026"
   },
   "agents": {
     "noMatch": "Brak agentów pasujących do wybranego filtra."
@@ -157,6 +159,11 @@
       "description": "Odtwarzaj dźwięk i pokazuj powiadomienie po zakończeniu generowania odpowiedzi.",
       "toggle": "Przełącz dźwięk ukończenia",
       "volume": "Głośność"
+    },
+    "watchdog": {
+      "title": "Historia Watchdog",
+      "description": "Zdarzenia monitoringu browser proxy (ostatnie 50).",
+      "noEvents": "Brak zdarzeń"
     },
     "browserProxy": {
       "title": "Browser Proxy",
@@ -271,6 +278,14 @@
     "hoursAgo": "{{h}} godz. temu",
     "yesterday": "wczoraj",
     "daysAgo": "{{d}} dn. temu"
+  },
+  "delegations": {
+    "title": "Delegacje Agentów",
+    "total": "Łącznie",
+    "completed": "Ukończone",
+    "errors": "Błędy",
+    "avgDuration": "Śr. Czas",
+    "empty": "Brak delegacji. Agenci będą automatycznie delegować podzadania podczas złożonych rozmów."
   },
   "mcp": {
     "title": "Serwery MCP",

@@ -408,6 +408,27 @@ impl ToolExecutor {
                     "required": ["repo_path", "message"]
                 }),
             },
+            ToolDefinition {
+                name: "call_agent".to_string(),
+                description: "Delegate a subtask to another Witcher agent. The target agent has full tool access \
+                    and uses the appropriate Claude model for its tier (Commander→Opus, Coordinator→Sonnet, \
+                    Executor→Haiku). Use when the task requires specialized expertise. Max 3 delegation levels."
+                    .to_string(),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "agent_name": {
+                            "type": "string",
+                            "description": "Target agent name (lowercase): geralt, yennefer, vesemir, triss, jaskier, ciri, dijkstra, lambert, eskel, regis, zoltan, philippa"
+                        },
+                        "task": {
+                            "type": "string",
+                            "description": "The subtask to delegate. Be specific about what you need and provide context."
+                        }
+                    },
+                    "required": ["agent_name", "task"]
+                }),
+            },
         ];
 
         // Append GitHub, Vercel, Fly.io, and Web tool definitions
