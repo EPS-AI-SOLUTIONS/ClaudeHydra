@@ -401,7 +401,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           </button>
 
           {/* Textarea */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative group">
             <textarea
               ref={textareaRef}
               data-testid="chat-textarea"
@@ -414,7 +414,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               disabled={disabled}
               rows={1}
               className={cn(
-                'w-full glass-input px-4 py-3 resize-none rounded-lg font-mono text-sm',
+                'w-full glass-input px-4 py-3 resize-none rounded-lg pr-24 scrollbar-hide font-mono text-sm',
                 'text-[var(--matrix-text-primary)] placeholder:text-[var(--matrix-text-secondary)]/60',
                 'focus:border-[var(--matrix-accent)] focus:ring-2 focus:ring-[var(--matrix-accent)]/30',
                 'outline-none transition-all duration-200',
