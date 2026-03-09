@@ -172,14 +172,14 @@ function StatusFooterComponent({
           ? 'text-violet-600'
           : 'text-violet-400';
 
-  const dividerCls = isLight ? 'text-slate-300' : 'text-white/20';
+  const dividerCls = isLight ? 'text-slate-300' : 'text-white/30';
 
   return (
     <footer
       data-testid="status-footer"
       className={cn(
         'px-6 py-2.5 border-t text-sm flex items-center justify-between shrink-0 transition-all duration-500',
-        isLight ? 'border-slate-200/30 bg-white/40 text-slate-600' : 'border-white/10 bg-black/20 text-slate-400',
+        isLight ? 'border-slate-200/30 bg-white/40 text-slate-600' : 'border-white/10 bg-black/20 text-slate-300',
       )}
     >
       {/* Left: Version + Connection + CPU + RAM + Proxy */}
