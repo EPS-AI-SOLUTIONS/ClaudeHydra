@@ -71,12 +71,12 @@ const LIGHT: ViewTheme = {
   glassPanelHover: 'hover:bg-white/50 hover:border-emerald-500/30',
   header: 'bg-white/30 backdrop-blur-xl border-b border-white/20',
   headerTitle: 'text-black font-bold',
-  headerSubtitle: 'text-gray-500',
+  headerSubtitle: 'text-gray-600',
   headerIcon: 'text-emerald-600',
   title: 'text-black',
   subtitle: 'text-gray-600',
   text: 'text-black',
-  textMuted: 'text-gray-500',
+  textMuted: 'text-gray-700',
   textAccent: 'text-emerald-600',
   input:
     'bg-white/50 border border-slate-200/50 text-black placeholder:text-gray-400 focus:border-emerald-500/50 focus:bg-white/70 rounded-xl outline-none transition-all',
@@ -107,7 +107,7 @@ const LIGHT: ViewTheme = {
   accentBorder: 'border-emerald-500/30',
   iconDefault: 'text-gray-700',
   iconAccent: 'text-emerald-600',
-  iconMuted: 'text-gray-400',
+  iconMuted: 'text-gray-500',
 };
 
 const DARK: ViewTheme = {
