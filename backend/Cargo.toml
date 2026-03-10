@@ -35,7 +35,7 @@ url = "2"
 http = "1"
 pdf-extract = "0.10"
 scraper = "0.25"
-zip = { version = "2", default-features = false, features = ["deflate"] }
+zip = { version = "3", default-features = false, features = ["deflate"] }
 aes-gcm = "0.10"
 hex = "0.4"
 streaming-iterator = "0.1"
