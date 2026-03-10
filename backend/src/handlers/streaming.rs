@@ -436,7 +436,7 @@ pub async fn claude_chat_stream(
                                 yield Ok::<_, std::io::Error>(axum::body::Bytes::from(format!("{}\n", done_line)));
 
                                 // Token usage tracking — fire-and-forget
-                                let latency = stream_start.elapsed().as_millis() as i32;
+                                let latency = stream_start.elapsed().as_millis().min(i32::MAX as u128) as i32;
                                 let input_est = (prompt_len / 4) as i32;
                                 let output_est = (output_chars / 4) as i32;
                                 let db = db_for_usage.clone();
@@ -786,15 +786,26 @@ async fn claude_chat_stream_with_tools(
                     let tool_input = tu.get("input").unwrap_or(&empty_input);
 
                     let (result, is_error) = if tool_name == "call_agent" {
-                        // Agent-to-agent delegation — longer timeout (120s)
-                        match tokio::time::timeout(
-                            std::time::Duration::from_secs(120),
-                            execute_agent_call(&state_clone, tool_input, &wd, 0),
-                        )
-                        .await
-                        {
-                            Ok(res) => res,
-                            Err(_) => ("Agent delegation timed out after 120s".to_string(), true),
+                        // Acquire A2A concurrency permit (max 5 concurrent delegations)
+                        match state_clone.a2a_semaphore.clone().acquire_owned().await {
+                            Err(_) => (
+                                "A2A delegation limit reached — semaphore closed".to_string(),
+                                true,
+                            ),
+                            Ok(_permit) => {
+                                // Agent-to-agent delegation — longer timeout (120s)
+                                match tokio::time::timeout(
+                                    std::time::Duration::from_secs(120),
+                                    execute_agent_call(&state_clone, tool_input, &wd, 0),
+                                )
+                                .await
+                                {
+                                    Ok(res) => res,
+                                    Err(_) => {
+                                        ("Agent delegation timed out after 120s".to_string(), true)
+                                    }
+                                }
+                            }
                         }
                     } else {
                         let timeout = std::time::Duration::from_secs(TOOL_TIMEOUT_SECS);
@@ -1749,17 +1760,29 @@ async fn execute_streaming_ws(
                 let state_ref = state.clone();
                 let wd_ref = wd.clone();
 
+                let semaphore = state.a2a_semaphore.clone();
                 let handle = tokio::spawn(async move {
                     let (result, is_error) = if tool_name == "call_agent" {
-                        // Agent-to-agent delegation — longer timeout (120s)
-                        match tokio::time::timeout(
-                            std::time::Duration::from_secs(120),
-                            execute_agent_call(&state_ref, &tool_input, &wd_ref, 0),
-                        )
-                        .await
-                        {
-                            Ok(res) => res,
-                            Err(_) => ("Agent delegation timed out after 120s".to_string(), true),
+                        // Acquire A2A concurrency permit (max 5 concurrent delegations)
+                        match semaphore.acquire_owned().await {
+                            Err(_) => (
+                                "A2A delegation limit reached — semaphore closed".to_string(),
+                                true,
+                            ),
+                            Ok(_permit) => {
+                                // Agent-to-agent delegation — longer timeout (120s)
+                                match tokio::time::timeout(
+                                    std::time::Duration::from_secs(120),
+                                    execute_agent_call(&state_ref, &tool_input, &wd_ref, 0),
+                                )
+                                .await
+                                {
+                                    Ok(res) => res,
+                                    Err(_) => {
+                                        ("Agent delegation timed out after 120s".to_string(), true)
+                                    }
+                                }
+                            }
                         }
                     } else {
                         let timeout = std::time::Duration::from_secs(TOOL_TIMEOUT_SECS);
@@ -2321,8 +2344,8 @@ pub(crate) async fn execute_agent_call(
         break;
     }
 
-    // Update task status in DB
-    let duration_ms = task_start.elapsed().as_millis() as i32;
+    // Update task status in DB (clamped to i32::MAX to prevent overflow)
+    let duration_ms = task_start.elapsed().as_millis().min(i32::MAX as u128) as i32;
     let is_error = collected_text.is_empty();
     let preview: String = collected_text.chars().take(500).collect();
     {

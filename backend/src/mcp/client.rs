@@ -344,10 +344,10 @@ impl McpClientManager {
         let status = resp.status();
 
         // Guard against OOM from oversized responses
-        if let Some(len) = resp.content_length() {
-            if len > MAX_MCP_RESPONSE_BYTES as u64 {
-                return Err(anyhow::anyhow!("MCP response too large: {} bytes", len));
-            }
+        if let Some(len) = resp.content_length()
+            && len > MAX_MCP_RESPONSE_BYTES as u64
+        {
+            return Err(anyhow::anyhow!("MCP response too large: {} bytes", len));
         }
         let bytes = resp.bytes().await?;
         if bytes.len() > MAX_MCP_RESPONSE_BYTES {

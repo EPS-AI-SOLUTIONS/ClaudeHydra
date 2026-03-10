@@ -40,12 +40,12 @@ pub fn validate_mcp_url(url: &str, is_prod: bool) -> Result<(), String> {
     }
 
     // Block IP literals pointing to link-local (metadata) range — always
-    if let Ok(ip) = host.parse::<std::net::IpAddr>() {
-        if let std::net::IpAddr::V4(v4) = ip {
-            if v4.octets()[0] == 169 && v4.octets()[1] == 254 {
-                return Err(format!("Blocked: MCP URL points to link-local IP {}", ip));
-            }
-        }
+    if let Ok(ip) = host.parse::<std::net::IpAddr>()
+        && let std::net::IpAddr::V4(v4) = ip
+        && v4.octets()[0] == 169
+        && v4.octets()[1] == 254
+    {
+        return Err(format!("Blocked: MCP URL points to link-local IP {}", ip));
     }
 
     // Production-only: also block localhost and private IPs
@@ -88,13 +88,13 @@ pub fn validate_mcp_url(url: &str, is_prod: bool) -> Result<(), String> {
                         ));
                     }
                     // IPv4-mapped addresses (::ffff:x.x.x.x)
-                    if let Some(v4) = v6.to_ipv4_mapped() {
-                        if v4.is_loopback() || v4.is_private() || v4.is_link_local() {
-                            return Err(format!(
-                                "Blocked: MCP URL resolves to private IPv4-mapped IP {} (production mode)",
-                                ip
-                            ));
-                        }
+                    if let Some(v4) = v6.to_ipv4_mapped()
+                        && (v4.is_loopback() || v4.is_private() || v4.is_link_local())
+                    {
+                        return Err(format!(
+                            "Blocked: MCP URL resolves to private IPv4-mapped IP {} (production mode)",
+                            ip
+                        ));
                     }
                 }
             }
@@ -404,15 +404,15 @@ fn validate_stdio_config(command: &str, env_vars: Option<&Value>) -> Result<(), 
         ));
     }
 
-    if let Some(env_val) = env_vars {
-        if let Some(obj) = env_val.as_object() {
-            for key in obj.keys() {
-                if BLOCKED_ENV_VARS.contains(&key.as_str()) {
-                    return Err(format!(
-                        "Environment variable '{}' is blocked for security reasons",
-                        key
-                    ));
-                }
+    if let Some(env_val) = env_vars
+        && let Some(obj) = env_val.as_object()
+    {
+        for key in obj.keys() {
+            if BLOCKED_ENV_VARS.contains(&key.as_str()) {
+                return Err(format!(
+                    "Environment variable '{}' is blocked for security reasons",
+                    key
+                ));
             }
         }
     }
@@ -457,22 +457,21 @@ pub async fn create_server_handler(
         return Err(StatusCode::BAD_REQUEST);
     }
     // Validate stdio command allowlist and blocked env vars
-    if req.transport == "stdio" {
-        if let Some(ref cmd) = req.command {
-            if let Err(msg) = validate_stdio_config(cmd, req.env_vars.as_ref()) {
-                tracing::warn!("mcp: create_server rejected: {}", msg);
-                return Err(StatusCode::BAD_REQUEST);
-            }
-        }
+    if req.transport == "stdio"
+        && let Some(ref cmd) = req.command
+        && let Err(msg) = validate_stdio_config(cmd, req.env_vars.as_ref())
+    {
+        tracing::warn!("mcp: create_server rejected: {}", msg);
+        return Err(StatusCode::BAD_REQUEST);
     }
     // SSRF validation for HTTP transport URLs
-    if req.transport == "http" {
-        if let Some(ref url) = req.url {
-            let is_prod = state.auth_secret.is_some();
-            if let Err(msg) = validate_mcp_url(url, is_prod) {
-                tracing::warn!("mcp: create_server SSRF rejected: {}", msg);
-                return Err(StatusCode::BAD_REQUEST);
-            }
+    if req.transport == "http"
+        && let Some(ref url) = req.url
+    {
+        let is_prod = state.auth_secret.is_some();
+        if let Err(msg) = validate_mcp_url(url, is_prod) {
+            tracing::warn!("mcp: create_server SSRF rejected: {}", msg);
+            return Err(StatusCode::BAD_REQUEST);
         }
     }
 
@@ -503,11 +502,11 @@ pub async fn update_server_handler(
         let effective_transport = req.transport.as_deref().unwrap_or(&current.transport);
         if effective_transport == "stdio" {
             let effective_command = req.command.as_deref().or(current.command.as_deref());
-            if let Some(cmd) = effective_command {
-                if let Err(msg) = validate_stdio_config(cmd, req.env_vars.as_ref()) {
-                    tracing::warn!("mcp: update_server rejected: {}", msg);
-                    return Err(StatusCode::BAD_REQUEST);
-                }
+            if let Some(cmd) = effective_command
+                && let Err(msg) = validate_stdio_config(cmd, req.env_vars.as_ref())
+            {
+                tracing::warn!("mcp: update_server rejected: {}", msg);
+                return Err(StatusCode::BAD_REQUEST);
             }
         }
     }

@@ -161,19 +161,18 @@ async fn resolve_and_validate_dns(host: &str, port: u16) -> Result<(), String> {
                 if (seg[0] & 0xfe00) == 0xfc00 || (seg[0] & 0xffc0) == 0xfe80 {
                     return Err(format!("Blocked: '{}' resolves to private IP {}", host, ip));
                 }
-                if let Some(v4) = v6.to_ipv4_mapped() {
-                    if v4.is_loopback()
+                if let Some(v4) = v6.to_ipv4_mapped()
+                    && (v4.is_loopback()
                         || v4.is_private()
                         || v4.is_link_local()
                         || v4.is_broadcast()
                         || v4.is_unspecified()
-                        || (v4.octets()[0] == 169 && v4.octets()[1] == 254)
-                    {
-                        return Err(format!(
-                            "Blocked: '{}' resolves to private IPv4-mapped {}",
-                            host, ip
-                        ));
-                    }
+                        || (v4.octets()[0] == 169 && v4.octets()[1] == 254))
+                {
+                    return Err(format!(
+                        "Blocked: '{}' resolves to private IPv4-mapped {}",
+                        host, ip
+                    ));
                 }
             }
         }
