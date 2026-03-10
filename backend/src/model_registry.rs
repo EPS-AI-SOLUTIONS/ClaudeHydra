@@ -561,10 +561,11 @@ pub async fn pin_model(
     State(state): State<AppState>,
     Json(body): Json<PinModelRequest>,
 ) -> Json<Value> {
-    let valid = ["commander", "Commander", "coordinator", "Coordinator", "executor", "Executor", "flash", "Flash"];
+    let normalized = body.use_case.to_lowercase();
+    let valid = ["commander", "coordinator", "executor", "flash"];
 
-    if !valid.contains(&body.use_case.as_str()) {
-        return Json(json!({ "error": format!("Invalid use_case '{}'. Valid: commander, coordinator, executor", body.use_case) }));
+    if !valid.contains(&normalized.as_str()) {
+        return Json(json!({ "error": format!("Invalid use_case '{}'. Valid: commander, coordinator, executor, flash", body.use_case) }));
     }
 
     let result = sqlx::query(
@@ -572,23 +573,23 @@ pub async fn pin_model(
          VALUES ($1, $2) \
          ON CONFLICT (use_case) DO UPDATE SET model_id = $2, pinned_at = now()",
     )
-    .bind(&body.use_case)
+    .bind(&normalized)
     .bind(&body.model_id)
     .execute(&state.db)
     .await;
 
     match result {
         Ok(_) => {
-            tracing::info!("model_registry: pinned use_case={} → model={}", body.use_case, body.model_id);
+            tracing::info!("model_registry: pinned use_case={} → model={}", normalized, body.model_id);
             // #40 Audit log
             crate::audit::log_audit(
                 &state.db,
                 "pin_model",
-                json!({ "use_case": body.use_case, "model_id": body.model_id }),
+                json!({ "use_case": normalized, "model_id": body.model_id }),
                 None,
             )
             .await;
-            Json(json!({ "pinned": true, "use_case": body.use_case, "model_id": body.model_id }))
+            Json(json!({ "pinned": true, "use_case": normalized, "model_id": body.model_id }))
         }
         Err(e) => Json(json!({ "error": format!("Failed to pin: {}", e) })),
     }

@@ -189,9 +189,16 @@ export async function apiGet<T>(path: string): Promise<T> {
   return deduplicatedGet<T>(path);
 }
 
-/** Polling-safe GET — no fetch-level retries, no console warnings on failure. */
+/** Polling-safe GET — deduped, no fetch-level retries, no console warnings on failure. */
 export async function apiGetPolling<T>(path: string): Promise<T> {
-  return apiFetch<T>(path, { method: 'GET' }, 0);
+  const existing = inflightGets.get(path);
+  if (existing) return existing as Promise<T>;
+
+  const promise = apiFetch<T>(path, { method: 'GET' }, 0).finally(() => {
+    inflightGets.delete(path);
+  });
+  inflightGets.set(path, promise);
+  return promise;
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
