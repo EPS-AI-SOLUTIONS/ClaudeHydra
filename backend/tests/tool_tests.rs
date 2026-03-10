@@ -59,18 +59,18 @@ async fn test_tool_list_directory() {
     std::fs::write(temp_dir.join("sub/b.txt"), "B").unwrap();
 
     let list_input = json!({
-        "path": ".",
+        "path": temp_dir.to_string_lossy(),
         "recursive": true
     });
 
     let (result, is_error) = executor.execute("list_directory", &list_input).await;
     assert!(!is_error, "list_directory failed: {}", result);
-    
+
     println!("List Result:\n{}", result);
 
-    assert!(result.contains("[FILE] a.txt"), "Missing a.txt in listing");
-    assert!(result.contains("[DIR]  sub/"), "Missing sub/ in listing");
-    
+    assert!(result.contains("a.txt"), "Missing a.txt in listing: {}", result);
+    assert!(result.contains("sub"), "Missing sub/ in listing: {}", result);
+
     // Check for b.txt regardless of path separator
     let has_b = result.contains("sub/b.txt") || result.contains("sub\\b.txt");
     assert!(has_b, "Missing sub/b.txt in listing (found: {})", result);

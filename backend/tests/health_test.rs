@@ -67,8 +67,8 @@ async fn auth_mode_endpoint_returns_ok() {
     assert_eq!(response.status(), StatusCode::OK);
 
     let json = body_json(response).await;
-    // In test mode, AUTH_SECRET is not set, so auth should not be required
-    assert_eq!(json.get("auth_required").and_then(|v| v.as_bool()), Some(false));
+    // In test mode, AUTH_SECRET is not set, so mode = "open"
+    assert_eq!(json["mode"], "open");
 }
 
 #[tokio::test]

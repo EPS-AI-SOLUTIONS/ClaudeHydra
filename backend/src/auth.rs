@@ -32,7 +32,7 @@ pub async fn require_auth(
 
     match auth_header {
         Some(header) if header.starts_with("Bearer ") => {
-            let token = &header[7..];
+            let token = header.strip_prefix("Bearer ").unwrap_or_default();
             if bool::from(token.as_bytes().ct_eq(secret.as_bytes())) {
                 Ok(next.run(request).await)
             } else {
@@ -134,8 +134,6 @@ mod tests {
 }
 
 /// Middleware that enforces Bearer token auth against the `api_keys` table.
-
-/// Middleware that enforces Bearer token auth against the `api_keys` table.
 pub async fn require_api_key_auth(
     State(state): State<AppState>,
     request: Request,
@@ -149,7 +147,7 @@ pub async fn require_api_key_auth(
 
     match auth_header {
         Some(header) if header.starts_with("Bearer ") => {
-            let token = &header[7..];
+            let token = header.strip_prefix("Bearer ").unwrap_or_default();
 
             // Verify against api_keys table
             let is_valid = match sqlx::query_scalar::<_, i64>(

@@ -289,6 +289,13 @@ fn version_key(id: &str) -> (u64, String) {
         }
     }
 
+    // Tier bonus: "pro" > "flash"/"lite" for same version number
+    if id.contains("-pro") {
+        version += 100;
+    } else if id.contains("-ultra") {
+        version += 200;
+    }
+
     (version, date_suffix)
 }
 
@@ -661,8 +668,9 @@ mod tests {
 
     #[test]
     fn version_key_gemini_3_1_pro() {
+        // "3.1" → 3*1000+1=3001, plus +100 pro bonus = 3101
         let (v, _) = version_key("gemini-3.1-pro-preview");
-        assert_eq!(v, 3001);
+        assert_eq!(v, 3101);
     }
 
     #[test]
