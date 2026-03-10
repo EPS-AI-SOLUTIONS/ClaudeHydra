@@ -4,16 +4,25 @@ import { type MouseEvent, memo, useDeferredValue, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { cn } from '@/shared/utils/cn';
-import { type Message, useCurrentSessionId } from '@/stores/viewStore';
+import { useCurrentSessionId } from '@/stores/viewStore';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageRating } from './MessageRating';
 import { splitToolOutput, stripParallelHeader } from './messageParser';
 
+export interface ChatMessage {
+  id?: string;
+  role: string;
+  content: string;
+  timestamp?: number;
+  error?: boolean;
+  model?: string;
+}
+
 interface MessageBubbleProps {
-  message: Message;
+  message: ChatMessage;
   isLast: boolean;
   isStreaming: boolean;
-  onContextMenu?: (e: MouseEvent<HTMLDivElement>, message: Message) => void;
+  onContextMenu?: (e: MouseEvent<HTMLDivElement>, message: ChatMessage) => void;
 }
 
 export const MessageBubble = memo<MessageBubbleProps>(({ message, isLast, isStreaming, onContextMenu }) => {

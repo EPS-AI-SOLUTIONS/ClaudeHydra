@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
 import { EmptyState } from '@/components/molecules/EmptyState';
 import type { ModelOption } from '@/components/molecules/ModelSelector';
 import { type PromptSuggestion, PromptSuggestions } from '@/components/molecules/PromptSuggestions';
@@ -292,9 +293,9 @@ export function ClaudeChatView() {
 
   // DB sync
   const { addMessageWithSync, renameSessionWithSync, generateTitleWithSync } = useSessionSync();
-  const activeSessionId = useViewStore((s) => s.activeSessionId);
-  const activeSession = useViewStore((s) => s.chatSessions.find((cs) => cs.id === s.activeSessionId));
-  const setSessionWorkingDirectory = useViewStore((s) => s.setSessionWorkingDirectory);
+  const activeSessionId = useViewStore(useShallow((s) => s.activeSessionId));
+  const activeSession = useViewStore(useShallow((s) => s.chatSessions.find((cs) => cs.id === s.activeSessionId)));
+  const setSessionWorkingDirectory = useViewStore(useShallow((s) => s.setSessionWorkingDirectory));
 
   // Settings (for welcome message)
   const { data: settings } = useSettingsQuery();
@@ -683,7 +684,7 @@ export function ClaudeChatView() {
           onSuggestionSelect={(text) => chatInputRef.current?.setValue(text)}
         />
 
-        <AnimatePresence>{useViewStore((s) => s.activeArtifact) && <ArtifactPanel />}</AnimatePresence>
+        <AnimatePresence>{useViewStore(useShallow((s) => s.activeArtifact)) && <ArtifactPanel />}</AnimatePresence>
       </div>
 
       {/* Streaming indicator bar */}

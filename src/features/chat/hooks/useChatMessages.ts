@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { apiGet } from '@/shared/api/client';
 import { useViewStore } from '@/stores/viewStore';
 import type { ChatMessage } from '../components/MessageBubble';
@@ -24,7 +25,7 @@ export function useChatMessages() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const activeSessionId = useViewStore((s) => s.activeSessionId);
+  const activeSessionId = useViewStore(useShallow((s) => s.activeSessionId));
 
   /** Update messages for a specific session. Only updates display if session is active. */
   const updateSessionMessages = useCallback((sessionId: string, updater: (prev: ChatMessage[]) => ChatMessage[]) => {

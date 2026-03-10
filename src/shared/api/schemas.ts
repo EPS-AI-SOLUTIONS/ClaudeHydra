@@ -29,8 +29,8 @@ export type Health = z.infer<typeof healthSchema>;
 
 export const systemStatsSchema = z.object({
   cpu_usage: z.number(),
-  memory_used: z.number(),
-  memory_total: z.number(),
+  memory_used_mb: z.number(),
+  memory_total_mb: z.number(),
   uptime_seconds: z.number(),
   active_sessions: z.number(),
   total_messages: z.number(),

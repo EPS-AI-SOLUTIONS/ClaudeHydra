@@ -20,7 +20,7 @@ import { cn } from '@/shared/utils/cn';
 export type StatusState = 'online' | 'offline' | 'pending' | 'error';
 export type StatusSize = 'sm' | 'md';
 
-export interface StatusIndicatorProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+interface StatusIndicatorProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Current status state. */
   status?: StatusState;
   /** Size variant. */

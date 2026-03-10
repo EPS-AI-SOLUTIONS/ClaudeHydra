@@ -18,7 +18,7 @@ import { cn } from '@/shared/utils/cn';
 // TYPES
 // ============================================================================
 
-export interface ToolActivity {
+interface ToolActivity {
   name: string;
   args?: unknown;
   iteration: number;

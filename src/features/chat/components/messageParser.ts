@@ -1,4 +1,4 @@
-export interface ContentSegment {
+interface ContentSegment {
   type: 'text' | 'tool';
   name?: string;
   content: string;

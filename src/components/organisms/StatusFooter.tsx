@@ -23,7 +23,7 @@ import { cn } from '@/shared/utils/cn';
 // TYPES
 // ============================================================================
 
-export type ConnectionHealth = 'connected' | 'degraded' | 'disconnected';
+type ConnectionHealth = 'connected' | 'degraded' | 'disconnected';
 
 export interface StatusFooterProps {
   /** Connection health status */

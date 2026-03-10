@@ -35,7 +35,7 @@ export interface ModelOption {
   description?: string;
 }
 
-export interface ModelSelectorProps<T extends ModelOption = ModelOption> {
+interface ModelSelectorProps<T extends ModelOption = ModelOption> {
   /** List of model options. */
   models: T[];
   /** Currently selected model id. */

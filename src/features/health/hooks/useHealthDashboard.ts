@@ -24,12 +24,12 @@ type AuthMode = z.infer<typeof AuthModeSchema>;
 
 const ModelsResponseSchema = z
   .object({
-    providers: z.record(z.array(z.unknown())).optional(),
+    providers: z.record(z.string(), z.array(z.unknown())).optional(),
   })
   .passthrough();
 type ModelsResponse = z.infer<typeof ModelsResponseSchema>;
 
-export interface HealthDashboardData {
+interface HealthDashboardData {
   backendOnline: boolean;
   uptimeSeconds: number | null;
   authRequired: boolean | null;
@@ -98,10 +98,13 @@ export function useHealthDashboard(): HealthDashboardData {
   const uptimeSeconds = healthQuery.data?.uptime_seconds ?? null;
   const authRequired = authQuery.data?.auth_required ?? null;
   const cpuUsage = statsQuery.data?.cpu_usage ?? null;
-  const memoryUsedMb = statsQuery.data?.memory_used ?? null;
-  const memoryTotalMb = statsQuery.data?.memory_total ?? null;
+  const memoryUsedMb = statsQuery.data?.memory_used_mb ?? null;
+  const memoryTotalMb = statsQuery.data?.memory_total_mb ?? null;
   const modelCount = modelsQuery.data?.providers
-    ? Object.values(modelsQuery.data.providers).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0)
+    ? Object.values(modelsQuery.data.providers).reduce(
+        (sum: number, arr) => sum + (Array.isArray(arr) ? arr.length : 0),
+        0,
+      )
     : null;
   const loading = healthQuery.isLoading || statsQuery.isLoading;
   const error = healthQuery.isError && statsQuery.isError;

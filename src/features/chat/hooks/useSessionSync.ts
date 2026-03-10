@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
 import { type ChatSession, useViewStore } from '@/stores/viewStore';
 import {
   useAddMessageMutation,
@@ -25,14 +26,27 @@ export function useSessionSync() {
     chatSessions,
     activeSessionId,
     createSessionWithId,
-    deleteSession: deleteSessionLocal,
-    updateSessionTitle: updateSessionTitleLocal,
+    deleteSessionLocal,
+    updateSessionTitleLocal,
     hydrateSessions,
     syncWorkingDirectories,
     selectSession,
     openTab,
     setView,
-  } = useViewStore();
+  } = useViewStore(
+    useShallow((state) => ({
+      chatSessions: state.chatSessions,
+      activeSessionId: state.activeSessionId,
+      createSessionWithId: state.createSessionWithId,
+      deleteSessionLocal: state.deleteSession,
+      updateSessionTitleLocal: state.updateSessionTitle,
+      hydrateSessions: state.hydrateSessions,
+      syncWorkingDirectories: state.syncWorkingDirectories,
+      selectSession: state.selectSession,
+      openTab: state.openTab,
+      setView: state.setView,
+    })),
+  );
 
   const { data: dbSessions, isSuccess: dbLoaded } = useSessionsQuery();
   const createMutation = useCreateSessionMutation();

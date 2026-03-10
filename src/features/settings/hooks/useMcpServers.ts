@@ -16,7 +16,7 @@ export interface McpServer {
   updated_at: string;
 }
 
-export interface McpDiscoveredTool {
+interface McpDiscoveredTool {
   id: string;
   server_id: string;
   tool_name: string;

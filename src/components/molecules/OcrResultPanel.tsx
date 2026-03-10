@@ -1,13 +1,11 @@
 /** Jaskier Shared Pattern — OcrResultPanel */
 
+import { Badge, Button, Card } from '@jaskier/ui';
 import DOMPurify from 'dompurify';
 import { Check, ChevronLeft, ChevronRight, Code2, Copy, Download, Eye, FileDown, Loader2 } from 'lucide-react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Badge  } from '@jaskier/ui';
-import { Button  } from '@jaskier/ui';
-import { Card  } from '@jaskier/ui';
 import { cn } from '@/shared/utils/cn';
 
 interface OcrResultPanelProps {
@@ -370,3 +368,5 @@ th{font-weight:bold;background:#f0f0f0}h1,h2,h3{margin:16px 0 8px}</style>
     </Card>
   );
 });
+
+export default OcrResultPanel;

@@ -12,7 +12,7 @@ import { env } from '@/shared/config/env';
 // ---------------------------------------------------------------------------
 
 /** Extended NDJSON chunk — may be a text token, tool_call, or tool_result. */
-export interface NdjsonEvent {
+interface NdjsonEvent {
   // Text token (backward-compatible)
   token?: string;
   done?: boolean;

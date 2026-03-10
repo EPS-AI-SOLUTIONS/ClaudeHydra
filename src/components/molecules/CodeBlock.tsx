@@ -23,7 +23,7 @@ import { useViewStore } from '@/stores/viewStore';
 // Types
 // ---------------------------------------------------------------------------
 
-export interface CodeBlockProps {
+interface CodeBlockProps {
   /** The code string to display. */
   code: string;
   /** Language identifier (e.g. 'typescript', 'python'). */

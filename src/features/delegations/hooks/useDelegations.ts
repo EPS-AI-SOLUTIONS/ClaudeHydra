@@ -1,5 +1,5 @@
 // src/features/delegations/hooks/useDelegations.ts
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { create } from 'zustand';
 import { apiGet, BASE_URL } from '@/shared/api/client';
@@ -19,14 +19,14 @@ export interface DelegationTask {
   completed_at: string | null;
 }
 
-export interface DelegationStats {
+interface DelegationStats {
   total: number;
   completed: number;
   errors: number;
   avg_duration_ms: number | null;
 }
 
-export interface DelegationsResponse {
+interface DelegationsResponse {
   tasks: DelegationTask[];
   stats: DelegationStats;
 }
@@ -39,7 +39,7 @@ interface DelegationStore {
   updateFromSSE: (task: DelegationTask) => void;
 }
 
-export const useDelegationStore = create<DelegationStore>((set) => ({
+const useDelegationStore = create<DelegationStore>((set) => ({
   data: null,
   isLoading: true,
   isError: false,

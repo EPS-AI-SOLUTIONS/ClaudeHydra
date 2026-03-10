@@ -3,27 +3,29 @@
 import { BaseChatInput, type BaseChatInputHandle } from '@jaskier/ui';
 import { AlertCircle, ChevronDown, FolderOpen, Network, Send, StopCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import {
-  type ChangeEvent,
-  type ClipboardEvent,
-  type DragEvent,
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/atoms';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { cn } from '@/shared/utils/cn';
 import { ImagePreview } from './ImagePreview';
 import { useChatFileHandler } from './useChatFileHandler';
-import { useDragAndDrop } from './useDragAndDrop';
 import { WorkingFolderPicker } from './WorkingFolderPicker';
 
-export type OrchestrationMode = 'direct' | 'orchestrate';
-export type OrchestrationPattern = 'auto' | 'sequential' | 'parallel' | 'loop' | 'hierarchical' | 'review' | 'security';
+export interface Attachment {
+  id: string;
+  name: string;
+  type: 'image' | 'file';
+  content: string;
+}
+
+export interface ChatInputHandle {
+  focus: () => void;
+  setValue: (value: string) => void;
+}
+
+type OrchestrationMode = 'direct' | 'orchestrate';
+type OrchestrationPattern = 'auto' | 'sequential' | 'parallel' | 'loop' | 'hierarchical' | 'review' | 'security';
 
 interface ChatInputProps {
   isStreaming: boolean;

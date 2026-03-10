@@ -66,7 +66,7 @@ AttachmentChip.displayName = 'AttachmentChip';
 // Component
 // ---------------------------------------------------------------------------
 
-export const AttachmentPreview = memo(function AttachmentPreview({ attachments, onRemove }: AttachmentPreviewProps) {
+const AttachmentPreview = memo(function AttachmentPreview({ attachments, onRemove }: AttachmentPreviewProps) {
   if (attachments.length === 0) return null;
 
   return (

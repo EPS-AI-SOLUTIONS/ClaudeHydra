@@ -1,13 +1,18 @@
 import { Code2, Maximize2, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { memo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { CodeBlock } from '@/components/molecules/CodeBlock';
 import { cn } from '@/shared/utils/cn';
 import { useViewStore } from '@/stores/viewStore';
 
 export const ArtifactPanel = memo(function ArtifactPanel() {
-  const activeArtifact = useViewStore((s) => s.activeArtifact);
-  const setActiveArtifact = useViewStore((s) => s.setActiveArtifact);
+  const { activeArtifact, setActiveArtifact } = useViewStore(
+    useShallow((s) => ({
+      activeArtifact: s.activeArtifact,
+      setActiveArtifact: s.setActiveArtifact,
+    })),
+  );
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const isHtml = activeArtifact?.language === 'html' || activeArtifact?.language === 'svg';
