@@ -12,13 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Install biome
-        run: npm install --no-save @biomejs/biome
+      - uses: biomejs/setup-biome@v2
       - name: Biome check
-        run: npx biome check --diagnostic-level=error src/
+        run: biome check --diagnostic-level=error src/
       # tsc requires @jaskier/ui workspace package (parent Desktop workspace)
       # TypeScript is enforced locally via pre-commit hook (conditional tsc)
 
