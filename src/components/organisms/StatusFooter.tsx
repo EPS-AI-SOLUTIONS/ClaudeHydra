@@ -10,6 +10,7 @@
  * Uses `memo()` for render optimization.
  */
 
+import { cn } from '@jaskier/ui';
 import { Cloud, Cpu, Zap } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +18,6 @@ import { StatusIndicator } from '@/components/molecules/StatusIndicator';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { BrowserProxyStatus } from '@/features/settings/hooks/useBrowserProxy';
 import { useBrowserProxyStatus } from '@/features/settings/hooks/useBrowserProxy';
-import { cn } from '@/shared/utils/cn';
 
 // ============================================================================
 // TYPES

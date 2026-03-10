@@ -7,14 +7,12 @@
  * system resources, model cache size, and uptime.
  */
 
+import { BaseMetricsDashboard, Card, cn } from '@jaskier/ui';
 import { Clock, RefreshCw, Shield } from 'lucide-react';
 import { memo, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { Card, BaseMetricsDashboard } from '@jaskier/ui';
 import { QueryError } from '@/components/molecules/QueryError';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 import { useHealthDashboard } from '../hooks/useHealthDashboard';
 
 // ============================================================================
@@ -99,9 +97,8 @@ export const HealthDashboard = memo(() => {
     );
   }
 
-  const memoryPercent = data.memoryTotalMb && data.memoryTotalMb > 0
-    ? (data.memoryUsedMb ?? 0) / data.memoryTotalMb * 100
-    : 0;
+  const memoryPercent =
+    data.memoryTotalMb && data.memoryTotalMb > 0 ? ((data.memoryUsedMb ?? 0) / data.memoryTotalMb) * 100 : 0;
 
   return (
     <div className="w-full flex flex-col gap-4">
@@ -122,27 +119,39 @@ export const HealthDashboard = memo(() => {
 
       <BaseMetricsDashboard
         title={t('health.metrics', 'System Metrics')}
-        cpu={data.cpuUsage !== null ? {
-          label: 'CPU',
-          value: data.cpuUsage,
-          status: data.cpuUsage > 90 ? 'error' : data.cpuUsage > 70 ? 'warning' : 'success'
-        } : undefined}
-        ram={data.memoryUsedMb !== null && data.memoryTotalMb !== null ? {
-          label: 'RAM',
-          value: memoryPercent,
-          displayValue: formatMemory(data.memoryUsedMb, data.memoryTotalMb),
-          status: memoryPercent > 90 ? 'error' : memoryPercent > 75 ? 'warning' : 'success'
-        } : undefined}
+        cpu={
+          data.cpuUsage !== null
+            ? {
+                label: 'CPU',
+                value: data.cpuUsage,
+                status: data.cpuUsage > 90 ? 'error' : data.cpuUsage > 70 ? 'warning' : 'success',
+              }
+            : undefined
+        }
+        ram={
+          data.memoryUsedMb !== null && data.memoryTotalMb !== null
+            ? {
+                label: 'RAM',
+                value: memoryPercent,
+                displayValue: formatMemory(data.memoryUsedMb, data.memoryTotalMb),
+                status: memoryPercent > 90 ? 'error' : memoryPercent > 75 ? 'warning' : 'success',
+              }
+            : undefined
+        }
         network={{
           label: 'Backend',
           status: data.backendOnline ? 'online' : 'offline',
         }}
-        modelLoad={data.modelCount !== null ? {
-          label: 'Models Loaded',
-          value: Math.min(data.modelCount * 20, 100), // pseudo-visualization 
-          displayValue: String(data.modelCount),
-          status: 'accent'
-        } : undefined}
+        modelLoad={
+          data.modelCount !== null
+            ? {
+                label: 'Models Loaded',
+                value: Math.min(data.modelCount * 20, 100), // pseudo-visualization
+                displayValue: String(data.modelCount),
+                status: 'accent',
+              }
+            : undefined
+        }
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

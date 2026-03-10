@@ -4,10 +4,10 @@
  * #19 Message search
  */
 
+import { cn } from '@jaskier/ui';
 import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cn } from '@/shared/utils/cn';
 
 interface SearchOverlayProps {
   /** All messages to search through */

@@ -10,6 +10,7 @@
  * Executor tier = Claude Haiku 4.5 (fast, efficient)
  */
 
+import { cn, EmptyState, ErrorBoundary } from '@jaskier/ui';
 import {
   Bot,
   Brain,
@@ -27,11 +28,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card } from '@/components/atoms';
-import { EmptyState } from '@/components/molecules/EmptyState';
 import { StatusIndicator, type StatusState } from '@/components/molecules/StatusIndicator';
-import { ErrorBoundary } from '@/features/chat/components/ErrorBoundary';
 import { type BackendLogEntry, useBackendLogs } from '@/features/logs/hooks/useLogs';
-import { cn } from '@/shared/utils/cn';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -355,7 +353,7 @@ export function AgentsView() {
   const onlineCount = useMemo(() => CLAUDE_AGENTS.filter((a) => a.status === 'online').length, []);
 
   return (
-    <ErrorBoundary name="AgentsView">
+    <ErrorBoundary>
       <div data-testid="agents-view" className="h-full flex flex-col xl:flex-row gap-4 overflow-hidden p-4 sm:p-6">
         {/* Main Agents Area */}
         <div className="flex-1 flex flex-col overflow-auto pr-2">
@@ -425,7 +423,7 @@ export function AgentsView() {
             {/* Empty State */}
             {filteredAgents.length === 0 && (
               <EmptyState
-                icon={Users}
+                icon={<Users />}
                 title={t('agents.noMatch', 'No agents match the selected filter')}
                 description={t('agents.noMatchDesc', 'Try selecting a different tier filter to see agents.')}
                 className="flex-1"

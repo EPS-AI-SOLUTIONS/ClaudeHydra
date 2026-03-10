@@ -13,6 +13,7 @@
  * Unified with GeminiHydra-v15 AppShell pattern for StatusFooter props.
  */
 
+import { cn } from '@jaskier/ui';
 import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { RuneRain, ThemedBackground } from '@/components/atoms';
 import { CommandPalette } from '@/components/molecules/CommandPalette';
@@ -24,7 +25,6 @@ import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { useSessionSync } from '@/features/chat/hooks/useSessionSync';
 import { useHealthStatus, useSystemStatsQuery } from '@/features/health/hooks/useHealth';
 import { useSettingsQuery } from '@/shared/hooks/useSettings';
-import { cn } from '@/shared/utils/cn';
 import { useViewStore } from '@/stores/viewStore';
 
 // ---------------------------------------------------------------------------

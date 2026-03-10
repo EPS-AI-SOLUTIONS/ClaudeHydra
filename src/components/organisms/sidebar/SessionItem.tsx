@@ -1,7 +1,7 @@
+import { cn } from '@jaskier/ui';
 import { Check, Edit2, Loader2, MessageSquare, Trash2, X } from 'lucide-react';
 import { type KeyboardEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/shared/utils/cn';
 import type { ChatSession } from '@/stores/viewStore';
 
 // ---------------------------------------------------------------------------

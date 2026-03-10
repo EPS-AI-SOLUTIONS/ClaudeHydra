@@ -47,9 +47,9 @@ import { useIsMobile } from '@/shared/hooks/useIsMobile';
 
 const PartnerChatModal = lazy(() => import('@/features/chat/components/PartnerChatModal'));
 
+import { cn } from '@jaskier/ui';
 import { SessionSearch } from '@/components/molecules/SessionSearch';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 import { useViewStore, type ViewId } from '@/stores/viewStore';
 import { FooterControls } from './sidebar/FooterControls';
 import { LogoButton } from './sidebar/LogoButton';

@@ -38,7 +38,7 @@ export function useChatMessages() {
         id: crypto.randomUUID(),
         role: 'system',
         content: '_[System] History automatically compacted to save tokens. Older messages archived._',
-        timestamp: new Date(),
+        timestamp: Date.now(),
       };
       updated = [compactedMessage, ...updated.slice(updated.length - 15)];
     }
@@ -90,7 +90,7 @@ export function useChatMessages() {
           role: m.role as ChatMessage['role'],
           content: m.content,
           model: m.model ?? undefined,
-          timestamp: new Date(m.timestamp),
+          timestamp: new Date(m.timestamp).getTime(),
           toolInteractions: m.tool_interactions?.map(
             (ti): ToolInteraction => ({
               id: ti.tool_use_id,

@@ -11,12 +11,12 @@
  * ClaudeHydra-v4: Green Matrix accent with glass-panel from globals.css.
  */
 
+import { cn } from '@jaskier/ui';
 import { Check, Clipboard, Maximize2, Terminal } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { copyToClipboard } from '@/shared/utils/clipboard';
-import { cn } from '@/shared/utils/cn';
 import { useViewStore } from '@/stores/viewStore';
 
 // ---------------------------------------------------------------------------

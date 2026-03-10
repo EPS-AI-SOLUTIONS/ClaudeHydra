@@ -1,9 +1,9 @@
+import { cn } from '@jaskier/ui';
 import { Code2, Maximize2, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { memo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { CodeBlock } from '@/components/molecules/CodeBlock';
-import { cn } from '@/shared/utils/cn';
 import { useViewStore } from '@/stores/viewStore';
 
 export const ArtifactPanel = memo(function ArtifactPanel() {

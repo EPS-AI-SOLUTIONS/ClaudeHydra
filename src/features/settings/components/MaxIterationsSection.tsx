@@ -1,16 +1,15 @@
 /** Jaskier Shared Pattern — Max Iterations Settings Section */
 
+import { cn } from '@jaskier/ui';
 import { Minus, Plus, Repeat } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-
 import { Button } from '@/components/atoms';
 import { apiPost } from '@/shared/api/client';
 import type { Settings } from '@/shared/api/schemas';
 import { useSettingsQuery } from '@/shared/hooks/useSettings';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 
 const MIN = 5;
 const MAX = 50;

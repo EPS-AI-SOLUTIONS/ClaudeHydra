@@ -1,5 +1,5 @@
+import { cn } from '@jaskier/ui';
 import { describe, expect, it } from 'vitest';
-import { cn } from '../cn';
 
 describe('cn utility', () => {
   it('returns an empty string when called with no arguments', () => {

@@ -4,8 +4,9 @@
  * Shared LogoButton — theme-aware logo with home navigation.
  * Collapsed: w-12 h-12 icon. Expanded: h-28 full logo.
  */
+
+import { cn } from '@jaskier/ui';
 import { useTheme } from '@/contexts/ThemeContext';
-import { cn } from '@/shared/utils/cn';
 
 interface LogoButtonProps {
   collapsed: boolean;

@@ -1,3 +1,4 @@
+import { ErrorBoundary } from '@jaskier/ui';
 import { QueryClientProvider, QueryErrorResetBoundary } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { AnimatePresence, motion } from 'motion/react';
@@ -8,9 +9,7 @@ import { FeatureErrorFallback } from '@/components/molecules/FeatureErrorFallbac
 import { OfflineBanner } from '@/components/molecules/OfflineBanner';
 import { ViewSkeleton } from '@/components/molecules/ViewSkeleton';
 import { AppShell } from '@/components/organisms/AppShell';
-import { ErrorBoundary } from '@/components/organisms/ErrorBoundary';
 import { queryClient } from '@/shared/api/queryClient';
-import { reportWebVitals } from '@/shared/utils/reportWebVitals';
 import { useViewStore } from '@/stores/viewStore';
 import '@/i18n';
 import './styles/globals.css';
@@ -93,8 +92,8 @@ function ViewRouter() {
             className="h-full w-full"
           >
             <QueryErrorResetBoundary>
-              {({ reset }) => (
-                <ErrorBoundary onReset={reset}>
+              {() => (
+                <ErrorBoundary>
                   <Suspense fallback={<ViewSkeleton />}>{renderNonChatView()}</Suspense>
                 </ErrorBoundary>
               )}
@@ -110,8 +109,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <QueryErrorResetBoundary>
-        {({ reset }) => (
-          <ErrorBoundary onReset={reset}>
+        {() => (
+          <ErrorBoundary>
             <AppShell>
               <ViewRouter />
             </AppShell>
@@ -158,7 +157,4 @@ if (rootElement) {
       root.unmount();
     });
   }
-
-  // Report Web Vitals performance metrics
-  reportWebVitals();
 }

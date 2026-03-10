@@ -1,14 +1,13 @@
 /** Jaskier Shared Pattern — Google OAuth + API Key Section for Settings */
 
+import { cn } from '@jaskier/ui';
 import { AlertTriangle, CheckCircle, Chrome, ExternalLink, Eye, EyeOff, Key, Loader2, LogOut } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { Badge, Button, Input } from '@/components/atoms';
 import { useGoogleAuthStatus } from '@/shared/hooks/useGoogleAuthStatus';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 
 const phaseVariants = {
   initial: { opacity: 0, y: 8 },

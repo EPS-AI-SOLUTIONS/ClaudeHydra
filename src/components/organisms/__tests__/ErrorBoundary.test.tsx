@@ -1,6 +1,6 @@
+import { ErrorBoundary } from '@jaskier/ui';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ErrorBoundary } from '@/components/organisms/ErrorBoundary';
 
 // ---------------------------------------------------------------------------
 // Helper: component that throws on render

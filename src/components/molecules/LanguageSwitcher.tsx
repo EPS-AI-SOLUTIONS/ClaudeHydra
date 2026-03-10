@@ -7,9 +7,9 @@
  * Renders flag-style toggle buttons for EN/PL.
  */
 
+import { cn } from '@jaskier/ui';
 import { Languages } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/shared/utils/cn';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },

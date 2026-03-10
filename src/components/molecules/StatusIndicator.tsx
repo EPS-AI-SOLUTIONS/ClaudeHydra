@@ -9,9 +9,9 @@
  * ClaudeHydra-v4: Uses CSS variable-based colors (matching GeminiHydra-v15 pattern).
  */
 
+import { cn } from '@jaskier/ui';
 import { motion } from 'motion/react';
 import type { HTMLAttributes } from 'react';
-import { cn } from '@/shared/utils/cn';
 
 // ---------------------------------------------------------------------------
 // Types

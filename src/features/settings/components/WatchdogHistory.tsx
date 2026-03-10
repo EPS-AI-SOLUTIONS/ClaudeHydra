@@ -3,14 +3,13 @@
  * Watchdog History — shows browser proxy health events from the ring buffer.
  */
 
+import { cn } from '@jaskier/ui';
 import { useQuery } from '@tanstack/react-query';
 import { Activity, AlertTriangle, CheckCircle, RefreshCw, WifiOff } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { apiGet } from '@/shared/api/client';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 
 interface HealthEvent {
   event_type: string;

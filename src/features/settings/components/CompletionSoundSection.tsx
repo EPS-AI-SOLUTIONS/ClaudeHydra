@@ -1,5 +1,6 @@
 /** Jaskier Shared Pattern — Completion Sound Settings */
 
+import { cn } from '@jaskier/ui';
 import { Bell, BellOff } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +11,6 @@ import {
   setCompletionVolume,
 } from '@/shared/hooks/useCompletionFeedback';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 
 export const CompletionSoundSection = memo(() => {
   const { t } = useTranslation();

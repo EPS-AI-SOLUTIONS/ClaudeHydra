@@ -4,13 +4,14 @@
  * Shared FooterControls — theme toggle, language selector, and version display.
  * Extracted from Sidebar for reuse across the Jaskier app family.
  */
+
+import { cn } from '@jaskier/ui';
 import { ChevronDown, Globe, Moon, Sun } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 
 interface FooterControlsProps {
   collapsed: boolean;

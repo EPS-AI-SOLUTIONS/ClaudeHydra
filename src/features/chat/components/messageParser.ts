@@ -12,12 +12,14 @@ export function splitToolOutput(content: string): ContentSegment[] {
 
   toolPattern.lastIndex = 0;
 
-  while ((match = toolPattern.exec(content)) !== null) {
+  match = toolPattern.exec(content);
+  while (match !== null) {
     if (match.index > lastIndex) {
       segments.push({ type: 'text', content: content.slice(lastIndex, match.index) });
     }
     segments.push({ type: 'tool', name: match[1] || '', content: match[2] || '' });
     lastIndex = match.index + match[0].length;
+    match = toolPattern.exec(content);
   }
   if (lastIndex < content.length) {
     segments.push({ type: 'text', content: content.slice(lastIndex) });

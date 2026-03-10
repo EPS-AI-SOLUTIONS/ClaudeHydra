@@ -1,12 +1,11 @@
 /** Jaskier Shared Pattern — OcrResultPanel */
 
-import { Badge, Button, Card } from '@jaskier/ui';
+import { Badge, Button, Card, cn } from '@jaskier/ui';
 import DOMPurify from 'dompurify';
 import { Check, ChevronLeft, ChevronRight, Code2, Copy, Download, Eye, FileDown, Loader2 } from 'lucide-react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { cn } from '@/shared/utils/cn';
 
 interface OcrResultPanelProps {
   pages: Array<{ page_number: number; text: string }>;

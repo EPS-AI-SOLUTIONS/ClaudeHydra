@@ -1,7 +1,7 @@
+import { cn } from '@jaskier/ui';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '@/components/atoms';
-import { cn } from '@/shared/utils/cn';
 
 interface Props {
   children: ReactNode;

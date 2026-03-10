@@ -1,10 +1,10 @@
 /** Jaskier Shared Pattern */
 
+import { cn } from '@jaskier/ui';
 import type { LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/shared/utils/cn';
 
 export interface PromptSuggestion {
   /** i18n key for the suggestion text */

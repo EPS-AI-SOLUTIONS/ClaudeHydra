@@ -50,11 +50,12 @@ export function VirtualMessageList({ messages, highlightId }: VirtualMessageList
                 width: '100%',
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              className="py-2"
+              className={`py-2 ${highlightId === msg.id ? 'ring-2 ring-yellow-400/60 rounded-xl' : ''}`}
             >
               <MessageBubble
                 message={msg}
-                className={highlightId === msg.id ? 'ring-2 ring-yellow-400/60 rounded-xl' : undefined}
+                isLast={virtualRow.index === messages.length - 1}
+                isStreaming={!!(msg as any).streaming}
               />
             </div>
           );

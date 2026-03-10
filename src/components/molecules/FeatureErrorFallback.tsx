@@ -1,7 +1,8 @@
 /** Jaskier Design System */
+
+import { Button } from '@jaskier/ui';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button  } from '@jaskier/ui';
 
 interface Props {
   feature: string;

@@ -3,12 +3,12 @@
  * Styled to match CodeBlock glass-panel aesthetic.
  */
 
+import { cn } from '@jaskier/ui';
 import { AlertCircle, Check, ChevronDown, FileSearch, FolderOpen, Loader2, Pencil, Users, Wrench } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CodeBlock } from '@/components/molecules/CodeBlock';
-import { cn } from '@/shared/utils/cn';
 
 // ---------------------------------------------------------------------------
 // Types

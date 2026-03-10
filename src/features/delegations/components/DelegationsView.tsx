@@ -1,12 +1,11 @@
 // src/features/delegations/components/DelegationsView.tsx
 
+import { cn } from '@jaskier/ui';
 import { Activity, AlertTriangle, CheckCircle2, Clock, Loader2, Network, RefreshCw, Users } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 import { type DelegationTask, useDelegations } from '../hooks/useDelegations';
 
 const TIER_COLORS: Record<string, string> = {

@@ -8,8 +8,8 @@
  * and a matrix-green shimmer effect.
  */
 
+import { Skeleton } from '@jaskier/ui';
 import { useTranslation } from 'react-i18next';
-import { Skeleton  } from '@jaskier/ui';
 
 // ---------------------------------------------------------------------------
 // Component

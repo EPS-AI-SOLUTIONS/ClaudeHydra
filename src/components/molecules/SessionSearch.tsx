@@ -4,10 +4,10 @@
  * #19 - Session search/filter
  */
 
+import { cn } from '@jaskier/ui';
 import { Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/shared/utils/cn';
 
 interface SessionSearchProps {
   /** Called with the debounced search query (lowercase). Empty string = no filter. */

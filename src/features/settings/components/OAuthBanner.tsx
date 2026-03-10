@@ -1,14 +1,13 @@
 /** Jaskier Shared Pattern — OAuth startup suggestion banner */
 
+import { cn } from '@jaskier/ui';
 import { ArrowRight, Crown, Key, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { Button } from '@/components/atoms';
 import { useOAuthStatus } from '@/shared/hooks/useOAuthStatus';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 import { useViewStore } from '@/stores/viewStore';
 
 export const OAuthBanner = memo(() => {

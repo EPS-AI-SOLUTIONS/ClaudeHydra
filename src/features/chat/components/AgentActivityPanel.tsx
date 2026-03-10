@@ -7,12 +7,12 @@
  * Ported from GeminiHydra — Jaskier Shared Pattern.
  */
 
+import { cn } from '@jaskier/ui';
 import { CheckCircle2, ChevronDown, ChevronUp, Cog, Loader2, Wrench, XCircle, Zap } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 
 // ============================================================================
 // TYPES

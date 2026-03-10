@@ -1,13 +1,12 @@
 /** Jaskier Shared Pattern — MCP Servers Settings Section */
 
+import { cn } from '@jaskier/ui';
 import { ChevronDown, ChevronRight, Network, Plus, Power, PowerOff, Trash2, Wrench } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-
 import { Button, Input } from '@/components/atoms';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 import {
   type McpServer,
   useConnectMcpServer,

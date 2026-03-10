@@ -6,18 +6,17 @@
  * Pixel-perfect port of GeminiHydra WelcomeScreen layout with ClaudeHydra data.
  */
 
+import { cn } from '@jaskier/ui';
 import type { TFunction } from 'i18next';
 import { Bot, Clock, MessageSquare, Network, Plus, Sparkles, Users } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { Badge, Button } from '@/components/atoms';
 import { useSessionSync } from '@/features/chat/hooks/useSessionSync';
 import { HealthDashboard } from '@/features/health/components/HealthDashboard';
 import { OAuthBanner } from '@/features/settings/components/OAuthBanner';
 import { useViewTheme } from '@/shared/hooks/useViewTheme';
-import { cn } from '@/shared/utils/cn';
 import { type ChatSession, useViewStore } from '@/stores/viewStore';
 
 // ============================================================================

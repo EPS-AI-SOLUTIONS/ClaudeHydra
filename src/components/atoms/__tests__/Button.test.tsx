@@ -1,6 +1,6 @@
+import { Button } from '@jaskier/ui';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { Button  } from '@jaskier/ui';
 
 describe('Button', () => {
   // -------------------------------------------------------------------------
