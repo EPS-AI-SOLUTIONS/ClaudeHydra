@@ -131,7 +131,16 @@ fn build_app(state: AppState) -> axum::Router {
         // #12 tower_governor already injects X-RateLimit-Limit, X-RateLimit-Remaining,
         // X-RateLimit-After, and Retry-After headers automatically via GovernorLayer.
         // No additional middleware needed — the headers are set by the governor layer above.
-        .layer(TraceLayer::new_for_http())
+        .layer(
+            TraceLayer::new_for_http().make_span_with(|request: &http::Request<_>| {
+                // Log only path (not query string) to avoid leaking WS token (?token=xxx)
+                tracing::info_span!(
+                    "http_request",
+                    method = %request.method(),
+                    uri = %request.uri().path(),
+                )
+            }),
+        )
         .layer(CompressionLayer::new())
 }
 

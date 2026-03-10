@@ -191,18 +191,20 @@ pub async fn refresh_cache(state: &AppState) -> (HashMap<String, Vec<ModelInfo>>
     let mut errors: Vec<String> = Vec::new();
 
     // Anthropic (primary for ClaudeHydra)
-    {
+    // Extract key from lock BEFORE async fetch to avoid holding read lock across HTTP call
+    let anthropic_key = {
         let rt = state.runtime.read().await;
-        if let Some(key) = rt.api_keys.get("ANTHROPIC_API_KEY") {
-            match fetch_anthropic_models(&state.http_client, key).await {
-                Ok(models) => {
-                    tracing::info!("model_registry: fetched {} Anthropic models", models.len());
-                    all_models.insert("anthropic".to_string(), models);
-                }
-                Err(e) => {
-                    tracing::warn!("model_registry: Anthropic fetch failed: {}", e);
-                    errors.push(format!("anthropic: {}", e));
-                }
+        rt.api_keys.get("ANTHROPIC_API_KEY").cloned()
+    };
+    if let Some(key) = anthropic_key {
+        match fetch_anthropic_models(&state.http_client, &key).await {
+            Ok(models) => {
+                tracing::info!("model_registry: fetched {} Anthropic models", models.len());
+                all_models.insert("anthropic".to_string(), models);
+            }
+            Err(e) => {
+                tracing::warn!("model_registry: Anthropic fetch failed: {}", e);
+                errors.push(format!("anthropic: {}", e));
             }
         }
     }
