@@ -17,11 +17,13 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Frontend TypeScript check
-npx tsc --noEmit --skipLibCheck
-if [ $? -ne 0 ]; then
-  echo "TypeScript check failed. Fix errors before committing."
-  exit 1
+# Frontend TypeScript check (only if .ts/.tsx files staged)
+if git diff --cached --name-only | grep -q '\.\(ts\|tsx\)$'; then
+  npx tsc --noEmit --skipLibCheck
+  if [ $? -ne 0 ]; then
+    echo "TypeScript check failed. Fix errors before committing."
+    exit 1
+  fi
 fi
 
 # Backend check (only if .rs files staged)
