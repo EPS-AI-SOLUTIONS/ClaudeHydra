@@ -2216,10 +2216,7 @@ pub(crate) async fn execute_agent_call(
         if !resp.status().is_success() {
             let err = resp.text().await.unwrap_or_default();
             let safe_err = sanitize_api_error(&err);
-            return (
-                format!("[{} {}]", agent_display_name, safe_err),
-                true,
-            );
+            return (format!("[{} {}]", agent_display_name, safe_err), true);
         }
 
         let resp_json: Value = match resp.json().await {
