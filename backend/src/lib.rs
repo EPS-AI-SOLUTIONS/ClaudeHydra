@@ -175,6 +175,12 @@ pub fn create_router(state: AppState) -> Router {
         .burst_size(30)
         .finish()
         .expect("rate limiter config: chat");
+    // A2A delegation endpoints: ~10 req/min (1 per 6s burst 3)
+    let rl_a2a = GovernorConfigBuilder::default()
+        .per_second(6)
+        .burst_size(3)
+        .finish()
+        .expect("rate limiter config: a2a");
     // Other protected routes: 120 req/min (1 per 0.5s burst 120)
     let rl_default = GovernorConfigBuilder::default()
         .per_millisecond(500)
@@ -304,11 +310,6 @@ pub fn create_router(state: AppState) -> Router {
         )
         .route("/api/agents", get(handlers::list_agents))
         .route("/api/agents/refresh", post(handlers::refresh_agents))
-        .route("/api/agents/delegations", get(handlers::list_delegations))
-        .route(
-            "/api/agents/delegations/stream",
-            get(handlers::delegations_stream),
-        )
         .route("/api/claude/models", get(handlers::claude_models))
         .route("/api/models", get(model_registry::list_models))
         .route("/api/models/refresh", post(model_registry::refresh_models))
@@ -388,9 +389,19 @@ pub fn create_router(state: AppState) -> Router {
         )
         .layer(GovernorLayer::new(rl_default));
 
+    // ── Protected: A2A delegation endpoints — ~10 req/min ────────
+    let a2a_routes = Router::new()
+        .route("/api/agents/delegations", get(handlers::list_delegations))
+        .route(
+            "/api/agents/delegations/stream",
+            get(handlers::delegations_stream),
+        )
+        .layer(GovernorLayer::new(rl_a2a));
+
     // ── Merge all protected routes with auth layer ──────────────────
     let protected = chat_stream_routes
         .merge(chat_routes)
+        .merge(a2a_routes)
         .merge(other_routes)
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
@@ -552,11 +563,6 @@ pub fn create_test_router(state: AppState) -> Router {
         )
         .route("/api/agents", get(handlers::list_agents))
         .route("/api/agents/refresh", post(handlers::refresh_agents))
-        .route("/api/agents/delegations", get(handlers::list_delegations))
-        .route(
-            "/api/agents/delegations/stream",
-            get(handlers::delegations_stream),
-        )
         .route("/api/claude/models", get(handlers::claude_models))
         .route("/api/models", get(model_registry::list_models))
         .route("/api/models/refresh", post(model_registry::refresh_models))
