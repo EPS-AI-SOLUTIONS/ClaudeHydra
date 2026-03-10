@@ -155,9 +155,10 @@ async fn send_to_anthropic_once(
         .send()
         .await
         .map_err(|e| {
+            tracing::error!("anthropic proxy: {}", e);
             (
                 StatusCode::BAD_GATEWAY,
-                Json(json!({ "error": format!("Anthropic API request failed: {}", e) })),
+                Json(json!({ "error": "AI provider request failed" })),
             )
         })?;
 
@@ -169,9 +170,10 @@ async fn send_to_anthropic_once(
                 .send()
                 .await
                 .map_err(|e| {
+                    tracing::error!("anthropic proxy fallback: {}", e);
                     (
                         StatusCode::BAD_GATEWAY,
-                        Json(json!({ "error": format!("Anthropic API request failed: {}", e) })),
+                        Json(json!({ "error": "AI provider request failed" })),
                     )
                 });
         }

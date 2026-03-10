@@ -152,15 +152,17 @@ pub async fn require_api_key_auth(
         Some(header) if header.starts_with("Bearer ") => {
             let token = header.strip_prefix("Bearer ").unwrap_or_default();
 
-            // Verify against api_keys table
-            let is_valid = match sqlx::query_scalar::<_, i64>(
-                "SELECT COUNT(*) FROM api_keys WHERE token = $1",
+            // Verify against api_keys table using constant-time comparison
+            // to prevent timing attacks that could leak token prefixes.
+            let is_valid = match sqlx::query_scalar::<_, String>(
+                "SELECT token FROM api_keys",
             )
-            .bind(token)
-            .fetch_one(&state.db)
+            .fetch_all(&state.db)
             .await
             {
-                Ok(count) => count > 0,
+                Ok(keys) => keys
+                    .iter()
+                    .any(|k| bool::from(token.as_bytes().ct_eq(k.as_bytes()))),
                 Err(e) => {
                     tracing::error!("Database error checking API key: {}", e);
                     false

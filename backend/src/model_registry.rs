@@ -593,7 +593,10 @@ pub async fn refresh_models(State(state): State<AppState>) -> Json<Value> {
         }
     });
     if !errors.is_empty() {
-        resp["errors"] = json!(errors);
+        for err in &errors {
+            tracing::error!("model registry refresh: {}", err);
+        }
+        resp["errors"] = json!(format!("{} provider(s) failed to refresh", errors.len()));
     }
     Json(resp)
 }
@@ -643,7 +646,10 @@ pub async fn pin_model(
             .await;
             Json(json!({ "pinned": true, "use_case": normalized, "model_id": body.model_id }))
         }
-        Err(e) => Json(json!({ "error": format!("Failed to pin: {}", e) })),
+        Err(e) => {
+            tracing::error!("model registry: failed to pin use_case={} model={}: {}", normalized, body.model_id, e);
+            Json(json!({ "error": "Internal database error" }))
+        }
     }
 }
 
@@ -663,7 +669,10 @@ pub async fn unpin_model(
 
     match result {
         Ok(r) => Json(json!({ "unpinned": r.rows_affected() > 0, "use_case": use_case })),
-        Err(e) => Json(json!({ "error": format!("Failed to unpin: {}", e) })),
+        Err(e) => {
+            tracing::error!("model registry: failed to unpin use_case={}: {}", use_case, e);
+            Json(json!({ "error": "Internal database error" }))
+        }
     }
 }
 

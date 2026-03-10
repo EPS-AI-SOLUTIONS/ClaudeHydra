@@ -113,16 +113,18 @@ pub async fn claude_chat(
     if !resp.status().is_success() {
         let status = resp.status();
         let err_body: Value = resp.json().await.unwrap_or_default();
+        tracing::error!("anthropic chat: status={}, body={}", status, err_body);
         return Err((
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-            Json(json!({ "error": err_body })),
+            Json(json!({ "error": "AI provider request failed" })),
         ));
     }
 
     let resp_body: Value = resp.json().await.map_err(|e| {
+        tracing::error!("anthropic chat: invalid JSON response: {}", e);
         (
             StatusCode::BAD_GATEWAY,
-            Json(json!({ "error": format!("Invalid JSON from Anthropic: {}", e) })),
+            Json(json!({ "error": "AI provider returned invalid response" })),
         )
     })?;
 

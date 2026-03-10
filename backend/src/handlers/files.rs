@@ -136,7 +136,7 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
     let ps_path = temp_dir.join("jaskier_browse_folder.ps1");
     if let Err(e) = std::fs::write(&ps_path, &ps_script) {
         tracing::error!("Failed to write PS1 script: {}", e);
-        return Json(json!({ "error": format!("Failed to write temp script: {}", e) }));
+        return Json(json!({ "error": "Failed to prepare folder dialog" }));
     }
 
     let output = tokio::process::Command::new("powershell")
@@ -165,7 +165,7 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {{
         }
         Err(e) => {
             tracing::error!("Failed to run folder dialog: {}", e);
-            Json(json!({ "error": format!("Failed to open folder dialog: {}", e) }))
+            Json(json!({ "error": "Failed to open folder dialog" }))
         }
     }
 }

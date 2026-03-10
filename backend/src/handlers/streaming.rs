@@ -72,24 +72,37 @@ fn trim_conversation(conversation: &mut Vec<Value>) {
     conversation.extend(tail);
 }
 
-/// Sanitize raw Anthropic API error text before sending to the frontend.
-/// Strips internal details (model IDs, request IDs, full JSON bodies) and
-/// returns a safe, user-facing message.
+/// Sanitize raw API error text before sending to the frontend.
+/// Logs the full error server-side and returns a safe, user-facing message
+/// that never exposes API keys, internal URLs, model names, or rate limit details.
 fn sanitize_api_error(raw: &str) -> String {
-    // Try to parse as JSON and extract a human-readable message
-    if let Ok(parsed) = serde_json::from_str::<Value>(raw)
-        && let Some(msg) = parsed
-            .pointer("/error/message")
-            .or_else(|| parsed.get("message"))
-            .or_else(|| parsed.get("error"))
-            .and_then(|v| v.as_str())
-    {
-        let safe: String = msg.chars().take(200).collect();
-        return format!("API error: {}", safe);
+    tracing::error!("Raw API error (sanitized before client delivery): {}", raw);
+
+    // Try to parse as JSON and extract only a high-level error type
+    if let Ok(parsed) = serde_json::from_str::<Value>(raw) {
+        // Anthropic: {"error": {"type": "...", "message": "..."}}
+        if let Some(err_type) = parsed.pointer("/error/type").and_then(|v| v.as_str()) {
+            return match err_type {
+                "overloaded_error" => "AI provider is temporarily overloaded. Please retry.".to_string(),
+                "rate_limit_error" => "Rate limit exceeded. Please wait and retry.".to_string(),
+                "invalid_request_error" => "Request could not be processed by AI provider.".to_string(),
+                "authentication_error" => "AI provider authentication failed.".to_string(),
+                _ => "AI provider request failed.".to_string(),
+            };
+        }
+        // Google: {"error": {"status": "...", "code": N}}
+        if let Some(status) = parsed.pointer("/error/status").and_then(|v| v.as_str()) {
+            return match status {
+                "RESOURCE_EXHAUSTED" => "Rate limit exceeded. Please wait and retry.".to_string(),
+                "INVALID_ARGUMENT" => "Request could not be processed by AI provider.".to_string(),
+                "UNAUTHENTICATED" | "PERMISSION_DENIED" => "AI provider authentication failed.".to_string(),
+                _ => "AI provider request failed.".to_string(),
+            };
+        }
     }
-    // Fallback: truncate raw text, strip anything that looks like a key/token
-    let truncated: String = raw.chars().take(200).collect();
-    format!("API error: {}", truncated)
+
+    // Fallback: never forward raw text
+    "AI provider request failed.".to_string()
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -146,18 +159,21 @@ async fn google_chat_stream(
             .timeout(std::time::Duration::from_secs(300));
 
     let resp = request.send().await.map_err(|e| {
+        tracing::error!("Google API request failed: {}", e);
         (
             StatusCode::BAD_GATEWAY,
-            Json(json!({ "error": format!("Google API request failed: {}", e) })),
+            Json(json!({ "error": "AI provider request failed" })),
         )
     })?;
 
     if !resp.status().is_success() {
         let status = resp.status();
         let err = resp.text().await.unwrap_or_default();
+        tracing::error!("Google API error (status={}): {}", status, err);
+        let safe_error = sanitize_api_error(&err);
         return Err((
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-            Json(json!({ "error": err })),
+            Json(json!({ "error": safe_error })),
         ));
     }
 
@@ -173,7 +189,8 @@ async fn google_chat_stream(
             let chunk = match chunk_result {
                 Ok(b) => b,
                 Err(e) => {
-                    let err_line = serde_json::to_string(&json!({ "token": format!("[Error: {}]", e), "done": true, "model": &model_for_done })).unwrap_or_default();
+                    tracing::error!("Google SSE stream error: {}", e);
+                    let err_line = serde_json::to_string(&json!({ "token": "\n[Stream interrupted]", "done": true, "model": &model_for_done })).unwrap_or_default();
                     yield Ok::<_, std::io::Error>(axum::body::Bytes::from(format!("{}\n", err_line)));
                     break;
                 }
@@ -356,10 +373,12 @@ pub async fn claude_chat_stream(
 
     if !resp.status().is_success() {
         let status = resp.status();
-        let err_body: Value = resp.json().await.unwrap_or_default();
+        let err_text = resp.text().await.unwrap_or_default();
+        tracing::error!("Anthropic API error after fallback chain (status={}): {}", status, &truncate_for_context_with_limit(&err_text, 500));
+        let safe_error = sanitize_api_error(&err_text);
         return Err((
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-            Json(json!({ "error": err_body })),
+            Json(json!({ "error": safe_error })),
         ));
     }
 
@@ -381,8 +400,9 @@ pub async fn claude_chat_stream(
             let chunk = match chunk_result {
                 Ok(bytes) => bytes,
                 Err(e) => {
+                    tracing::error!("Anthropic SSE stream error: {}", e);
                     let err_line = serde_json::to_string(&json!({
-                        "token": format!("\n[Stream error: {}]", e),
+                        "token": "\n[Stream interrupted]",
                         "done": true,
                         "model": &model_for_done,
                         "total_tokens": total_tokens,
@@ -595,14 +615,15 @@ async fn claude_chat_stream_with_tools(
             let resp = match send_to_anthropic(&state_clone, &body, 300).await {
                 Ok(r) => r,
                 Err((_, Json(err_val))) => {
-                    let err_msg = err_val
+                    let raw_msg = err_val
                         .get("error")
                         .and_then(|e| e.as_str())
                         .unwrap_or("Unknown error");
+                    tracing::error!("send_to_anthropic failed (tool loop): {}", raw_msg);
                     let _ = tx
                         .send(
                             serde_json::to_string(&json!({
-                                "token": format!("\n[API error: {}]", err_msg),
+                                "token": "\n[AI provider request failed]",
                                 "done": true, "model": &model, "total_tokens": 0,
                             }))
                             .unwrap_or_default(),
@@ -1197,7 +1218,7 @@ async fn handle_ws(socket: WebSocket, state: AppState) {
                         ws_send(
                             &mut sender,
                             &WsServerMessage::Error {
-                                message: format!("Invalid message format: {}", e),
+                                message: "Invalid message format".to_string(),
                                 code: Some("PARSE_ERROR".to_string()),
                             },
                         )
@@ -1330,14 +1351,15 @@ async fn execute_streaming_ws(
         let resp = match send_to_anthropic(state, &body, 300).await {
             Ok(r) => r,
             Err((_, Json(err_val))) => {
-                let err_msg = err_val
+                let raw_msg = err_val
                     .get("error")
                     .and_then(|e| e.as_str())
                     .unwrap_or("Unknown error");
+                tracing::error!("WS: send_to_anthropic failed (no-tools): {}", raw_msg);
                 ws_send(
                     sender,
                     &WsServerMessage::Error {
-                        message: err_msg.to_string(),
+                        message: "AI provider request failed".to_string(),
                         code: Some("API_ERROR".to_string()),
                     },
                 )
@@ -1374,7 +1396,9 @@ async fn execute_streaming_ws(
         };
 
         if !resp.status().is_success() {
+            let status = resp.status();
             let err_text = resp.text().await.unwrap_or_default();
+            tracing::error!("WS: Anthropic API error after fallback (status={}): {}", status, &truncate_for_context_with_limit(&err_text, 500));
             let safe_error = sanitize_api_error(&err_text);
             ws_send(
                 sender,
@@ -1551,14 +1575,15 @@ async fn execute_streaming_ws(
         let resp = match send_to_anthropic(state, &body, 300).await {
             Ok(r) => r,
             Err((_, Json(err_val))) => {
-                let err_msg = err_val
+                let raw_msg = err_val
                     .get("error")
                     .and_then(|e| e.as_str())
                     .unwrap_or("Unknown error");
+                tracing::error!("WS: send_to_anthropic failed (tool loop, iter={}): {}", iteration, raw_msg);
                 ws_send(
                     sender,
                     &WsServerMessage::Error {
-                        message: format!("API error: {}", err_msg),
+                        message: "AI provider request failed".to_string(),
                         code: Some("API_ERROR".to_string()),
                     },
                 )
@@ -2228,23 +2253,29 @@ pub(crate) async fn execute_agent_call(
         let resp = match send_to_anthropic(state, &body, 120).await {
             Ok(r) => r,
             Err((_, Json(err_val))) => {
-                let msg = err_val
+                let raw_msg = err_val
                     .get("error")
                     .and_then(|e| e.as_str())
                     .unwrap_or("Unknown error");
-                return (format!("[{} error: {}]", agent_display_name, msg), true);
+                tracing::error!("Agent delegation '{}' send_to_anthropic failed: {}", agent_display_name, raw_msg);
+                return (format!("[{} error: AI provider request failed]", agent_display_name), true);
             }
         };
 
         if !resp.status().is_success() {
+            let status = resp.status();
             let err = resp.text().await.unwrap_or_default();
+            tracing::error!("Agent delegation '{}' API error (status={}): {}", agent_display_name, status, &truncate_for_context_with_limit(&err, 500));
             let safe_err = sanitize_api_error(&err);
             return (format!("[{} {}]", agent_display_name, safe_err), true);
         }
 
         let resp_json: Value = match resp.json().await {
             Ok(v) => v,
-            Err(e) => return (format!("[{} parse error: {}]", agent_display_name, e), true),
+            Err(e) => {
+                tracing::error!("Agent delegation '{}' response parse error: {}", agent_display_name, e);
+                return (format!("[{} error: failed to parse AI response]", agent_display_name), true);
+            }
         };
 
         let stop_reason = resp_json
