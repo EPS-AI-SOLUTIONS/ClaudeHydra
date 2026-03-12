@@ -1,12 +1,12 @@
 /** Jaskier Shared Pattern — Settings View */
 
+import { useViewTheme } from '@jaskier/chat-module';
 import { cn } from '@jaskier/ui';
 import { Settings } from 'lucide-react';
 import { motion } from 'motion/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/atoms';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { AutoUpdaterSection } from './AutoUpdaterSection';
 import { BrowserProxySection } from './BrowserProxySection';
 import { CompletionSoundSection } from './CompletionSoundSection';

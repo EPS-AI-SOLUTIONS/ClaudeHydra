@@ -1,5 +1,6 @@
 /** Jaskier Shared Pattern — Telemetry Settings Section */
 
+import { useViewTheme } from '@jaskier/chat-module';
 import { cn } from '@jaskier/ui';
 import { BarChart3 } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
@@ -8,7 +9,6 @@ import { toast } from 'sonner';
 import { apiPost } from '@/shared/api/client';
 import type { Settings } from '@/shared/api/schemas';
 import { useSettingsQuery } from '@/shared/hooks/useSettings';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 
 export const TelemetrySection = memo(() => {
   const { t } = useTranslation();

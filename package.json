@@ -23,6 +23,9 @@
         "analyze": "vite build --mode analyze"
     },
     "dependencies": {
+        "@jaskier/chat-module": "workspace:*",
+        "@jaskier/core": "workspace:*",
+        "@jaskier/hydra-app": "workspace:*",
         "@jaskier/ui": "workspace:*",
         "@tanstack/react-query": "^5.90.21",
         "@tanstack/react-query-devtools": "^5.91.3",

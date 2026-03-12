@@ -36,7 +36,6 @@ pub use streaming::*;
 
 pub(crate) const TOOL_TIMEOUT_SECS: u64 = 60;
 pub(crate) const MAX_MESSAGE_LENGTH: usize = 100_000;
-pub(crate) const MAX_TITLE_LENGTH: usize = 500;
 
 // ── Shared helpers ────────────────────────────────────────────────────────
 
@@ -205,11 +204,11 @@ pub(crate) async fn send_to_anthropic(
     timeout_secs: u64,
 ) -> Result<reqwest::Response, (StatusCode, Json<Value>)> {
     // Circuit breaker gate
-    if !state.circuit_breaker.allow_request().await {
+    if let Err(msg) = state.circuit_breaker.check().await {
         return Err((
             StatusCode::SERVICE_UNAVAILABLE,
             Json(json!({
-                "error": "Circuit breaker is OPEN — upstream Anthropic API is temporarily unavailable"
+                "error": msg
             })),
         ));
     }

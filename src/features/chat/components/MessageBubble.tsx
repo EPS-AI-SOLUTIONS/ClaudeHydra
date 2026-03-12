@@ -1,8 +1,8 @@
-﻿import { AgentAvatar, BaseMessageBubble, cn } from '@jaskier/ui';
+﻿import { useViewTheme } from '@jaskier/chat-module';
+import { AgentAvatar, BaseMessageBubble, cn } from '@jaskier/ui';
 import { Terminal } from 'lucide-react';
 import { type MouseEvent, memo, useDeferredValue, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { useCurrentSession } from '@/stores/viewStore';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MessageRating } from './MessageRating';

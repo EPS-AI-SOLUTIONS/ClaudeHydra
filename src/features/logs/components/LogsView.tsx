@@ -1,5 +1,6 @@
 // src/features/logs/components/LogsView.tsx
 
+import { useViewTheme } from '@jaskier/chat-module';
 import { cn } from '@jaskier/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Copy, RefreshCw, ScrollText, Search, Trash2 } from 'lucide-react';
@@ -8,7 +9,6 @@ import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button, Card, Input } from '@/components/atoms';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { type BackendLogEntry, clearBackendLogs, useBackendLogs } from '../hooks/useLogs';
 
 // ---------------------------------------------------------------------------

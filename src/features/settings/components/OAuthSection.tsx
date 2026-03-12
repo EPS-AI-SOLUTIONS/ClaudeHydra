@@ -1,5 +1,6 @@
 /** Jaskier Shared Pattern — OAuth PKCE UI Section */
 
+import { useViewTheme } from '@jaskier/chat-module';
 import { cn } from '@jaskier/ui';
 import { AlertTriangle, CheckCircle, Crown, ExternalLink, Key, LogIn, LogOut, Shield } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -7,7 +8,6 @@ import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Input } from '@/components/atoms';
 import { useOAuthStatus } from '@/shared/hooks/useOAuthStatus';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 
 const BENEFITS = [
   { key: 'oauth.benefits.flatRate', icon: Crown },

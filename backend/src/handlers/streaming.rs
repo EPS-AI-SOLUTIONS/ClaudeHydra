@@ -23,93 +23,17 @@ use crate::auth::validate_ws_token;
 use crate::models::*;
 use crate::state::AppState;
 
+use jaskier_core::handlers::anthropic_streaming::{
+    build_iteration_nudge, build_ndjson_response, dynamic_max_iterations, sanitize_api_error,
+    tool_result_context_limit, trim_conversation,
+    truncate_for_context_with_limit as truncate_tool_output,
+};
+
 use super::prompt::{ChatContext, resolve_chat_context};
 use super::{
     TOOL_TIMEOUT_SECS, is_retryable_status, sanitize_json_strings, send_to_anthropic,
     truncate_for_context_with_limit,
 };
-
-/// Maximum number of messages in the conversation Vec during agentic tool loops.
-/// Keeps system prompt + initial user message (first 2) + last (MAX - 2) messages.
-/// 80 messages allows ~40 tool iterations before trimming kicks in.
-const MAX_CONVERSATION_MESSAGES: usize = 80;
-
-/// Trim conversation to stay within MAX_CONVERSATION_MESSAGES.
-/// Preserves the first 2 messages (system context + initial user prompt)
-/// and keeps the most recent messages, discarding middle entries.
-fn trim_conversation(conversation: &mut Vec<Value>) {
-    if conversation.len() <= MAX_CONVERSATION_MESSAGES {
-        return;
-    }
-    let keep_head = 2.min(conversation.len());
-    let keep_tail = MAX_CONVERSATION_MESSAGES.saturating_sub(keep_head);
-    let tail_start = conversation.len().saturating_sub(keep_tail);
-
-    if tail_start <= keep_head {
-        // Nothing to trim — head and tail overlap
-        return;
-    }
-
-    let trimmed_count = tail_start - keep_head;
-    tracing::info!(
-        "Trimming conversation: {} messages total, removing {} from middle (keeping first {} + last {})",
-        conversation.len(),
-        trimmed_count,
-        keep_head,
-        keep_tail,
-    );
-
-    // Insert a marker so the model knows context was trimmed
-    let tail: Vec<Value> = conversation.drain(tail_start..).collect();
-    conversation.truncate(keep_head);
-    conversation.push(json!({
-        "role": "user",
-        "content": format!(
-            "[SYSTEM: {} earlier messages trimmed for context efficiency. Focus on the most recent context.]",
-            trimmed_count
-        )
-    }));
-    conversation.extend(tail);
-}
-
-/// Sanitize raw API error text before sending to the frontend.
-/// Logs the full error server-side and returns a safe, user-facing message
-/// that never exposes API keys, internal URLs, model names, or rate limit details.
-fn sanitize_api_error(raw: &str) -> String {
-    tracing::error!("Raw API error (sanitized before client delivery): {}", raw);
-
-    // Try to parse as JSON and extract only a high-level error type
-    if let Ok(parsed) = serde_json::from_str::<Value>(raw) {
-        // Anthropic: {"error": {"type": "...", "message": "..."}}
-        if let Some(err_type) = parsed.pointer("/error/type").and_then(|v| v.as_str()) {
-            return match err_type {
-                "overloaded_error" => {
-                    "AI provider is temporarily overloaded. Please retry.".to_string()
-                }
-                "rate_limit_error" => "Rate limit exceeded. Please wait and retry.".to_string(),
-                "invalid_request_error" => {
-                    "Request could not be processed by AI provider.".to_string()
-                }
-                "authentication_error" => "AI provider authentication failed.".to_string(),
-                _ => "AI provider request failed.".to_string(),
-            };
-        }
-        // Google: {"error": {"status": "...", "code": N}}
-        if let Some(status) = parsed.pointer("/error/status").and_then(|v| v.as_str()) {
-            return match status {
-                "RESOURCE_EXHAUSTED" => "Rate limit exceeded. Please wait and retry.".to_string(),
-                "INVALID_ARGUMENT" => "Request could not be processed by AI provider.".to_string(),
-                "UNAUTHENTICATED" | "PERMISSION_DENIED" => {
-                    "AI provider authentication failed.".to_string()
-                }
-                _ => "AI provider request failed.".to_string(),
-            };
-        }
-    }
-
-    // Fallback: never forward raw text
-    "AI provider request failed.".to_string()
-}
 
 // ═══════════════════════════════════════════════════════════════════════
 //  Post-task MCP notification (fire-and-forget)
@@ -117,18 +41,17 @@ fn sanitize_api_error(raw: &str) -> String {
 
 /// Send a "success" notification via the ai-swarm-notifier MCP server (if connected).
 /// Best-effort: errors are logged but never propagate to the caller.
+/// Uses the shared `McpClientManager::call_tool(prefixed_name, args)` API.
 async fn send_task_complete_notification(state: &AppState, model: &str) {
-    let prefixed = "mcp_ai-swarm-notifier_show_notification";
-    if let Some((server_id, tool_name)) = state.mcp_client.resolve_tool(prefixed).await {
-        let args = json!({
-            "status": "success",
-            "agent": "ClaudeHydra",
-            "message": format!("Task completed ({})", model),
-        });
-        match state.mcp_client.call_tool(&server_id, &tool_name, &args).await {
-            Ok(_) => tracing::debug!("Task completion notification sent via MCP"),
-            Err(e) => tracing::warn!("Failed to send task notification: {}", e),
-        }
+    let prefixed = "mcp_ai_swarm_notifier_show_notification";
+    let args = json!({
+        "status": "success",
+        "agent": "ClaudeHydra",
+        "message": format!("Task completed ({})", model),
+    });
+    match state.mcp_client.call_tool(prefixed, &args).await {
+        Ok(_) => tracing::debug!("Task completion notification sent via MCP"),
+        Err(e) => tracing::debug!("MCP notification not sent (server may not be connected): {}", e),
     }
 }
 
@@ -246,18 +169,7 @@ async fn google_chat_stream(
         yield Ok::<_, std::io::Error>(axum::body::Bytes::from(format!("{}\n", done_line)));
     };
 
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header("content-type", "application/x-ndjson")
-        .header("cache-control", "no-cache")
-        .header("x-content-type-options", "nosniff")
-        .body(Body::from_stream(ndjson_stream))
-        .unwrap_or_else(|_| {
-            Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(Body::empty())
-                .unwrap_or_default()
-        }))
+    Ok(build_ndjson_response(Body::from_stream(ndjson_stream)))
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -529,18 +441,7 @@ pub async fn claude_chat_stream(
         }
     };
 
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header("content-type", "application/x-ndjson")
-        .header("cache-control", "no-cache")
-        .header("x-content-type-options", "nosniff")
-        .body(Body::from_stream(ndjson_stream))
-        .unwrap_or_else(|_| {
-            Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(Body::empty())
-                .unwrap_or_default()
-        }))
+    Ok(build_ndjson_response(Body::from_stream(ndjson_stream)))
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -560,14 +461,7 @@ async fn claude_chat_stream_with_tools(
 
     // Dynamic iteration cap based on prompt complexity
     let prompt_len = req.messages.last().map(|m| m.content.len()).unwrap_or(0);
-    let dynamic_max: usize = if prompt_len < 200 {
-        15
-    } else if prompt_len < 1000 {
-        20
-    } else {
-        25
-    };
-    let max_tool_iterations: usize = dynamic_max.min(ctx.max_iterations.max(1) as usize);
+    let max_tool_iterations: usize = dynamic_max_iterations(prompt_len).min(ctx.max_iterations.max(1) as usize);
 
     // Build initial messages — prefer DB history when session_id present
     let initial_messages: Vec<Value> = if let Some(ref sid) = ctx.session_id {
@@ -899,14 +793,7 @@ async fn claude_chat_stream_with_tools(
                         has_written_file = true;
                     }
 
-                    let context_limit = if iteration < 3 {
-                        25000
-                    } else if iteration < 6 {
-                        15000
-                    } else {
-                        8000
-                    };
-                    let truncated_result = truncate_for_context_with_limit(&result, context_limit);
+                    let truncated_result = truncate_tool_output(&result, tool_result_context_limit(iteration as u32));
 
                     let _ = tx
                         .send(
@@ -934,32 +821,7 @@ async fn claude_chat_stream_with_tools(
                 trim_conversation(&mut conversation);
 
                 // Iteration nudges
-                if iteration >= 3 {
-                    let approx_context_bytes: usize = conversation
-                        .iter()
-                        .map(|c| serde_json::to_string(c).map(|s| s.len()).unwrap_or(0))
-                        .sum();
-                    let context_hint = format!(
-                        "[CONTEXT: ~{}KB, {} msgs, iter {}/{}]",
-                        approx_context_bytes / 1024,
-                        conversation.len(),
-                        iteration,
-                        max_tool_iterations
-                    );
-                    let nudge = if iteration >= 12 {
-                        format!(
-                            "[SYSTEM: Approaching limit. {} Wrap up and apply any pending changes.]",
-                            context_hint
-                        )
-                    } else if iteration >= 8 {
-                        format!("[SYSTEM: {} Consider applying edits now.]", context_hint)
-                    } else {
-                        format!(
-                            "[SYSTEM: {} {} iterations remaining.]",
-                            context_hint,
-                            max_tool_iterations - iteration
-                        )
-                    };
+                if let Some(nudge) = build_iteration_nudge(iteration as u32, max_tool_iterations as u32, &conversation) {
                     conversation.push(json!({ "role": "user", "content": nudge }));
                 }
 
@@ -1183,18 +1045,7 @@ async fn claude_chat_stream_with_tools(
         }
     };
 
-    Ok(Response::builder()
-        .status(StatusCode::OK)
-        .header("content-type", "application/x-ndjson")
-        .header("cache-control", "no-cache")
-        .header("x-content-type-options", "nosniff")
-        .body(Body::from_stream(ndjson_stream))
-        .unwrap_or_else(|_| {
-            Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
-                .body(Body::empty())
-                .unwrap_or_default()
-        }))
+    Ok(build_ndjson_response(Body::from_stream(ndjson_stream)))
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1349,14 +1200,7 @@ async fn execute_streaming_ws(
 
     // Dynamic iteration cap
     let prompt_len = prompt.len();
-    let dynamic_max: usize = if prompt_len < 200 {
-        15
-    } else if prompt_len < 1000 {
-        20
-    } else {
-        25
-    };
-    let max_tool_iterations: usize = dynamic_max.min(ctx.max_iterations.max(1) as usize);
+    let max_tool_iterations: usize = dynamic_max_iterations(prompt_len).min(ctx.max_iterations.max(1) as usize);
 
     // Send Start
     ws_send(
@@ -1925,14 +1769,7 @@ async fn execute_streaming_ws(
                         )
                         .await;
 
-                        let context_limit = if iteration < 3 {
-                            25000
-                        } else if iteration < 6 {
-                            15000
-                        } else {
-                            8000
-                        };
-                        let truncated = truncate_for_context_with_limit(&result, context_limit);
+                        let truncated = truncate_tool_output(&result, tool_result_context_limit(iteration));
                         tool_results.push(json!({
                             "type": "tool_result",
                             "tool_use_id": &tool_id,
@@ -1960,32 +1797,7 @@ async fn execute_streaming_ws(
             trim_conversation(&mut conversation);
 
             // Iteration nudges
-            if iteration >= 3 {
-                let approx_context_bytes: usize = conversation
-                    .iter()
-                    .map(|c| serde_json::to_string(c).map(|s| s.len()).unwrap_or(0))
-                    .sum();
-                let context_hint = format!(
-                    "[CONTEXT: ~{}KB, {} msgs, iter {}/{}]",
-                    approx_context_bytes / 1024,
-                    conversation.len(),
-                    iteration,
-                    max_tool_iterations
-                );
-                let nudge = if iteration >= 12 {
-                    format!(
-                        "[SYSTEM: Approaching limit. {} Wrap up and apply any pending changes.]",
-                        context_hint
-                    )
-                } else if iteration >= 8 {
-                    format!("[SYSTEM: {} Consider applying edits now.]", context_hint)
-                } else {
-                    format!(
-                        "[SYSTEM: {} {} iterations remaining.]",
-                        context_hint,
-                        max_tool_iterations as u32 - iteration
-                    )
-                };
+            if let Some(nudge) = build_iteration_nudge(iteration, max_tool_iterations as u32, &conversation) {
                 conversation.push(json!({ "role": "user", "content": nudge }));
             }
 
@@ -2421,7 +2233,7 @@ pub(crate) async fn execute_agent_call(
                     }
                 };
 
-                let truncated = truncate_for_context_with_limit(&result, 15000);
+                let truncated = truncate_tool_output(&result, 15000);
                 tool_results.push(json!({
                     "type": "tool_result",
                     "tool_use_id": tool_id,

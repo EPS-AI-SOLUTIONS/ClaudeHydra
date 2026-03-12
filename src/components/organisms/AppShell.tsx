@@ -13,6 +13,7 @@
  * Unified with GeminiHydra AppShell pattern for StatusFooter props.
  */
 
+import { ChatViewThemeProvider } from '@jaskier/chat-module';
 import { cn } from '@jaskier/ui';
 import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { RuneRain, ThemedBackground } from '@/components/atoms';
@@ -116,47 +117,51 @@ function AppShellInner({ children }: AppShellProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  const isLight = resolvedTheme === 'light';
+
   return (
-    <div
-      data-testid="app-shell"
-      className={cn(
-        'relative flex h-screen w-full overflow-hidden font-mono',
-        isDark
-          ? 'text-white selection:bg-white/30 selection:text-white'
-          : 'text-black selection:bg-emerald-500 selection:text-white',
-      )}
-    >
-      {/* Skip to content — accessibility */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-matrix-accent focus:text-white"
+    <ChatViewThemeProvider isLight={isLight}>
+      <div
+        data-testid="app-shell"
+        className={cn(
+          'relative flex h-screen w-full overflow-hidden font-mono',
+          isDark
+            ? 'text-white selection:bg-white/30 selection:text-white'
+            : 'text-black selection:bg-emerald-500 selection:text-white',
+        )}
       >
-        Skip to content
-      </a>
+        {/* Skip to content — accessibility */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-matrix-accent focus:text-white"
+        >
+          Skip to content
+        </a>
 
-      {/* Background layers */}
-      <ThemedBackground resolvedTheme={resolvedTheme} />
+        {/* Background layers */}
+        <ThemedBackground resolvedTheme={resolvedTheme} />
 
-      {/* Rune Rain Effect */}
-      <RuneRain opacity={0.1} />
+        {/* Rune Rain Effect */}
+        <RuneRain opacity={0.1} />
 
-      {/* Command Palette (Ctrl+K) */}
-      <CommandPalette />
+        {/* Command Palette (Ctrl+K) */}
+        <CommandPalette />
 
-      {/* Main content with padding and gap matching Tissaia */}
-      <div className="relative z-10 flex h-full w-full backdrop-blur-[1px] gap-4 p-4">
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Main content with padding and gap matching Tissaia */}
+        <div className="relative z-10 flex h-full w-full backdrop-blur-[1px] gap-4 p-4">
+          {/* Sidebar */}
+          <Sidebar />
 
-        {/* Main content area */}
-        <main id="main-content" className={cn('flex-1 flex flex-col min-w-0 overflow-hidden relative', glassPanel)}>
-          {currentView === 'chat' && <TabBar />}
-          {/* View Content — animations handled by ViewRouter */}
-          <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-          <StatusFooter {...footerProps} />
-        </main>
+          {/* Main content area */}
+          <main id="main-content" className={cn('flex-1 flex flex-col min-w-0 overflow-hidden relative', glassPanel)}>
+            {currentView === 'chat' && <TabBar />}
+            {/* View Content — animations handled by ViewRouter */}
+            <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+            <StatusFooter {...footerProps} />
+          </main>
+        </div>
       </div>
-    </div>
+    </ChatViewThemeProvider>
   );
 }
 
@@ -166,7 +171,7 @@ function AppShellInner({ children }: AppShellProps) {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <ThemeProvider>
+    <ThemeProvider storageKey="claude-hydra-theme">
       <AppShellInner>{children}</AppShellInner>
     </ThemeProvider>
   );

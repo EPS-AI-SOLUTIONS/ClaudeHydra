@@ -6,52 +6,12 @@ use tower_http::trace::TraceLayer;
 
 use claudehydra_backend::handlers;
 use claudehydra_backend::model_registry;
-use claudehydra_backend::state::{AppState, LogEntry, LogRingBuffer};
+#[cfg(feature = "shuttle")]
+use claudehydra_backend::state::LogRingBuffer;
+use claudehydra_backend::state::AppState;
 use claudehydra_backend::watchdog;
 
-// ── Log buffer tracing layer ────────────────────────────────────────
-struct LogBufferLayer {
-    buffer: std::sync::Arc<LogRingBuffer>,
-}
-
-impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for LogBufferLayer {
-    fn on_event(
-        &self,
-        event: &tracing::Event<'_>,
-        _ctx: tracing_subscriber::layer::Context<'_, S>,
-    ) {
-        let meta = event.metadata();
-        let mut visitor = MessageVisitor(String::new());
-        event.record(&mut visitor);
-
-        self.buffer.push(LogEntry {
-            timestamp: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
-            level: meta.level().to_string(),
-            target: meta.target().to_string(),
-            message: visitor.0,
-        });
-    }
-}
-
-struct MessageVisitor(String);
-
-impl tracing::field::Visit for MessageVisitor {
-    fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
-        if field.name() == "message" {
-            self.0 = format!("{:?}", value);
-        } else if self.0.is_empty() {
-            self.0 = format!("{}={:?}", field.name(), value);
-        }
-    }
-
-    fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
-        if field.name() == "message" {
-            self.0 = value.to_string();
-        } else if self.0.is_empty() {
-            self.0 = format!("{}={}", field.name(), value);
-        }
-    }
-}
+use jaskier_core::app_builder;
 
 fn build_app(state: AppState) -> axum::Router {
     // CORS — allow Vite dev server + Vercel production
@@ -182,31 +142,8 @@ async fn main() -> shuttle_axum::ShuttleAxum {
 #[cfg(not(feature = "shuttle"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    use tracing_subscriber::EnvFilter;
-    use tracing_subscriber::prelude::*;
-
-    enable_ansi();
-
-    // Create log ring buffer BEFORE subscriber so the Layer can capture events
-    let log_buffer = std::sync::Arc::new(LogRingBuffer::new(1000));
-    let buffer_layer = LogBufferLayer {
-        buffer: log_buffer.clone(),
-    };
-
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
-    if std::env::var("RUST_LOG_FORMAT").as_deref() == Ok("json") {
-        tracing_subscriber::registry()
-            .with(env_filter)
-            .with(tracing_subscriber::fmt::layer().json())
-            .with(buffer_layer)
-            .init();
-    } else {
-        tracing_subscriber::registry()
-            .with(env_filter)
-            .with(tracing_subscriber::fmt::layer().with_ansi(true))
-            .with(buffer_layer)
-            .init();
-    }
+    app_builder::enable_ansi();
+    let log_buffer = app_builder::init_tracing(1000);
 
     dotenvy::dotenv().ok();
 
@@ -314,7 +251,7 @@ async fn main() -> anyhow::Result<()> {
         .parse()?;
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
 
-    print_banner(port);
+    app_builder::print_banner("CLAUDEHYDRA v4", "AI Swarm Control Center", "33", port);
     tracing::info!("ClaudeHydra v4 backend listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -322,57 +259,8 @@ async fn main() -> anyhow::Result<()> {
         listener,
         app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
     )
-    .with_graceful_shutdown(shutdown_signal())
+    .with_graceful_shutdown(app_builder::shutdown_signal())
     .await?;
 
     Ok(())
-}
-
-// Jaskier Shared Pattern -- enable ANSI colors on Windows consoles
-#[cfg(windows)]
-fn enable_ansi() {
-    use windows::Win32::System::Console::{
-        ENABLE_VIRTUAL_TERMINAL_PROCESSING, GetConsoleMode, GetStdHandle, STD_ERROR_HANDLE,
-        STD_OUTPUT_HANDLE, SetConsoleMode,
-    };
-    for std_handle in [STD_OUTPUT_HANDLE, STD_ERROR_HANDLE] {
-        unsafe {
-            let Ok(handle) = GetStdHandle(std_handle) else {
-                continue;
-            };
-            let mut mode = Default::default();
-            if GetConsoleMode(handle, &mut mode).is_ok() {
-                let _ = SetConsoleMode(handle, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-            }
-        }
-    }
-}
-#[cfg(not(windows))]
-fn enable_ansi() {}
-
-fn print_banner(port: u16) {
-    // ClaudeHydra: bold yellow (33)
-    println!();
-    println!("  \x1b[1;33m>>>  CLAUDEHYDRA v4  <<<\x1b[0m");
-    println!("  \x1b[33mAI Swarm Control Center\x1b[0m");
-    println!("  \x1b[1;32mhttp://localhost:{port}\x1b[0m");
-    println!();
-}
-
-async fn shutdown_signal() {
-    let ctrl_c = tokio::signal::ctrl_c();
-    #[cfg(unix)]
-    {
-        let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-            .expect("failed to install SIGTERM handler");
-        tokio::select! {
-            _ = ctrl_c => {},
-            _ = sigterm.recv() => {},
-        }
-    }
-    #[cfg(not(unix))]
-    {
-        ctrl_c.await.ok();
-    }
-    tracing::info!("Shutdown signal received, starting graceful shutdown");
 }

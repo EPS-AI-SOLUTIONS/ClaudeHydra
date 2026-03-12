@@ -1,39 +1,32 @@
-// Jaskier Shared Pattern — model_registry
+// Jaskier Shared Pattern -- model_registry
 //
-// ClaudeHydra v4 — Dynamic Model Registry
-// Fetches available models from Anthropic (and optionally Google) APIs,
-// caches them with a TTL, and selects the latest model for each tier.
+// ClaudeHydra v4 -- Dynamic Model Registry
+// Core types (ModelInfo, ModelCache, PinModelRequest) and utility functions
+// (version_key, select_best, classify_complexity, refresh_cache) are provided
+// by the shared `jaskier-core` crate.
+//
+// ClaudeHydra keeps its own `ResolvedModels` and `resolve_models` since its
+// use cases (commander/coordinator/executor/flash) differ from the Gemini-focused
+// shared defaults (chat/thinking/image/flash).
 
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
 
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::header;
 use axum::response::IntoResponse;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::{Value, json};
 use utoipa::ToSchema;
 
 use crate::state::AppState;
 
-// --- Jaskier Shared Core Types ---
+// ── Re-export shared types from jaskier-core ──────────────────────────────────
+pub use jaskier_core::model_registry::{
+    ModelCache, ModelInfo, PinModelRequest, classify_complexity, refresh_cache,
+};
 
-// ── Cache TTL ────────────────────────────────────────────────────────────────
-
-const CACHE_TTL: Duration = Duration::from_secs(3600); // 1 hour
-
-// ── Model info ───────────────────────────────────────────────────────────────
-
-#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
-pub struct ModelInfo {
-    pub id: String,
-    pub provider: String,
-    pub display_name: Option<String>,
-    pub capabilities: Vec<String>,
-}
-
-// --- Project-Specific Types ---
+// ── ClaudeHydra-specific: Anthropic tier resolution ───────────────────────────
 
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct ResolvedModels {
@@ -42,229 +35,6 @@ pub struct ResolvedModels {
     pub executor: Option<ModelInfo>,    // haiku
     pub flash: Option<ModelInfo>,       // gemini flash (fast tasks)
 }
-
-// ── Pin request ──────────────────────────────────────────────────────────────
-
-#[derive(Debug, Clone, Deserialize, ToSchema)]
-pub struct PinModelRequest {
-    pub use_case: String,
-    pub model_id: String,
-}
-
-// ── Model cache ──────────────────────────────────────────────────────────────
-
-pub struct ModelCache {
-    pub models: HashMap<String, Vec<ModelInfo>>,
-    pub fetched_at: Option<Instant>,
-}
-
-impl Default for ModelCache {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl ModelCache {
-    pub fn new() -> Self {
-        Self {
-            models: HashMap::new(),
-            fetched_at: None,
-        }
-    }
-
-    pub fn is_stale(&self) -> bool {
-        match self.fetched_at {
-            Some(t) => t.elapsed() > CACHE_TTL,
-            None => true,
-        }
-    }
-}
-
-// ── Fetch models from providers ──────────────────────────────────────────────
-
-async fn fetch_anthropic_models(
-    client: &reqwest::Client,
-    api_key: &str,
-) -> Result<Vec<ModelInfo>, String> {
-    let resp = client
-        .get("https://api.anthropic.com/v1/models")
-        .header("x-api-key", api_key)
-        .header("anthropic-version", "2023-06-01")
-        .send()
-        .await
-        .map_err(|e| format!("Anthropic models request failed: {}", e))?;
-
-    if !resp.status().is_success() {
-        return Err(format!("Anthropic models API returned {}", resp.status()));
-    }
-
-    let body: Value = resp
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse Anthropic models: {}", e))?;
-
-    let data = body["data"].as_array().cloned().unwrap_or_default();
-
-    let mut models = Vec::new();
-    for m in data {
-        let id = m["id"].as_str().unwrap_or("").to_string();
-        let display_name = m["display_name"]
-            .as_str()
-            .or_else(|| m["name"].as_str())
-            .map(|s| s.to_string());
-
-        let mut caps = vec!["text".to_string(), "vision".to_string()];
-        if id.contains("opus") {
-            caps.push("advanced_reasoning".to_string());
-        }
-
-        if !id.is_empty() {
-            models.push(ModelInfo {
-                id,
-                provider: "anthropic".to_string(),
-                display_name,
-                capabilities: caps,
-            });
-        }
-    }
-
-    Ok(models)
-}
-
-async fn fetch_google_models(
-    client: &reqwest::Client,
-    api_key: &str,
-    is_oauth: bool,
-) -> Result<Vec<ModelInfo>, String> {
-    let url = "https://generativelanguage.googleapis.com/v1beta/models";
-
-    let parsed_url = reqwest::Url::parse(url).map_err(|e| format!("Invalid URL: {}", e))?;
-
-    let resp = crate::oauth_google::apply_google_auth(client.get(parsed_url), api_key, is_oauth)
-        .send()
-        .await
-        .map_err(|e| format!("Google models request failed: {:?}", e))?;
-
-    if !resp.status().is_success() {
-        return Err(format!("Google models API returned {}", resp.status()));
-    }
-
-    let body: Value = resp
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse Google models: {}", e))?;
-
-    let models_arr = body["models"].as_array().cloned().unwrap_or_default();
-
-    let mut models = Vec::new();
-    for m in models_arr {
-        let name = m["name"].as_str().unwrap_or("").to_string();
-        let id = name.trim_start_matches("models/").to_string();
-        let display_name = m["displayName"].as_str().map(|s| s.to_string());
-
-        let methods: Vec<String> = m["supportedGenerationMethods"]
-            .as_array()
-            .cloned()
-            .unwrap_or_default()
-            .iter()
-            .filter_map(|v| v.as_str().map(|s| s.to_string()))
-            .collect();
-
-        if methods.contains(&"generateContent".to_string()) && id.starts_with("gemini") {
-            models.push(ModelInfo {
-                id,
-                provider: "google".to_string(),
-                display_name,
-                capabilities: vec!["text".to_string()],
-            });
-        }
-    }
-
-    Ok(models)
-}
-
-// ── Refresh cache ────────────────────────────────────────────────────────────
-
-pub async fn refresh_cache(state: &AppState) -> (HashMap<String, Vec<ModelInfo>>, Vec<String>) {
-    let mut all_models: HashMap<String, Vec<ModelInfo>> = HashMap::new();
-    let mut errors: Vec<String> = Vec::new();
-
-    // Anthropic (primary for ClaudeHydra)
-    // Extract key from lock BEFORE async fetch to avoid holding read lock across HTTP call
-    let anthropic_key = {
-        let rt = state.runtime.read().await;
-        rt.api_keys.get("ANTHROPIC_API_KEY").cloned()
-    };
-    if let Some(key) = anthropic_key {
-        match fetch_anthropic_models(&state.http_client, &key).await {
-            Ok(models) => {
-                tracing::info!("model_registry: fetched {} Anthropic models", models.len());
-                all_models.insert("anthropic".to_string(), models);
-            }
-            Err(e) => {
-                tracing::warn!("model_registry: Anthropic fetch failed: {}", e);
-                errors.push(format!("anthropic: {}", e));
-            }
-        }
-    }
-
-    // Google — use OAuth or API key credential, with automatic fallback
-    if let Some((cred, is_oauth)) = crate::oauth_google::get_google_credential(state).await {
-        match fetch_google_models(&state.http_client, &cred, is_oauth).await {
-            Ok(models) => {
-                tracing::info!("model_registry: fetched {} Google models", models.len());
-                all_models.insert("google".to_string(), models);
-            }
-            Err(e) => {
-                tracing::warn!("model_registry: Google fetch failed: {}", e);
-                // If OAuth was used and failed, mark it invalid and try API key
-                if is_oauth {
-                    crate::oauth_google::mark_oauth_gemini_invalid(state);
-                    tracing::info!("model_registry: OAuth failed, trying API key fallback");
-                    if let Some((fallback_cred, fallback_is_oauth)) =
-                        crate::oauth_google::get_google_api_key_credential(state).await
-                    {
-                        match fetch_google_models(
-                            &state.http_client,
-                            &fallback_cred,
-                            fallback_is_oauth,
-                        )
-                        .await
-                        {
-                            Ok(models) => {
-                                tracing::info!(
-                                    "model_registry: fallback OK — fetched {} Google models via API key",
-                                    models.len()
-                                );
-                                all_models.insert("google".to_string(), models);
-                            }
-                            Err(e2) => {
-                                tracing::warn!(
-                                    "model_registry: API key fallback also failed: {}",
-                                    e2
-                                );
-                                errors.push(format!("google (oauth): {}", e));
-                                errors.push(format!("google (api_key): {}", e2));
-                            }
-                        }
-                    } else {
-                        errors.push(format!("google: {} (no API key fallback available)", e));
-                    }
-                } else {
-                    errors.push(format!("google: {}", e));
-                }
-            }
-        }
-    }
-
-    let mut cache = state.model_cache.write().await;
-    cache.models = all_models.clone();
-    cache.fetched_at = Some(Instant::now());
-
-    (all_models, errors)
-}
-
-// ── Model selection ──────────────────────────────────────────────────────────
 
 /// Extract a sortable version key from a model ID.
 /// Handles patterns like "gemini-2.5-flash", "gemini-3.1-pro", "claude-sonnet-4-6".
@@ -326,16 +96,19 @@ fn select_best(
 }
 
 /// Resolve the best model for each use case from the cached models.
+/// ClaudeHydra resolves Anthropic tiers (commander/coordinator/executor) + Google flash.
 pub async fn resolve_models(state: &AppState) -> ResolvedModels {
+    use jaskier_core::model_registry::HasModelRegistryState;
+
     {
-        let cache = state.model_cache.read().await;
+        let cache = state.model_cache().read().await;
         if cache.is_stale() {
             drop(cache);
             let _ = refresh_cache(state).await;
         }
     }
 
-    let cache = state.model_cache.read().await;
+    let cache = state.model_cache().read().await;
     let anthropic = cache.models.get("anthropic").cloned().unwrap_or_default();
 
     // Commander: latest opus (prefer non-dated, fallback to dated)
@@ -365,42 +138,6 @@ pub async fn resolve_models(state: &AppState) -> ResolvedModels {
         coordinator,
         executor,
         flash,
-    }
-}
-
-/// Classify prompt complexity for auto-tier routing.
-/// Returns "simple" (→ flash), "complex" (→ commander), or "medium" (→ coordinator).
-pub fn classify_complexity(prompt: &str) -> &'static str {
-    let chars = prompt.len();
-    let words = prompt.split_whitespace().count();
-    let lower = prompt.to_lowercase();
-    let complex_keywords = [
-        "architect",
-        "refactor",
-        "design pattern",
-        "migration",
-        "security audit",
-        "performance",
-        "optimize",
-        "scale",
-        "infrastructure",
-        "deploy",
-        "```",
-        "fn ",
-        "function ",
-        "class ",
-        "impl ",
-        "async ",
-        "struct ",
-    ];
-    let has_complex = complex_keywords.iter().any(|k| lower.contains(k));
-
-    if chars > 1000 || has_complex {
-        "complex"
-    } else if chars < 80 && words < 15 {
-        "simple"
-    } else {
-        "medium"
     }
 }
 
@@ -475,7 +212,7 @@ async fn get_pins_map(state: &AppState) -> HashMap<String, String> {
 /// Called once at startup: fetch models from API, pick the best per tier,
 /// and persist the coordinator model as `default_model` in `ch_settings`.
 pub async fn startup_sync(state: &AppState) {
-    tracing::info!("model_registry: fetching models at startup…");
+    tracing::info!("model_registry: fetching models at startup\u{2026}");
 
     let (models, startup_errors) = refresh_cache(state).await;
     let total: usize = models.values().map(|v| v.len()).sum();
@@ -541,9 +278,11 @@ pub async fn startup_sync(state: &AppState) {
     responses((status = 200, description = "Cached models, resolved selections, and pins", body = Value))
 )]
 pub async fn list_models(State(state): State<AppState>) -> impl IntoResponse {
+    use jaskier_core::model_registry::HasModelRegistryState;
+
     let resolved = resolve_models(&state).await;
     let pins = get_pins_map(&state).await;
-    let cache = state.model_cache.read().await;
+    let cache = state.model_cache().read().await;
 
     let total: usize = cache.models.values().map(|v| v.len()).sum();
     let stale = cache.is_stale();
@@ -732,14 +471,12 @@ mod tests {
 
     #[test]
     fn version_key_gemini_2_5_flash() {
-        // "2.5" → major=2, minor=5 → 2*1000 + 5 = 2005
         let (v, _) = version_key("gemini-2.5-flash");
         assert_eq!(v, 2005);
     }
 
     #[test]
     fn version_key_gemini_3_1_pro() {
-        // "3.1" → 3*1000+1=3001, plus +100 pro bonus = 3101
         let (v, _) = version_key("gemini-3.1-pro-preview");
         assert_eq!(v, 3101);
     }
@@ -755,7 +492,6 @@ mod tests {
     fn version_key_ordering_claude_models() {
         let (v_opus, _) = version_key("claude-opus-4-6");
         let (v_haiku_dated, d) = version_key("claude-haiku-4-5-20251001");
-        // opus 4-6 has version 6000, haiku 4-5 has version 5000
         assert!(v_opus > v_haiku_dated);
         assert_eq!(d, "20251001");
     }
@@ -771,8 +507,6 @@ mod tests {
         ];
 
         let best = select_best(&models, &[], &[]);
-        // Both opus and sonnet have version 6000, but opus sorts first alphabetically
-        // Actually they have identical version_key — sort is stable so first in sorted order wins
         let best_id = best
             .expect("select_best should find a model from non-empty list")
             .id;
@@ -837,7 +571,6 @@ mod tests {
             model("claude-sonnet-4-6", "anthropic"),
         ];
 
-        // Excluding "20" removes dated variants
         let best = select_best(&models, &["sonnet"], &["20"]);
         assert_eq!(
             best.expect("sonnet filter excluding dated should match claude-sonnet-4-6")

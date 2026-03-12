@@ -1,16 +1,16 @@
 /** Jaskier Shared Pattern — Completion Sound Settings */
 
-import { cn } from '@jaskier/ui';
-import { Bell, BellOff } from 'lucide-react';
-import { memo, useCallback, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useViewTheme } from '@jaskier/chat-module';
 import {
   getCompletionVolume,
   isCompletionSoundEnabled,
   setCompletionSoundEnabled,
   setCompletionVolume,
-} from '@/shared/hooks/useCompletionFeedback';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
+} from '@jaskier/core';
+import { cn } from '@jaskier/ui';
+import { Bell, BellOff } from 'lucide-react';
+import { memo, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const CompletionSoundSection = memo(() => {
   const { t } = useTranslation();

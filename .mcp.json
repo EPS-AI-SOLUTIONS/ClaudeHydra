@@ -75,6 +75,12 @@
         "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\JaskierNotifierMCP\\index.js"
       ]
     },
+    "jaskier-vault": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\JaskierVaultMCP\\index.js"
+      ]
+    },
     "grafana": {
       "command": "uvx",
       "args": ["mcp-grafana"],

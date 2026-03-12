@@ -1,245 +1,32 @@
 // Jaskier Shared Pattern — state
 // ClaudeHydra v4 - Application state
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
 use sqlx::PgPool;
 use tokio::sync::RwLock;
+
+// Re-export log types from shared crate so main.rs and other modules can use `crate::state::LogEntry` etc.
+pub use jaskier_core::logs::{LogEntry, LogRingBuffer};
+// Re-export CircuitBreaker from shared crate.
+pub use jaskier_core::circuit_breaker::CircuitBreaker;
+// Re-export PKCE types from shared crate so other modules can use `crate::state::OAuthPkceState`.
+pub use jaskier_oauth::pkce::{OAUTH_STATE_TTL, OAuthPkceState};
+// Re-export SystemSnapshot from shared crate.
+pub use jaskier_tools::system_monitor::SystemSnapshot;
 
 use crate::mcp::client::McpClientManager;
 use crate::model_registry::ModelCache;
 use crate::models::WitcherAgent;
 use crate::tools::ToolExecutor;
 
-// ── Log Ring Buffer — Jaskier Shared Pattern ────────────────────────────────
-/// In-memory ring buffer for backend log entries (last N events).
-/// Uses `std::sync::Mutex` because writes happen in the tracing Layer
-/// (sync context — not inside a tokio runtime poll).
-
-#[derive(Clone, serde::Serialize)]
-pub struct LogEntry {
-    pub timestamp: String,
-    pub level: String,
-    pub target: String,
-    pub message: String,
-}
-
-pub struct LogRingBuffer {
-    entries: std::sync::Mutex<VecDeque<LogEntry>>,
-    capacity: usize,
-}
-
-impl LogRingBuffer {
-    pub fn new(capacity: usize) -> Self {
-        Self {
-            entries: std::sync::Mutex::new(VecDeque::with_capacity(capacity)),
-            capacity,
-        }
-    }
-
-    pub fn push(&self, entry: LogEntry) {
-        let mut buf = self.entries.lock().unwrap_or_else(|p| p.into_inner());
-        if buf.len() >= self.capacity {
-            buf.pop_front();
-        }
-        buf.push_back(entry);
-    }
-
-    pub fn clear(&self) {
-        let mut buf = self.entries.lock().unwrap_or_else(|p| p.into_inner());
-        buf.clear();
-    }
-
-    pub fn recent(
-        &self,
-        limit: usize,
-        min_level: Option<&str>,
-        search: Option<&str>,
-    ) -> Vec<LogEntry> {
-        let buf = self.entries.lock().unwrap_or_else(|p| p.into_inner());
-        buf.iter()
-            .rev()
-            .filter(|e| min_level.is_none_or(|lvl| level_ord(&e.level) >= level_ord(lvl)))
-            .filter(|e| {
-                search.is_none_or(|s| {
-                    let s_lower = s.to_lowercase();
-                    e.message.to_lowercase().contains(&s_lower)
-                        || e.target.to_lowercase().contains(&s_lower)
-                })
-            })
-            .take(limit)
-            .cloned()
-            .collect()
-    }
-}
-
-fn level_ord(level: &str) -> u8 {
-    match level.to_uppercase().as_str() {
-        "ERROR" => 5,
-        "WARN" => 4,
-        "INFO" => 3,
-        "DEBUG" => 2,
-        "TRACE" => 1,
-        _ => 0,
-    }
-}
-
-// ── Circuit Breaker — Jaskier Shared Pattern ────────────────────────────────
-/// Simple circuit breaker for upstream API providers.
-///
-/// After `FAILURE_THRESHOLD` consecutive failures the circuit **trips** for
-/// `COOLDOWN_SECS` seconds. While tripped, `allow_request()` returns `false`
-/// so callers can fail fast without hitting the upstream.
-///
-/// Thread-safe — uses atomics only, no mutex/rwlock.
-pub struct CircuitBreaker {
-    consecutive_failures: AtomicU32,
-    /// `None` = circuit is closed (healthy).
-    /// `Some(instant)` = tripped at this wall-clock instant.
-    tripped_at: RwLock<Option<Instant>>,
-    /// `true` = circuit is half-open (one probe request allowed).
-    half_open: AtomicBool,
-}
-
-const FAILURE_THRESHOLD: u32 = 3;
-const COOLDOWN_SECS: u64 = 60;
-
-impl Default for CircuitBreaker {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl CircuitBreaker {
-    pub fn new() -> Self {
-        Self {
-            consecutive_failures: AtomicU32::new(0),
-            tripped_at: RwLock::new(None),
-            half_open: AtomicBool::new(false),
-        }
-    }
-
-    /// Returns `true` if the circuit is closed (allow the request).
-    /// Returns `false` if tripped and the cooldown has NOT elapsed yet.
-    /// After cooldown: transitions to HALF_OPEN and allows exactly ONE probe request.
-    pub async fn allow_request(&self) -> bool {
-        let guard = self.tripped_at.read().await;
-        match *guard {
-            None => {
-                // Circuit is closed — but check if half-open (probe in progress)
-                if self.half_open.load(Ordering::Acquire) {
-                    return false; // Another request is already probing
-                }
-                true
-            }
-            Some(tripped) => {
-                if tripped.elapsed().as_secs() < COOLDOWN_SECS {
-                    return false;
-                }
-                drop(guard);
-                // Cooldown elapsed — CAS to become the single probe request
-                if self
-                    .half_open
-                    .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-                    .is_ok()
-                {
-                    tracing::info!(
-                        "circuit_breaker: cooldown elapsed, entering HALF_OPEN — allowing probe request"
-                    );
-                    true
-                } else {
-                    false // Another task already became the probe
-                }
-            }
-        }
-    }
-
-    /// Record a successful request — resets the failure counter and closes the circuit.
-    pub async fn record_success(&self) {
-        let was_half_open = self.half_open.swap(false, Ordering::Release);
-        let prev = self.consecutive_failures.swap(0, Ordering::Relaxed);
-        if was_half_open || prev > 0 {
-            let mut wg = self.tripped_at.write().await;
-            *wg = None;
-            tracing::info!(
-                "circuit_breaker: success recorded, circuit CLOSED (was {} failures, half_open={})",
-                prev,
-                was_half_open
-            );
-        }
-    }
-
-    /// Record a failed request. Trips the circuit after `FAILURE_THRESHOLD` consecutive failures.
-    /// If in HALF_OPEN state, re-trips immediately.
-    pub async fn record_failure(&self) {
-        let was_half_open = self.half_open.swap(false, Ordering::Release);
-        if was_half_open {
-            // Probe failed — re-trip immediately with fresh cooldown
-            let mut wg = self.tripped_at.write().await;
-            *wg = Some(Instant::now());
-            tracing::error!(
-                "circuit_breaker: HALF_OPEN probe failed — re-tripped for {}s",
-                COOLDOWN_SECS
-            );
-            return;
-        }
-        let count = self.consecutive_failures.fetch_add(1, Ordering::Relaxed) + 1;
-        tracing::warn!("circuit_breaker: failure #{}", count);
-        if count >= FAILURE_THRESHOLD {
-            let mut wg = self.tripped_at.write().await;
-            if wg.is_none() {
-                *wg = Some(Instant::now());
-                tracing::error!(
-                    "circuit_breaker: TRIPPED after {} consecutive failures — blocking requests for {}s",
-                    count,
-                    COOLDOWN_SECS
-                );
-            }
-        }
-    }
-}
-
 // ── Shared: RuntimeState ────────────────────────────────────────────────────
 /// Mutable runtime state (not persisted — lost on restart).
 pub struct RuntimeState {
     pub api_keys: HashMap<String, String>,
-}
-
-/// Temporary PKCE state for an in-progress OAuth flow.
-pub struct OAuthPkceState {
-    pub code_verifier: String,
-    pub created_at: tokio::time::Instant,
-}
-
-/// TTL for OAuth CSRF state entries (10 minutes).
-pub const OAUTH_STATE_TTL: std::time::Duration = std::time::Duration::from_secs(600);
-
-// ── Shared: SystemSnapshot ───────────────────────────────────────────────────
-/// Cached system statistics snapshot, refreshed every 5s by background task.
-#[derive(Clone)]
-pub struct SystemSnapshot {
-    pub cpu_usage_percent: f32,
-    pub memory_used_mb: f64,
-    pub memory_total_mb: f64,
-    pub network_rx_bytes: u64,
-    pub network_tx_bytes: u64,
-    pub platform: String,
-}
-
-impl Default for SystemSnapshot {
-    fn default() -> Self {
-        Self {
-            cpu_usage_percent: 0.0,
-            memory_used_mb: 0.0,
-            memory_total_mb: 0.0,
-            network_rx_bytes: 0,
-            network_tx_bytes: 0,
-            platform: std::env::consts::OS.to_string(),
-        }
-    }
 }
 
 // ── Shared: AppState (project-specific fields vary) ─────────────────────────
@@ -261,6 +48,8 @@ pub struct AppState {
     pub github_oauth_states: Arc<RwLock<HashMap<String, tokio::time::Instant>>>,
     /// Vercel OAuth states keyed by state param (concurrent-safe, TTL 10min).
     pub vercel_oauth_states: Arc<RwLock<HashMap<String, tokio::time::Instant>>>,
+    /// Runtime API keys map (mirrors `runtime.api_keys`) — required by `HasGoogleOAuthState`.
+    pub api_keys: Arc<RwLock<HashMap<String, String>>>,
     /// `true` once startup_sync completes (or times out).
     pub ready: Arc<AtomicBool>,
     /// Cached system stats (CPU, memory) refreshed every 5s by background task.
@@ -348,10 +137,13 @@ impl AppState {
 
         let (a2a_task_tx, _) = tokio::sync::broadcast::channel(100);
 
+        let api_keys_arc = Arc::new(RwLock::new(api_keys.clone()));
+
         Self {
             db,
             agents,
             runtime: Arc::new(RwLock::new(RuntimeState { api_keys })),
+            api_keys: api_keys_arc,
             model_cache: Arc::new(RwLock::new(ModelCache::new())),
             start_time: Instant::now(),
             http_client,
@@ -363,7 +155,7 @@ impl AppState {
             ready: Arc::new(AtomicBool::new(false)),
             system_monitor: Arc::new(RwLock::new(SystemSnapshot::default())),
             auth_secret,
-            circuit_breaker: Arc::new(CircuitBreaker::new()),
+            circuit_breaker: Arc::new(CircuitBreaker::new("anthropic")),
             mcp_client,
             oauth_gemini_valid: Arc::new(AtomicBool::new(true)),
             log_buffer,
@@ -400,6 +192,7 @@ impl AppState {
             runtime: Arc::new(RwLock::new(RuntimeState {
                 api_keys: HashMap::new(),
             })),
+            api_keys: Arc::new(RwLock::new(HashMap::new())),
             model_cache: Arc::new(RwLock::new(ModelCache::new())),
             start_time: Instant::now(),
             http_client: http_client.clone(),
@@ -411,7 +204,7 @@ impl AppState {
             ready: Arc::new(AtomicBool::new(false)),
             system_monitor: Arc::new(RwLock::new(SystemSnapshot::default())),
             auth_secret: None,
-            circuit_breaker: Arc::new(CircuitBreaker::new()),
+            circuit_breaker: Arc::new(CircuitBreaker::new("anthropic")),
             oauth_gemini_valid: Arc::new(AtomicBool::new(true)),
             log_buffer: Arc::new(LogRingBuffer::new(1000)),
             prompt_cache: Arc::new(RwLock::new(HashMap::new())),
@@ -422,6 +215,172 @@ impl AppState {
             a2a_task_tx,
             a2a_semaphore: Arc::new(tokio::sync::Semaphore::new(5)),
         }
+    }
+}
+
+// ── jaskier-core trait implementations ───────────────────────────────────────
+
+impl jaskier_core::auth::HasAuthSecret for AppState {
+    fn auth_secret(&self) -> Option<&str> {
+        self.auth_secret.as_deref()
+    }
+}
+
+impl jaskier_core::logs::HasLogBuffer for AppState {
+    fn log_buffer(&self) -> &Arc<LogRingBuffer> {
+        &self.log_buffer
+    }
+}
+
+// ── jaskier-oauth trait implementations ──────────────────────────────────────
+
+impl jaskier_oauth::google::HasGoogleOAuthState for AppState {
+    fn db(&self) -> &sqlx::PgPool { &self.db }
+    fn http_client(&self) -> &reqwest::Client { &self.http_client }
+    fn runtime_api_keys(&self) -> &Arc<RwLock<HashMap<String, String>>> { &self.api_keys }
+    fn oauth_pkce_states(&self) -> &Arc<RwLock<HashMap<String, OAuthPkceState>>> { &self.google_oauth_pkce }
+    fn oauth_gemini_valid(&self) -> &Arc<std::sync::atomic::AtomicBool> { &self.oauth_gemini_valid }
+    fn google_auth_table(&self) -> &'static str { "ch_google_auth" }
+    fn default_port(&self) -> &'static str { "8082" }
+}
+
+impl jaskier_oauth::github::HasGitHubOAuthState for AppState {
+    fn db(&self) -> &sqlx::PgPool { &self.db }
+    fn http_client(&self) -> &reqwest::Client { &self.http_client }
+    fn github_oauth_states(&self) -> &Arc<RwLock<HashMap<String, tokio::time::Instant>>> { &self.github_oauth_states }
+    fn github_oauth_table(&self) -> &'static str { "ch_oauth_github" }
+}
+
+impl jaskier_oauth::vercel::HasVercelOAuthState for AppState {
+    fn db(&self) -> &sqlx::PgPool { &self.db }
+    fn http_client(&self) -> &reqwest::Client { &self.http_client }
+    fn vercel_oauth_states(&self) -> &Arc<RwLock<HashMap<String, tokio::time::Instant>>> { &self.vercel_oauth_states }
+    fn vercel_oauth_table(&self) -> &'static str { "ch_oauth_vercel" }
+}
+
+impl jaskier_oauth::service_tokens::HasServiceTokensState for AppState {
+    fn db(&self) -> &sqlx::PgPool { &self.db }
+    fn service_tokens_table(&self) -> &'static str { "ch_service_tokens" }
+}
+
+impl jaskier_browser::browser_proxy::HasBrowserProxyState for AppState {
+    fn http_client(&self) -> &reqwest::Client { &self.http_client }
+    fn browser_proxy_status(&self) -> &Arc<RwLock<jaskier_browser::browser_proxy::BrowserProxyStatus>> {
+        &self.browser_proxy_status
+    }
+}
+
+impl jaskier_core::model_registry::HasModelRegistryState for AppState {
+    fn model_cache(&self) -> &Arc<RwLock<crate::model_registry::ModelCache>> { &self.model_cache }
+    fn anthropic_api_key(&self) -> Option<String> {
+        self.api_keys.try_read().ok()?.get("ANTHROPIC_API_KEY").cloned()
+    }
+    fn model_pins_table(&self) -> &'static str { "ch_model_pins" }
+    fn settings_table(&self) -> &'static str { "ch_settings" }
+    fn audit_log_table(&self) -> &'static str { "ch_audit_log" }
+}
+
+impl jaskier_browser::watchdog::HasWatchdogState for AppState {
+    fn browser_proxy_status(&self) -> &Arc<RwLock<jaskier_browser::browser_proxy::BrowserProxyStatus>> {
+        &self.browser_proxy_status
+    }
+    fn browser_proxy_history(&self) -> &Arc<jaskier_browser::browser_proxy::ProxyHealthHistory> {
+        &self.browser_proxy_history
+    }
+}
+
+// ── jaskier-core sessions trait implementation ───────────────────────────────
+
+impl jaskier_core::sessions::HasSessionsState for AppState {
+    fn db(&self) -> &sqlx::PgPool { &self.db }
+
+    // ── Table names ──────────────────────────────────────────────────────
+    fn sessions_table(&self) -> &'static str { "ch_sessions" }
+    fn messages_table(&self) -> &'static str { "ch_messages" }
+    fn settings_table(&self) -> &'static str { "ch_settings" }
+    fn memory_table(&self) -> &'static str { "ch_memories" }
+    fn knowledge_nodes_table(&self) -> &'static str { "ch_knowledge_nodes" }
+    fn knowledge_edges_table(&self) -> &'static str { "ch_knowledge_edges" }
+    fn prompt_history_table(&self) -> &'static str { "ch_prompt_history" }
+    fn ratings_table(&self) -> &'static str { "ch_ratings" }
+    fn audit_log_table(&self) -> &'static str { "ch_audit_log" }
+
+    // ── Delegated operations ─────────────────────────────────────────────
+
+    async fn log_audit_entry(
+        &self,
+        action: &str,
+        data: serde_json::Value,
+        ip: Option<&str>,
+    ) {
+        crate::audit::log_audit(&self.db, action, data, ip).await;
+    }
+
+    async fn get_best_model_id(&self, _use_case: &str) -> String {
+        // ClaudeHydra uses Anthropic models — return coordinator tier default
+        let cache = self.model_cache.read().await;
+        // Iterate all provider buckets and find the best sonnet model
+        for models in cache.models.values() {
+            if let Some(m) = models.iter().find(|m| m.id.contains("sonnet")) {
+                return m.id.clone();
+            }
+        }
+        "claude-sonnet-4-6".to_string()
+    }
+
+    async fn generate_title_with_ai(&self, first_message: &str) -> Option<String> {
+        use serde_json::json;
+
+        let snippet: &str = if first_message.len() > 500 {
+            let end = first_message
+                .char_indices()
+                .take_while(|(i, _)| *i < 500)
+                .last()
+                .map(|(i, c)| i + c.len_utf8())
+                .unwrap_or(500.min(first_message.len()));
+            &first_message[..end]
+        } else {
+            first_message
+        };
+
+        let body = json!({
+            "model": "claude-haiku-4-5-20251001",
+            "max_tokens": 64,
+            "messages": [{
+                "role": "user",
+                "content": format!(
+                    "Generate a concise 3-7 word title for a chat that starts with this message. \
+                     Return ONLY the title text, no quotes, no explanation.\n\nMessage: {}",
+                    snippet
+                )
+            }]
+        });
+
+        let resp = crate::handlers::send_to_anthropic(self, &body, 15).await.ok()?;
+
+        if !resp.status().is_success() {
+            tracing::error!("generate_title_with_ai: Anthropic API returned {}", resp.status());
+            return None;
+        }
+
+        let json_resp: serde_json::Value = resp.json().await.ok()?;
+        let raw_title = json_resp
+            .get("content")
+            .and_then(|c| c.get(0))
+            .and_then(|c0| c0.get("text"))
+            .and_then(|t| t.as_str())
+            .unwrap_or("");
+        let raw_title = raw_title.trim().trim_matches('"').trim();
+
+        if raw_title.is_empty() {
+            tracing::warn!(
+                "generate_title_with_ai: Anthropic response missing text, response keys: {:?}",
+                json_resp.as_object().map(|o| o.keys().collect::<Vec<_>>())
+            );
+            return None;
+        }
+
+        Some(raw_title.to_string())
     }
 }
 

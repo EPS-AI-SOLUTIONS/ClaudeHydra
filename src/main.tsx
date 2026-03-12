@@ -1,3 +1,4 @@
+import { FeatureErrorFallback } from '@jaskier/hydra-app/components/molecules';
 import { ErrorBoundary } from '@jaskier/ui';
 import { QueryClientProvider, QueryErrorResetBoundary } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -5,7 +6,6 @@ import { AnimatePresence, motion } from 'motion/react';
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Toaster } from 'sonner';
-import { FeatureErrorFallback } from '@/components/molecules/FeatureErrorFallback';
 import { OfflineBanner } from '@/components/molecules/OfflineBanner';
 import { ViewSkeleton } from '@/components/molecules/ViewSkeleton';
 import { AppShell } from '@/components/organisms/AppShell';

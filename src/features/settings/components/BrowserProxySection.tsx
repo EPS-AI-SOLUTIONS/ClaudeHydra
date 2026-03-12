@@ -1,5 +1,6 @@
 /** Jaskier Shared Pattern — Browser Proxy Login Section (Settings) */
 
+import { useViewTheme } from '@jaskier/chat-module';
 import { cn } from '@jaskier/ui';
 import { AlertTriangle, CheckCircle, Globe, Loader2, LogIn, LogOut, Power, RefreshCw } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -7,7 +8,6 @@ import { memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Badge, Button } from '@/components/atoms';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import {
   useBrowserProxyLogin,
   useBrowserProxyLogout,

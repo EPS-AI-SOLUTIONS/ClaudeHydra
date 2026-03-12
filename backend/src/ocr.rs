@@ -1,6 +1,10 @@
 // Jaskier Shared Pattern -- ocr
 // ClaudeHydra v4 — OCR via Claude Vision API (primary) / Gemini Vision (fallback)
 //
+// Types re-exported from jaskier-tools::ocr (shared crate).
+// Handlers are local because ClaudeHydra has a dual-provider strategy
+// (Claude Vision primary, Gemini fallback) and uses ch_ocr_history table.
+//
 // Endpoints:
 //   POST /api/ocr              — synchronous OCR (single image or PDF)
 //   POST /api/ocr/stream       — SSE streaming OCR with progress events
@@ -18,12 +22,18 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::sse::{Event, KeepAlive, Sse};
 use futures_util::Stream;
-use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 
 use crate::state::AppState;
+
+// ── Re-export shared types from jaskier-tools ────────────────────────────────
+
+pub use jaskier_tools::ocr::{
+    OcrBatchItem, OcrBatchItemResult, OcrBatchRequest, OcrHistoryEntry, OcrHistoryFull,
+    OcrHistoryParams, OcrPage, OcrRequest, OcrResponse, PaginatedOcrHistory,
+};
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -96,127 +106,6 @@ const ALLOWED_MIME_TYPES: &[&str] = &[
     "image/heic",
     "application/pdf",
 ];
-
-// ── Request / Response models ────────────────────────────────────────────────
-
-#[derive(Debug, Deserialize)]
-pub struct OcrRequest {
-    /// Base64-encoded image or PDF data.
-    pub data_base64: String,
-    /// MIME type: image/png, image/jpeg, image/webp, application/pdf
-    pub mime_type: String,
-    /// Optional custom prompt (overrides default OCR_PROMPT).
-    pub prompt: Option<String>,
-    /// For PDFs: optional page range (informational).
-    pub page_range: Option<String>,
-    /// Language hint (e.g. "pl", "en", "de") — improves accuracy for diacritics and domain terms.
-    pub language: Option<String>,
-    /// OCR preset: "invoice", "document", "handwriting", "table", "receipt".
-    pub preset: Option<String>,
-    /// Original filename — used for auto-detection of preset when preset is None.
-    pub filename: Option<String>,
-    /// If true, perform a second AI call to extract structured data from the OCR text.
-    pub extract_structured: Option<bool>,
-    /// Output format: "text" (default, markdown) or "html" (semantic HTML with tables).
-    pub output_format: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct OcrResponse {
-    pub text: String,
-    pub pages: Vec<OcrPage>,
-    pub total_pages: usize,
-    pub processing_time_ms: u64,
-    pub provider: String,
-    /// Output format used: "text" or "html".
-    pub output_format: String,
-    /// Approximate confidence score (0.0-1.0) derived from model logprobs, if available.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub confidence: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub detected_preset: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub structured_data: Option<Value>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct OcrPage {
-    pub page_number: usize,
-    pub text: String,
-}
-
-// ── Batch models ─────────────────────────────────────────────────────────────
-
-#[derive(Debug, Deserialize)]
-pub struct OcrBatchRequest {
-    pub items: Vec<OcrBatchItem>,
-    pub prompt: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct OcrBatchItem {
-    pub data_base64: String,
-    pub mime_type: String,
-    pub filename: Option<String>,
-    pub preset: Option<String>,
-    pub language: Option<String>,
-    pub extract_structured: Option<bool>,
-    pub output_format: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct OcrBatchItemResult {
-    pub filename: Option<String>,
-    pub response: Option<OcrResponse>,
-    pub error: Option<String>,
-}
-
-// ── History models ───────────────────────────────────────────────────────────
-
-#[derive(Debug, Deserialize)]
-pub struct OcrHistoryParams {
-    pub limit: Option<i64>,
-    pub offset: Option<i64>,
-    pub search: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct PaginatedOcrHistory {
-    pub items: Vec<OcrHistoryEntry>,
-    pub total: i64,
-    pub limit: i64,
-    pub offset: i64,
-}
-
-#[derive(Debug, Serialize, sqlx::FromRow)]
-pub struct OcrHistoryEntry {
-    pub id: String,
-    pub filename: Option<String>,
-    pub mime_type: String,
-    pub preset: Option<String>,
-    pub total_pages: i32,
-    pub provider: String,
-    pub processing_time_ms: i64,
-    pub detected_preset: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-}
-
-#[derive(Debug, Serialize, sqlx::FromRow)]
-pub struct OcrHistoryFull {
-    pub id: String,
-    pub filename: Option<String>,
-    pub mime_type: String,
-    pub preset: Option<String>,
-    pub text: String,
-    pub pages_json: Value,
-    pub total_pages: i32,
-    pub confidence: Option<f64>,
-    pub provider: String,
-    pub processing_time_ms: i64,
-    pub detected_preset: Option<String>,
-    pub structured_data: Option<Value>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-}
 
 // ── Auto-detect preset ──────────────────────────────────────────────────────
 
@@ -849,6 +738,8 @@ pub async fn ocr_history_delete(
 }
 
 // ── OCR extraction (tries Claude first, falls back to Gemini) ────────────────
+// CH-specific: dual-provider strategy — Claude Vision primary, Gemini fallback.
+// Shared crate is Gemini-only; this is the main reason handlers remain local.
 
 async fn ocr_extract(
     state: &AppState,

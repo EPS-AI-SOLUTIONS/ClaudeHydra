@@ -1,18 +1,31 @@
 use claudehydra_backend::tools::ToolExecutor;
 use serde_json::json;
+use std::sync::Once;
+
+/// Set ALLOWED_FILE_DIRS once (to a known parent directory) so that
+/// parallel tests don't interfere with each other via env::set_var races.
+static INIT_ENV: Once = Once::new();
+
+fn test_temp_base() -> std::path::PathBuf {
+    let base = std::env::temp_dir().join("claudehydra_tool_tests");
+    INIT_ENV.call_once(|| {
+        std::fs::create_dir_all(&base).unwrap();
+        unsafe {
+            std::env::set_var("ALLOWED_FILE_DIRS", base.to_string_lossy().to_string());
+        }
+    });
+    base
+}
 
 #[tokio::test]
 async fn test_tool_write_and_read_file() {
-    // Setup: Use a temp directory for testing
-    let temp_dir = std::env::temp_dir().join("claudehydra_tests");
-    std::fs::create_dir_all(&temp_dir).unwrap();
+    let base = test_temp_base();
+    let work_dir = base.join("write_read");
+    std::fs::create_dir_all(&work_dir).unwrap();
 
-    // Set ALLOWED_FILE_DIRS env var for the test
-    unsafe {
-        std::env::set_var("ALLOWED_FILE_DIRS", temp_dir.to_string_lossy().to_string());
-    }
+    let executor = ToolExecutor::default()
+        .with_working_directory(&work_dir.to_string_lossy());
 
-    let executor = ToolExecutor::default();
     let file_name = "test_file_op.txt";
     let file_content = "Hello from automated test!";
 
@@ -41,36 +54,34 @@ async fn test_tool_write_and_read_file() {
     assert_eq!(read_result, file_content, "Read content mismatch");
 
     // Cleanup
-    let _ = std::fs::remove_dir_all(temp_dir);
+    let _ = std::fs::remove_dir_all(work_dir);
 }
 
 #[tokio::test]
 async fn test_tool_list_directory() {
-    let temp_dir = std::env::temp_dir().join("claudehydra_tests_ls");
-    if temp_dir.exists() {
-        std::fs::remove_dir_all(&temp_dir).unwrap();
+    let base = test_temp_base();
+    let work_dir = base.join("list_dir");
+    if work_dir.exists() {
+        let _ = std::fs::remove_dir_all(&work_dir);
     }
-    std::fs::create_dir_all(&temp_dir).unwrap();
-    unsafe {
-        std::env::set_var("ALLOWED_FILE_DIRS", temp_dir.to_string_lossy().to_string());
-    }
+    std::fs::create_dir_all(&work_dir).unwrap();
 
-    let executor = ToolExecutor::default();
+    let executor = ToolExecutor::default()
+        .with_working_directory(&work_dir.to_string_lossy());
 
     // Create some dummy files
-    std::fs::write(temp_dir.join("a.txt"), "A").unwrap();
-    std::fs::create_dir(temp_dir.join("sub")).unwrap();
-    std::fs::write(temp_dir.join("sub/b.txt"), "B").unwrap();
+    std::fs::write(work_dir.join("a.txt"), "A").unwrap();
+    std::fs::create_dir(work_dir.join("sub")).unwrap();
+    std::fs::write(work_dir.join("sub/b.txt"), "B").unwrap();
 
+    // Use "." (relative to working_directory) instead of absolute path
     let list_input = json!({
-        "path": temp_dir.to_string_lossy(),
+        "path": ".",
         "recursive": true
     });
 
     let (result, is_error) = executor.execute("list_directory", &list_input).await;
     assert!(!is_error, "list_directory failed: {}", result);
-
-    println!("List Result:\n{}", result);
 
     assert!(
         result.contains("a.txt"),
@@ -87,5 +98,5 @@ async fn test_tool_list_directory() {
     let has_b = result.contains("sub/b.txt") || result.contains("sub\\b.txt");
     assert!(has_b, "Missing sub/b.txt in listing (found: {})", result);
 
-    let _ = std::fs::remove_dir_all(temp_dir);
+    let _ = std::fs::remove_dir_all(work_dir);
 }

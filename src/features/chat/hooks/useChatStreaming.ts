@@ -5,9 +5,9 @@
  * Extracted from ClaudeChatView.tsx to reduce component complexity.
  */
 
+import { useOnlineStatus } from '@jaskier/core';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { useViewStore } from '@/stores/viewStore';
 import { claudeStreamChat } from '../api/claudeStream';
 import type { Attachment } from '../components/ChatInput';

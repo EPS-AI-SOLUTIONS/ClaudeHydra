@@ -6,13 +6,13 @@
  * message count badges, scroll on overflow, context menu, glass-panel background.
  */
 
+import { useViewTheme } from '@jaskier/chat-module';
 import { cn } from '@jaskier/ui';
 import { Pin, Plus, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { memo, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSessionSync } from '@/features/chat/hooks/useSessionSync';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { type ChatTab, useViewStore } from '@/stores/viewStore';
 
 // ============================================================================

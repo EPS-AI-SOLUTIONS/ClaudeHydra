@@ -27,8 +27,11 @@ if git diff --cached --name-only | grep -q '\.\(ts\|tsx\)$'; then
 fi
 
 # Backend check (only if .rs files staged)
+# Use workspace root with -p flag to avoid junction link path resolution issues
+# (ClaudeHydra/backend relative paths only work via apps/ClaudeHydra junction)
 if git diff --cached --name-only | grep -q '\.rs$'; then
-  (cd backend && cargo check)
+  WORKSPACE_ROOT="$(cd .. && pwd)"
+  (cd "$WORKSPACE_ROOT" && cargo check -p claudehydra-backend)
   if [ $? -ne 0 ]; then
     echo "Cargo check failed. Fix errors before committing."
     exit 1

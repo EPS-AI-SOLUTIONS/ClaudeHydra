@@ -1,10 +1,10 @@
 // Jaskier Shared Pattern -- backend integration test
 // ClaudeHydra v4 - Health endpoint integration test
+//
+// Uses jaskier_core::testing shared helpers for request building and body parsing.
 
-use axum::body::Body;
-use axum::http::{Request, StatusCode};
-use http_body_util::BodyExt;
-use serde_json::Value;
+use jaskier_core::testing::{body_json, get};
+use axum::http::StatusCode;
 use tower::ServiceExt;
 
 use claudehydra_backend::state::AppState;
@@ -15,39 +15,15 @@ fn test_app() -> axum::Router {
     claudehydra_backend::create_router(state)
 }
 
-/// Collect a response body into a `serde_json::Value`.
-async fn body_json(response: axum::response::Response) -> Value {
-    let bytes = response.into_body().collect().await.unwrap().to_bytes();
-    serde_json::from_slice(&bytes).unwrap()
-}
-
 #[tokio::test]
 async fn health_endpoint_returns_ok() {
-    let response = test_app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/health")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = test_app().oneshot(get("/api/health")).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 }
 
 #[tokio::test]
 async fn health_endpoint_returns_json_with_status_field() {
-    let response = test_app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/health")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = test_app().oneshot(get("/api/health")).await.unwrap();
     let json = body_json(response).await;
     assert!(
         json.get("status").is_some(),
@@ -57,16 +33,7 @@ async fn health_endpoint_returns_json_with_status_field() {
 
 #[tokio::test]
 async fn auth_mode_endpoint_returns_ok() {
-    let response = test_app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/auth/mode")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = test_app().oneshot(get("/api/auth/mode")).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
     let json = body_json(response).await;
@@ -77,15 +44,9 @@ async fn auth_mode_endpoint_returns_ok() {
 #[tokio::test]
 async fn readiness_endpoint_exists() {
     let response = test_app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/health/ready")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(get("/api/health/ready"))
         .await
         .unwrap();
-
     // Readiness may return 503 if not marked ready yet, but should not 404
     assert_ne!(response.status(), StatusCode::NOT_FOUND);
 }
@@ -93,14 +54,8 @@ async fn readiness_endpoint_exists() {
 #[tokio::test]
 async fn nonexistent_route_returns_404() {
     let response = test_app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/does-not-exist")
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(get("/api/does-not-exist"))
         .await
         .unwrap();
-
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }

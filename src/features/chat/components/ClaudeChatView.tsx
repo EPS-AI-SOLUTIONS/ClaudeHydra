@@ -6,6 +6,7 @@
  * inline as collapsible ToolCallBlock panels.
  */
 
+import { useCompletionFeedback, useOnlineStatus } from '@jaskier/core';
 import { cn, EmptyState } from '@jaskier/ui';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown, Code2, FileSearch, FileText, GitBranch, Globe, MessageSquare, Search } from 'lucide-react';
@@ -19,8 +20,6 @@ import { type PromptSuggestion, PromptSuggestions } from '@/components/molecules
 import { useAutoScroll } from '@/features/chat/hooks/useAutoScroll';
 import { type ClaudeModel, FALLBACK_CLAUDE_MODELS, useClaudeModels } from '@/features/chat/hooks/useClaudeModels';
 import { useSessionSync } from '@/features/chat/hooks/useSessionSync';
-import { useCompletionFeedback } from '@/shared/hooks/useCompletionFeedback';
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 import { useSettingsQuery } from '@/shared/hooks/useSettings';
 import { useWebSocketChat } from '@/shared/hooks/useWebSocketChat';
 import { useViewStore } from '@/stores/viewStore';

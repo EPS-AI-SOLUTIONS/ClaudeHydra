@@ -9,6 +9,7 @@
  * Neutral white accent (#ffffff) for active states, hovers, borders, glows.
  */
 
+import { useIsMobile } from '@jaskier/core';
 import {
   ChevronDown,
   ChevronLeft,
@@ -40,19 +41,16 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePartnerSessions } from '@/features/chat/hooks/usePartnerSessions';
-import { useIsMobile } from '@/shared/hooks/useIsMobile';
 
 const PartnerChatModal = lazy(() => import('@/features/chat/components/PartnerChatModal'));
 
+import { useViewTheme } from '@jaskier/chat-module';
+import { FooterControls, LogoButton } from '@jaskier/hydra-app/components/organisms';
 import { cn } from '@jaskier/ui';
 import { SessionSearch } from '@/components/molecules/SessionSearch';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { useViewStore, type ViewId } from '@/stores/viewStore';
-import { FooterControls } from './sidebar/FooterControls';
-import { LogoButton } from './sidebar/LogoButton';
 import { SessionItem } from './sidebar/SessionItem';
 import { useSidebarLogic } from './sidebar/useSidebarLogic';
 

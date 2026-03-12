@@ -92,24 +92,15 @@ async fn request_id_middleware(
         handlers::get_settings,
         handlers::update_settings,
         handlers::set_api_key,
-        // Sessions
-        handlers::list_sessions,
-        handlers::create_session,
+        // Sessions (local overrides with utoipa annotations)
         handlers::get_session,
-        handlers::update_session,
-        handlers::delete_session,
         handlers::add_session_message,
-        handlers::generate_session_title,
         // Model registry
         model_registry::list_models,
         model_registry::refresh_models,
         model_registry::pin_model,
         model_registry::unpin_model,
         model_registry::list_pins,
-        // Prompt history
-        handlers::list_prompt_history,
-        handlers::add_prompt_history,
-        handlers::clear_prompt_history,
     ),
     components(schemas(
         // Core models
@@ -158,38 +149,14 @@ async fn request_id_middleware(
 )]
 pub struct ApiDoc;
 
-/// Build the application router with the given shared state.
-/// Extracted from `main()` so integration tests can construct the app
-/// without binding to a network port.
-pub fn create_router(state: AppState) -> Router {
-    // ── #21 Per-endpoint rate limiting — Jaskier Shared Pattern ──────
-    // Streaming chat: 20 req/min (1 per 3s burst 20)
-    let rl_chat_stream = GovernorConfigBuilder::default()
-        .per_second(3)
-        .burst_size(20)
-        .finish()
-        .expect("rate limiter config: chat_stream");
-    // Non-streaming chat: 30 req/min (1 per 2s burst 30)
-    let rl_chat = GovernorConfigBuilder::default()
-        .per_second(2)
-        .burst_size(30)
-        .finish()
-        .expect("rate limiter config: chat");
-    // A2A delegation endpoints: ~10 req/min (1 per 6s burst 3)
-    let rl_a2a = GovernorConfigBuilder::default()
-        .per_second(6)
-        .burst_size(3)
-        .finish()
-        .expect("rate limiter config: a2a");
-    // Other protected routes: 120 req/min (1 per 0.5s burst 120)
-    let rl_default = GovernorConfigBuilder::default()
-        .per_millisecond(500)
-        .burst_size(120)
-        .finish()
-        .expect("rate limiter config: default");
+// ═══════════════════════════════════════════════════════════════════════
+//  Shared route registration — single source of truth for all endpoints
+// ═══════════════════════════════════════════════════════════════════════
 
-    // ── Public routes (no auth) ──────────────────────────────────────
-    let public = Router::new()
+/// All public routes (no auth required).
+/// Includes health checks, OAuth flows, and browser proxy management.
+fn public_routes() -> Router<AppState> {
+    Router::new()
         .route("/api/health", get(handlers::health_check))
         .route("/api/health/ready", get(handlers::readiness))
         // Anthropic OAuth (PKCE)
@@ -201,112 +168,127 @@ pub fn create_router(state: AppState) -> Router {
         // Google OAuth (public — must be accessible to complete auth flow)
         .route(
             "/api/auth/google/status",
-            get(oauth_google::google_auth_status),
+            get(oauth_google::google_auth_status::<AppState>),
         )
         .route(
             "/api/auth/google/login",
-            post(oauth_google::google_auth_login),
+            post(oauth_google::google_auth_login::<AppState>),
         )
         .route(
             "/api/auth/google/redirect",
-            get(oauth_google::google_redirect),
+            get(oauth_google::google_redirect::<AppState>),
         )
         .route(
             "/api/auth/google/logout",
-            post(oauth_google::google_auth_logout),
+            post(oauth_google::google_auth_logout::<AppState>),
         )
         .route(
             "/api/auth/google/apikey",
-            post(oauth_google::google_save_api_key).delete(oauth_google::google_delete_api_key),
+            post(oauth_google::google_save_api_key::<AppState>).delete(oauth_google::google_delete_api_key::<AppState>),
         )
         // GitHub OAuth (public — must be accessible to complete auth flow)
         .route(
             "/api/auth/github/status",
-            get(oauth_github::github_auth_status),
+            get(oauth_github::github_auth_status::<AppState>),
         )
         .route(
             "/api/auth/github/login",
-            post(oauth_github::github_auth_login),
+            post(oauth_github::github_auth_login::<AppState>),
         )
         .route(
             "/api/auth/github/callback",
-            post(oauth_github::github_auth_callback),
+            post(oauth_github::github_auth_callback::<AppState>),
         )
         .route(
             "/api/auth/github/logout",
-            post(oauth_github::github_auth_logout),
+            post(oauth_github::github_auth_logout::<AppState>),
         )
         // Vercel OAuth (public — must be accessible to complete auth flow)
         .route(
             "/api/auth/vercel/status",
-            get(oauth_vercel::vercel_auth_status),
+            get(oauth_vercel::vercel_auth_status::<AppState>),
         )
         .route(
             "/api/auth/vercel/login",
-            post(oauth_vercel::vercel_auth_login),
+            post(oauth_vercel::vercel_auth_login::<AppState>),
         )
         .route(
             "/api/auth/vercel/callback",
-            post(oauth_vercel::vercel_auth_callback),
+            post(oauth_vercel::vercel_auth_callback::<AppState>),
         )
         .route(
             "/api/auth/vercel/logout",
-            post(oauth_vercel::vercel_auth_logout),
+            post(oauth_vercel::vercel_auth_logout::<AppState>),
         )
         // Browser proxy management (public — no auth, proxy handles its own state)
         .route(
             "/api/browser-proxy/status",
-            get(browser_proxy::proxy_status),
+            get(browser_proxy::proxy_status::<AppState>),
         )
-        .route("/api/browser-proxy/login", post(browser_proxy::proxy_login))
+        .route("/api/browser-proxy/login", post(browser_proxy::proxy_login::<AppState>))
         .route(
             "/api/browser-proxy/login/status",
-            get(browser_proxy::proxy_login_status),
+            get(browser_proxy::proxy_login_status::<AppState>),
         )
         .route(
             "/api/browser-proxy/reinit",
-            post(browser_proxy::proxy_reinit),
+            post(browser_proxy::proxy_reinit::<AppState>),
         )
         .route(
             "/api/browser-proxy/logout",
-            delete(browser_proxy::proxy_logout),
+            delete(browser_proxy::proxy_logout::<AppState>),
         )
         .route(
             "/api/browser-proxy/history",
             get(handlers::browser_proxy_history),
-        );
+        )
+}
 
-    // ── Protected: streaming chat — 20 req/min ──────────────────────
-    let chat_stream_routes = Router::new()
+/// Streaming chat route (protected, separate for rate limiting in production).
+fn chat_stream_routes() -> Router<AppState> {
+    Router::new()
         .route(
             "/api/claude/chat/stream",
             post(handlers::claude_chat_stream),
         )
-        .layer(GovernorLayer::new(rl_chat_stream));
+}
 
-    // ── Protected: non-streaming chat — 30 req/min ──────────────────
-    let chat_routes = Router::new()
+/// Non-streaming chat route (protected, separate for rate limiting in production).
+fn chat_routes() -> Router<AppState> {
+    Router::new()
         .route("/api/claude/chat", post(handlers::claude_chat))
-        .layer(GovernorLayer::new(rl_chat));
+}
 
-    // ── Protected: other routes — 120 req/min ───────────────────────
-    let other_routes = Router::new()
+/// A2A delegation routes (protected, separate for rate limiting in production).
+fn a2a_routes() -> Router<AppState> {
+    Router::new()
+        .route("/api/agents/delegations", get(handlers::list_delegations))
+        .route(
+            "/api/agents/delegations/stream",
+            get(handlers::delegations_stream),
+        )
+}
+
+/// All other protected routes — system, admin, tokens, logs, agents, models,
+/// settings, sessions, MCP, OCR, prompt history.
+fn general_protected_routes() -> Router<AppState> {
+    Router::new()
         .route("/api/system/stats", get(handlers::system_stats))
         // Admin — hot-reload API keys
         .route("/api/admin/rotate-key", post(handlers::rotate_key))
         // Service tokens (Fly.io PAT, etc.) — protected
         .route(
             "/api/tokens",
-            get(service_tokens::list_tokens).post(service_tokens::store_token),
+            get(service_tokens::list_tokens::<AppState>).post(service_tokens::store_token::<AppState>),
         )
         .route(
             "/api/tokens/{service}",
-            delete(service_tokens::delete_token),
+            delete(service_tokens::delete_token::<AppState>),
         )
         // Logs — backend log ring buffer
         .route(
             "/api/logs/backend",
-            get(logs::backend_logs).delete(logs::clear_backend_logs),
+            get(logs::backend_logs::<AppState>).delete(logs::clear_backend_logs::<AppState>),
         )
         .route("/api/agents", get(handlers::list_agents))
         .route("/api/agents/refresh", post(handlers::refresh_agents))
@@ -324,29 +306,31 @@ pub fn create_router(state: AppState) -> Router {
             get(handlers::get_settings).post(handlers::update_settings),
         )
         .route("/api/settings/api-key", post(handlers::set_api_key))
+        // Sessions — shared generic handlers via jaskier_core::sessions
         .route(
             "/api/sessions",
-            get(handlers::list_sessions).post(handlers::create_session),
+            get(handlers::list_sessions::<AppState>).post(handlers::create_session::<AppState>),
         )
         .route(
             "/api/sessions/{id}",
             get(handlers::get_session)
-                .patch(handlers::update_session)
-                .delete(handlers::delete_session),
+                .patch(handlers::update_session::<AppState>)
+                .delete(handlers::delete_session::<AppState>),
         )
         .route(
             "/api/sessions/{id}/working-directory",
-            patch(handlers::update_session_working_directory),
+            patch(handlers::update_session_working_directory::<AppState>),
         )
         .route("/api/files/list", post(handlers::list_files))
         .route("/api/files/browse", post(handlers::browse_directory))
+        // Session messages — local override (tool_interactions support)
         .route(
             "/api/sessions/{id}/messages",
             post(handlers::add_session_message),
         )
         .route(
             "/api/sessions/{id}/generate-title",
-            post(handlers::generate_session_title),
+            post(handlers::generate_session_title::<AppState>),
         )
         // ── MCP routes (Phase 9 + 10) ────────────────────────────────
         .route(
@@ -380,49 +364,24 @@ pub fn create_router(state: AppState) -> Router {
             "/api/ocr/history/{id}",
             get(ocr::ocr_history_item).delete(ocr::ocr_history_delete),
         )
-        // Prompt history
+        // Prompt history — shared generic handlers via jaskier_core::sessions
         .route(
             "/api/prompt-history",
-            get(handlers::list_prompt_history)
-                .post(handlers::add_prompt_history)
-                .delete(handlers::clear_prompt_history),
+            get(handlers::list_prompt_history::<AppState>)
+                .post(handlers::add_prompt_history::<AppState>)
+                .delete(handlers::clear_prompt_history::<AppState>),
         )
-        .layer(GovernorLayer::new(rl_default));
+}
 
-    // ── Protected: A2A delegation endpoints — ~10 req/min ────────
-    let a2a_routes = Router::new()
-        .route("/api/agents/delegations", get(handlers::list_delegations))
-        .route(
-            "/api/agents/delegations/stream",
-            get(handlers::delegations_stream),
-        )
-        .layer(GovernorLayer::new(rl_a2a));
-
-    // ── Merge all protected routes with auth layer ──────────────────
-    let protected = chat_stream_routes
-        .merge(chat_routes)
-        .merge(a2a_routes)
-        .merge(other_routes)
-        .route_layer(middleware::from_fn_with_state(
-            state.clone(),
-            auth::require_auth,
-        ));
-
-    let rl_system = GovernorConfigBuilder::default()
-        .per_millisecond(500)
-        .burst_size(120)
-        .finish()
-        .expect("rate limiter config: system");
-
-    let api_key_routes = Router::new()
+/// Routes that require API key authentication (system metrics/audit).
+fn api_key_auth_routes() -> Router<AppState> {
+    Router::new()
         .route("/api/system/metrics", get(handlers::system_metrics))
         .route("/api/system/audit", get(handlers::system_audit))
-        .route_layer(middleware::from_fn_with_state(
-            state.clone(),
-            auth::require_api_key_auth,
-        ))
-        .layer(GovernorLayer::new(rl_system));
+}
 
+/// Extra routes: Prometheus metrics (public), v1 API aliases, WebSocket.
+fn extra_routes() -> Router<AppState> {
     // ── Metrics endpoint (public, no auth) ─────────────────────────
     let metrics = Router::new().route("/api/metrics", get(metrics_handler));
 
@@ -435,12 +394,22 @@ pub fn create_router(state: AppState) -> Router {
     // ── WebSocket route (auth via ?token query param, outside middleware) ─
     let ws_routes = Router::new().route("/ws/chat", get(handlers::ws_chat));
 
+    metrics.merge(v1_public).merge(ws_routes)
+}
+
+/// Assemble the final `Router` from pre-built route groups + shared state.
+/// Adds Swagger UI, body limit, request correlation ID, and binds state.
+fn assemble_app(
+    state: AppState,
+    public: Router<AppState>,
+    protected: Router<AppState>,
+    api_key: Router<AppState>,
+    extra: Router<AppState>,
+) -> Router {
     public
         .merge(protected)
-        .merge(api_key_routes)
-        .merge(ws_routes)
-        .merge(metrics)
-        .merge(v1_public)
+        .merge(api_key)
+        .merge(extra)
         // Swagger UI — no auth required
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         // 60 MB body limit — must be before .with_state() for Json extractor
@@ -450,6 +419,63 @@ pub fn create_router(state: AppState) -> Router {
         .with_state(state)
 }
 
+/// Build the application router with the given shared state.
+/// Extracted from `main()` so integration tests can construct the app
+/// without binding to a network port.
+pub fn create_router(state: AppState) -> Router {
+    // ── #21 Per-endpoint rate limiting — Jaskier Shared Pattern ──────
+    // Streaming chat: 20 req/min (1 per 3s burst 20)
+    let rl_chat_stream = GovernorConfigBuilder::default()
+        .per_second(3)
+        .burst_size(20)
+        .finish()
+        .expect("rate limiter config: chat_stream");
+    // Non-streaming chat: 30 req/min (1 per 2s burst 30)
+    let rl_chat = GovernorConfigBuilder::default()
+        .per_second(2)
+        .burst_size(30)
+        .finish()
+        .expect("rate limiter config: chat");
+    // A2A delegation endpoints: ~10 req/min (1 per 6s burst 3)
+    let rl_a2a = GovernorConfigBuilder::default()
+        .per_second(6)
+        .burst_size(3)
+        .finish()
+        .expect("rate limiter config: a2a");
+    // Other protected routes: 120 req/min (1 per 0.5s burst 120)
+    let rl_default = GovernorConfigBuilder::default()
+        .per_millisecond(500)
+        .burst_size(120)
+        .finish()
+        .expect("rate limiter config: default");
+
+    // Apply rate limiters to each route group
+    let protected = chat_stream_routes()
+        .layer(GovernorLayer::new(rl_chat_stream))
+        .merge(chat_routes().layer(GovernorLayer::new(rl_chat)))
+        .merge(a2a_routes().layer(GovernorLayer::new(rl_a2a)))
+        .merge(general_protected_routes().layer(GovernorLayer::new(rl_default)))
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth::require_auth::<AppState>,
+        ));
+
+    let rl_system = GovernorConfigBuilder::default()
+        .per_millisecond(500)
+        .burst_size(120)
+        .finish()
+        .expect("rate limiter config: system");
+
+    let api_key = api_key_auth_routes()
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth::require_api_key_auth,
+        ))
+        .layer(GovernorLayer::new(rl_system));
+
+    assemble_app(state, public_routes(), protected, api_key, extra_routes())
+}
+
 /// Test-only router — identical routes but **without** `GovernorLayer` rate
 /// limiting.  `tower_governor` extracts the peer IP via `ConnectInfo`, which
 /// is absent in `oneshot()` integration tests, causing a blanket 500
@@ -457,218 +483,23 @@ pub fn create_router(state: AppState) -> Router {
 /// logic intact while allowing pure in-memory tests.
 #[doc(hidden)]
 pub fn create_test_router(state: AppState) -> Router {
-    // ── Public routes (no auth) ──────────────────────────────────────
-    let public = Router::new()
-        .route("/api/health", get(handlers::health_check))
-        .route("/api/health/ready", get(handlers::readiness))
-        .route("/api/auth/status", get(oauth::auth_status))
-        .route("/api/auth/login", post(oauth::auth_login))
-        .route("/api/auth/callback", post(oauth::auth_callback))
-        .route("/api/auth/logout", post(oauth::auth_logout))
-        .route("/api/auth/mode", get(handlers::auth_mode))
-        .route(
-            "/api/auth/google/status",
-            get(oauth_google::google_auth_status),
-        )
-        .route(
-            "/api/auth/google/login",
-            post(oauth_google::google_auth_login),
-        )
-        .route(
-            "/api/auth/google/redirect",
-            get(oauth_google::google_redirect),
-        )
-        .route(
-            "/api/auth/google/logout",
-            post(oauth_google::google_auth_logout),
-        )
-        .route(
-            "/api/auth/google/apikey",
-            post(oauth_google::google_save_api_key).delete(oauth_google::google_delete_api_key),
-        )
-        .route(
-            "/api/auth/github/status",
-            get(oauth_github::github_auth_status),
-        )
-        .route(
-            "/api/auth/github/login",
-            post(oauth_github::github_auth_login),
-        )
-        .route(
-            "/api/auth/github/callback",
-            post(oauth_github::github_auth_callback),
-        )
-        .route(
-            "/api/auth/github/logout",
-            post(oauth_github::github_auth_logout),
-        )
-        .route(
-            "/api/auth/vercel/status",
-            get(oauth_vercel::vercel_auth_status),
-        )
-        .route(
-            "/api/auth/vercel/login",
-            post(oauth_vercel::vercel_auth_login),
-        )
-        .route(
-            "/api/auth/vercel/callback",
-            post(oauth_vercel::vercel_auth_callback),
-        )
-        .route(
-            "/api/auth/vercel/logout",
-            post(oauth_vercel::vercel_auth_logout),
-        )
-        .route(
-            "/api/browser-proxy/status",
-            get(browser_proxy::proxy_status),
-        )
-        .route("/api/browser-proxy/login", post(browser_proxy::proxy_login))
-        .route(
-            "/api/browser-proxy/login/status",
-            get(browser_proxy::proxy_login_status),
-        )
-        .route(
-            "/api/browser-proxy/reinit",
-            post(browser_proxy::proxy_reinit),
-        )
-        .route(
-            "/api/browser-proxy/logout",
-            delete(browser_proxy::proxy_logout),
-        )
-        .route(
-            "/api/browser-proxy/history",
-            get(handlers::browser_proxy_history),
-        );
-
-    // ── Protected routes (auth middleware, NO rate limiter) ───────────
-    let protected = Router::new()
-        .route(
-            "/api/claude/chat/stream",
-            post(handlers::claude_chat_stream),
-        )
-        .route("/api/claude/chat", post(handlers::claude_chat))
-        .route("/api/system/stats", get(handlers::system_stats))
-        .route("/api/admin/rotate-key", post(handlers::rotate_key))
-        .route(
-            "/api/tokens",
-            get(service_tokens::list_tokens).post(service_tokens::store_token),
-        )
-        .route(
-            "/api/tokens/{service}",
-            delete(service_tokens::delete_token),
-        )
-        .route(
-            "/api/logs/backend",
-            get(logs::backend_logs).delete(logs::clear_backend_logs),
-        )
-        .route("/api/agents", get(handlers::list_agents))
-        .route("/api/agents/refresh", post(handlers::refresh_agents))
-        .route("/api/claude/models", get(handlers::claude_models))
-        .route("/api/models", get(model_registry::list_models))
-        .route("/api/models/refresh", post(model_registry::refresh_models))
-        .route("/api/models/pin", post(model_registry::pin_model))
-        .route(
-            "/api/models/pin/{use_case}",
-            delete(model_registry::unpin_model),
-        )
-        .route("/api/models/pins", get(model_registry::list_pins))
-        .route(
-            "/api/settings",
-            get(handlers::get_settings).post(handlers::update_settings),
-        )
-        .route("/api/settings/api-key", post(handlers::set_api_key))
-        .route(
-            "/api/sessions",
-            get(handlers::list_sessions).post(handlers::create_session),
-        )
-        .route(
-            "/api/sessions/{id}",
-            get(handlers::get_session)
-                .patch(handlers::update_session)
-                .delete(handlers::delete_session),
-        )
-        .route(
-            "/api/sessions/{id}/working-directory",
-            patch(handlers::update_session_working_directory),
-        )
-        .route("/api/files/list", post(handlers::list_files))
-        .route("/api/files/browse", post(handlers::browse_directory))
-        .route(
-            "/api/sessions/{id}/messages",
-            post(handlers::add_session_message),
-        )
-        .route(
-            "/api/sessions/{id}/generate-title",
-            post(handlers::generate_session_title),
-        )
-        .route(
-            "/api/mcp/servers",
-            get(mcp::config::list_servers_handler).post(mcp::config::create_server_handler),
-        )
-        .route(
-            "/api/mcp/servers/{id}",
-            patch(mcp::config::update_server_handler).delete(mcp::config::delete_server_handler),
-        )
-        .route(
-            "/api/mcp/servers/{id}/connect",
-            post(mcp::config::connect_server_handler),
-        )
-        .route(
-            "/api/mcp/servers/{id}/disconnect",
-            post(mcp::config::disconnect_server_handler),
-        )
-        .route(
-            "/api/mcp/servers/{id}/tools",
-            get(mcp::config::list_server_tools_handler),
-        )
-        .route("/api/mcp/tools", get(mcp::config::list_all_tools_handler))
-        .route("/mcp", post(mcp::server::mcp_handler))
-        .route("/api/ocr", post(ocr::ocr))
-        .route("/api/ocr/stream", post(ocr::ocr_stream))
-        .route("/api/ocr/batch/stream", post(ocr::ocr_batch_stream))
-        .route("/api/ocr/history", get(ocr::ocr_history))
-        .route(
-            "/api/ocr/history/{id}",
-            get(ocr::ocr_history_item).delete(ocr::ocr_history_delete),
-        )
-        .route(
-            "/api/prompt-history",
-            get(handlers::list_prompt_history)
-                .post(handlers::add_prompt_history)
-                .delete(handlers::clear_prompt_history),
-        )
+    // All protected routes merged flat — no rate limiting
+    let protected = chat_stream_routes()
+        .merge(chat_routes())
+        .merge(a2a_routes())
+        .merge(general_protected_routes())
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
-            auth::require_auth,
+            auth::require_auth::<AppState>,
         ));
 
-    let api_key_routes = Router::new()
-        .route("/api/system/metrics", get(handlers::system_metrics))
-        .route("/api/system/audit", get(handlers::system_audit))
+    let api_key = api_key_auth_routes()
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             auth::require_api_key_auth,
         ));
 
-    let metrics = Router::new().route("/api/metrics", get(metrics_handler));
-
-    let v1_public = Router::new()
-        .route("/api/v1/health", get(handlers::health_check))
-        .route("/api/v1/health/ready", get(handlers::readiness))
-        .route("/api/v1/auth/mode", get(handlers::auth_mode));
-
-    let ws_routes = Router::new().route("/ws/chat", get(handlers::ws_chat));
-
-    public
-        .merge(protected)
-        .merge(api_key_routes)
-        .merge(ws_routes)
-        .merge(metrics)
-        .merge(v1_public)
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        .layer(DefaultBodyLimit::max(60 * 1024 * 1024))
-        .layer(axum::middleware::from_fn(request_id_middleware))
-        .with_state(state)
+    assemble_app(state, public_routes(), protected, api_key, extra_routes())
 }
 
 // ── Prometheus-compatible metrics endpoint ───────────────────────────────────

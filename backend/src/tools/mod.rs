@@ -521,31 +521,16 @@ impl ToolExecutor {
     }
 
     /// Dispatch an MCP-prefixed tool call to the appropriate MCP server.
+    /// Uses the shared `McpClientManager::call_tool(prefixed_name, args)` API.
     async fn execute_mcp_tool(
         &self,
         prefixed_name: &str,
         input: &Value,
         state: &AppState,
     ) -> (String, bool) {
-        let resolved = state.mcp_client.resolve_tool(prefixed_name).await;
-        match resolved {
-            Some((server_id, tool_name)) => {
-                match state
-                    .mcp_client
-                    .call_tool(&server_id, &tool_name, input)
-                    .await
-                {
-                    Ok(result) => (result, false),
-                    Err(e) => (e, true),
-                }
-            }
-            None => (
-                format!(
-                    "MCP tool '{}' not found on any connected server",
-                    prefixed_name
-                ),
-                true,
-            ),
+        match state.mcp_client.call_tool(prefixed_name, input).await {
+            Ok(result) => (result, false),
+            Err(e) => (e, true),
         }
     }
 
@@ -554,12 +539,12 @@ impl ToolExecutor {
     pub async fn tool_definitions_with_mcp(&self, state: &AppState) -> Vec<ToolDefinition> {
         let mut defs = self.tool_definitions();
 
-        // Append MCP tools from connected servers
+        // Append MCP tools from connected servers (shared McpTool has prefixed_name field)
         let mcp_tools = state.mcp_client.list_all_tools().await;
-        for (prefixed_name, tool) in mcp_tools {
+        for tool in mcp_tools {
             defs.push(ToolDefinition {
-                name: prefixed_name,
-                description: tool.description,
+                name: tool.prefixed_name,
+                description: tool.description.unwrap_or_default(),
                 input_schema: tool.input_schema,
             });
         }

@@ -1,5 +1,6 @@
 /** Jaskier Shared Pattern — Max Tokens Settings Section */
 
+import { useViewTheme } from '@jaskier/chat-module';
 import { cn } from '@jaskier/ui';
 import { Minus, Plus, TextCursorInput } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
@@ -9,7 +10,6 @@ import { Button } from '@/components/atoms';
 import { apiPost } from '@/shared/api/client';
 import type { Settings } from '@/shared/api/schemas';
 import { useSettingsQuery } from '@/shared/hooks/useSettings';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 
 const MIN = 1024;
 const MAX = 16384;

@@ -7,12 +7,12 @@
  * system resources, model cache size, and uptime.
  */
 
+import { useViewTheme } from '@jaskier/chat-module';
+import { QueryError } from '@jaskier/hydra-app/components/molecules';
 import { BaseMetricsDashboard, Card, cn } from '@jaskier/ui';
 import { Clock, RefreshCw, Shield } from 'lucide-react';
 import { memo, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { QueryError } from '@/components/molecules/QueryError';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 import { useHealthDashboard } from '../hooks/useHealthDashboard';
 
 // ============================================================================

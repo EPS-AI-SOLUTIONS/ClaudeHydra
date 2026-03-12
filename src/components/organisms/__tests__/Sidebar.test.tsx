@@ -66,7 +66,7 @@ vi.mock('@/stores/viewStore', () => ({
   }),
 }));
 
-vi.mock('@/shared/hooks/useViewTheme', () => ({
+vi.mock('@jaskier/chat-module', () => ({
   useViewTheme: () => ({
     accent: '#ffffff',
     bg: 'rgba(10, 10, 30, 0.95)',

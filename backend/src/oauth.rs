@@ -10,7 +10,10 @@ use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use base64::Engine;
-use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
+use base64::engine::general_purpose::STANDARD;
+
+// Re-export PKCE helpers from the shared crate so callers can use `crate::oauth::random_base64url`, etc.
+pub(crate) use jaskier_oauth::pkce::{random_base64url, sha256_base64url};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -443,18 +446,3 @@ async fn get_token_row(state: &AppState) -> Option<OAuthTokenRow> {
     .ok()?
 }
 
-pub(crate) fn random_base64url(len: usize) -> String {
-    let buf: Vec<u8> = (0..len).map(|_| rand::random::<u8>()).collect();
-    URL_SAFE_NO_PAD.encode(&buf)
-}
-
-pub(crate) fn sha256_base64url(input: &str) -> String {
-    URL_SAFE_NO_PAD.encode(Sha256::digest(input.as_bytes()))
-}
-
-pub(crate) fn html_escape(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-}

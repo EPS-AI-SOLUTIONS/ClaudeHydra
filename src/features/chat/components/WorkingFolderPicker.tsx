@@ -1,5 +1,6 @@
 /** Compact working folder picker with native OS folder dialog — Jaskier Shared Pattern */
 
+import { useViewTheme } from '@jaskier/chat-module';
 import { cn } from '@jaskier/ui';
 import { Check, FolderOpen, Loader2, Pencil, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -7,7 +8,6 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { apiPatch, apiPost } from '@/shared/api/client';
-import { useViewTheme } from '@/shared/hooks/useViewTheme';
 
 // ============================================================================
 // WORKING FOLDER PICKER (per-session)

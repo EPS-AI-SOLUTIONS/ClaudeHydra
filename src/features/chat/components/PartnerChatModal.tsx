@@ -2,6 +2,7 @@
  * PartnerChatModal — read-only overlay showing a GeminiHydra conversation.
  */
 
+import { useFocusTrap } from '@jaskier/core';
 import { cn } from '@jaskier/ui';
 import { Bot, Loader2, User, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -9,7 +10,6 @@ import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePartnerSession } from '@/features/chat/hooks/usePartnerSessions';
-import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { formatTime } from '@/shared/utils/locale';
 
 interface Props {

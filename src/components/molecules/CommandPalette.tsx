@@ -8,6 +8,7 @@
  * Uses viewStore for navigation, ThemeContext for theme toggle.
  */
 
+import { useFocusTrap } from '@jaskier/core';
 import { cn } from '@jaskier/ui';
 import { Home, MessageSquare, Moon, Plus, Search, Sun } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -15,7 +16,6 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSessionSync } from '@/features/chat/hooks/useSessionSync';
-import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useViewStore } from '@/stores/viewStore';
 
 interface Action {

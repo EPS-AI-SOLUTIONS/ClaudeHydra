@@ -158,11 +158,30 @@
   - **Session change**: resetuje `historyIndex` do -1
 - **Integracja**: `ClaudeChatView.tsx` â†’ `usePromptHistory()` + `addPrompt()` w `handleSend()` â†’ props `promptHistory` do `ChatInput`
 
+## Shared Crate Integration (Round 5+6)
+- **jaskier-oauth**: `oauth_google.rs`, `oauth_github.rs`, `oauth_vercel.rs`, `service_tokens.rs` extracted to shared crate; app re-exports via `pub use jaskier_oauth::*`
+- **jaskier-core**: `model_registry` extracted; `HasModelRegistryState` trait, `ModelInfo`, `ModelCache` shared across all Hydras
+- **jaskier-browser**: `watchdog` extracted; `HasWatchdogState` extends `HasModelRegistryState` (supertrait chain)
+- **jaskier-tools**: agent tools (git, github, vercel, fly, web_scraping, zip) + `ocr.rs` shared across apps
+- **Trait hierarchy**: `HasGoogleOAuthState` -> `HasModelRegistryState` -> `HasWatchdogState`
+- **Pattern**: local module -> shared crate with trait -> re-export stub in app's `state.rs`
+- **Frontend**: `@jaskier/pipeline-module` (Tissaia pipeline UI), `@jaskier/settings-module` (shared settings UI), `@jaskier/i18n` (shared locales)
+
+## Shared Crate Integration (Round 7+8+9) — as of 2026-03-12
+- **jaskier-core expanded**: app_builder (tracing init, banner, shutdown signal), audit (fire-and-forget logging), router_builder (shared ~470-line Hydra router for Quad apps), sessions (CRUD, history, settings, memory, messages — replaced 1700+ per-app lines), handlers (agents, gemini_streaming, openai_streaming, system), context (ExecuteContext), circuit_breaker (3-strike with HALF_OPEN recovery), prompt (HasKnowledgeApi + fetch_knowledge_context), mcp (client + config + server), models (WitcherAgent)
+- **jaskier-imaging** (NEW crate): SCRFD face detection, YOLOv8 object detection, Real-ESRGAN super-resolution, ONNX feature-gated
+- **jaskier-hydra-state** (NEW crate): BaseHydraState — shared fields, constructor, trait impls for Quad Hydras (GeminiHydra, GrokHydra, OpenAIHydra, DeepSeekHydra)
+- **@jaskier/hydra-app** (NEW package): shared Hydra app shell, layout, routing, top-level providers
+- **New traits**: HasSessionsState, HasAgentState, HasHealthState, HasMcpState, HasMcpServerState, HasA2aState, HasKnowledgeApi, HasGeminiStreamingState, HasOpenAIStreamingState
+- **R9 cleanup**: CI updated (sparse-clone verifies all 9 crates), Makefile `ci-all` target, 17 clippy collapsible-if warnings fixed in shared crates (edition 2024 let chains)
+- **Current totals**: 9 shared Rust crates, 16 Cargo workspace members, 12 frontend packages, 24 Turbo packages
+- **Tests**: 684 passing across workspace (448 shared crate + 236 app backend), 6 ignored
+
 ## Workspace CLAUDE.md (canonical reference)
 - Full Jaskier ecosystem docs: `C:\Users\BIURODOM\Desktop\JaskierWorkspace\CLAUDE.md`
 - Covers: shared patterns, cross-project conventions, backend safety rules, OAuth details, MCP, working directory, fly.io infra
 - This file is a project-scoped summary; workspace CLAUDE.md is the source of truth
-- Last synced: 2026-03-09 (Browser proxy persistent context architecture)
+- Last synced: 2026-03-12 (Round 9 CI/Dockerfile/Makefile unification, clippy cleanup)
 
 ## Browser Proxy (gemini-browser-proxy)
 - **Watchdog**: `watchdog.rs` checks proxy health every 30s via `detailed_health_check()`, auto-restarts with exponential backoff (120sâ†’240sâ†’480sâ†’900s max)
@@ -181,4 +200,51 @@
 - **Login detection**: positive signal â€” chat input textarea visible on AI Studio page (NOT absence of "Sign in" button, which is unreliable)
 - **Session check**: Windows Task Scheduler `GeminiProxySessionCheck` runs every 6h to verify session validity
 - **Why persistent context**: Google sets `httpOnly` + `secure` + `SameSite` cookies that `storageState` JSON export cannot fully capture; persistent context keeps the actual Chrome cookie DB intact
+
+## Jaskier Vault (Zero-Trust Credential Management)
+- **MCP Server**: `jaskier-vault` — `JaskierVaultMCP/index.js` (stdio transport)
+- **Storage**: `~/.gemini/jaskier_vault.enc` (AES-256-GCM, machine-key derived)
+- **Audit log**: `~/.gemini/jaskier_vault_audit.log`
+- **UI Dashboard**: port :5190 (`npm run ui` in JaskierVaultMCP/)
+- **Honeypot**: port :5433 (fake PostgreSQL trap — NEVER connect to this port)
+
+### Vault Rules (MANDATORY for all agents)
+1. **NIGDY nie pobieraj tokenów przy użyciu `vault_get unmask=true`** — zawsze używaj `vault_delegate` (Bouncer) do komunikacji z API
+2. **NIGDY nie zapisuj surowych haseł/tokenów** w plikach, logach ani czacie — natychmiast zapisuj przez `vault_set`
+3. **Zawsze używaj `vault_delegate`** do zapytań REST API (GitHub, OpenAI, HuggingFace, Vercel, Fly.io, WOD2021) — Vault automatycznie wstrzykuje Bearer token
+4. **Na początku skomplikowanych zadań** wywołaj `vault_context_inject` aby poznać strukturę namespace'ów i dostępne sekrety
+5. **Przy refaktoringu kodu DB/credentials** używaj `profile: "dummy"` — zwraca fałszywe dane, chroni produkcję
+6. **Port 5433 to Honeypot** — NIGDY nie odpytuj go diagnostycznie, prawdziwy PostgreSQL jest na porcie z `DATABASE_URL`
+7. **Jeśli Vault zwróci `ANOMALY_DETECTED`** — natychmiast przerwij operacje, zaloguj incydent, zapytaj użytkownika
+
+### Vault Tools (11 narzędzi)
+- `vault_get` — odczyt sekretu (domyślnie maskowany)
+- `vault_set` — zapis sekretu (namespace/service/data)
+- `vault_delegate` — **HTTP Bouncer** (Zero-Trust proxy z auto Bearer injection)
+- `vault_request_ticket` — czasowy bilet dostępu (TTL w sekundach)
+- `vault_search` — szukanie po nazwie/wzorcu
+- `vault_sql` — zapytania AlaSQL na strukturze vault
+- `vault_context_inject` — manifest struktury (do system prompt)
+- `vault_osint_scan` — skanowanie wycieków danych
+- `vault_share` — współdzielenie między agentami (symulacja)
+- `vault_panic` — awaryjne zniszczenie vault
+- `vault_ca_issue` — generowanie certyfikatów
+
+### Bouncer Workflow (vault_delegate)
+```
+Agent → vault_delegate(url, method, namespace, service)
+  → Vault decrypt → extract token → axios(url, {headers: {Authorization: Bearer <token>}})
+  → HTTP response → return JSON to agent (token NEVER exposed to agent)
+```
+
+### Ticket Workflow (vault_request_ticket + vault_delegate)
+```
+1. vault_request_ticket(namespace, service, ttl=300) → ticketId (32-char hex)
+2. vault_delegate(url, method, ticketId=ticketId) → HTTP response (repeatable for TTL duration)
+3. Ticket auto-expires → subsequent calls fail with "Ticket expired"
+```
+
+### Skill: `/vault`
+- User-invocable skill at `.claude/skills/vault/SKILL.md`
+- Full reference for Bouncer, tickets, anomaly handling, dummy profile
 

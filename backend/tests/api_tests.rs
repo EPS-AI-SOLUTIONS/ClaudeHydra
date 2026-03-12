@@ -1,7 +1,5 @@
-use axum::body::Body;
-use axum::http::{Request, StatusCode};
-use http_body_util::BodyExt;
-use serde_json::Value;
+use axum::http::StatusCode;
+use jaskier_core::testing::{body_json, get, post_json};
 use tower::ServiceExt;
 
 use claudehydra_backend::state::AppState;
@@ -14,58 +12,31 @@ fn app() -> axum::Router {
     claudehydra_backend::create_test_router(state)
 }
 
-/// Helper: collect a response body into a serde_json::Value.
-async fn body_json(response: axum::response::Response) -> Value {
-    let bytes = response.into_body().collect().await.unwrap().to_bytes();
-    serde_json::from_slice(&bytes).unwrap()
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 //  GET /api/health
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
 async fn health_returns_200() {
-    let response = app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/health")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = app().oneshot(get("/api/health")).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 }
 
 #[tokio::test]
 async fn health_has_correct_fields() {
-    let response = app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/health")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = app().oneshot(get("/api/health")).await.unwrap();
     let json = body_json(response).await;
 
     // new_test() uses connect_lazy to a fake DB → SELECT 1 fails → "degraded"
-    // (not "starting" — the health endpoint checks DB, not the ready flag)
     let status = json["status"].as_str().unwrap();
     assert!(
         status == "healthy" || status == "degraded",
         "unexpected health status: {status}"
     );
     assert_eq!(json["version"], "4.0.0");
-    // Handler sets "ClaudeHydra v4"
     assert_eq!(json["app"], "ClaudeHydra v4");
     assert!(json["uptime_seconds"].is_u64());
     assert!(json["providers"].is_array());
-    // No ollama_connected field anymore
     assert!(json.get("ollama_connected").is_none());
 }
 
@@ -75,20 +46,10 @@ async fn health_has_correct_fields() {
 
 #[tokio::test]
 async fn auth_mode_returns_200() {
-    let response = app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/auth/mode")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = app().oneshot(get("/api/auth/mode")).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
     let json = body_json(response).await;
-    // new_test() sets auth_secret = None → mode is "open"
     assert_eq!(json["mode"], "open");
 }
 
@@ -98,17 +59,7 @@ async fn auth_mode_returns_200() {
 
 #[tokio::test]
 async fn readiness_returns_503_before_ready() {
-    let response = app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/health/ready")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    // new_test() does not call mark_ready(), so should be 503
+    let response = app().oneshot(get("/api/health/ready")).await.unwrap();
     assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
@@ -118,31 +69,13 @@ async fn readiness_returns_503_before_ready() {
 
 #[tokio::test]
 async fn agents_returns_200() {
-    let response = app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/agents")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = app().oneshot(get("/api/agents")).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 }
 
 #[tokio::test]
 async fn agents_returns_12_agents() {
-    let response = app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/agents")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = app().oneshot(get("/api/agents")).await.unwrap();
     let json = body_json(response).await;
     let agents = json.as_array().unwrap();
     assert_eq!(agents.len(), 12);
@@ -150,16 +83,7 @@ async fn agents_returns_12_agents() {
 
 #[tokio::test]
 async fn agents_have_required_fields() {
-    let response = app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/agents")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = app().oneshot(get("/api/agents")).await.unwrap();
     let json = body_json(response).await;
     let agents = json.as_array().unwrap();
 
@@ -175,16 +99,7 @@ async fn agents_have_required_fields() {
 
 #[tokio::test]
 async fn agents_have_correct_model_per_tier() {
-    let response = app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/agents")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = app().oneshot(get("/api/agents")).await.unwrap();
     let json = body_json(response).await;
     let agents = json.as_array().unwrap();
 
@@ -211,18 +126,7 @@ async fn set_api_key_returns_200() {
         "key": "test-key-12345"
     });
 
-    let response = app()
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/api/settings/api-key")
-                .header("content-type", "application/json")
-                .body(Body::from(serde_json::to_vec(&body).unwrap()))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = app().oneshot(post_json("/api/settings/api-key", body)).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
     let json = body_json(response).await;
@@ -236,15 +140,6 @@ async fn set_api_key_returns_200() {
 
 #[tokio::test]
 async fn unknown_route_returns_404() {
-    let response = app()
-        .oneshot(
-            Request::builder()
-                .uri("/api/nonexistent")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
+    let response = app().oneshot(get("/api/nonexistent")).await.unwrap();
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }

@@ -5,10 +5,10 @@
  * #25 Offline detection
  */
 
+import { useOnlineStatus } from '@jaskier/core';
 import { WifiOff } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus';
 
 export function OfflineBanner() {
   const { t } = useTranslation();

@@ -1,4 +1,9 @@
 //! Session CRUD, message storage, and AI title generation.
+//!
+//! Most handlers delegate to `jaskier_core::sessions` via `HasSessionsState`.
+//! ClaudeHydra keeps local overrides for `get_session` and `add_session_message`
+//! because they include `ch_tool_interactions` joins and inserts — a feature
+//! specific to Claude's tool-use protocol that other Hydras don't have.
 
 use axum::Json;
 use axum::extract::{Path, Query, State};
@@ -8,144 +13,20 @@ use serde_json::{Value, json};
 use crate::models::*;
 use crate::state::AppState;
 
-use super::{MAX_MESSAGE_LENGTH, MAX_TITLE_LENGTH, send_to_anthropic};
+use super::MAX_MESSAGE_LENGTH;
 
-// ═══════════════════════════════════════════════════════════════════════
-//  Pagination
-// ═══════════════════════════════════════════════════════════════════════
-
-#[derive(Debug, serde::Deserialize)]
-pub struct PaginationParams {
-    #[serde(default)]
-    pub limit: Option<i64>,
-    #[serde(default)]
-    pub offset: Option<i64>,
-    #[serde(default)]
-    pub after: Option<String>,
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  List sessions (cursor + offset pagination)
-// ═══════════════════════════════════════════════════════════════════════
-
-#[utoipa::path(get, path = "/api/sessions", tag = "sessions",
-    responses((status = 200, description = "Paginated session list")))]
-pub async fn list_sessions(
-    State(state): State<AppState>,
-    Query(params): Query<PaginationParams>,
-) -> Result<Json<Value>, StatusCode> {
-    let limit = params.limit.unwrap_or(100).clamp(1, 500);
-
-    let rows = if let Some(ref cursor_id) = params.after {
-        let cursor_uuid = uuid::Uuid::parse_str(cursor_id).map_err(|_| {
-            tracing::warn!("list_sessions: invalid cursor UUID: {}", cursor_id);
-            StatusCode::BAD_REQUEST
-        })?;
-        sqlx::query_as::<_, SessionSummaryRow>(
-            "SELECT s.id, s.title, s.created_at, \
-             (SELECT COUNT(*) FROM ch_messages WHERE session_id = s.id) as message_count, \
-             s.working_directory \
-             FROM ch_sessions s \
-             WHERE s.updated_at < (SELECT updated_at FROM ch_sessions WHERE id = $1) \
-             ORDER BY s.updated_at DESC \
-             LIMIT $2",
-        )
-        .bind(cursor_uuid)
-        .bind(limit + 1)
-        .fetch_all(&state.db)
-        .await
-    } else {
-        let offset = params.offset.unwrap_or(0).max(0);
-        sqlx::query_as::<_, SessionSummaryRow>(
-            "SELECT s.id, s.title, s.created_at, \
-             (SELECT COUNT(*) FROM ch_messages WHERE session_id = s.id) as message_count, \
-             s.working_directory \
-             FROM ch_sessions s ORDER BY s.updated_at DESC \
-             LIMIT $1 OFFSET $2",
-        )
-        .bind(limit + 1)
-        .bind(offset)
-        .fetch_all(&state.db)
-        .await
-    }
-    .map_err(|e| {
-        tracing::error!("Failed to list sessions: {}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-
-    let has_more = rows.len() as i64 > limit;
-    let rows_trimmed: Vec<_> = rows.into_iter().take(limit as usize).collect();
-    let next_cursor = if has_more {
-        rows_trimmed.last().map(|r| r.id.to_string())
-    } else {
-        None
-    };
-
-    let summaries: Vec<SessionSummary> = rows_trimmed
-        .into_iter()
-        .map(|r| SessionSummary {
-            id: r.id.to_string(),
-            title: r.title,
-            created_at: r.created_at.to_rfc3339(),
-            message_count: r.message_count as usize,
-            working_directory: r.working_directory,
-        })
-        .collect();
-
-    Ok(Json(json!({
-        "sessions": summaries,
-        "has_more": has_more,
-        "next_cursor": next_cursor,
-    })))
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  Create session
-// ═══════════════════════════════════════════════════════════════════════
-
-#[utoipa::path(post, path = "/api/sessions", tag = "sessions",
-    request_body = CreateSessionRequest,
-    responses((status = 201, description = "Session created")))]
-pub async fn create_session(
-    State(state): State<AppState>,
-    Json(req): Json<CreateSessionRequest>,
-) -> Result<(StatusCode, Json<Value>), StatusCode> {
-    if req.title.len() > MAX_TITLE_LENGTH {
-        tracing::warn!(
-            "create_session: title exceeds {} chars (got {})",
-            MAX_TITLE_LENGTH,
-            req.title.len()
-        );
-        return Err(StatusCode::BAD_REQUEST);
-    }
-
-    let row = sqlx::query_as::<_, SessionRow>(
-        "INSERT INTO ch_sessions (title) VALUES ($1) \
-         RETURNING id, title, created_at, updated_at, working_directory",
-    )
-    .bind(&req.title)
-    .fetch_one(&state.db)
-    .await
-    .map_err(|e| {
-        tracing::error!("Failed to create session: {}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-
-    let session = Session {
-        id: row.id.to_string(),
-        title: row.title,
-        created_at: row.created_at.to_rfc3339(),
-        messages: Vec::new(),
-    };
-
-    Ok((
-        StatusCode::CREATED,
-        Json(serde_json::to_value(session).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?),
-    ))
-}
+// ── Re-export shared session types ───────────────────────────────────────────
+// These are used by lib.rs OpenAPI derive and route registration.
+pub use jaskier_core::sessions::{
+    PaginationParams,
+    // Shared handlers — wired via turbofish in lib.rs routes.
+    list_sessions, create_session, update_session, delete_session,
+    update_session_working_directory, generate_session_title,
+};
 
 // ═══════════════════════════════════════════════════════════════════════
 //  Get session (with paginated messages + tool interactions)
+//  LOCAL OVERRIDE — shared version lacks tool_interactions join
 // ═══════════════════════════════════════════════════════════════════════
 
 #[utoipa::path(get, path = "/api/sessions/{id}", tag = "sessions",
@@ -262,116 +143,8 @@ pub async fn get_session(
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-//  Update session
-// ═══════════════════════════════════════════════════════════════════════
-
-#[utoipa::path(patch, path = "/api/sessions/{id}", tag = "sessions",
-    params(("id" = String, Path, description = "Session UUID")),
-    request_body = UpdateSessionRequest,
-    responses((status = 200, description = "Updated session")))]
-pub async fn update_session(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-    Json(req): Json<UpdateSessionRequest>,
-) -> Result<Json<Value>, StatusCode> {
-    if req.title.len() > MAX_TITLE_LENGTH {
-        tracing::warn!(
-            "update_session: title exceeds {} chars (got {})",
-            MAX_TITLE_LENGTH,
-            req.title.len()
-        );
-        return Err(StatusCode::BAD_REQUEST);
-    }
-
-    let session_id: uuid::Uuid = id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
-
-    let row = sqlx::query_as::<_, SessionRow>(
-        "UPDATE ch_sessions SET title = $1, updated_at = NOW() WHERE id = $2 \
-         RETURNING id, title, created_at, updated_at, working_directory",
-    )
-    .bind(&req.title)
-    .bind(session_id)
-    .fetch_optional(&state.db)
-    .await
-    .map_err(|e| {
-        tracing::error!("Failed to update session: {}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?
-    .ok_or(StatusCode::NOT_FOUND)?;
-
-    let session = SessionSummary {
-        id: row.id.to_string(),
-        title: row.title,
-        created_at: row.created_at.to_rfc3339(),
-        message_count: 0,
-        working_directory: row.working_directory,
-    };
-
-    Ok(Json(
-        serde_json::to_value(session).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?,
-    ))
-}
-
-/// PATCH /api/sessions/{id}/working-directory
-pub async fn update_session_working_directory(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-    Json(req): Json<UpdateWorkingDirectoryRequest>,
-) -> Result<Json<Value>, StatusCode> {
-    let session_id: uuid::Uuid = id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
-    let wd = req.working_directory.trim().to_string();
-
-    if !wd.is_empty() && !std::path::Path::new(&wd).is_dir() {
-        return Err(StatusCode::BAD_REQUEST);
-    }
-
-    sqlx::query("UPDATE ch_sessions SET working_directory = $1, updated_at = NOW() WHERE id = $2")
-        .bind(&wd)
-        .bind(session_id)
-        .execute(&state.db)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(Json(json!({ "working_directory": wd })))
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  Delete session
-// ═══════════════════════════════════════════════════════════════════════
-
-#[utoipa::path(delete, path = "/api/sessions/{id}", tag = "sessions",
-    params(("id" = String, Path, description = "Session UUID")),
-    responses((status = 200, description = "Session deleted")))]
-pub async fn delete_session(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Result<Json<Value>, StatusCode> {
-    let session_id: uuid::Uuid = id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
-
-    let result = sqlx::query("DELETE FROM ch_sessions WHERE id = $1")
-        .bind(session_id)
-        .execute(&state.db)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to delete session: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-    if result.rows_affected() > 0 {
-        crate::audit::log_audit(
-            &state.db,
-            "delete_session",
-            json!({ "session_id": id }),
-            None,
-        )
-        .await;
-    }
-
-    Ok(Json(json!({ "status": "deleted", "id": id })))
-}
-
-// ═══════════════════════════════════════════════════════════════════════
 //  Add message to session
+//  LOCAL OVERRIDE — shared version lacks tool_interactions insert
 // ═══════════════════════════════════════════════════════════════════════
 
 #[utoipa::path(post, path = "/api/sessions/{id}/messages", tag = "sessions",
@@ -466,103 +239,4 @@ pub async fn add_session_message(
         StatusCode::CREATED,
         Json(serde_json::to_value(entry).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?),
     ))
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  Generate session title (AI-powered via Claude Haiku)
-// ═══════════════════════════════════════════════════════════════════════
-
-#[utoipa::path(post, path = "/api/sessions/{id}/generate-title", tag = "sessions",
-    params(("id" = String, Path, description = "Session UUID")),
-    responses((status = 200, description = "Generated title")))]
-pub async fn generate_session_title(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Result<Json<Value>, StatusCode> {
-    let session_id: uuid::Uuid = id.parse().map_err(|_| StatusCode::BAD_REQUEST)?;
-
-    let first_msg = sqlx::query_scalar::<_, String>(
-        "SELECT content FROM ch_messages \
-         WHERE session_id = $1 AND role = 'user' \
-         ORDER BY created_at ASC LIMIT 1",
-    )
-    .bind(session_id)
-    .fetch_optional(&state.db)
-    .await
-    .map_err(|e| {
-        tracing::error!("generate_session_title: DB error: {}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?
-    .ok_or(StatusCode::NOT_FOUND)?;
-
-    let snippet: &str = if first_msg.len() > 500 {
-        let end = first_msg
-            .char_indices()
-            .take_while(|(i, _)| *i < 500)
-            .last()
-            .map(|(i, c)| i + c.len_utf8())
-            .unwrap_or(500.min(first_msg.len()));
-        &first_msg[..end]
-    } else {
-        &first_msg
-    };
-
-    let body = json!({
-        "model": "claude-haiku-4-5-20251001",
-        "max_tokens": 64,
-        "messages": [{
-            "role": "user",
-            "content": format!(
-                "Generate a concise 3-7 word title for a chat that starts with this message. \
-                 Return ONLY the title text, no quotes, no explanation.\n\nMessage: {}",
-                snippet
-            )
-        }]
-    });
-
-    let resp = send_to_anthropic(&state, &body, 15).await.map_err(|e| {
-        tracing::error!("generate_session_title: API error: {:?}", e.1);
-        StatusCode::BAD_GATEWAY
-    })?;
-
-    if !resp.status().is_success() {
-        tracing::error!("generate_session_title: API returned {}", resp.status());
-        return Err(StatusCode::BAD_GATEWAY);
-    }
-
-    let json_resp: Value = resp.json().await.map_err(|_| StatusCode::BAD_GATEWAY)?;
-    let raw_title = json_resp
-        .get("content")
-        .and_then(|c| c.get(0))
-        .and_then(|c0| c0.get("text"))
-        .and_then(|t| t.as_str())
-        .unwrap_or("");
-    let raw_title = raw_title.trim().trim_matches('"').trim();
-
-    if raw_title.is_empty() {
-        tracing::warn!(
-            "generate_session_title: Anthropic response missing text, response keys: {:?}",
-            json_resp.as_object().map(|o| o.keys().collect::<Vec<_>>())
-        );
-        return Err(StatusCode::BAD_GATEWAY);
-    }
-
-    let title: String = raw_title.chars().take(MAX_TITLE_LENGTH).collect();
-
-    sqlx::query("UPDATE ch_sessions SET title = $1, updated_at = NOW() WHERE id = $2")
-        .bind(&title)
-        .bind(session_id)
-        .execute(&state.db)
-        .await
-        .map_err(|e| {
-            tracing::error!("generate_session_title: DB update failed: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
-
-    tracing::info!(
-        "generate_session_title: session {} → {:?}",
-        session_id,
-        title
-    );
-    Ok(Json(json!({ "title": title })))
 }

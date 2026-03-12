@@ -6,32 +6,135 @@ on:
   pull_request:
     branches: [master]
 
-jobs:
-  frontend:
-    name: Frontend Checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: biomejs/setup-biome@v2
-      - name: Biome check
-        run: biome check --diagnostic-level=error src/
-      # tsc requires @jaskier/ui workspace package (parent Desktop workspace)
-      # TypeScript is enforced locally via pre-commit hook (conditional tsc)
+# Cancel in-progress runs for the same ref
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
-  backend:
-    name: Backend Checks
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Frontend: pnpm install + Biome lint
+  #
+  # TypeScript type-checking is skipped because tsc requires @jaskier/ui
+  # from the parent monorepo workspace. Typecheck is enforced locally
+  # via `pnpm turbo run typecheck` and the post-commit hook.
+  # ──────────────────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+
+      - name: Biome lint
+        run: biome check --diagnostic-level=error src/
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Backend: Rust check + clippy + fmt + test (compile-only)
+  #
+  # ClaudeHydra's Cargo.toml references shared crates via relative paths:
+  #   jaskier-core = { path = "../../../crates/jaskier-core" }
+  #
+  # In GitHub Actions the repo is checked out at:
+  #   /home/runner/work/ClaudeHydra/ClaudeHydra/
+  # So ../../../crates resolves to:
+  #   /home/runner/work/crates/
+  #
+  # We sparse-clone the monorepo's crates/ directory into that location.
+  #
+  # For full workspace-level CI (all apps + all crates), use:
+  #   make ci (from JaskierWorkspace root)
+  # which invokes ci/rust-workspace-check.sh + ci/frontend-check.sh
+  # ──────────────────────────────────────────────────────────────────────────
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    env:
+      CRATES_SOURCE_REPO: ${{ secrets.CRATES_SOURCE_REPO || 'https://github.com/EPS-AI-SOLUTIONS/JaskierWorkspace.git' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
+
+      # Sparse-clone shared crates into the path Cargo.toml expects
+      - name: Set up shared workspace crates
+        run: |
+          # backend/Cargo.toml uses path = "../../../crates/<crate>"
+          # From checkout: ClaudeHydra/backend → ../../.. = /home/runner/work/
+          CRATES_TARGET="/home/runner/work/crates"
+
+          echo "Checkout dir  : $GITHUB_WORKSPACE"
+          echo "Crates target : $CRATES_TARGET"
+
+          if [ -d "$CRATES_TARGET/jaskier-core" ]; then
+            echo "Crates already present — skipping"
+            exit 0
+          fi
+
+          git clone \
+            --filter=blob:none \
+            --no-checkout \
+            --depth=1 \
+            --branch master \
+            "$CRATES_SOURCE_REPO" \
+            /tmp/_ws_sparse
+
+          cd /tmp/_ws_sparse
+          git sparse-checkout init --cone
+          git sparse-checkout set crates
+          git checkout
+
+          mv /tmp/_ws_sparse/crates "$CRATES_TARGET"
+          rm -rf /tmp/_ws_sparse
+
+          # Verify all expected shared crates are present (9 crates as of R9)
+          for crate in jaskier-core jaskier-oauth jaskier-browser jaskier-tools jaskier-db jaskier-memory jaskier-ai-modules jaskier-imaging jaskier-hydra-state; do
+            if [ ! -f "$CRATES_TARGET/$crate/Cargo.toml" ]; then
+              echo "ERROR: Missing crate: $crate"
+              exit 1
+            fi
+          done
+
+          echo "Shared crates ready ($(ls "$CRATES_TARGET/" | wc -l) crates):"
+          ls "$CRATES_TARGET/"
+
+      - name: Cache Cargo registry + build artifacts
+        uses: Swatinem/rust-cache@v2
         with:
           workspaces: backend
-      - run: cargo fmt --check
-      - run: cargo clippy -- -D warnings
-      - run: cargo test --no-run
+
+      - name: Format check
+        working-directory: backend
+        run: cargo fmt --check
+
+      - name: Clippy
+        working-directory: backend
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Test (compile only)
+        working-directory: backend
+        run: cargo test --no-run
+        # Tests require a live PostgreSQL instance (SQLx runtime queries).
+        # We compile but don't run. DB-dependent tests are #[ignore]'d and
+        # run locally via `cargo test` with a Docker Postgres container.
