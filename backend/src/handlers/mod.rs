@@ -48,6 +48,7 @@ use axum::Json;
 use axum::http::StatusCode;
 use serde_json::{Value, json};
 
+use crate::ai_gateway::vault_bridge::HasVaultBridge;
 use crate::state::AppState;
 
 /// Check if an HTTP status code is retryable (429 Too Many Requests or 5xx).
@@ -95,27 +96,71 @@ pub(crate) fn sanitize_json_strings(value: &mut Value) {
 
 // ── Anthropic API helpers ─────────────────────────────────────────────────
 
-/// Get the Anthropic credential.
+/// Get the Anthropic credential with dual resolution strategy:
+/// 1. First try: Jaskier Vault (`ai_providers/anthropic_max`)
+/// 2. Fallback: Old DB path (deprecated `crate::oauth::get_valid_access_token`)
+/// 3. Last resort: Runtime API keys / `ANTHROPIC_API_KEY` env var
+///
 /// Returns `(token_or_key, is_oauth)`.
 async fn get_anthropic_credential(state: &AppState) -> Option<(String, bool)> {
-    // 1. Try Anthropic OAuth token from DB
+    // 1. Try Vault first (ai_providers/anthropic_max)
+    match state.vault_client().get("ai_providers", "anthropic_max").await {
+        Ok(cred) if cred.is_connected => {
+            // Vault has a connected credential — use delegate for actual API calls.
+            // For header injection (non-delegate path), extract the masked value
+            // as a signal that Vault is the active source. The actual token is
+            // injected by the Vault Bouncer in `send_to_anthropic_via_vault`.
+            tracing::info!("Using Vault credential for Anthropic (plan: {:?})", cred.plan_tier);
+            // Return a sentinel that tells build_anthropic_request to use OAuth Bearer.
+            // The real token was already validated by Vault — masked_value is proof of connection.
+            // For direct API calls, callers should prefer vault_delegate() instead.
+            return Some(("__vault_managed__".to_string(), true));
+        }
+        Ok(cred) => {
+            tracing::debug!(
+                "Vault has Anthropic credential but not connected (is_connected={}), falling back",
+                cred.is_connected
+            );
+        }
+        Err(crate::ai_gateway::vault_bridge::VaultError::NotFound) => {
+            tracing::debug!("Vault has no Anthropic credential, falling back to DB OAuth");
+        }
+        Err(crate::ai_gateway::vault_bridge::VaultError::AnomalyDetected(msg)) => {
+            tracing::error!("ANOMALY DETECTED from Vault during credential resolution: {}", msg);
+            // On anomaly, do NOT fall through — fail safe
+            return None;
+        }
+        Err(e) => {
+            tracing::debug!("Vault unavailable ({}), falling back to DB OAuth", e);
+        }
+    }
+
+    // 2. Fallback: Old DB OAuth path (deprecated — will be removed after full migration)
+    #[allow(deprecated)]
     if let Some(token) = crate::oauth::get_valid_access_token(state).await {
+        tracing::info!("Falling back to DB OAuth for Anthropic");
         return Some((token, true));
     }
-    // 2. Try runtime state (hot-loaded API key)
+    // 3. Try runtime state (hot-loaded API key)
     {
         let rt = state.runtime.read().await;
         if let Some(key) = rt.api_keys.get("ANTHROPIC_API_KEY")
             && !key.is_empty()
         {
+            tracing::info!("Falling back to runtime API key for Anthropic");
             return Some((key.clone(), false));
         }
     }
-    // 3. Try env var
-    std::env::var("ANTHROPIC_API_KEY")
+    // 4. Last resort: env var
+    if let Some(key) = std::env::var("ANTHROPIC_API_KEY")
         .ok()
         .filter(|k| !k.is_empty())
-        .map(|k| (k, false))
+    {
+        tracing::info!("Falling back to ANTHROPIC_API_KEY env var for Anthropic");
+        return Some((key, false));
+    }
+
+    None
 }
 
 /// Build a request to the Anthropic Messages API.
@@ -143,6 +188,11 @@ fn build_anthropic_request(
 }
 
 /// Send a single request to Anthropic (no retry).
+///
+/// When Vault is the active credential source (`__vault_managed__`), this
+/// delegates the upstream HTTP call through Vault Bouncer — the raw token
+/// never leaves the Vault process. For non-Vault credentials (DB OAuth,
+/// API key), the old direct-request path is used.
 async fn send_to_anthropic_once(
     state: &AppState,
     body: &Value,
@@ -155,6 +205,14 @@ async fn send_to_anthropic_once(
         )
     })?;
 
+    // ── Vault Bouncer path ────────────────────────────────────────────────
+    // When credential is "__vault_managed__", delegate the API call through Vault.
+    // The Vault Bouncer injects the real Bearer token; this backend never sees it.
+    if credential == "__vault_managed__" {
+        return send_to_anthropic_via_vault(state, body, timeout_secs).await;
+    }
+
+    // ── Direct path (DB OAuth token or API key) ───────────────────────────
     let resp = build_anthropic_request(state, body, &credential, timeout_secs, is_oauth)
         .send()
         .await
@@ -184,6 +242,106 @@ async fn send_to_anthropic_once(
     }
 
     Ok(resp)
+}
+
+/// Send a request to Anthropic through the Vault Bouncer (zero-trust delegation).
+///
+/// The Vault decrypts the credential, injects the Bearer token, and makes the
+/// upstream HTTP call. This backend receives only the response — the raw token
+/// never enters our process memory.
+///
+/// Returns a synthetic `reqwest::Response` built from the Vault delegate response,
+/// preserving the existing contract expected by `send_to_anthropic`.
+async fn send_to_anthropic_via_vault(
+    state: &AppState,
+    body: &Value,
+    _timeout_secs: u64,
+) -> Result<reqwest::Response, (StatusCode, Json<Value>)> {
+    let vault = state.vault_client();
+
+    let delegate_result = vault
+        .delegate(
+            "https://api.anthropic.com/v1/messages",
+            "POST",
+            "ai_providers",
+            "anthropic_max",
+            Some(body.clone()),
+        )
+        .await;
+
+    match delegate_result {
+        Ok(vault_resp) => {
+            tracing::debug!(
+                "Vault Bouncer delegate completed (status={}, latency={}ms)",
+                vault_resp.status,
+                vault_resp.latency_ms
+            );
+
+            // Build a synthetic reqwest::Response from Vault delegate response
+            let status_code = reqwest::StatusCode::from_u16(vault_resp.status)
+                .unwrap_or(reqwest::StatusCode::BAD_GATEWAY);
+
+            let response_bytes = serde_json::to_vec(&vault_resp.body).unwrap_or_default();
+            let http_resp = http::Response::builder()
+                .status(status_code)
+                .header("content-type", "application/json")
+                .body(response_bytes)
+                .map_err(|e| {
+                    tracing::error!("Failed to build synthetic response: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({ "error": "Internal error building Vault response" })),
+                    )
+                })?;
+
+            Ok(reqwest::Response::from(http_resp))
+        }
+        Err(crate::ai_gateway::vault_bridge::VaultError::AnomalyDetected(msg)) => {
+            tracing::error!("ANOMALY DETECTED during Vault delegate: {}", msg);
+            Err((
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(json!({ "error": "Security anomaly detected — operations halted" })),
+            ))
+        }
+        Err(e) => {
+            tracing::warn!("Vault Bouncer delegate failed ({}), falling back to direct path", e);
+
+            // Fallback: try DB OAuth or API key directly
+            #[allow(deprecated)]
+            if let Some(token) = crate::oauth::get_valid_access_token(state).await {
+                tracing::info!("Vault delegate failed — falling back to DB OAuth token");
+                return build_anthropic_request(state, body, &token, _timeout_secs, true)
+                    .send()
+                    .await
+                    .map_err(|e| {
+                        tracing::error!("anthropic proxy (vault fallback): {}", e);
+                        (
+                            StatusCode::BAD_GATEWAY,
+                            Json(json!({ "error": "AI provider request failed" })),
+                        )
+                    });
+            }
+
+            if let Some((api_key, false)) = get_anthropic_api_key_only(state).await {
+                tracing::info!("Vault delegate failed — falling back to API key");
+                return build_anthropic_request(state, body, &api_key, _timeout_secs, false)
+                    .send()
+                    .await
+                    .map_err(|e| {
+                        tracing::error!("anthropic proxy (vault fallback): {}", e);
+                        (
+                            StatusCode::BAD_GATEWAY,
+                            Json(json!({ "error": "AI provider request failed" })),
+                        )
+                    });
+            }
+
+            Err((
+                StatusCode::BAD_GATEWAY,
+                Json(json!({ "error": format!("Vault delegate failed and no fallback available: {}", e) })),
+            ))
+        }
+    }
 }
 
 /// Get Anthropic API key only (skip OAuth). Used as fallback.

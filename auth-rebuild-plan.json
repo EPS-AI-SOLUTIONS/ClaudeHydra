@@ -1,0 +1,975 @@
+{
+  "$schema": "jaskier-auth-rebuild-v1",
+  "plan_name": "Skarbiec Krasnali — Total Auth Rebuild",
+  "plan_version": "1.0.0",
+  "created": "2026-03-14",
+  "author": "Claude Opus 4.6 + Gemini Pro (shared session b1f155b8f3ae)",
+  "description": "Całkowita przebudowa systemu logowania do dostawców AI. Odejście od per-API-key billing na rzecz subskrypcji konsumenckich (plany). Jaskier Vault (Skarbiec Krasnali) staje się JEDYNYM źródłem i zarządcą credentials. Stare moduły OAuth, tabele DB i komponenty frontend — do kosza.",
+
+  "strategy": {
+    "name": "STRICT_PLAN_ONLY",
+    "philosophy": "Zero API billing. Wszystkie zapytania AI lecą przez subskrypcje konsumenckie (Claude Max, ChatGPT Plus, Gemini Advanced, X Premium). ClaudeHydra backend działa jako unified proxy — tłumaczy żądania agentów na format web/sesyjny odpowiedniego dostawcy.",
+    "credential_store": "Jaskier Vault (The Sentinel) — zero-trust, AES-256-GCM, Bouncer pattern",
+    "allow_api_billing_fallback": false,
+    "allow_env_var_keys": false,
+    "backend_proxy_base_url": "http://localhost:8082/api"
+  },
+
+  "providers": {
+    "anthropic": {
+      "plan_name": "Claude Max",
+      "monthly_cost": "$100/mo (flat rate, unlimited)",
+      "auth_type": "oauth_pkce",
+      "token_type": "OAuth Access Token",
+      "token_prefix": "sk-ant-oat",
+      "vault_config": {
+        "namespace": "ai_providers",
+        "service": "anthropic_max",
+        "fields": {
+          "access_token": "OAuth access token (auto-refreshed)",
+          "refresh_token": "OAuth refresh token (long-lived)",
+          "expires_at": "Unix timestamp expiry",
+          "scope": "OAuth scopes granted",
+          "plan_tier": "max|team|enterprise"
+        }
+      },
+      "proxy_routing": {
+        "endpoint": "/api/ai/anthropic/chat",
+        "stream_endpoint": "/api/ai/anthropic/stream",
+        "auth_mechanism": "Bearer ${access_token}",
+        "upstream_url": "https://api.anthropic.com/v1/messages",
+        "headers": {
+          "anthropic-version": "2023-06-01",
+          "anthropic-beta": "oauth-2025-04-20,prompt-caching-2024-07-31"
+        },
+        "notes": "OAuth token z planu MAX działa na oficjalnym API (scope user:inference). NIE jest to web scraping — to legalne API z tokenem OAuth."
+      },
+      "model_tiers": {
+        "commander": "claude-opus-4-6",
+        "coordinator": "claude-sonnet-4-6",
+        "executor": "claude-haiku-4-5-20251001"
+      }
+    },
+
+    "openai": {
+      "plan_name": "ChatGPT Plus / Pro",
+      "monthly_cost": "$20/mo (Plus) or $200/mo (Pro)",
+      "auth_type": "session_token",
+      "token_type": "JWT Session Token",
+      "token_prefix": "eyJhbG",
+      "vault_config": {
+        "namespace": "ai_providers",
+        "service": "openai_session",
+        "fields": {
+          "session_token": "JWT session token z chatgpt.com",
+          "device_id": "Device fingerprint ID",
+          "oai_did": "OpenAI device ID cookie",
+          "cf_clearance": "Cloudflare clearance cookie",
+          "expires_at": "Estimated session expiry",
+          "plan_tier": "plus|pro|team"
+        }
+      },
+      "proxy_routing": {
+        "endpoint": "/api/ai/openai/chat",
+        "stream_endpoint": "/api/ai/openai/stream",
+        "auth_mechanism": "Bearer ${session_token}",
+        "upstream_url": "https://chatgpt.com/backend-api/conversation",
+        "headers": {
+          "oai-device-id": "${device_id}",
+          "oai-language": "en-US"
+        },
+        "notes": "Session token z chatgpt.com (NIE sk-proj API key). Wymaga periodic refresh przez browser proxy."
+      },
+      "model_tiers": {
+        "commander": "gpt-4o",
+        "coordinator": "gpt-4o-mini",
+        "executor": "gpt-4o-mini"
+      }
+    },
+
+    "google": {
+      "plan_name": "Gemini Advanced (Google One AI Premium)",
+      "monthly_cost": "$19.99/mo",
+      "auth_type": "oauth_google",
+      "token_type": "Google OAuth Access Token",
+      "token_prefix": "ya29.",
+      "vault_config": {
+        "namespace": "ai_providers",
+        "service": "google_gemini",
+        "fields": {
+          "access_token": "Google OAuth access token",
+          "refresh_token": "Google OAuth refresh token",
+          "expires_at": "Unix timestamp expiry",
+          "user_email": "Authenticated Google account email",
+          "plan_tier": "advanced|ultra"
+        }
+      },
+      "proxy_routing": {
+        "endpoint": "/api/ai/google/chat",
+        "stream_endpoint": "/api/ai/google/stream",
+        "auth_mechanism": "Bearer ${access_token}",
+        "upstream_url": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+        "headers": {},
+        "notes": "OAuth token z Google One AI Premium. Automatyczny refresh przez Google OAuth PKCE flow."
+      },
+      "model_tiers": {
+        "commander": "gemini-2.5-pro-preview-06-05",
+        "coordinator": "gemini-2.5-flash-preview-05-20",
+        "executor": "gemini-2.0-flash"
+      }
+    },
+
+    "xai": {
+      "plan_name": "X Premium+ (Grok)",
+      "monthly_cost": "$16/mo (Premium+) or $30/mo (SuperGrok)",
+      "auth_type": "cookie_session",
+      "token_type": "X.com Auth Cookies",
+      "token_prefix": "auth_token=",
+      "vault_config": {
+        "namespace": "ai_providers",
+        "service": "xai_grok",
+        "fields": {
+          "auth_token": "X.com auth_token cookie",
+          "ct0": "X.com ct0 CSRF token",
+          "twid": "X.com user ID cookie",
+          "expires_at": "Estimated cookie expiry",
+          "plan_tier": "premium_plus|supergrok"
+        }
+      },
+      "proxy_routing": {
+        "endpoint": "/api/ai/xai/chat",
+        "stream_endpoint": "/api/ai/xai/stream",
+        "auth_mechanism": "Cookie: auth_token=${auth_token}; ct0=${ct0}",
+        "upstream_url": "https://grok.x.com/rest/app-chat/conversations/new",
+        "headers": {
+          "x-csrf-token": "${ct0}",
+          "x-twitter-auth-type": "OAuth2Session"
+        },
+        "notes": "Cookie auth z X.com. Wymaga periodic refresh przez browser proxy (gemini-browser-proxy). Grok nie ma oficjalnego API."
+      },
+      "model_tiers": {
+        "commander": "grok-3",
+        "coordinator": "grok-3-mini",
+        "executor": "grok-3-mini-fast"
+      }
+    },
+
+    "deepseek": {
+      "plan_name": "DeepSeek (free tier / Pro)",
+      "monthly_cost": "$0 (free) or API billing",
+      "auth_type": "api_key_via_vault",
+      "token_type": "API Key",
+      "token_prefix": "sk-",
+      "vault_config": {
+        "namespace": "ai_providers",
+        "service": "deepseek",
+        "fields": {
+          "api_key": "DeepSeek API key (Vault-managed, Bouncer-proxied)",
+          "plan_tier": "free|pro"
+        }
+      },
+      "proxy_routing": {
+        "endpoint": "/api/ai/deepseek/chat",
+        "stream_endpoint": "/api/ai/deepseek/stream",
+        "auth_mechanism": "vault_delegate",
+        "upstream_url": "https://api.deepseek.com/v1/chat/completions",
+        "headers": {},
+        "notes": "DeepSeek nie ma planu konsumenckiego — używa API key przez Vault Bouncer (vault_delegate). Agent NIGDY nie widzi klucza."
+      },
+      "model_tiers": {
+        "commander": "deepseek-reasoner",
+        "coordinator": "deepseek-chat",
+        "executor": "deepseek-chat"
+      }
+    },
+
+    "ollama": {
+      "plan_name": "Ollama (local, free)",
+      "monthly_cost": "$0",
+      "auth_type": "none",
+      "token_type": "none",
+      "vault_config": {
+        "namespace": "ai_providers",
+        "service": "ollama_local",
+        "fields": {
+          "base_url": "Ollama server URL (default http://localhost:11434)",
+          "default_model": "Preferred local model name"
+        }
+      },
+      "proxy_routing": {
+        "endpoint": "/api/ai/ollama/chat",
+        "stream_endpoint": "/api/ai/ollama/stream",
+        "auth_mechanism": "none",
+        "upstream_url": "http://localhost:11434/api/chat",
+        "headers": {},
+        "notes": "Ollama jest lokalny — brak auth, brak Vault. Bezpośredni proxy pass-through."
+      },
+      "model_tiers": {
+        "commander": "llama3.1:70b",
+        "coordinator": "llama3.1:8b",
+        "executor": "llama3.1:8b"
+      }
+    }
+  },
+
+  "vault_integration": {
+    "name": "Skarbiec Krasnali (Jaskier Vault — The Sentinel)",
+    "description": "Jaskier Vault staje się JEDYNYM zarządcą credentials dla wszystkich dostawców AI. Żadne tokeny nie są przechowywane w bazie danych PostgreSQL. Żadne klucze API nie są przekazywane przez env vars.",
+
+    "architecture": {
+      "storage": "~/.gemini/jaskier_vault.enc (AES-256-GCM, machine-key derived)",
+      "audit": "~/.gemini/jaskier_vault_audit.log",
+      "transport": "MCP stdio (jaskier-vault server)",
+      "encryption": "AES-256-GCM with HKDF key derivation (hostname+username+profile)",
+      "ui_dashboard": "http://localhost:5190"
+    },
+
+    "credential_lifecycle": {
+      "store": {
+        "tool": "vault_set",
+        "flow": "Agent/User → vault_set(namespace='ai_providers', service='anthropic_max', data={...}) → Vault encrypts → stored in .enc file",
+        "when": "Po udanym OAuth callback lub manualnym wpisaniu tokena"
+      },
+      "retrieve_for_api_call": {
+        "tool": "vault_delegate",
+        "flow": "Agent → vault_delegate(url, method, namespace='ai_providers', service='anthropic_max') → Vault decrypts token → Vault makes HTTP call with Bearer auth → returns JSON response → Agent NIGDY nie widzi tokena",
+        "when": "Każde zapytanie do AI providera"
+      },
+      "retrieve_for_display": {
+        "tool": "vault_get (unmask=false)",
+        "flow": "Agent → vault_get(namespace='ai_providers', service='anthropic_max') → Vault returns masked value (sk-ant-***) → safe for UI display",
+        "when": "Wyświetlanie statusu auth w Settings UI"
+      },
+      "ticket_based_access": {
+        "tool": "vault_request_ticket + vault_delegate",
+        "flow": "Agent → vault_request_ticket(namespace, service, ttl=300) → ticketId → vault_delegate(url, method, ticketId=ticketId) → response (repeatable for TTL)",
+        "when": "Batch operations, multiple API calls w jednej sesji"
+      },
+      "rotation": {
+        "tool": "vault_set (overwrite)",
+        "flow": "OAuth refresh → new access_token → vault_set(overwrite=true) → old token encrypted-overwritten",
+        "when": "Token expiry, periodic refresh, manual rotation"
+      },
+      "emergency": {
+        "tool": "vault_panic",
+        "flow": "vault_panic → ALL credentials destroyed → audit log entry → user notified",
+        "when": "Credential compromise detected, ANOMALY_DETECTED response"
+      }
+    },
+
+    "namespace_structure": {
+      "ai_providers": {
+        "description": "Wszystkie credentials dostawców AI",
+        "services": ["anthropic_max", "openai_session", "google_gemini", "xai_grok", "deepseek", "ollama_local"]
+      },
+      "integrations": {
+        "description": "Credentials narzędzi deweloperskich (GitHub, Vercel, Fly.io)",
+        "services": ["github_oauth", "vercel_oauth", "flyio_pat"]
+      },
+      "system": {
+        "description": "Systemowe tokeny (AUTH_SECRET, encryption keys)",
+        "services": ["auth_secret", "oauth_encryption_key"]
+      }
+    },
+
+    "backend_integration": {
+      "new_module": "vault_bridge.rs",
+      "description": "Most między Rust backendem a Jaskier Vault MCP. Zamiast szyfrować tokeny w PostgreSQL, backend odpytuje Vault przez MCP stdio lub HTTP.",
+      "trait": "HasVaultBridge",
+      "methods": [
+        "vault_get_credential(namespace, service) → Option<MaskedCredential>",
+        "vault_delegate_request(url, method, namespace, service, body?) → Result<VaultResponse>",
+        "vault_store_credential(namespace, service, data) → Result<()>",
+        "vault_check_health() → VaultHealthStatus",
+        "vault_get_provider_status(provider) → ProviderAuthStatus"
+      ]
+    }
+  },
+
+  "new_architecture": {
+    "name": "Unified AI Provider Gateway",
+    "description": "Jeden router, jeden trait, jeden flow. Każdy dostawca AI to wariant enuma AiProvider. Credentials z Vault, routing przez unified proxy.",
+
+    "new_rust_modules": {
+      "ai_gateway/mod.rs": {
+        "description": "Główny moduł Unified AI Gateway — enum AiProvider, trait HasAiGateway, routing logic",
+        "estimated_loc": 200,
+        "contains": [
+          "pub enum AiProvider { Anthropic, OpenAI, Google, Xai, DeepSeek, Ollama }",
+          "pub struct ProviderConfig { endpoint, stream_endpoint, upstream_url, auth_type, vault_namespace, vault_service, headers }",
+          "pub trait HasAiGateway: HasVaultBridge { fn ai_gateway() → &AiGatewayState; fn provider_configs() → &HashMap<AiProvider, ProviderConfig>; }",
+          "pub fn get_provider_config(provider: AiProvider) → ProviderConfig",
+          "impl AiProvider { fn from_model_id(model: &str) → Option<AiProvider> }"
+        ]
+      },
+
+      "ai_gateway/handlers.rs": {
+        "description": "HTTP handlers dla unified AI Gateway — chat, stream, status, provider management",
+        "estimated_loc": 400,
+        "endpoints": [
+          "POST /api/ai/{provider}/chat — unified chat (non-streaming)",
+          "POST /api/ai/{provider}/stream — unified streaming (SSE)",
+          "GET  /api/ai/providers — list all configured providers + auth status",
+          "GET  /api/ai/providers/{provider}/status — single provider auth status",
+          "POST /api/ai/providers/{provider}/connect — initiate OAuth/login flow",
+          "POST /api/ai/providers/{provider}/callback — OAuth callback",
+          "POST /api/ai/providers/{provider}/disconnect — revoke + delete credentials",
+          "POST /api/ai/providers/{provider}/refresh — force token refresh",
+          "POST /api/ai/providers/{provider}/test — send test prompt, verify connection"
+        ]
+      },
+
+      "ai_gateway/vault_bridge.rs": {
+        "description": "Most Vault ↔ Rust backend. Komunikacja z Jaskier Vault przez HTTP lub MCP stdio.",
+        "estimated_loc": 300,
+        "contains": [
+          "pub trait HasVaultBridge { fn vault_client() → &VaultClient; }",
+          "pub struct VaultClient { http: reqwest::Client, vault_url: String }",
+          "impl VaultClient { async fn get(...), async fn set(...), async fn delegate(...), async fn request_ticket(...), async fn health() }",
+          "pub struct MaskedCredential { service: String, masked_value: String, expires_at: Option<i64>, plan_tier: String }",
+          "pub struct VaultResponse { status: u16, body: serde_json::Value, latency_ms: u64 }",
+          "Error handling: VaultError { NotFound, Unauthorized, AnomalyDetected, ConnectionFailed, Timeout }"
+        ]
+      },
+
+      "ai_gateway/oauth_flows.rs": {
+        "description": "Zunifikowane OAuth flows — jeden handler PKCE dla wszystkich dostawców OAuth",
+        "estimated_loc": 350,
+        "contains": [
+          "pub struct OAuthProviderConfig { authorize_url, token_url, redirect_uri, client_id, client_secret, scopes, pkce_method }",
+          "pub fn unified_oauth_login(provider: AiProvider, config: &OAuthProviderConfig) → (authorize_url, state, code_verifier)",
+          "pub fn unified_oauth_callback(provider: AiProvider, code, state, code_verifier) → OAuthTokens",
+          "pub fn unified_oauth_refresh(provider: AiProvider, refresh_token) → OAuthTokens",
+          "Tokeny po exchange'u lecą BEZPOŚREDNIO do Vault (vault_set), NIE do PostgreSQL",
+          "PKCE state przechowywany in-memory (Arc<DashMap>) z TTL 10 min"
+        ]
+      },
+
+      "ai_gateway/session_manager.rs": {
+        "description": "Zarządzanie sesjami cookie-based (OpenAI, xAI) — refresh, validation, browser proxy integration",
+        "estimated_loc": 250,
+        "contains": [
+          "pub struct SessionConfig { provider, cookie_names: Vec<String>, refresh_interval: Duration, browser_proxy_url: Option<String> }",
+          "pub async fn validate_session(provider: AiProvider) → SessionStatus { Valid, Expired, Invalid, Unknown }",
+          "pub async fn refresh_session_via_browser(provider: AiProvider) → Result<()> — triggers browser proxy to re-login",
+          "pub async fn extract_session_cookies(provider: AiProvider) → Result<HashMap<String, String>> — reads from browser proxy",
+          "pub async fn store_session_to_vault(provider: AiProvider, cookies: HashMap) → Result<()>",
+          "Periodic background task: check session validity every 30 min, auto-refresh if expiring"
+        ]
+      },
+
+      "ai_gateway/model_router.rs": {
+        "description": "Inteligentny routing modeli — wybór providera na podstawie model ID, fallback chain, load balancing",
+        "estimated_loc": 200,
+        "contains": [
+          "pub struct ModelRoute { provider: AiProvider, model_id: String, upstream_model: String, priority: u8 }",
+          "pub fn resolve_model(requested_model: &str) → Result<ModelRoute>",
+          "pub fn fallback_chain(primary: AiProvider) → Vec<AiProvider> — jeśli primary down, próbuj kolejnych",
+          "pub fn provider_for_tier(tier: ModelTier) → Vec<(AiProvider, String)> — commander/coordinator/executor",
+          "pub enum ModelTier { Commander, Coordinator, Executor }",
+          "Konfiguracja fallback: Anthropic → Google → OpenAI → DeepSeek → Ollama"
+        ]
+      }
+    },
+
+    "new_frontend_modules": {
+      "src/features/settings/components/AiProvidersSection.tsx": {
+        "description": "Jeden zunifikowany komponent zamiast osobnych OAuthSection + GoogleOAuthSection. Karty dostawców z statusem, connect/disconnect, test connection.",
+        "estimated_loc": 350,
+        "replaces": ["OAuthSection.tsx", "GoogleOAuthSection.tsx"],
+        "features": [
+          "Provider cards grid (Anthropic, OpenAI, Google, xAI, DeepSeek, Ollama)",
+          "Każda karta: logo, nazwa planu, status (connected/disconnected/expiring), plan tier badge",
+          "Connect button → uruchamia OAuth flow lub manual token input",
+          "Disconnect button → vault_set delete + revoke",
+          "Test Connection button → POST /api/ai/providers/{provider}/test",
+          "Token expiry countdown (auto-refresh indicator)",
+          "Vault health indicator (green/red dot)",
+          "Monthly cost summary (total across all providers)"
+        ]
+      },
+
+      "src/features/settings/components/VaultStatusSection.tsx": {
+        "description": "Dashboard Jaskier Vault — health, audit log preview, namespace browser, emergency controls",
+        "estimated_loc": 200,
+        "features": [
+          "Vault health status (online/offline/degraded)",
+          "Credential count per namespace",
+          "Last audit log entries (5 most recent)",
+          "Emergency Panic button (vault_panic — requires double confirmation)",
+          "Credential rotation trigger",
+          "Link to full Vault UI dashboard (:5190)"
+        ]
+      },
+
+      "src/features/settings/hooks/useAiProviders.ts": {
+        "description": "TanStack Query hook dla statusu wszystkich dostawców AI",
+        "estimated_loc": 120,
+        "replaces": ["useOAuthStatus (inline in OAuthSection)", "useGoogleAuthStatus.ts"],
+        "api_calls": [
+          "GET /api/ai/providers → lista dostawców + status auth",
+          "POST /api/ai/providers/{provider}/connect → inicjalizacja login",
+          "POST /api/ai/providers/{provider}/disconnect → wylogowanie",
+          "POST /api/ai/providers/{provider}/test → test połączenia"
+        ]
+      },
+
+      "src/features/settings/hooks/useVaultStatus.ts": {
+        "description": "TanStack Query hook dla statusu Jaskier Vault",
+        "estimated_loc": 60,
+        "api_calls": [
+          "GET /api/vault/health → vault health + credential count",
+          "GET /api/vault/audit → recent audit entries"
+        ]
+      }
+    },
+
+    "new_db_migration": {
+      "filename": "2026031501_025_ai_provider_gateway.sql",
+      "description": "Nowa zunifikowana tabela — minimalna, bo credentials są w Vault. DB przechowuje TYLKO metadane o połączeniach (bez tokenów!).",
+      "sql": [
+        "CREATE TABLE IF NOT EXISTS ch_ai_providers (",
+        "  id SERIAL PRIMARY KEY,",
+        "  provider TEXT NOT NULL UNIQUE,",
+        "  plan_name TEXT NOT NULL DEFAULT '',",
+        "  plan_tier TEXT NOT NULL DEFAULT '',",
+        "  auth_type TEXT NOT NULL DEFAULT 'none',",
+        "  vault_namespace TEXT NOT NULL DEFAULT 'ai_providers',",
+        "  vault_service TEXT NOT NULL DEFAULT '',",
+        "  is_connected BOOLEAN NOT NULL DEFAULT FALSE,",
+        "  last_verified_at TIMESTAMPTZ,",
+        "  last_error TEXT,",
+        "  monthly_cost_cents INTEGER NOT NULL DEFAULT 0,",
+        "  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),",
+        "  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+        ");",
+        "",
+        "INSERT INTO ch_ai_providers (provider, plan_name, auth_type, vault_namespace, vault_service, monthly_cost_cents) VALUES",
+        "  ('anthropic', 'Claude Max', 'oauth_pkce', 'ai_providers', 'anthropic_max', 10000),",
+        "  ('openai', 'ChatGPT Plus', 'session_token', 'ai_providers', 'openai_session', 2000),",
+        "  ('google', 'Gemini Advanced', 'oauth_google', 'ai_providers', 'google_gemini', 1999),",
+        "  ('xai', 'X Premium+', 'cookie_session', 'ai_providers', 'xai_grok', 1600),",
+        "  ('deepseek', 'DeepSeek', 'api_key_via_vault', 'ai_providers', 'deepseek', 0),",
+        "  ('ollama', 'Ollama Local', 'none', 'ai_providers', 'ollama_local', 0)",
+        "ON CONFLICT (provider) DO NOTHING;"
+      ]
+    }
+  },
+
+  "old_code_removal": {
+    "description": "Kompletna lista plików, tabel DB, migracji i komponentów do usunięcia. ZERO pozostałości starego systemu auth.",
+
+    "rust_files_to_delete": {
+      "ClaudeHydra/backend/src/oauth.rs": {
+        "lines": 53,
+        "reason": "Stary wrapper Anthropic OAuth → zastąpiony przez ai_gateway/oauth_flows.rs + vault_bridge.rs"
+      },
+      "ClaudeHydra/backend/src/oauth_google.rs": {
+        "lines": 8,
+        "reason": "Stary wrapper Google OAuth → zastąpiony przez ai_gateway/oauth_flows.rs"
+      },
+      "ClaudeHydra/backend/src/oauth_github.rs": {
+        "lines": 5,
+        "reason": "GitHub OAuth przeniesiony do namespace 'integrations' w Vault. Nowy handler w ai_gateway."
+      },
+      "ClaudeHydra/backend/src/oauth_vercel.rs": {
+        "lines": 5,
+        "reason": "Vercel OAuth przeniesiony do namespace 'integrations' w Vault."
+      },
+      "ClaudeHydra/backend/src/service_tokens.rs": {
+        "lines": 4,
+        "reason": "Zbędny — wszystkie service tokeny w Vault (namespace 'integrations')."
+      }
+    },
+
+    "shared_crate_refactor": {
+      "crates/jaskier-oauth/src/anthropic.rs": {
+        "lines": 531,
+        "action": "REFACTOR → wyciąć DB storage, zostawić PKCE flow, token exchange. Wynik idzie do Vault, nie do PostgreSQL.",
+        "keep": ["PKCE flow logic", "token exchange", "token refresh", "constants (CLIENT_ID, URLs)"],
+        "remove": ["DB INSERT/UPDATE ch_oauth_tokens", "DB SELECT ch_oauth_tokens", "encrypt_token/decrypt_token calls for DB", "singleton id=1 pattern"]
+      },
+      "crates/jaskier-oauth/src/google.rs": {
+        "lines": 824,
+        "action": "REFACTOR → wyciąć dual auth (OAuth + API key z DB), zostawić PKCE flow. Credential storage → Vault.",
+        "keep": ["PKCE flow", "token exchange", "redirect handler", "constants"],
+        "remove": ["DB INSERT/UPDATE ch_google_auth", "API key encryption in DB", "get_google_credential() 3-tier fallback", "AtomicBool oauth_gemini_valid (replaced by Vault status)"]
+      },
+      "crates/jaskier-oauth/src/github.rs": {
+        "lines": 304,
+        "action": "REFACTOR → wyciąć DB storage, zostawić code exchange flow. Token → Vault.",
+        "keep": ["code exchange logic", "constants"],
+        "remove": ["DB INSERT/UPDATE ch_oauth_github", "encrypt_token for DB"]
+      },
+      "crates/jaskier-oauth/src/vercel.rs": {
+        "lines": 301,
+        "action": "REFACTOR → wyciąć DB storage, zostawić code exchange flow. Token → Vault.",
+        "keep": ["code exchange logic", "constants"],
+        "remove": ["DB INSERT/UPDATE ch_oauth_vercel", "encrypt_token for DB"]
+      },
+      "crates/jaskier-oauth/src/service_tokens.rs": {
+        "lines": 295,
+        "action": "DELETE ENTIRELY — zastąpione przez Vault namespace 'integrations'",
+        "reason": "Generic encrypted token storage w DB jest redundantne gdy mamy Vault"
+      },
+      "crates/jaskier-oauth/src/crypto.rs": {
+        "lines": 469,
+        "action": "KEEP but REDUCE — crypto nadal potrzebne do PKCE, ale nie do szyfrowania tokenów w DB (to robi Vault)",
+        "keep": ["sha256_base64url (PKCE)", "random_base64url (nonces)", "is_encryption_configured"],
+        "remove": ["encrypt_token()", "decrypt_token()", "all DB-oriented encryption logic"]
+      }
+    },
+
+    "db_tables_to_drop": {
+      "ch_oauth_tokens": {
+        "migration": "2026022402_006_oauth_tokens.sql",
+        "reason": "Anthropic OAuth tokens → Vault ai_providers/anthropic_max"
+      },
+      "ch_google_auth": {
+        "migration": "2026022807_015_google_auth.sql",
+        "reason": "Google OAuth + API key → Vault ai_providers/google_gemini"
+      },
+      "ch_oauth_github": {
+        "migration": "2026022801_009_github_oauth.sql",
+        "reason": "GitHub OAuth → Vault integrations/github_oauth"
+      },
+      "ch_oauth_vercel": {
+        "migration": "2026022802_010_vercel_oauth.sql",
+        "reason": "Vercel OAuth → Vault integrations/vercel_oauth"
+      },
+      "ch_service_tokens": {
+        "migration": "2026022803_011_service_tokens.sql",
+        "reason": "Service tokens (Fly.io PAT etc.) → Vault integrations/flyio_pat"
+      }
+    },
+
+    "db_cleanup_migration": {
+      "filename": "2026031502_026_drop_old_auth_tables.sql",
+      "sql": [
+        "-- Skarbiec Krasnali migration: drop old auth tables (credentials now in Vault)",
+        "DROP TABLE IF EXISTS ch_oauth_tokens CASCADE;",
+        "DROP TABLE IF EXISTS ch_google_auth CASCADE;",
+        "DROP TABLE IF EXISTS ch_oauth_github CASCADE;",
+        "DROP TABLE IF EXISTS ch_oauth_vercel CASCADE;",
+        "DROP TABLE IF EXISTS ch_service_tokens CASCADE;"
+      ]
+    },
+
+    "frontend_files_to_delete": {
+      "src/features/settings/components/OAuthSection.tsx": {
+        "estimated_lines": 150,
+        "reason": "Zastąpione przez AiProvidersSection.tsx"
+      },
+      "src/features/settings/components/GoogleOAuthSection.tsx": {
+        "estimated_lines": 150,
+        "reason": "Zastąpione przez AiProvidersSection.tsx"
+      },
+      "src/features/settings/hooks/useGoogleAuthStatus.ts": {
+        "estimated_lines": 80,
+        "reason": "Zastąpione przez useAiProviders.ts"
+      }
+    },
+
+    "env_vars_to_remove": {
+      "ANTHROPIC_API_KEY": {
+        "reason": "Nie używamy API keys — tylko OAuth z planu MAX. Token w Vault.",
+        "migration": "Usuń z .env, fly secrets unset, Dockerfile ARG"
+      },
+      "GOOGLE_API_KEY": {
+        "reason": "Nie używamy API keys — tylko OAuth. Credential w Vault.",
+        "migration": "Usuń z .env, fly secrets unset"
+      },
+      "GOOGLE_OAUTH_CLIENT_ID": {
+        "reason": "Przeniesione do Vault namespace system/google_oauth_client",
+        "migration": "vault_set → fly secrets unset"
+      },
+      "GOOGLE_OAUTH_CLIENT_SECRET": {
+        "reason": "Przeniesione do Vault",
+        "migration": "vault_set → fly secrets unset"
+      },
+      "GITHUB_CLIENT_ID": {
+        "reason": "Przeniesione do Vault",
+        "migration": "vault_set → fly secrets unset"
+      },
+      "GITHUB_CLIENT_SECRET": {
+        "reason": "Przeniesione do Vault",
+        "migration": "vault_set → fly secrets unset"
+      },
+      "VERCEL_CLIENT_ID": {
+        "reason": "Przeniesione do Vault",
+        "migration": "vault_set → fly secrets unset"
+      },
+      "VERCEL_CLIENT_SECRET": {
+        "reason": "Przeniesione do Vault",
+        "migration": "vault_set → fly secrets unset"
+      },
+      "OAUTH_ENCRYPTION_KEY": {
+        "reason": "Niepotrzebne — Vault ma własne szyfrowanie AES-256-GCM",
+        "migration": "fly secrets unset"
+      }
+    },
+
+    "traits_to_remove": {
+      "HasAnthropicOAuthState": {
+        "crate": "jaskier-oauth",
+        "reason": "Zastąpione przez HasAiGateway + HasVaultBridge",
+        "affected_apps": ["ClaudeHydra (extra_trait w delegate_base_traits!)"]
+      },
+      "HasGoogleOAuthState": {
+        "crate": "jaskier-oauth",
+        "reason": "Zastąpione przez HasAiGateway + HasVaultBridge",
+        "affected_apps": ["ClaudeHydra", "GeminiHydra", "GrokHydra", "OpenAIHydra", "DeepSeekHydra"],
+        "breaking_change": "SUPERTRAIT CHAIN: HasGoogleOAuthState → HasModelRegistryState → HasWatchdogState. Trzeba przepiąć na HasAiGateway."
+      },
+      "HasGitHubOAuthState": {
+        "crate": "jaskier-oauth",
+        "reason": "Zastąpione przez HasVaultBridge (namespace integrations)",
+        "affected_apps": ["all Hydras via delegate_base_traits!"]
+      },
+      "HasVercelOAuthState": {
+        "crate": "jaskier-oauth",
+        "reason": "Zastąpione przez HasVaultBridge",
+        "affected_apps": ["all Hydras via delegate_base_traits!"]
+      },
+      "HasServiceTokensState": {
+        "crate": "jaskier-oauth",
+        "reason": "Zastąpione przez HasVaultBridge",
+        "affected_apps": ["all Hydras via delegate_base_traits!"]
+      }
+    },
+
+    "routes_to_remove": {
+      "/api/auth/status": "Zastąpione przez GET /api/ai/providers/anthropic/status",
+      "/api/auth/login": "Zastąpione przez POST /api/ai/providers/anthropic/connect",
+      "/api/auth/callback": "Zastąpione przez POST /api/ai/providers/anthropic/callback",
+      "/api/auth/logout": "Zastąpione przez POST /api/ai/providers/anthropic/disconnect",
+      "/api/auth/google/*": "Zastąpione przez /api/ai/providers/google/*",
+      "/api/auth/github/*": "Zastąpione przez /api/ai/providers/github/* (w namespace integrations)",
+      "/api/auth/vercel/*": "Zastąpione przez /api/ai/providers/vercel/*",
+      "/api/tokens": "Zastąpione przez Vault (vault_get/vault_set via MCP)",
+      "/api/tokens/{service}": "Zastąpione przez Vault"
+    }
+  },
+
+  "implementation_phases": {
+    "phase_1": {
+      "name": "Vault Bridge + AI Gateway Foundation",
+      "priority": "CRITICAL",
+      "estimated_effort": "2-3 days",
+      "tasks": [
+        {
+          "id": "P1-001",
+          "task": "Stwórz moduł ai_gateway/vault_bridge.rs — VaultClient struct + HasVaultBridge trait",
+          "details": "HTTP client do Jaskier Vault MCP. Metody: get, set, delegate, request_ticket, health. Error handling z AnomalyDetected.",
+          "files_created": ["backend/src/ai_gateway/vault_bridge.rs"],
+          "dependencies": []
+        },
+        {
+          "id": "P1-002",
+          "task": "Stwórz moduł ai_gateway/mod.rs — AiProvider enum + ProviderConfig + HasAiGateway trait",
+          "details": "Enum z 6 wariantami (Anthropic, OpenAI, Google, Xai, DeepSeek, Ollama). ProviderConfig z endpoint, auth_type, vault mapping. from_model_id() resolver.",
+          "files_created": ["backend/src/ai_gateway/mod.rs"],
+          "dependencies": ["P1-001"]
+        },
+        {
+          "id": "P1-003",
+          "task": "Stwórz migrację 025_ai_provider_gateway.sql",
+          "details": "Tabela ch_ai_providers — metadane o połączeniach (BEZ tokenów). INSERT seed data dla 6 providerów.",
+          "files_created": ["backend/migrations/2026031501_025_ai_provider_gateway.sql"],
+          "dependencies": []
+        },
+        {
+          "id": "P1-004",
+          "task": "Przenieś istniejące credentials do Vault",
+          "details": "Jednorazowy skrypt migracyjny: odczytaj tokeny z ch_oauth_tokens, ch_google_auth, ch_oauth_github, ch_oauth_vercel, ch_service_tokens → vault_set do odpowiednich namespace/service. Potem DROP stare tabele.",
+          "files_created": ["backend/scripts/migrate_credentials_to_vault.rs"],
+          "dependencies": ["P1-001"]
+        }
+      ]
+    },
+
+    "phase_2": {
+      "name": "Unified OAuth Flows + Session Manager",
+      "priority": "HIGH",
+      "estimated_effort": "2-3 days",
+      "tasks": [
+        {
+          "id": "P2-001",
+          "task": "Stwórz ai_gateway/oauth_flows.rs — zunifikowany PKCE flow",
+          "details": "Jeden handler obsługuje Anthropic, Google, GitHub, Vercel OAuth. Po token exchange → vault_set (NIE DB insert). PKCE state in-memory DashMap z TTL.",
+          "files_created": ["backend/src/ai_gateway/oauth_flows.rs"],
+          "dependencies": ["P1-001", "P1-002"]
+        },
+        {
+          "id": "P2-002",
+          "task": "Stwórz ai_gateway/session_manager.rs — cookie-based sessions (OpenAI, xAI)",
+          "details": "Walidacja sesji, auto-refresh przez browser proxy, cookie extraction, storage do Vault. Background task co 30 min.",
+          "files_created": ["backend/src/ai_gateway/session_manager.rs"],
+          "dependencies": ["P1-001"]
+        },
+        {
+          "id": "P2-003",
+          "task": "Stwórz ai_gateway/handlers.rs — unified HTTP handlers",
+          "details": "9 endpointów: chat, stream, providers list, provider status, connect, callback, disconnect, refresh, test. Routing: /api/ai/{provider}/*",
+          "files_created": ["backend/src/ai_gateway/handlers.rs"],
+          "dependencies": ["P2-001", "P2-002"]
+        },
+        {
+          "id": "P2-004",
+          "task": "Stwórz ai_gateway/model_router.rs — inteligentny routing modeli",
+          "details": "ModelRoute resolution, fallback chain, tier-based routing. Konfiguracja: Anthropic → Google → OpenAI → DeepSeek → Ollama.",
+          "files_created": ["backend/src/ai_gateway/model_router.rs"],
+          "dependencies": ["P1-002"]
+        }
+      ]
+    },
+
+    "phase_3": {
+      "name": "Frontend Rebuild + Stare Pliki do Kosza",
+      "priority": "HIGH",
+      "estimated_effort": "1-2 days",
+      "tasks": [
+        {
+          "id": "P3-001",
+          "task": "Stwórz AiProvidersSection.tsx — zunifikowany komponent dostawców",
+          "details": "Provider cards grid, connect/disconnect/test, vault health indicator, cost summary. Zastępuje OAuthSection + GoogleOAuthSection.",
+          "files_created": ["src/features/settings/components/AiProvidersSection.tsx"],
+          "dependencies": ["P2-003"]
+        },
+        {
+          "id": "P3-002",
+          "task": "Stwórz VaultStatusSection.tsx — dashboard Vault w settings",
+          "details": "Health status, credential count, audit log preview, panic button, rotation trigger.",
+          "files_created": ["src/features/settings/components/VaultStatusSection.tsx"],
+          "dependencies": ["P1-001"]
+        },
+        {
+          "id": "P3-003",
+          "task": "Stwórz useAiProviders.ts + useVaultStatus.ts hooks",
+          "details": "TanStack Query hooks z polling. Zastępuje useOAuthStatus + useGoogleAuthStatus.",
+          "files_created": [
+            "src/features/settings/hooks/useAiProviders.ts",
+            "src/features/settings/hooks/useVaultStatus.ts"
+          ],
+          "dependencies": ["P2-003"]
+        },
+        {
+          "id": "P3-004",
+          "task": "Zaktualizuj SettingsView.tsx — podmień sekcje auth",
+          "details": "Usuń importy OAuthSection + GoogleOAuthSection. Dodaj AiProvidersSection + VaultStatusSection.",
+          "files_modified": ["src/features/settings/components/SettingsView.tsx"],
+          "dependencies": ["P3-001", "P3-002"]
+        }
+      ]
+    },
+
+    "phase_4": {
+      "name": "Cleanup — Usunięcie Starego Kodu",
+      "priority": "MEDIUM",
+      "estimated_effort": "1 day",
+      "tasks": [
+        {
+          "id": "P4-001",
+          "task": "Usuń stare pliki backend (5 wrapperów)",
+          "details": "Usuń: oauth.rs, oauth_google.rs, oauth_github.rs, oauth_vercel.rs, service_tokens.rs z ClaudeHydra/backend/src/",
+          "files_deleted": [
+            "backend/src/oauth.rs",
+            "backend/src/oauth_google.rs",
+            "backend/src/oauth_github.rs",
+            "backend/src/oauth_vercel.rs",
+            "backend/src/service_tokens.rs"
+          ],
+          "dependencies": ["P2-003"]
+        },
+        {
+          "id": "P4-002",
+          "task": "Usuń stare frontend pliki (3 pliki)",
+          "details": "Usuń: OAuthSection.tsx, GoogleOAuthSection.tsx, useGoogleAuthStatus.ts",
+          "files_deleted": [
+            "src/features/settings/components/OAuthSection.tsx",
+            "src/features/settings/components/GoogleOAuthSection.tsx",
+            "src/features/settings/hooks/useGoogleAuthStatus.ts"
+          ],
+          "dependencies": ["P3-004"]
+        },
+        {
+          "id": "P4-003",
+          "task": "Stwórz migrację 026 — DROP stare tabele auth",
+          "details": "DROP TABLE IF EXISTS: ch_oauth_tokens, ch_google_auth, ch_oauth_github, ch_oauth_vercel, ch_service_tokens.",
+          "files_created": ["backend/migrations/2026031502_026_drop_old_auth_tables.sql"],
+          "dependencies": ["P1-004"]
+        },
+        {
+          "id": "P4-004",
+          "task": "Refaktoruj jaskier-oauth shared crate",
+          "details": "Wyciąć DB storage z anthropic.rs, google.rs, github.rs, vercel.rs. Usunąć service_tokens.rs entirely. Zredukować crypto.rs (zostaw PKCE utils). Zaktualizować lib.rs exports.",
+          "files_modified": [
+            "crates/jaskier-oauth/src/anthropic.rs",
+            "crates/jaskier-oauth/src/google.rs",
+            "crates/jaskier-oauth/src/github.rs",
+            "crates/jaskier-oauth/src/vercel.rs",
+            "crates/jaskier-oauth/src/crypto.rs",
+            "crates/jaskier-oauth/src/lib.rs"
+          ],
+          "files_deleted": [
+            "crates/jaskier-oauth/src/service_tokens.rs"
+          ],
+          "dependencies": ["P2-001"]
+        },
+        {
+          "id": "P4-005",
+          "task": "Zaktualizuj supertrait chain",
+          "details": "Stary: HasGoogleOAuthState → HasModelRegistryState → HasWatchdogState. Nowy: HasAiGateway → HasModelRegistryState → HasWatchdogState. Update delegate_base_traits! w jaskier-hydra-state.",
+          "files_modified": [
+            "crates/jaskier-hydra-state/src/lib.rs",
+            "crates/jaskier-oauth/src/lib.rs",
+            "crates/jaskier-core/src/lib.rs"
+          ],
+          "dependencies": ["P1-002"]
+        },
+        {
+          "id": "P4-006",
+          "task": "Usuń stare env vars z Fly.io + Dockerfile",
+          "details": "fly secrets unset ANTHROPIC_API_KEY GOOGLE_API_KEY OAUTH_ENCRYPTION_KEY itd. Wyczyść Dockerfile ARG/ENV.",
+          "files_modified": ["backend/Dockerfile"],
+          "dependencies": ["P4-003"]
+        },
+        {
+          "id": "P4-007",
+          "task": "Zaktualizuj lib.rs — nowy router z /api/ai/* routes",
+          "details": "Usuń stare /api/auth/* routes. Dodaj nowy Router z ai_gateway handlers. Zaktualizuj PROTECTED routes.",
+          "files_modified": ["backend/src/lib.rs"],
+          "dependencies": ["P2-003", "P4-001"]
+        },
+        {
+          "id": "P4-008",
+          "task": "Zaktualizuj state.rs — nowe traity, usunięcie starych",
+          "details": "Usuń: HasAnthropicOAuthState, HasGoogleOAuthState z extra_traits. Dodaj: HasAiGateway, HasVaultBridge. Update BaseHydraState fields.",
+          "files_modified": ["backend/src/state.rs"],
+          "dependencies": ["P4-005"]
+        },
+        {
+          "id": "P4-009",
+          "task": "Zaktualizuj handlers.rs — model routing do AI Gateway",
+          "details": "Stary flow: handlers.rs bezpośrednio woła Anthropic API z tokenem. Nowy: handlers.rs → ai_gateway → vault_delegate → upstream.",
+          "files_modified": ["backend/src/handlers.rs"],
+          "dependencies": ["P2-004"]
+        },
+        {
+          "id": "P4-010",
+          "task": "Wyczyść mod.rs declarations + Cargo.toml",
+          "details": "Usuń mod oauth; mod oauth_google; itp. z main module tree. Dodaj mod ai_gateway;. Cleanup Cargo.toml deps.",
+          "files_modified": ["backend/src/lib.rs", "backend/Cargo.toml"],
+          "dependencies": ["P4-001", "P4-007"]
+        }
+      ]
+    },
+
+    "phase_5": {
+      "name": "Testing + Verification",
+      "priority": "HIGH",
+      "estimated_effort": "1 day",
+      "tasks": [
+        {
+          "id": "P5-001",
+          "task": "Unit testy ai_gateway modules",
+          "details": "Testy: VaultClient mock, AiProvider routing, model resolution, OAuth flow PKCE, session validation.",
+          "files_created": ["backend/src/ai_gateway/tests.rs"],
+          "dependencies": ["P2-003"]
+        },
+        {
+          "id": "P5-002",
+          "task": "Integration testy z Vault",
+          "details": "Testy end-to-end: vault_set credential → vault_delegate API call → verify response. Wymaga running Vault MCP.",
+          "files_created": ["crates/jaskier-integration-tests/src/vault_gateway_tests.rs"],
+          "dependencies": ["P1-001"]
+        },
+        {
+          "id": "P5-003",
+          "task": "Frontend testy — provider cards",
+          "details": "Playwright E2E: navigate to settings → verify provider cards → test connect/disconnect flow.",
+          "files_modified": ["packages/testing/tests/claudehydra/settings.spec.ts"],
+          "dependencies": ["P3-001"]
+        },
+        {
+          "id": "P5-004",
+          "task": "Cargo check + clippy + test full workspace",
+          "details": "make ci-all — verify 0 errors, 0 clippy warnings, all tests pass after removal.",
+          "dependencies": ["P4-010"]
+        },
+        {
+          "id": "P5-005",
+          "task": "Deploy do Fly.io + smoke test",
+          "details": "fly deploy → verify /api/health → verify /api/ai/providers returns correct status.",
+          "dependencies": ["P5-004"]
+        }
+      ]
+    }
+  },
+
+  "risk_assessment": {
+    "high_risk": [
+      {
+        "risk": "Supertrait chain breakage",
+        "description": "HasGoogleOAuthState jest supertraitem dla HasModelRegistryState → HasWatchdogState. Usunięcie go rozbije WSZYSTKIE 5 Hydras.",
+        "mitigation": "Phase 4 P4-005: najpierw przepiąć supertrait na HasAiGateway, potem dopiero usuwać HasGoogleOAuthState.",
+        "affected": ["ClaudeHydra", "GeminiHydra", "GrokHydra", "OpenAIHydra", "DeepSeekHydra"]
+      },
+      {
+        "risk": "Vault MCP unavailability",
+        "description": "Jeśli Jaskier Vault MCP nie odpowiada, backend nie ma dostępu do ŻADNYCH credentials.",
+        "mitigation": "Graceful degradation: VaultClient z retry (3x) + timeout (5s). Fallback: cached credentials in-memory (Arc<RwLock<HashMap>>) z TTL 1h. Health endpoint /api/vault/health."
+      },
+      {
+        "risk": "Fly.io prod credentials loss",
+        "description": "DROP TABLE ch_oauth_tokens na prod zanim credentials przeniesione do Vault = utrata tokenów.",
+        "mitigation": "Phase 1 P1-004 MUSI być wykonane PRZED Phase 4 P4-003. Backup DB przed migracją."
+      },
+      {
+        "risk": "Browser proxy session refresh failure",
+        "description": "OpenAI i xAI wymagają cookie-based auth. Jeśli browser proxy nie odświeży sesji, requesty failują.",
+        "mitigation": "Session manager z background task co 30 min. Alert (toast) jeśli refresh failed 3x. Manual re-login fallback."
+      }
+    ],
+
+    "medium_risk": [
+      {
+        "risk": "delegate_base_traits! macro update",
+        "description": "Makro w jaskier-hydra-state musi obsłużyć nowe traity (HasAiGateway, HasVaultBridge) zamiast starych.",
+        "mitigation": "Unit testy w jaskier-integration-tests weryfikują trait chain compilation."
+      },
+      {
+        "risk": "Frontend breaking changes",
+        "description": "Nowe API paths (/api/ai/* zamiast /api/auth/*) wymagają update wszystkich fetch calls.",
+        "mitigation": "API client w @jaskier/core — zmiana w jednym miejscu propaguje do wszystkich apps."
+      }
+    ],
+
+    "low_risk": [
+      {
+        "risk": "Ollama local — no auth needed",
+        "description": "Ollama nie wymaga auth, ale jest w ai_gateway dla consistency.",
+        "mitigation": "auth_type: 'none' — VaultBridge skip dla Ollama."
+      }
+    ]
+  },
+
+  "summary": {
+    "files_to_create": 12,
+    "files_to_delete": 9,
+    "files_to_modify": 15,
+    "db_tables_to_create": 1,
+    "db_tables_to_drop": 5,
+    "traits_to_add": 2,
+    "traits_to_remove": 5,
+    "env_vars_to_remove": 8,
+    "new_endpoints": 9,
+    "old_endpoints_removed": 20,
+    "estimated_new_loc": 1880,
+    "estimated_deleted_loc": 2500,
+    "net_loc_change": -620,
+    "total_phases": 5,
+    "total_tasks": 24,
+    "estimated_total_effort": "7-10 days"
+  }
+}

@@ -71,6 +71,10 @@ default = []
 shuttle = ["dep:shuttle-axum", "dep:shuttle-runtime"]
 test-helpers = []
 
+[[bin]]
+name = "migrate-credentials-to-vault"
+path = "src/bin/migrate_credentials_to_vault.rs"
+
 [dev-dependencies]
 jaskier-core = { path = "../../../crates/jaskier-core", features = ["test-helpers"] }
 tower = { workspace = true }

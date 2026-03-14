@@ -24,6 +24,8 @@ pub use jaskier_hydra_state::{
 
 use std::time::Instant;
 
+use crate::ai_gateway::{self, AiGatewayState, HasAiGateway};
+use crate::ai_gateway::vault_bridge::{HasVaultBridge, VaultClient};
 use crate::models::WitcherAgent;
 use crate::tools::ToolExecutor;
 
@@ -40,6 +42,9 @@ use crate::tools::ToolExecutor;
 #[derive(Clone)]
 pub struct AppState {
     pub base: BaseHydraState,
+    // ── AI Gateway (unified multi-provider gateway + Vault bridge) ──
+    /// Unified AI Gateway state — provider configs and Vault client.
+    pub ai_gateway: Arc<AiGatewayState>,
     // ── CH-specific fields (not in BaseHydraState) ──────────────────
     /// Agents cache — CH uses local WitcherAgent type with `model` field.
     pub agents: Arc<RwLock<Vec<WitcherAgent>>>,
@@ -111,12 +116,20 @@ impl AppState {
         // Unit broadcast required by HasAgentState / HasA2aState trait bounds
         let (a2a_unit_tx, _) = tokio::sync::broadcast::channel(100);
 
+        // ── AI Gateway (unified multi-provider + Vault bridge) ─────
+        let vault_client = VaultClient::new(); // default: http://localhost:5190
+        let ai_gateway_state = Arc::new(AiGatewayState {
+            providers: ai_gateway::default_provider_configs(),
+            vault_client,
+        });
+
         // ── Backward-compat field aliases ───────────────────────────
         let http_client = base.client.clone();
         let circuit_breaker = base.gemini_circuit.clone();
 
         Self {
             base,
+            ai_gateway: ai_gateway_state,
             agents,
             tool_executor,
             rate_limit_config,
@@ -191,8 +204,14 @@ impl AppState {
             api_key_env_vars: &["ANTHROPIC_API_KEY"],
         };
 
+        let ai_gateway_state = Arc::new(AiGatewayState {
+            providers: ai_gateway::default_provider_configs(),
+            vault_client: VaultClient::with_url("http://localhost:19999"), // non-existent in tests
+        });
+
         Self {
             base,
+            ai_gateway: ai_gateway_state,
             agents,
             tool_executor: Arc::new(ToolExecutor::new(http_client.clone(), HashMap::new())),
             rate_limit_config: crate::rate_limits::RateLimitConfig { groups: std::collections::HashMap::new() },
@@ -223,6 +242,22 @@ jaskier_hydra_state::delegate_trait_knowledge_api!(AppState);
 
 // Extra trait: Anthropic OAuth (CH-specific)
 jaskier_hydra_state::delegate_trait_anthropic_oauth!(AppState, "ch");
+
+// ── HasAiGateway — unified multi-provider gateway access ─────────────────────
+
+impl HasAiGateway for AppState {
+    fn ai_gateway(&self) -> &AiGatewayState {
+        &self.ai_gateway
+    }
+}
+
+// ── HasVaultBridge — Jaskier Vault client access ─────────────────────────────
+
+impl HasVaultBridge for AppState {
+    fn vault_client(&self) -> &VaultClient {
+        &self.ai_gateway.vault_client
+    }
+}
 
 // ── HasMetricsState — manual impl (CH overrides a2a_agent_column/error_filter)
 impl jaskier_core::metrics::HasMetricsState for AppState {
@@ -365,30 +400,69 @@ impl jaskier_core::mcp::server::HasMcpServerState for AppState {
     }
 }
 
-// ── HasAnthropicCredential — CH uses Anthropic OAuth + API key ──────────────
+// ── HasAnthropicCredential — CH uses Vault → DB OAuth → API key chain ───────
+//
+// Dual resolution strategy for backward compatibility during Vault migration:
+// 1. First try: Jaskier Vault (ai_providers/anthropic_max)
+// 2. Fallback: Old DB path (deprecated crate::oauth::get_valid_access_token)
+// 3. Last resort: Runtime API keys / ANTHROPIC_API_KEY env var
+//
+// NOTE: This trait is used by `generate_title_via_anthropic` in jaskier-core::sessions.
+// Unlike the handler path (which can use vault_delegate for zero-trust Bouncer calls),
+// title generation needs an actual token string for the Authorization header.
+// When Vault returns is_connected=true but we don't have the raw token, we fall through
+// to the DB OAuth path — Vault Bouncer delegation happens at the handler level only.
 
 impl jaskier_core::sessions::HasAnthropicCredential for AppState {
     fn http_client(&self) -> &reqwest::Client { &self.http_client }
 
     async fn get_anthropic_credential(&self) -> Option<(String, bool)> {
-        // 1. Try Anthropic OAuth token from DB
+        // 1. Try Vault first (ai_providers/anthropic_max)
+        //    For this trait (title generation), we need the actual token.
+        //    Vault.get() returns a masked credential — we can't use it directly.
+        //    BUT: if Vault is connected, it confirms the credential exists and is valid,
+        //    so we can trust the DB OAuth fallback more confidently.
+        let vault_connected = match self.ai_gateway.vault_client.get("ai_providers", "anthropic_max").await {
+            Ok(cred) if cred.is_connected => {
+                tracing::debug!("Vault confirms Anthropic credential is connected (title gen path)");
+                true
+            }
+            Ok(_) => false,
+            Err(crate::ai_gateway::vault_bridge::VaultError::AnomalyDetected(msg)) => {
+                tracing::error!("ANOMALY DETECTED from Vault during title gen credential resolution: {}", msg);
+                return None;
+            }
+            Err(_) => false,
+        };
+
+        // 2. Fallback: Old DB OAuth path (deprecated — will be removed after full migration)
+        #[allow(deprecated)]
         if let Some(token) = crate::oauth::get_valid_access_token(self).await {
+            if vault_connected {
+                tracing::info!("Using DB OAuth token for title gen (Vault confirmed connected)");
+            } else {
+                tracing::info!("Falling back to DB OAuth for Anthropic (title gen)");
+            }
             return Some((token, true));
         }
-        // 2. Try runtime state (hot-loaded API key)
+        // 3. Try runtime state (hot-loaded API key)
         {
             let rt = self.base.runtime.read().await;
             if let Some(key) = rt.api_keys.get("ANTHROPIC_API_KEY")
                 && !key.is_empty()
             {
+                tracing::info!("Falling back to runtime API key for Anthropic (title gen)");
                 return Some((key.clone(), false));
             }
         }
-        // 3. Try env var
+        // 4. Last resort: env var
         std::env::var("ANTHROPIC_API_KEY")
             .ok()
             .filter(|k| !k.is_empty())
-            .map(|k| (k, false))
+            .map(|k| {
+                tracing::info!("Falling back to ANTHROPIC_API_KEY env var for Anthropic (title gen)");
+                (k, false)
+            })
     }
 }
 

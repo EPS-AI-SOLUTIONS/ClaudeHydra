@@ -15,6 +15,7 @@
 - `src/shared/hooks/useViewTheme.ts` â€” full ViewTheme (replaced v3 simplified version)
 - `src/stores/viewStore.ts` â€” ChatSession type, chatSessions, openTabs, activeSessionId
 - `src/features/chat/components/OllamaChatView.tsx` â€” main chat interface
+- `backend/src/ai_gateway/` â€” unified AI provider gateway (Skarbiec Krasnali)
 
 ## Store API (differs from GeminiHydra)
 - `setView(view)` not `setCurrentView(view)`
@@ -37,9 +38,9 @@
 - Stack: Rust + Axum 0.8 + SQLx + PostgreSQL 17
 - Route syntax: `{id}` (NOT `:id` â€” axum 0.8 breaking change)
 - Entry point: `backend/src/lib.rs` â†’ `create_router()` builds all API routes
-- Key modules: `handlers.rs` (system prompt + tool defs), `state.rs` (AppState + LogRingBuffer), `models.rs`, `logs.rs` (4 log endpoints â€” backend/audit/flyio/activity), `tools/` (mod.rs + fs_tools.rs + pdf_tools.rs + zip_tools.rs + image_tools.rs + git_tools.rs + github_tools.rs + vercel_tools.rs + fly_tools.rs), `model_registry.rs` (dynamic model discovery), `browser_proxy.rs` (proxy status + health check + login/logout handlers), `watchdog.rs` (proxy auto-restart + health history), `oauth.rs` (Anthropic OAuth PKCE), `oauth_google.rs` (Google OAuth PKCE + API key), `oauth_github.rs` (GitHub OAuth), `oauth_vercel.rs` (Vercel OAuth), `service_tokens.rs` (Fly.io PAT), `mcp/` (client.rs + server.rs + config.rs)
+- Key modules: `handlers.rs` (system prompt + tool defs), `state.rs` (AppState + LogRingBuffer), `models.rs`, `logs.rs` (4 log endpoints â€” backend/audit/flyio/activity), `tools/` (mod.rs + fs_tools.rs + pdf_tools.rs + zip_tools.rs + image_tools.rs + git_tools.rs + github_tools.rs + vercel_tools.rs + fly_tools.rs), `model_registry.rs` (dynamic model discovery), `browser_proxy.rs` (proxy status + health check + login/logout handlers), `watchdog.rs` (proxy auto-restart + health history), `ai_gateway/` (unified AI provider gateway â€” Skarbiec Krasnali), `oauth.rs` (Anthropic OAuth PKCE â€” **deprecated**, use ai_gateway), `oauth_google.rs` (Google OAuth PKCE â€” **deprecated**), `oauth_github.rs` (GitHub OAuth â€” **deprecated**), `oauth_vercel.rs` (Vercel OAuth â€” **deprecated**), `service_tokens.rs` (Fly.io PAT â€” **deprecated**), `mcp/` (client.rs + server.rs + config.rs)
 - DB: `claudehydra` on localhost:5433 (user: claude, pass: claude_local)
-- Tables: ch_settings, ch_sessions, ch_messages, ch_tool_interactions, ch_model_pins, ch_oauth_tokens, ch_google_auth, ch_oauth_github, ch_oauth_vercel, ch_service_tokens, ch_mcp_servers, ch_mcp_discovered_tools, ch_audit_log, ch_prompt_history
+- Tables: ch_settings, ch_sessions, ch_messages, ch_tool_interactions, ch_model_pins, ch_ai_providers, ch_mcp_servers, ch_mcp_discovered_tools, ch_audit_log, ch_prompt_history (legacy: ch_oauth_tokens, ch_google_auth, ch_oauth_github, ch_oauth_vercel, ch_service_tokens — dropped by migration 026)
 
 ## Backend Local Dev
 - Wymaga Docker Desktop (PostgreSQL container)
@@ -187,6 +188,33 @@
 - **Current totals**: 11 shared Rust crates, 18 Cargo workspace members, 10 frontend packages, 22 Turbo packages
 - **Clippy**: 0 warnings in shared crates (all 5 expect_used warnings fixed)
 
+## AI Gateway — Skarbiec Krasnali (2026-03-14)
+- **Architecture**: Unified AI Provider Gateway replacing per-provider OAuth modules (`oauth.rs`, `oauth_google.rs`, `oauth_github.rs`, `oauth_vercel.rs`, `service_tokens.rs` — all marked `#[deprecated]`)
+- **Strategy**: `STRICT_PLAN_ONLY` — consumer plan subscriptions only (Claude Max, ChatGPT Plus, Gemini Advanced, X Premium+, DeepSeek, Ollama). No direct API keys in DB; all credentials managed via Jaskier Vault
+- **Credential Store**: Jaskier Vault (The Sentinel) — zero-trust AES-256-GCM encryption, Bouncer pattern (`vault_delegate`) for all API calls. Backend never sees raw tokens
+- **Backend modules** (6 files in `backend/src/ai_gateway/`):
+  - `mod.rs` — `AiProvider` enum (Anthropic, Google, OpenAI, xAI, DeepSeek, Ollama), `ProviderConfig`, `HasAiGateway` trait
+  - `vault_bridge.rs` — `VaultClient`, `HasVaultBridge` trait, retry logic, credential cache (TTL-based)
+  - `handlers.rs` — 9 HTTP handlers + SSE streaming proxy for all providers
+  - `oauth_flows.rs` — unified PKCE flow for Anthropic/Google/GitHub/Vercel (replaces 4 separate modules)
+  - `session_manager.rs` — cookie-based auth for OpenAI/xAI consumer plans, background session refresh
+  - `model_router.rs` — intelligent routing (provider selection, fallback chain, tier detection, cost optimization)
+  - `vault_handlers.rs` — Vault proxy endpoints for frontend (status, provider list, credential health)
+- **API endpoints**:
+  - `POST /api/ai/{provider}/chat` — unified chat completion (all providers)
+  - `GET /api/ai/{provider}/stream` — SSE streaming proxy (all providers)
+  - `GET /api/ai/providers` — list configured providers + health status
+  - `/api/vault/*` — Vault proxy (status, credentials, provider config)
+- **DB migration**: `025_ai_provider_gateway.sql` — creates `ch_ai_providers` (provider metadata only — NO tokens stored in DB)
+- **DB cleanup**: `026_drop_old_auth_tables.sql` — drops ch_oauth_tokens, ch_google_auth, ch_oauth_github, ch_oauth_vercel, ch_service_tokens
+- **Frontend**:
+  - `src/features/settings/components/AiProvidersSection.tsx` — provider cards with Vault connection status
+  - `src/features/settings/components/VaultStatusSection.tsx` — Vault health, namespace browser, credential overview
+  - `src/features/settings/hooks/useAiProviders.ts` — provider CRUD + health polling
+  - `src/features/settings/hooks/useVaultStatus.ts` — Vault connectivity + secret counts
+- **Tests**: 122 new tests across ai_gateway modules (unit + integration)
+- **Deprecated modules**: `oauth.rs`, `oauth_google.rs`, `oauth_github.rs`, `oauth_vercel.rs`, `service_tokens.rs` — marked `#[deprecated(since = "4.1.0", note = "use ai_gateway")]`, will be removed in next major version
+
 ## Workspace CLAUDE.md (canonical reference)
 - Full Jaskier ecosystem docs: `C:\Users\BIURODOM\Desktop\JaskierWorkspace\CLAUDE.md`
 - Covers: shared patterns, cross-project conventions, backend safety rules, OAuth details, MCP, working directory, fly.io infra
@@ -212,10 +240,10 @@
 - **Why persistent context**: Google sets `httpOnly` + `secure` + `SameSite` cookies that `storageState` JSON export cannot fully capture; persistent context keeps the actual Chrome cookie DB intact
 
 ## Jaskier Vault (Zero-Trust Credential Management)
-- **MCP Server**: `jaskier-vault` — `JaskierVaultMCP/index.js` (stdio transport)
+- **MCP Server**: `jaskier-vault` — `services/JaskierVaultMCP/index.js` (stdio transport)
 - **Storage**: `~/.gemini/jaskier_vault.enc` (AES-256-GCM, machine-key derived)
 - **Audit log**: `~/.gemini/jaskier_vault_audit.log`
-- **UI Dashboard**: port :5190 (`npm run ui` in JaskierVaultMCP/)
+- **UI Dashboard**: port :5190 (`npm run ui` in services/JaskierVaultMCP/)
 - **Honeypot**: port :5433 (fake PostgreSQL trap — NEVER connect to this port)
 
 ### Vault Rules (MANDATORY for all agents)

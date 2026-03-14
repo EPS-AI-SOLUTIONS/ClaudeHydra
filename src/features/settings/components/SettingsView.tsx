@@ -7,18 +7,22 @@ import { motion } from 'motion/react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/atoms';
+import AiProvidersSection from './AiProvidersSection';
 import { AutoUpdaterSection } from './AutoUpdaterSection';
 import { BrowserProxySection } from './BrowserProxySection';
 import { CompactionSection } from './CompactionSection';
 import { CompletionSoundSection } from './CompletionSoundSection';
 import { CustomInstructionsSection } from './CustomInstructionsSection';
-import { GoogleOAuthSection } from './GoogleOAuthSection';
+// TODO: Remove after ai_gateway migration complete
+// import { GoogleOAuthSection } from './GoogleOAuthSection';
 import { MaxIterationsSection } from './MaxIterationsSection';
 import { MaxTokensSection } from './MaxTokensSection';
 import { McpServersSection } from './McpServersSection';
-import { OAuthSection } from './OAuthSection';
+// TODO: Remove after ai_gateway migration complete
+// import { OAuthSection } from './OAuthSection';
 import { TelemetrySection } from './TelemetrySection';
 import { TemperatureSection } from './TemperatureSection';
+import VaultStatusSection from './VaultStatusSection';
 import { WatchdogHistory } from './WatchdogHistory';
 import { WorkingFolderSection } from './WorkingFolderSection';
 
@@ -42,19 +46,34 @@ export const SettingsView = memo(() => {
           </h1>
         </div>
 
-        {/* Anthropic OAuth Section */}
+        {/* AI Providers Section (unified gateway) */}
         <Card>
           <div className="p-6">
-            <OAuthSection />
+            <AiProvidersSection />
           </div>
         </Card>
 
-        {/* Google OAuth Section */}
+        {/* Vault Status Section */}
         <Card>
           <div className="p-6">
-            <GoogleOAuthSection />
+            <VaultStatusSection />
           </div>
         </Card>
+
+        {/* TODO: Remove after ai_gateway migration complete */}
+        {false && (
+          <>
+            {/* Anthropic OAuth Section */}
+            <Card>
+              <div className="p-6">{/* <OAuthSection /> */}</div>
+            </Card>
+
+            {/* Google OAuth Section */}
+            <Card>
+              <div className="p-6">{/* <GoogleOAuthSection /> */}</div>
+            </Card>
+          </>
+        )}
 
         {/* Working Folder Section */}
         <Card>

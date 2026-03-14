@@ -1,3 +1,4 @@
+pub mod ai_gateway;
 pub mod audit;
 pub mod auth;
 pub mod browser_proxy;
@@ -326,6 +327,124 @@ fn ch_metrics_router() -> Router<AppState> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+//  Vault proxy routes — forward to Jaskier Vault MCP for the frontend
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Vault proxy: public health endpoint (no auth).
+fn ch_vault_public_routes() -> Router<AppState> {
+    Router::new()
+        .route("/api/vault/health", get(vault_proxy::vault_health))
+        .route("/api/vault/audit", get(vault_proxy::vault_audit))
+}
+
+/// Vault proxy: protected endpoints (auth required).
+fn ch_vault_protected_routes(state: AppState) -> Router<AppState> {
+    Router::new()
+        .route("/api/vault/panic", post(vault_proxy::vault_panic))
+        .route("/api/vault/rotate", post(vault_proxy::vault_rotate))
+        .route_layer(axum::middleware::from_fn_with_state(
+            state,
+            auth::require_auth::<AppState>,
+        ))
+}
+
+/// Vault proxy handler implementations.
+///
+/// These forward requests to the Jaskier Vault MCP Server (default: localhost:5190).
+/// The frontend calls these CH backend endpoints instead of hitting Vault directly,
+/// keeping the Vault URL internal to the backend.
+mod vault_proxy {
+    use axum::extract::State;
+    use axum::http::StatusCode;
+    use axum::response::IntoResponse;
+    use axum::Json;
+    use serde_json::{json, Value};
+
+    use super::state::AppState;
+    use crate::ai_gateway::vault_bridge::HasVaultBridge;
+
+    /// GET /api/vault/health — forward to VaultClient health check.
+    pub async fn vault_health(State(state): State<AppState>) -> impl IntoResponse {
+        let status = state.vault_client().health().await;
+        Json(serde_json::to_value(status).unwrap_or_else(|_| json!({"online": false})))
+    }
+
+    /// GET /api/vault/audit — forward to Vault audit endpoint.
+    pub async fn vault_audit(State(state): State<AppState>) -> impl IntoResponse {
+        let vault_url = state.vault_client().vault_url();
+        let url = format!("{}/api/vault/audit", vault_url);
+
+        match reqwest::get(&url).await {
+            Ok(resp) if resp.status().is_success() => {
+                let body: Value = resp.json().await.unwrap_or(json!([]));
+                (StatusCode::OK, Json(body))
+            }
+            Ok(resp) => {
+                let status = resp.status().as_u16();
+                (
+                    StatusCode::from_u16(status).unwrap_or(StatusCode::BAD_GATEWAY),
+                    Json(json!({"error": "vault_audit_failed", "status": status})),
+                )
+            }
+            Err(e) => (
+                StatusCode::BAD_GATEWAY,
+                Json(json!({"error": "vault_unreachable", "message": e.to_string()})),
+            ),
+        }
+    }
+
+    /// POST /api/vault/panic — forward vault panic (PROTECTED).
+    pub async fn vault_panic(State(state): State<AppState>) -> impl IntoResponse {
+        let vault_url = state.vault_client().vault_url();
+        let url = format!("{}/api/vault/panic", vault_url);
+        let client = reqwest::Client::new();
+
+        match client.post(&url).send().await {
+            Ok(resp) if resp.status().is_success() => {
+                let body: Value = resp.json().await.unwrap_or(json!({"status": "panic_executed"}));
+                (StatusCode::OK, Json(body))
+            }
+            Ok(resp) => {
+                let status = resp.status().as_u16();
+                (
+                    StatusCode::from_u16(status).unwrap_or(StatusCode::BAD_GATEWAY),
+                    Json(json!({"error": "vault_panic_failed", "status": status})),
+                )
+            }
+            Err(e) => (
+                StatusCode::BAD_GATEWAY,
+                Json(json!({"error": "vault_unreachable", "message": e.to_string()})),
+            ),
+        }
+    }
+
+    /// POST /api/vault/rotate — forward vault rotate (PROTECTED).
+    pub async fn vault_rotate(State(state): State<AppState>) -> impl IntoResponse {
+        let vault_url = state.vault_client().vault_url();
+        let url = format!("{}/api/vault/rotate", vault_url);
+        let client = reqwest::Client::new();
+
+        match client.post(&url).send().await {
+            Ok(resp) if resp.status().is_success() => {
+                let body: Value = resp.json().await.unwrap_or(json!({"status": "rotate_executed"}));
+                (StatusCode::OK, Json(body))
+            }
+            Ok(resp) => {
+                let status = resp.status().as_u16();
+                (
+                    StatusCode::from_u16(status).unwrap_or(StatusCode::BAD_GATEWAY),
+                    Json(json!({"error": "vault_rotate_failed", "status": status})),
+                )
+            }
+            Err(e) => (
+                StatusCode::BAD_GATEWAY,
+                Json(json!({"error": "vault_unreachable", "message": e.to_string()})),
+            ),
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 //  HydraRouterConfig builder
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -380,8 +499,22 @@ fn build_ch_config(state: AppState) -> HydraRouterConfig<AppState> {
 /// - `execute_routes`: claude_chat + claude_chat_stream (with auth + rate limiting)
 /// - `agents_router`, `files_router`, `system_router`: CH-specific CRUD + admin
 /// - `app_protected_routes`: analytics, tags, settings/api-key, OCR, claude/models
+///
+/// The ai_gateway router is merged BEFORE the HydraRouter (higher priority) to
+/// ensure `/api/ai/*` and `/api/vault/*` routes take precedence.
+/// TODO: Remove old auth routes after full migration to ai_gateway
 pub fn create_router(state: AppState) -> Router {
-    build_hydra_router(state.clone(), build_ch_config(state))
+    let hydra_router = build_hydra_router(state.clone(), build_ch_config(state.clone()));
+
+    // ai_gateway routes merged first — higher priority than old auth routes.
+    // .with_state() converts Router<AppState> → Router<()> so it can merge
+    // with the hydra_router (which already has state applied).
+    let gateway_routes = ai_gateway::handlers::ai_gateway_router::<AppState>()
+        .merge(ch_vault_public_routes())
+        .merge(ch_vault_protected_routes(state.clone()))
+        .with_state(state);
+
+    gateway_routes.merge(hydra_router)
 }
 
 /// Test-only router — identical routes but **without** `GovernorLayer` rate
@@ -391,5 +524,13 @@ pub fn create_router(state: AppState) -> Router {
 /// logic intact while allowing pure in-memory tests.
 #[doc(hidden)]
 pub fn create_test_router(state: AppState) -> Router {
-    build_hydra_test_router(state.clone(), build_ch_config(state))
+    let hydra_router = build_hydra_test_router(state.clone(), build_ch_config(state.clone()));
+
+    // ai_gateway routes merged first — higher priority than old auth routes.
+    let gateway_routes = ai_gateway::handlers::ai_gateway_router::<AppState>()
+        .merge(ch_vault_public_routes())
+        .merge(ch_vault_protected_routes(state.clone()))
+        .with_state(state);
+
+    gateway_routes.merge(hydra_router)
 }

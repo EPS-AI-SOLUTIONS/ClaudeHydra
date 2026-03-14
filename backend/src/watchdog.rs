@@ -7,6 +7,7 @@ pub use jaskier_browser::watchdog::HasWatchdogState;
 
 use std::time::Duration;
 
+use crate::ai_gateway::vault_bridge::HasVaultBridge;
 use crate::state::AppState;
 
 const CHECK_INTERVAL: Duration = Duration::from_secs(60);
@@ -34,17 +35,36 @@ pub fn spawn(state: AppState) -> tokio::task::JoinHandle<()> {
 
 /// Check Anthropic API reachability.
 /// Uses a lightweight HEAD request to api.anthropic.com (no tokens consumed).
-/// Skips if no credential is available (OAuth token or API key).
+/// Skips if no credential is available (Vault, OAuth token, or API key).
 async fn check_anthropic_api(state: &AppState) -> bool {
-    // Only check if we have a credential configured
+    // Check if we have a credential configured from ANY source:
+    // 1. Vault (ai_providers/anthropic_max)
+    let has_vault = match state.vault_client().get("ai_providers", "anthropic_max").await {
+        Ok(cred) => {
+            if cred.is_connected {
+                tracing::debug!("watchdog: Vault has connected Anthropic credential");
+            }
+            cred.is_connected
+        }
+        Err(crate::ai_gateway::vault_bridge::VaultError::AnomalyDetected(msg)) => {
+            tracing::error!("watchdog: ANOMALY DETECTED from Vault: {}", msg);
+            return false;
+        }
+        Err(_) => false,
+    };
+
+    // 2. DB OAuth (deprecated path)
+    #[allow(deprecated)]
     let has_oauth = crate::oauth::get_valid_access_token(state).await.is_some();
+
+    // 3. API key (runtime or env var)
     let has_key = {
         let rt = state.runtime.read().await;
         rt.api_keys.contains_key("ANTHROPIC_API_KEY")
-    };
+    } || std::env::var("ANTHROPIC_API_KEY").ok().filter(|k| !k.is_empty()).is_some();
 
-    if !has_oauth && !has_key {
-        // No credential -- skip check (not an error)
+    if !has_vault && !has_oauth && !has_key {
+        // No credential from any source -- skip check (not an error)
         return true;
     }
 
