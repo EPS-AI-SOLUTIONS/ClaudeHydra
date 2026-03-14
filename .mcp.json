@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "serena": {
+    "skryba": {
       "command": "uvx",
       "args": [
         "--from", "serena-agent",
@@ -9,85 +9,97 @@
         "--project-root", "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\ClaudeHydra"
       ]
     },
-    "playwright": {
-      "command": "npx",
+    "kukielkarz": {
+      "command": "cmd",
       "args": [
+        "/c", "npx",
         "@playwright/mcp@latest"
       ]
     },
-    "brave-search": {
-      "command": "npx",
+    "tropiciel": {
+      "command": "cmd",
       "args": [
+        "/c", "npx",
         "@modelcontextprotocol/server-brave-search@latest"
       ],
       "env": {
         "BRAVE_API_KEY": "${BRAVE_API_KEY}"
       }
     },
-    "repomix": {
-      "command": "npx",
+    "zgniatacz": {
+      "command": "cmd",
       "args": [
+        "/c", "npx",
         "repomix@latest",
         "--mcp"
       ]
     },
-    "github": {
+    "osmiorniczka": {
       "type": "http",
       "url": "http://127.0.0.1:8888/sse"
     },
-    "filesystem": {
-      "command": "npx",
+    "kartotekarz": {
+      "command": "cmd",
       "args": [
+        "/c", "npx",
         "@modelcontextprotocol/server-filesystem@latest",
         "C:\\Users\\BIURODOM\\Desktop"
       ]
     },
-    "memory": {
-      "command": "npx",
+    "hipokamp": {
+      "command": "cmd",
       "args": [
+        "/c", "npx",
         "@modelcontextprotocol/server-memory@latest"
       ],
       "env": {
-        "MEMORY_FILE_PATH": "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\SharedMemory\\memory.json"
+        "MEMORY_FILE_PATH": "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\data\\SharedMemory\\memory.json"
       }
     },
-    "sequential-thinking": {
-      "command": "npx",
+    "rozkminiak": {
+      "command": "cmd",
       "args": [
+        "/c", "npx",
         "@modelcontextprotocol/server-sequential-thinking@latest"
       ]
     },
-    "context7": {
-      "command": "npx",
+    "bibliotekarz": {
+      "command": "cmd",
       "args": [
+        "/c", "npx",
         "@upstash/context7-mcp@latest"
       ]
     },
-    "desktop-commander": {
-      "command": "npx",
+    "komendant-pulpitu": {
+      "command": "cmd",
       "args": [
+        "/c", "npx",
         "@wonderwhy-er/desktop-commander@latest"
       ]
     },
-    "ai-swarm-notifier": {
+    "grzankarz": {
       "command": "node",
       "args": [
-        "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\JaskierNotifierMCP\\index.js"
+        "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\services\\JaskierNotifierMCP\\index.js"
       ]
     },
-    "jaskier-vault": {
+    "skarbiec": {
       "command": "node",
       "args": [
-        "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\JaskierVaultMCP\\index.js"
+        "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\services\\JaskierVaultMCP\\index.js"
       ]
     },
-    "grafana": {
+    "grafomanka": {
       "command": "uvx",
       "args": ["mcp-grafana"],
       "env": {
         "GRAFANA_URL": "https://pawelserkowskilang.grafana.net",
         "GRAFANA_SERVICE_ACCOUNT_TOKEN": "${GRAFANA_SERVICE_ACCOUNT_TOKEN}"
       }
+    },
+    "dozorca": {
+      "command": "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\target\\release\\vesemir.exe",
+      "args": ["mcp-server"]
     }
   }
 }
