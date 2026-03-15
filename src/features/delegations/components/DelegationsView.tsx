@@ -39,7 +39,7 @@ function timeAgo(dateStr: string): string {
 
 function TaskRow({ task, theme }: { task: DelegationTask; theme: ReturnType<typeof useViewTheme> }) {
   const [expanded, setExpanded] = useState(false);
-  const tierClass = TIER_COLORS[task.agent_tier] || TIER_COLORS.executor;
+  const tierClass = TIER_COLORS[task.agent_tier] || TIER_COLORS['executor'];
   const StatusIcon = STATUS_ICONS[task.status] || Activity;
   const isWorking = task.status === 'working';
   const isError = task.is_error;

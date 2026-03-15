@@ -548,7 +548,7 @@ function ScoreCard({ label, value, color }: { label: string; value: number; colo
   };
 
   return (
-    <div className={`rounded-lg border p-3 text-center ${colorClasses[color] || colorClasses.teal}`}>
+    <div className={`rounded-lg border p-3 text-center ${colorClasses[color] || colorClasses['teal']}`}>
       <div className="text-xl font-bold font-mono">{pct}%</div>
       <div className="text-xs opacity-75 mt-0.5">{label}</div>
     </div>

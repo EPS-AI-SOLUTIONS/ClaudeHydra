@@ -475,14 +475,14 @@ export function SwarmBuilder({ events = [] }: { events?: SwarmEventType[] }) {
     const currentEdges = reactFlowInstance.getEdges();
 
     // Find all agent nodes in the graph
-    const agentNodes = currentNodes.filter((n: Node) => n.type === 'agent' && n.data?.peerId);
+    const agentNodes = currentNodes.filter((n: Node) => n.type === 'agent' && n.data?.['peerId']);
 
     if (agentNodes.length === 0) {
       toast.error('No agents found in the architecture');
       return;
     }
 
-    const targets = agentNodes.map((n: Node) => n.data.peerId);
+    const targets = agentNodes.map((n: Node) => n.data['peerId']);
     const prompt = window.prompt('Enter task prompt for the selected agents:');
 
     if (!prompt) return;

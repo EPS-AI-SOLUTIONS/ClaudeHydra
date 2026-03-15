@@ -19,9 +19,9 @@ export type Env = z.infer<typeof envSchema>;
 
 function validateEnv(): Env {
   const raw = {
-    VITE_BACKEND_URL: import.meta.env.VITE_BACKEND_URL as string | undefined,
-    VITE_AUTH_SECRET: import.meta.env.VITE_AUTH_SECRET as string | undefined,
-    VITE_PARTNER_AUTH_SECRET: import.meta.env.VITE_PARTNER_AUTH_SECRET as string | undefined,
+    VITE_BACKEND_URL: import.meta.env['VITE_BACKEND_URL'] as string | undefined,
+    VITE_AUTH_SECRET: import.meta.env['VITE_AUTH_SECRET'] as string | undefined,
+    VITE_PARTNER_AUTH_SECRET: import.meta.env['VITE_PARTNER_AUTH_SECRET'] as string | undefined,
   };
 
   const result = envSchema.safeParse(raw);

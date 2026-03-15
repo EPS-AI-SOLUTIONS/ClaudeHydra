@@ -154,15 +154,16 @@ export function useCollabDocument(options: UseCollabDocumentOptions): UseCollabD
 
       states.forEach((state, clientId) => {
         if (clientId === doc.clientID) return;
-        const user = state.user as { name?: string; color?: string; isAgent?: boolean } | undefined;
+        const user = state['user'] as { name?: string; color?: string; isAgent?: boolean } | undefined;
         if (user) {
+          const cursor = state['cursor'] as { anchor?: number; head?: number } | undefined;
           peerList.push({
             clientId,
             userName: user.name ?? 'Unknown',
             userColor: user.color ?? '#808080',
             isAgent: user.isAgent ?? false,
-            cursorAnchor: state.cursor?.anchor,
-            cursorHead: state.cursor?.head,
+            cursorAnchor: cursor?.anchor,
+            cursorHead: cursor?.head,
           });
         }
       });
