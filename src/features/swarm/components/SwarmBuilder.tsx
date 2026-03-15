@@ -34,7 +34,17 @@ const nodeStyle = {
   boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
 };
 
-export function AgentNode({ data }: { data: any }) {
+interface NodeData {
+  label: string;
+  model?: string;
+  server?: string;
+  dbType?: string;
+  language?: string;
+  isolated?: boolean;
+  peerId?: string;
+}
+
+export function AgentNode({ data }: { data: NodeData }) {
   return (
     <div style={{ ...nodeStyle, border: '2px solid #3b82f6' }}>
       <Handle type="target" position={Position.Top} />
@@ -48,7 +58,7 @@ export function AgentNode({ data }: { data: any }) {
   );
 }
 
-export function McpNode({ data }: { data: any }) {
+export function McpNode({ data }: { data: NodeData }) {
   return (
     <div style={{ ...nodeStyle, border: '2px solid #eab308' }}>
       <Handle type="target" position={Position.Top} />
@@ -62,7 +72,7 @@ export function McpNode({ data }: { data: any }) {
   );
 }
 
-export function DbNode({ data }: { data: any }) {
+export function DbNode({ data }: { data: NodeData }) {
   return (
     <div style={{ ...nodeStyle, border: '2px solid #22c55e' }}>
       <Handle type="target" position={Position.Top} />
@@ -76,7 +86,7 @@ export function DbNode({ data }: { data: any }) {
   );
 }
 
-export function SandboxNode({ data }: { data: any }) {
+export function SandboxNode({ data }: { data: NodeData }) {
   return (
     <div style={{ ...nodeStyle, border: '2px solid #10b981', background: '#0f2e1f' }}>
       <Handle type="target" position={Position.Top} />
@@ -110,6 +120,18 @@ const nodeTypes = {
   sandbox: SandboxNode,
 };
 
+interface MediaEdgeProps {
+  id: string;
+  sourceX: number;
+  sourceY: number;
+  targetX: number;
+  targetY: number;
+  sourcePosition: Position;
+  targetPosition: Position;
+  style?: React.CSSProperties;
+  markerEnd?: string;
+}
+
 export function MediaEdge({
   id,
   sourceX,
@@ -120,7 +142,7 @@ export function MediaEdge({
   targetPosition,
   style = {},
   markerEnd,
-}: any) {
+}: MediaEdgeProps) {
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -163,28 +185,46 @@ const edgeTypes = {
 
 // ── Sidebar for Draggable Nodes ──────────────────────────────────────────────
 
-function Sidebar() {
-  const onDragStart = (event: React.DragEvent, nodeType: string, label: string, extraData: any = {}) => {
+const itemStyle: React.CSSProperties = {
+  padding: '10px',
+  marginBottom: '10px',
+  background: '#1e293b',
+  border: '1px solid #334155',
+  borderRadius: '6px',
+  cursor: 'grab',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  fontSize: '12px',
+  color: '#e2e8f0',
+};
+
+function DraggableItem({
+  nodeType,
+  label,
+  extraData = {},
+  children,
+}: {
+  nodeType: string;
+  label: string;
+  extraData?: Record<string, unknown>;
+  children: React.ReactNode;
+}) {
+  const handleDragStart = (event: React.DragEvent) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
     event.dataTransfer.setData('application/reactflow-label', label);
     event.dataTransfer.setData('application/reactflow-data', JSON.stringify(extraData));
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  const itemStyle = {
-    padding: '10px',
-    marginBottom: '10px',
-    background: '#1e293b',
-    border: '1px solid #334155',
-    borderRadius: '6px',
-    cursor: 'grab',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '12px',
-    color: '#e2e8f0',
-  };
+  return (
+    <div role="option" tabIndex={0} style={itemStyle} onDragStart={handleDragStart} draggable>
+      {children}
+    </div>
+  );
+}
 
+function Sidebar() {
   return (
     <div
       style={{
@@ -195,49 +235,39 @@ function Sidebar() {
         display: 'flex',
         flexDirection: 'column',
       }}
+      role="listbox"
+      aria-label="Toolbox"
     >
       <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#e2e8f0', marginBottom: '16px' }}>Toolbox</div>
 
       <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase' }}>Agents</div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) =>
-          onDragStart(e, 'agent', 'Claude Agent', { model: 'claude-3-5-sonnet', peerId: 'claudehydra' })
-        }
-        draggable
+      <DraggableItem
+        nodeType="agent"
+        label="Claude Agent"
+        extraData={{ model: 'claude-3-5-sonnet', peerId: 'claudehydra' }}
       >
         <Bot size={14} color="#60a5fa" /> Claude
-      </div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) =>
-          onDragStart(e, 'agent', 'DeepSeek Agent', { model: 'deepseek-coder', peerId: 'deepseekhydra' })
-        }
-        draggable
+      </DraggableItem>
+      <DraggableItem
+        nodeType="agent"
+        label="DeepSeek Agent"
+        extraData={{ model: 'deepseek-coder', peerId: 'deepseekhydra' }}
       >
         <Bot size={14} color="#60a5fa" /> DeepSeek
-      </div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) => onDragStart(e, 'agent', 'Gemini Agent', { model: 'gemini-1.5-pro', peerId: 'geminihydra' })}
-        draggable
+      </DraggableItem>
+      <DraggableItem
+        nodeType="agent"
+        label="Gemini Agent"
+        extraData={{ model: 'gemini-1.5-pro', peerId: 'geminihydra' }}
       >
         <Bot size={14} color="#60a5fa" /> Gemini
-      </div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) => onDragStart(e, 'agent', 'Grok Agent', { model: 'grok-beta', peerId: 'grokhydra' })}
-        draggable
-      >
+      </DraggableItem>
+      <DraggableItem nodeType="agent" label="Grok Agent" extraData={{ model: 'grok-beta', peerId: 'grokhydra' }}>
         <Bot size={14} color="#60a5fa" /> Grok
-      </div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) => onDragStart(e, 'agent', 'OpenAI Agent', { model: 'gpt-4o', peerId: 'openaihydra' })}
-        draggable
-      >
+      </DraggableItem>
+      <DraggableItem nodeType="agent" label="OpenAI Agent" extraData={{ model: 'gpt-4o', peerId: 'openaihydra' }}>
         <Bot size={14} color="#60a5fa" /> OpenAI
-      </div>
+      </DraggableItem>
 
       <div
         style={{
@@ -250,16 +280,12 @@ function Sidebar() {
       >
         MCP Servers
       </div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) => onDragStart(e, 'mcp', 'Playwright MCP', { server: 'playwright' })}
-        draggable
-      >
+      <DraggableItem nodeType="mcp" label="Playwright MCP" extraData={{ server: 'playwright' }}>
         <Wrench size={14} color="#facc15" /> Playwright
-      </div>
-      <div style={itemStyle} onDragStart={(e) => onDragStart(e, 'mcp', 'Repomix MCP', { server: 'repomix' })} draggable>
+      </DraggableItem>
+      <DraggableItem nodeType="mcp" label="Repomix MCP" extraData={{ server: 'repomix' }}>
         <Wrench size={14} color="#facc15" /> Repomix
-      </div>
+      </DraggableItem>
 
       <div
         style={{
@@ -272,20 +298,12 @@ function Sidebar() {
       >
         Databases
       </div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) => onDragStart(e, 'database', 'Postgres', { dbType: 'PostgreSQL 17' })}
-        draggable
-      >
+      <DraggableItem nodeType="database" label="Postgres" extraData={{ dbType: 'PostgreSQL 17' }}>
         <Database size={14} color="#4ade80" /> Postgres
-      </div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) => onDragStart(e, 'database', 'Qdrant Vector', { dbType: 'Vector DB' })}
-        draggable
-      >
+      </DraggableItem>
+      <DraggableItem nodeType="database" label="Qdrant Vector" extraData={{ dbType: 'Vector DB' }}>
         <Database size={14} color="#4ade80" /> Qdrant
-      </div>
+      </DraggableItem>
 
       <div
         style={{
@@ -298,42 +316,31 @@ function Sidebar() {
       >
         Sandbox
       </div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) => onDragStart(e, 'sandbox', 'Node.js Sandbox', { language: 'node', isolated: true })}
-        draggable
-      >
+      <DraggableItem nodeType="sandbox" label="Node.js Sandbox" extraData={{ language: 'node', isolated: true }}>
         <Shield size={14} color="#10b981" /> Node.js
-      </div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) => onDragStart(e, 'sandbox', 'Python Sandbox', { language: 'python', isolated: true })}
-        draggable
-      >
+      </DraggableItem>
+      <DraggableItem nodeType="sandbox" label="Python Sandbox" extraData={{ language: 'python', isolated: true }}>
         <Shield size={14} color="#10b981" /> Python
-      </div>
-      <div
-        style={itemStyle}
-        onDragStart={(e) => onDragStart(e, 'sandbox', 'Bash Sandbox', { language: 'bash', isolated: true })}
-        draggable
-      >
+      </DraggableItem>
+      <DraggableItem nodeType="sandbox" label="Bash Sandbox" extraData={{ language: 'bash', isolated: true }}>
         <Shield size={14} color="#10b981" /> Bash
-      </div>
+      </DraggableItem>
     </div>
   );
 }
 
-import { useSwarm } from '../hooks/useSwarm';
+import { type SwarmEvent as SwarmEventType, useSwarm } from '../hooks/useSwarm';
 
 // ── Main Builder Component ───────────────────────────────────────────────────
 
 let id = 0;
 const getId = () => `dndnode_${id++}`;
 
-export function SwarmBuilder({ events = [] }: { events?: any[] }) {
+export function SwarmBuilder({ events = [] }: { events?: SwarmEventType[] }) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  // biome-ignore lint/suspicious/noExplicitAny: ReactFlow instance type is complex and internal
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [isRunning, setIsRunning] = useState(false);
   const { delegate } = useSwarm();
@@ -343,7 +350,7 @@ export function SwarmBuilder({ events = [] }: { events?: any[] }) {
     fetch('http://localhost:8082/api/swarm/architecture')
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.nodes && data.edges) {
+        if (data?.nodes && data?.edges) {
           setNodes(data.nodes || []);
           setEdges(data.edges || []);
         }
@@ -355,7 +362,8 @@ export function SwarmBuilder({ events = [] }: { events?: any[] }) {
   React.useEffect(() => {
     if (!events || events.length === 0) return;
 
-    const latestEvent = events[0]; // Assuming events are unshifted (newest first)
+    const latestEvent = events[0];
+    if (!latestEvent) return;
     if (latestEvent.eventType === 'peer_working' || latestEvent.eventType === 'delegation_sent') {
       setEdges((eds) =>
         eds.map((e) => ({
@@ -414,7 +422,9 @@ export function SwarmBuilder({ events = [] }: { events?: any[] }) {
       let parsedData = {};
       try {
         parsedData = JSON.parse(dataStr);
-      } catch (e) {}
+      } catch {
+        // invalid JSON, use empty defaults
+      }
 
       const newNode: Node = {
         id: getId(),
@@ -431,7 +441,7 @@ export function SwarmBuilder({ events = [] }: { events?: any[] }) {
   const handleExport = () => {
     if (reactFlowInstance) {
       const flow = reactFlowInstance.toObject();
-      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(flow, null, 2));
+      const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(flow, null, 2))}`;
       const downloadAnchorNode = document.createElement('a');
       downloadAnchorNode.setAttribute('href', dataStr);
       downloadAnchorNode.setAttribute('download', 'swarm_architecture.json');
@@ -452,7 +462,7 @@ export function SwarmBuilder({ events = [] }: { events?: any[] }) {
           body: JSON.stringify(flow),
         });
         toast.success('Architecture saved to backend');
-      } catch (err) {
+      } catch {
         toast.error('Failed to save architecture');
       }
     }
@@ -538,6 +548,7 @@ export function SwarmBuilder({ events = [] }: { events?: any[] }) {
             <Panel position="top-right">
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
+                  type="button"
                   onClick={handleSave}
                   style={{
                     display: 'flex',
@@ -556,6 +567,7 @@ export function SwarmBuilder({ events = [] }: { events?: any[] }) {
                   Save
                 </button>
                 <button
+                  type="button"
                   onClick={handleExport}
                   style={{
                     display: 'flex',
@@ -574,6 +586,7 @@ export function SwarmBuilder({ events = [] }: { events?: any[] }) {
                   Export
                 </button>
                 <button
+                  type="button"
                   onClick={handleExecute}
                   disabled={isRunning || nodes.length === 0}
                   style={{

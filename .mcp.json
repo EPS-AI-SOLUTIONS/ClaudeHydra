@@ -5,8 +5,9 @@
       "args": [
         "--from", "serena-agent",
         "serena",
-        "--mode", "codex",
-        "--project-root", "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\ClaudeHydra"
+        "start-mcp-server",
+        "--context", "codex",
+        "--project", "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\ClaudeHydra"
       ]
     },
     "kukielkarz": {
@@ -36,7 +37,7 @@
     },
     "osmiorniczka": {
       "type": "http",
-      "url": "http://127.0.0.1:8888/sse"
+      "url": "https://jaskier-mcp.fly.dev/mcp"
     },
     "kartotekarz": {
       "command": "cmd",
@@ -77,12 +78,6 @@
         "@wonderwhy-er/desktop-commander@latest"
       ]
     },
-    "grzankarz": {
-      "command": "node",
-      "args": [
-        "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\services\\JaskierNotifierMCP\\index.js"
-      ]
-    },
     "skarbiec": {
       "command": "node",
       "args": [
@@ -100,14 +95,6 @@
     "dozorca": {
       "command": "C:\\Users\\BIURODOM\\Desktop\\JaskierWorkspace\\target\\release\\vesemir.exe",
       "args": ["mcp-server"]
-    },
-    "gemini-browser-proxy": {
-      "command": "uvx",
-      "args": [
-        "--from", "gemini-browser-proxy",
-        "gemini-browser-proxy",
-        "mcp"
-      ]
     }
   }
 }

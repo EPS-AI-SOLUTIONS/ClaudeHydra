@@ -399,7 +399,7 @@ async fn google_chat_stream(
     req: ChatRequest,
     ctx: ChatContext,
 ) -> Result<Response, (StatusCode, Json<Value>)> {
-    let credential = crate::oauth_google::get_google_credential(&state).await;
+    let credential = jaskier_oauth::google::get_google_credential(&state).await;
     let (api_key, is_oauth) = match credential {
         Some(c) => c,
         None => {
@@ -439,7 +439,7 @@ async fn google_chat_stream(
     });
 
     let request =
-        crate::oauth_google::apply_google_auth(state.http_client.post(&url), &api_key, is_oauth)
+        jaskier_oauth::google::apply_google_auth(state.http_client.post(&url), &api_key, is_oauth)
             .json(&body)
             .timeout(std::time::Duration::from_secs(300));
 

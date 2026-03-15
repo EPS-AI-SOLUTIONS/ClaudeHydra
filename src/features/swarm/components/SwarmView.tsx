@@ -23,13 +23,16 @@ import {
   Brain,
   CheckCircle2,
   Globe,
+  Image as ImageIcon,
   LayoutTemplate,
   Loader2,
   Network,
+  Paperclip,
   Play,
   RefreshCw,
   Send,
   Shield,
+  Trash2,
   XCircle,
   Zap,
 } from 'lucide-react';
@@ -125,6 +128,10 @@ export function SwarmView() {
   const [delegatePrompt, setDelegatePrompt] = useState('');
   const [delegatePattern, setDelegatePattern] = useState<OrchestrationPattern>('parallel');
   const [delegateTargets, setDelegateTargets] = useState<string[]>([]);
+  const [delegateAttachments, setDelegateAttachments] = useState<{ contentType: string; url: string; name?: string }[]>(
+    [],
+  );
+  const [attachmentUrl, setAttachmentUrl] = useState('');
   const [activeTab, setActiveTab] = useState<'monitoring' | 'builder' | 'sandbox' | 'pruning'>('monitoring');
 
   // ── Build flow graph ───────────────────────────────────────────────────
@@ -184,10 +191,33 @@ export function SwarmView() {
 
   const handleDelegate = useCallback(async () => {
     if (!delegatePrompt.trim()) return;
-    await delegate(delegatePrompt, delegatePattern, delegateTargets, 120);
+    await delegate(delegatePrompt, delegatePattern, delegateTargets, 120, delegateAttachments);
     setDelegatePrompt('');
+    setDelegateAttachments([]);
+    setAttachmentUrl('');
     setShowDelegatePanel(false);
-  }, [delegate, delegatePrompt, delegatePattern, delegateTargets]);
+  }, [delegate, delegatePrompt, delegatePattern, delegateTargets, delegateAttachments]);
+
+  const addAttachment = useCallback(() => {
+    if (!attachmentUrl.trim()) return;
+    const url = attachmentUrl.trim();
+    // Infer content type from URL
+    let contentType = 'application/octet-stream';
+    const ext = url.split('.').pop()?.toLowerCase() ?? '';
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext))
+      contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+    else if (ext === 'pdf') contentType = 'application/pdf';
+    else if (['txt', 'md', 'log'].includes(ext)) contentType = 'text/plain';
+    else if (['json'].includes(ext)) contentType = 'application/json';
+
+    const name = url.split('/').pop() || 'attachment';
+    setDelegateAttachments((prev) => [...prev, { contentType, url, name }]);
+    setAttachmentUrl('');
+  }, [attachmentUrl]);
+
+  const removeAttachment = useCallback((index: number) => {
+    setDelegateAttachments((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   // ── Toggle target selection ────────────────────────────────────────────
 
@@ -200,6 +230,7 @@ export function SwarmView() {
       {/* ── Tab Switcher ────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '8px', padding: '12px', borderBottom: '1px solid #1e293b' }}>
         <button
+          type="button"
           onClick={() => setActiveTab('monitoring')}
           style={{
             display: 'flex',
@@ -217,6 +248,7 @@ export function SwarmView() {
           <Activity size={16} /> Monitoring
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('builder')}
           style={{
             display: 'flex',
@@ -234,6 +266,7 @@ export function SwarmView() {
           <LayoutTemplate size={16} /> Swarm Builder
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('sandbox')}
           style={{
             display: 'flex',
@@ -251,6 +284,7 @@ export function SwarmView() {
           <Shield size={16} /> Sandbox
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('pruning')}
           style={{
             display: 'flex',
@@ -336,6 +370,7 @@ export function SwarmView() {
                   <div style={{ width: '1px', height: '20px', background: '#334155' }} />
 
                   <button
+                    type="button"
                     onClick={discover}
                     disabled={isDiscovering}
                     style={{
@@ -356,6 +391,7 @@ export function SwarmView() {
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => setShowDelegatePanel(!showDelegatePanel)}
                     style={{
                       display: 'flex',
@@ -423,6 +459,7 @@ export function SwarmView() {
                   <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
                     {(['parallel', 'sequential', 'review', 'fan_out'] as OrchestrationPattern[]).map((p) => (
                       <button
+                        type="button"
                         key={p}
                         onClick={() => setDelegatePattern(p)}
                         style={{
@@ -453,6 +490,7 @@ export function SwarmView() {
                           const colors = PROVIDER_COLORS[peer.provider] ?? DEFAULT_COLORS;
                           return (
                             <button
+                              type="button"
                               key={peer.id}
                               onClick={() => toggleTarget(peer.id)}
                               style={{
@@ -472,8 +510,110 @@ export function SwarmView() {
                     </div>
                   </div>
 
+                  {/* Attachments section */}
+                  <div style={{ marginTop: '10px' }}>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#94a3b8',
+                        marginBottom: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <Paperclip size={12} />
+                      Attachments (image/doc URLs):
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input
+                        type="text"
+                        value={attachmentUrl}
+                        onChange={(e) => setAttachmentUrl(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addAttachment()}
+                        placeholder="https://... or file:///..."
+                        style={{
+                          flex: 1,
+                          background: '#1e293b',
+                          border: '1px solid #334155',
+                          borderRadius: '6px',
+                          color: '#e2e8f0',
+                          padding: '4px 8px',
+                          fontSize: '11px',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={addAttachment}
+                        disabled={!attachmentUrl.trim()}
+                        style={{
+                          padding: '4px 8px',
+                          background: '#1e293b',
+                          border: '1px solid #334155',
+                          borderRadius: '6px',
+                          color: '#e2e8f0',
+                          fontSize: '11px',
+                          cursor: attachmentUrl.trim() ? 'pointer' : 'not-allowed',
+                        }}
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {delegateAttachments.length > 0 && (
+                      <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                        {delegateAttachments.map((att, attIdx) => (
+                          <div
+                            key={att.url}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '3px 8px',
+                              background: '#1e293b',
+                              border: '1px solid #334155',
+                              borderRadius: '6px',
+                              fontSize: '10px',
+                              color: '#94a3b8',
+                            }}
+                          >
+                            {att.contentType.startsWith('image/') ? (
+                              <ImageIcon size={10} color="#3b82f6" />
+                            ) : (
+                              <Paperclip size={10} color="#94a3b8" />
+                            )}
+                            <span
+                              style={{
+                                maxWidth: '120px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {att.name || 'attachment'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeAttachment(attIdx)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                padding: '0',
+                                display: 'flex',
+                              }}
+                            >
+                              <Trash2 size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Execute button */}
                   <button
+                    type="button"
                     onClick={handleDelegate}
                     disabled={isDelegating || !delegatePrompt.trim()}
                     style={{
@@ -554,9 +694,9 @@ export function SwarmView() {
                   Waiting for events...
                 </div>
               ) : (
-                events.slice(0, 30).map((event, i) => (
+                events.slice(0, 30).map((event) => (
                   <div
-                    key={`${event.taskId}-${event.timestamp}-${i}`}
+                    key={`${event.taskId}-${event.timestamp}-${event.eventType}-${event.peerId ?? ''}`}
                     style={{
                       fontSize: '11px',
                       color: '#94a3b8',
@@ -595,6 +735,7 @@ export function SwarmView() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                     <div style={{ fontSize: '14px', fontWeight: 600, color: '#e2e8f0' }}>Task Details</div>
                     <button
+                      type="button"
                       onClick={() => loadTask('')}
                       style={{
                         background: 'none',
@@ -629,9 +770,9 @@ export function SwarmView() {
                     </div>
                     {selectedTask.attachments && selectedTask.attachments.length > 0 && (
                       <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
-                        {selectedTask.attachments.map((att, idx) => (
+                        {selectedTask.attachments.map((att) => (
                           <div
-                            key={idx}
+                            key={att.url}
                             style={{
                               position: 'relative',
                               width: '60px',
@@ -668,9 +809,9 @@ export function SwarmView() {
                     )}
                   </div>
 
-                  {selectedTask.results.map((result, i) => (
+                  {selectedTask.results.map((result) => (
                     <div
-                      key={`${result.peer_id}-${i}`}
+                      key={result.peer_id}
                       style={{
                         marginTop: '12px',
                         padding: '10px',
@@ -705,9 +846,9 @@ export function SwarmView() {
                       )}
                       {result.attachments && result.attachments.length > 0 && (
                         <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
-                          {result.attachments.map((att, idx) => (
+                          {result.attachments.map((att) => (
                             <div
-                              key={idx}
+                              key={att.url}
                               style={{
                                 position: 'relative',
                                 width: '60px',
@@ -782,6 +923,7 @@ function Stat({
 function TaskRow({ task, onClick }: { task: SwarmTaskSummary; onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       style={{
         display: 'block',
@@ -857,5 +999,6 @@ function eventColor(eventType: string): string {
   if (eventType.includes('error') || eventType.includes('failed') || eventType.includes('lost')) return '#ef4444';
   if (eventType.includes('sent') || eventType.includes('working')) return '#3b82f6';
   if (eventType.includes('timeout')) return '#f59e0b';
+  if (eventType.includes('attachment') || eventType.includes('media')) return '#a855f7';
   return '#94a3b8';
 }

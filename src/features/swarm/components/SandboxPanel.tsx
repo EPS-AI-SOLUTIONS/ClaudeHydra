@@ -125,6 +125,7 @@ export function SandboxPanel() {
 
           {/* Session toggle */}
           <button
+            type="button"
             onClick={() => setShowSessions(!showSessions)}
             style={{
               display: 'flex',
@@ -155,6 +156,7 @@ export function SandboxPanel() {
         >
           {LANGUAGES.map((lang) => (
             <button
+              type="button"
               key={lang.id}
               onClick={() => handleLanguageChange(lang.id)}
               style={{
@@ -207,6 +209,7 @@ export function SandboxPanel() {
               <Container size={12} />
               Session active
               <button
+                type="button"
                 onClick={() => setActiveSessionId(null)}
                 style={{
                   background: 'none',
@@ -224,6 +227,7 @@ export function SandboxPanel() {
 
           {/* Create session button */}
           <button
+            type="button"
             onClick={handleCreateSession}
             disabled={isCreating}
             style={{
@@ -277,7 +281,7 @@ export function SandboxPanel() {
                 const target = e.target as HTMLTextAreaElement;
                 const start = target.selectionStart;
                 const end = target.selectionEnd;
-                setCode(code.substring(0, start) + '  ' + code.substring(end));
+                setCode(`${code.substring(0, start)}  ${code.substring(end)}`);
                 // Restore cursor position after React re-render
                 requestAnimationFrame(() => {
                   target.selectionStart = target.selectionEnd = start + 2;
@@ -298,6 +302,7 @@ export function SandboxPanel() {
             }}
           >
             <button
+              type="button"
               onClick={handleExecute}
               disabled={isExecuting || !code.trim()}
               style={{
@@ -537,7 +542,8 @@ function SessionCard({
   const langConfig = LANGUAGES.find((l) => l.id === session.language);
 
   return (
-    <div
+    <button
+      type="button"
       style={{
         padding: '8px 10px',
         marginBottom: '6px',
@@ -545,6 +551,9 @@ function SessionCard({
         border: `1px solid ${isActive ? '#3b82f6' : '#1e293b'}`,
         borderRadius: '8px',
         cursor: 'pointer',
+        width: '100%',
+        textAlign: 'left',
+        color: 'inherit',
       }}
       onClick={onSelect}
     >
@@ -576,6 +585,7 @@ function SessionCard({
             }}
           />
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onDestroy();
@@ -598,7 +608,7 @@ function SessionCard({
         {session.container_id ? ' · Docker' : ' · fallback'}
         {session.resource_limits.memory_mb && ` · ${session.resource_limits.memory_mb}MB`}
       </div>
-    </div>
+    </button>
   );
 }
 

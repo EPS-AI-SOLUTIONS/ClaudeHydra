@@ -17,7 +17,7 @@ use claudehydra_backend::ai_gateway::{
     default_provider_configs,
     model_router::{ModelRouter, ModelTier},
     oauth_flows::{
-        AiProvider as OAuthAiProvider, OAuthFlowManager, OAuthProviderConfig, OAuthTokens,
+        OAuthProvider, OAuthFlowManager, OAuthProviderConfig, OAuthTokens,
         PkceMethod,
     },
     vault_bridge::{MaskedCredential, VaultClient, VaultError, VaultHealthStatus},
@@ -379,11 +379,11 @@ fn router_tier_defaults_have_all_tiers() {
 async fn oauth_initiate_login_anthropic_returns_valid_pkce_url() {
     let mgr = OAuthFlowManager::new(reqwest::Client::new());
     let resp = mgr
-        .initiate_login(OAuthAiProvider::Anthropic)
+        .initiate_login(OAuthProvider::Anthropic)
         .await
         .unwrap();
 
-    assert_eq!(resp.provider, OAuthAiProvider::Anthropic);
+    assert_eq!(resp.provider, OAuthProvider::Anthropic);
     assert!(!resp.state.is_empty(), "State parameter should not be empty");
 
     // Parse the URL and verify PKCE parameters
@@ -411,11 +411,11 @@ async fn oauth_initiate_login_twice_produces_different_states() {
     let mgr = OAuthFlowManager::new(reqwest::Client::new());
 
     let resp1 = mgr
-        .initiate_login(OAuthAiProvider::Anthropic)
+        .initiate_login(OAuthProvider::Anthropic)
         .await
         .unwrap();
     let resp2 = mgr
-        .initiate_login(OAuthAiProvider::Anthropic)
+        .initiate_login(OAuthProvider::Anthropic)
         .await
         .unwrap();
 
@@ -446,7 +446,7 @@ async fn oauth_handle_callback_with_invalid_state_returns_error() {
 async fn oauth_handle_callback_consumes_state_atomically() {
     let mgr = OAuthFlowManager::new(reqwest::Client::new());
     let resp = mgr
-        .initiate_login(OAuthAiProvider::Anthropic)
+        .initiate_login(OAuthProvider::Anthropic)
         .await
         .unwrap();
 
@@ -481,7 +481,7 @@ async fn oauth_cleanup_preserves_fresh_states() {
 
     // Insert a fresh state via the normal API
     let _ = mgr
-        .initiate_login(OAuthAiProvider::Anthropic)
+        .initiate_login(OAuthProvider::Anthropic)
         .await
         .unwrap();
     assert_eq!(mgr.pending_states_count().await, 1);
@@ -500,7 +500,7 @@ async fn oauth_unconfigured_provider_returns_error() {
     let mgr = OAuthFlowManager::new(reqwest::Client::new());
 
     // GitHub is not configured by default (requires env vars)
-    let result = mgr.initiate_login(OAuthAiProvider::GitHub).await;
+    let result = mgr.initiate_login(OAuthProvider::GitHub).await;
     assert!(result.is_err());
     assert!(
         result.unwrap_err().to_string().contains("not configured"),
@@ -511,20 +511,20 @@ async fn oauth_unconfigured_provider_returns_error() {
 #[tokio::test]
 async fn oauth_manager_always_has_anthropic() {
     let mgr = OAuthFlowManager::new(reqwest::Client::new());
-    assert!(mgr.has_provider(OAuthAiProvider::Anthropic));
+    assert!(mgr.has_provider(OAuthProvider::Anthropic));
     // GitHub and Vercel require env vars — may or may not be present
     // Just verify the check doesn't panic
-    let _ = mgr.has_provider(OAuthAiProvider::GitHub);
-    let _ = mgr.has_provider(OAuthAiProvider::Vercel);
+    let _ = mgr.has_provider(OAuthProvider::GitHub);
+    let _ = mgr.has_provider(OAuthProvider::Vercel);
 }
 
 #[tokio::test]
 async fn oauth_register_provider_makes_it_available() {
     let mut mgr = OAuthFlowManager::new(reqwest::Client::new());
-    assert!(!mgr.has_provider(OAuthAiProvider::GitHub));
+    assert!(!mgr.has_provider(OAuthProvider::GitHub));
 
     mgr.register_provider(OAuthProviderConfig {
-        provider: OAuthAiProvider::GitHub,
+        provider: OAuthProvider::GitHub,
         authorize_url: "https://github.com/login/oauth/authorize".into(),
         token_url: "https://github.com/login/oauth/access_token".into(),
         redirect_uri: "http://localhost:8082/api/auth/github/callback".into(),
@@ -535,14 +535,14 @@ async fn oauth_register_provider_makes_it_available() {
         extra_params: HashMap::new(),
     });
 
-    assert!(mgr.has_provider(OAuthAiProvider::GitHub));
+    assert!(mgr.has_provider(OAuthProvider::GitHub));
 
     // Should now be able to initiate login
     let resp = mgr
-        .initiate_login(OAuthAiProvider::GitHub)
+        .initiate_login(OAuthProvider::GitHub)
         .await
         .unwrap();
-    assert_eq!(resp.provider, OAuthAiProvider::GitHub);
+    assert_eq!(resp.provider, OAuthProvider::GitHub);
     let parsed = url::Url::parse(&resp.authorize_url).unwrap();
     assert_eq!(parsed.host_str(), Some("github.com"));
 }
@@ -551,7 +551,7 @@ async fn oauth_register_provider_makes_it_available() {
 async fn oauth_refresh_unconfigured_provider_errors() {
     let mgr = OAuthFlowManager::new(reqwest::Client::new());
     let result = mgr
-        .refresh_token(OAuthAiProvider::Vercel, "rt-xxx")
+        .refresh_token(OAuthProvider::Vercel, "rt-xxx")
         .await;
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("not configured"));
@@ -560,7 +560,7 @@ async fn oauth_refresh_unconfigured_provider_errors() {
 #[tokio::test]
 async fn oauth_anthropic_config_has_correct_constants() {
     let cfg = OAuthFlowManager::default_anthropic_config();
-    assert_eq!(cfg.provider, OAuthAiProvider::Anthropic);
+    assert_eq!(cfg.provider, OAuthProvider::Anthropic);
     assert!(cfg.authorize_url.contains("claude.ai"));
     assert!(cfg.token_url.contains("anthropic.com"));
     assert!(cfg.client_secret.is_none(), "Anthropic is a public client");

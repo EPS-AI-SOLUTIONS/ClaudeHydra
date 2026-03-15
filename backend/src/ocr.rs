@@ -763,7 +763,7 @@ async fn ocr_extract(
     }
 
     // Fallback: Gemini Vision API via Google OAuth
-    if let Some((credential, is_oauth)) = crate::oauth_google::get_google_credential(state).await {
+    if let Some((credential, is_oauth)) = jaskier_oauth::google::get_google_credential(state).await {
         let (text, confidence) = ocr_with_gemini(
             &state.http_client,
             &credential,
@@ -906,7 +906,7 @@ async fn ocr_with_gemini(
     });
 
     let builder = client.post(&url).json(&request_body);
-    let builder = crate::oauth_google::apply_google_auth(builder, credential, is_oauth);
+    let builder = jaskier_oauth::google::apply_google_auth(builder, credential, is_oauth);
 
     let response = builder
         .timeout(std::time::Duration::from_secs(120))
@@ -955,7 +955,7 @@ async fn ocr_with_gemini(
 /// Extract structured data from OCR text. Uses Gemini (text-only, simpler) since
 /// this is a second-pass analysis that doesn't need vision capabilities.
 async fn extract_structured_data(state: &AppState, ocr_text: &str) -> Result<Value, String> {
-    let (credential, is_oauth) = crate::oauth_google::get_google_credential(state)
+    let (credential, is_oauth) = jaskier_oauth::google::get_google_credential(state)
         .await
         .ok_or_else(|| {
             "No Google API credential configured for structured extraction".to_string()
@@ -976,7 +976,7 @@ async fn extract_structured_data(state: &AppState, ocr_text: &str) -> Result<Val
     });
 
     let builder = state.http_client.post(&url).json(&request_body);
-    let builder = crate::oauth_google::apply_google_auth(builder, &credential, is_oauth);
+    let builder = jaskier_oauth::google::apply_google_auth(builder, &credential, is_oauth);
 
     let response = builder
         .send()

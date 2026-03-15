@@ -10,7 +10,6 @@ pub mod model_router;
 
 use std::collections::HashMap;
 use std::fmt;
-use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
@@ -20,95 +19,10 @@ pub use model_router::*;
 pub use oauth_flows::*;
 pub use session_manager::*;
 pub use vault_bridge::*;
-pub use vault_handlers::*;
-
-// ── AiProvider ────────────────────────────────────────────────────────────────
-
-/// All supported AI providers in the Jaskier ecosystem.
-/// Each variant maps to a consumer subscription plan (STRICT_PLAN_ONLY strategy).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum AiProvider {
-    Anthropic,
-    OpenAI,
-    Google,
-    Xai,
-    DeepSeek,
-    Ollama,
-}
-
-impl fmt::Display for AiProvider {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let name = match self {
-            AiProvider::Anthropic => "anthropic",
-            AiProvider::OpenAI => "openai",
-            AiProvider::Google => "google",
-            AiProvider::Xai => "xai",
-            AiProvider::DeepSeek => "deepseek",
-            AiProvider::Ollama => "ollama",
-        };
-        write!(f, "{}", name)
-    }
-}
-
-impl FromStr for AiProvider {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "anthropic" => Ok(AiProvider::Anthropic),
-            "openai" => Ok(AiProvider::OpenAI),
-            "google" | "gemini" => Ok(AiProvider::Google),
-            "xai" | "grok" => Ok(AiProvider::Xai),
-            "deepseek" => Ok(AiProvider::DeepSeek),
-            "ollama" => Ok(AiProvider::Ollama),
-            _ => Err(format!("Unknown AI provider: '{}'", s)),
-        }
-    }
-}
-
-impl AiProvider {
-    /// All provider variants for iteration.
-    pub const ALL: [AiProvider; 6] = [
-        AiProvider::Anthropic,
-        AiProvider::OpenAI,
-        AiProvider::Google,
-        AiProvider::Xai,
-        AiProvider::DeepSeek,
-        AiProvider::Ollama,
-    ];
-
-    /// Detect the provider from a model ID prefix.
-    ///
-    /// - `claude-*` -> Anthropic
-    /// - `gpt-*`, `o1-*`, `o3-*` -> OpenAI
-    /// - `gemini-*` -> Google
-    /// - `grok-*` -> Xai
-    /// - `deepseek-*` -> DeepSeek
-    /// - `llama*`, `mistral*`, `codellama*`, `phi*` -> Ollama (local models)
-    pub fn from_model_id(model: &str) -> Option<AiProvider> {
-        let lower = model.to_lowercase();
-        if lower.starts_with("claude-") {
-            Some(AiProvider::Anthropic)
-        } else if lower.starts_with("gpt-") || lower.starts_with("o1-") || lower.starts_with("o3-") {
-            Some(AiProvider::OpenAI)
-        } else if lower.starts_with("gemini-") {
-            Some(AiProvider::Google)
-        } else if lower.starts_with("grok-") {
-            Some(AiProvider::Xai)
-        } else if lower.starts_with("deepseek-") {
-            Some(AiProvider::DeepSeek)
-        } else if lower.starts_with("llama")
-            || lower.starts_with("mistral")
-            || lower.starts_with("codellama")
-            || lower.starts_with("phi")
-        {
-            Some(AiProvider::Ollama)
-        } else {
-            None
-        }
-    }
-}
+// vault_handlers types/functions are re-exported through vault_bridge (jaskier_vault::*)
+//
+// NOTE: AiProvider, ModelTier, ModelTiers, ModelRouter, ModelRoute, detect_provider,
+// detect_tier, etc. are all re-exported from jaskier-model-router via model_router::*.
 
 // ── AuthType ──────────────────────────────────────────────────────────────────
 
@@ -141,18 +55,8 @@ impl fmt::Display for AuthType {
     }
 }
 
-// ── ModelTiers ────────────────────────────────────────────────────────────────
-
-/// Default model assignments per operational tier for a given provider.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ModelTiers {
-    /// Highest-capability model for complex reasoning tasks.
-    pub commander: String,
-    /// Balanced model for general-purpose coordination.
-    pub coordinator: String,
-    /// Fast, cost-efficient model for simple execution tasks.
-    pub executor: String,
-}
+// NOTE: ModelTiers is now defined in jaskier-model-router crate,
+// re-exported via `pub use model_router::*` above.
 
 // ── ProviderConfig ────────────────────────────────────────────────────────────
 
@@ -350,50 +254,9 @@ pub fn default_provider_configs() -> HashMap<AiProvider, ProviderConfig> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn ai_provider_display() {
-        assert_eq!(AiProvider::Anthropic.to_string(), "anthropic");
-        assert_eq!(AiProvider::OpenAI.to_string(), "openai");
-        assert_eq!(AiProvider::Google.to_string(), "google");
-        assert_eq!(AiProvider::Xai.to_string(), "xai");
-        assert_eq!(AiProvider::DeepSeek.to_string(), "deepseek");
-        assert_eq!(AiProvider::Ollama.to_string(), "ollama");
-    }
-
-    #[test]
-    fn ai_provider_from_str() {
-        assert_eq!(AiProvider::from_str("anthropic"), Ok(AiProvider::Anthropic));
-        assert_eq!(AiProvider::from_str("OPENAI"), Ok(AiProvider::OpenAI));
-        assert_eq!(AiProvider::from_str("Gemini"), Ok(AiProvider::Google));
-        assert_eq!(AiProvider::from_str("grok"), Ok(AiProvider::Xai));
-        assert_eq!(AiProvider::from_str("DeepSeek"), Ok(AiProvider::DeepSeek));
-        assert_eq!(AiProvider::from_str("OLLAMA"), Ok(AiProvider::Ollama));
-        assert!(AiProvider::from_str("unknown").is_err());
-    }
-
-    #[test]
-    fn ai_provider_from_model_id() {
-        assert_eq!(AiProvider::from_model_id("claude-opus-4-6"), Some(AiProvider::Anthropic));
-        assert_eq!(AiProvider::from_model_id("claude-sonnet-4-6"), Some(AiProvider::Anthropic));
-        assert_eq!(AiProvider::from_model_id("gpt-4o"), Some(AiProvider::OpenAI));
-        assert_eq!(AiProvider::from_model_id("o1-preview"), Some(AiProvider::OpenAI));
-        assert_eq!(AiProvider::from_model_id("o3-mini"), Some(AiProvider::OpenAI));
-        assert_eq!(AiProvider::from_model_id("gemini-2.5-pro-preview"), Some(AiProvider::Google));
-        assert_eq!(AiProvider::from_model_id("grok-3"), Some(AiProvider::Xai));
-        assert_eq!(AiProvider::from_model_id("deepseek-chat"), Some(AiProvider::DeepSeek));
-        assert_eq!(AiProvider::from_model_id("deepseek-reasoner"), Some(AiProvider::DeepSeek));
-        assert_eq!(AiProvider::from_model_id("llama3.1:70b"), Some(AiProvider::Ollama));
-        assert_eq!(AiProvider::from_model_id("mistral:latest"), Some(AiProvider::Ollama));
-        assert_eq!(AiProvider::from_model_id("unknown-model"), None);
-    }
-
-    #[test]
-    fn ai_provider_roundtrip_serde() {
-        let json = serde_json::to_string(&AiProvider::Anthropic).unwrap();
-        assert_eq!(json, "\"anthropic\"");
-        let parsed: AiProvider = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed, AiProvider::Anthropic);
-    }
+    // NOTE: AiProvider, ModelTier, ModelTiers, detect_provider, detect_tier tests
+    // are now in jaskier-model-router crate (43 tests). These tests cover only
+    // the gateway-specific types (AuthType, ProviderConfig, default_provider_configs).
 
     #[test]
     fn default_configs_has_all_providers() {

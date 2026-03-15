@@ -104,7 +104,7 @@ impl HasSwarmHub for crate::state::AppState {
 pub fn swarm_delegate_tool_def() -> serde_json::Value {
     serde_json::json!({
         "name": "swarm_delegate_task",
-        "description": "Delegate a task to other AI agents in the Jaskier Swarm. Sends a prompt to one or more peer Hydra instances (GeminiHydra, GrokHydra, OpenAIHydra, DeepSeekHydra) for parallel or sequential execution. Returns aggregated results from all agents.",
+        "description": "Delegate a task to other AI agents in the Jaskier Swarm. Sends a prompt (with optional multimodal attachments — images, PDFs, documents) to one or more peer Hydra instances (GeminiHydra, GrokHydra, OpenAIHydra, DeepSeekHydra) for parallel or sequential execution. Returns aggregated results from all agents, including any attachments they produce.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -115,12 +115,25 @@ pub fn swarm_delegate_tool_def() -> serde_json::Value {
                 "pattern": {
                     "type": "string",
                     "enum": ["parallel", "sequential", "review", "fan_out"],
-                    "description": "Orchestration pattern. 'parallel' sends to all targets simultaneously. 'sequential' chains output→input. 'review' has one agent work and another review."
+                    "description": "Orchestration pattern. 'parallel' sends to all targets simultaneously. 'sequential' chains output→input (including attachments). 'review' has one agent work and another review."
                 },
                 "targets": {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "Target peer IDs (e.g. ['geminihydra', 'grokhydra']). Empty = all online peers."
+                },
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "content_type": {"type": "string", "description": "MIME type (e.g. 'image/png', 'application/pdf')"},
+                            "url": {"type": "string", "description": "URL or file path to the attachment"},
+                            "name": {"type": "string", "description": "Human-readable filename"}
+                        },
+                        "required": ["content_type", "url"]
+                    },
+                    "description": "Optional multimodal attachments (images, PDFs, documents) to include with the task"
                 },
                 "timeout_secs": {
                     "type": "integer",

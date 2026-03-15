@@ -98,7 +98,7 @@ pub(crate) fn sanitize_json_strings(value: &mut Value) {
 
 /// Get the Anthropic credential with dual resolution strategy:
 /// 1. First try: Jaskier Vault (`ai_providers/anthropic_max`)
-/// 2. Fallback: Old DB path (deprecated `crate::oauth::get_valid_access_token`)
+/// 2. Fallback: Old DB path (`jaskier_oauth::anthropic::get_valid_anthropic_access_token`)
 /// 3. Last resort: Runtime API keys / `ANTHROPIC_API_KEY` env var
 ///
 /// Returns `(token_or_key, is_oauth)`.
@@ -135,9 +135,8 @@ async fn get_anthropic_credential(state: &AppState) -> Option<(String, bool)> {
         }
     }
 
-    // 2. Fallback: Old DB OAuth path (deprecated — will be removed after full migration)
-    #[allow(deprecated)]
-    if let Some(token) = crate::oauth::get_valid_access_token(state).await {
+    // 2. Fallback: Old DB OAuth path (will be removed after full Vault migration)
+    if let Some(token) = jaskier_oauth::anthropic::get_valid_anthropic_access_token(state).await {
         tracing::info!("Falling back to DB OAuth for Anthropic");
         return Some((token, true));
     }
@@ -307,8 +306,7 @@ async fn send_to_anthropic_via_vault(
             tracing::warn!("Vault Bouncer delegate failed ({}), falling back to direct path", e);
 
             // Fallback: try DB OAuth or API key directly
-            #[allow(deprecated)]
-            if let Some(token) = crate::oauth::get_valid_access_token(state).await {
+            if let Some(token) = jaskier_oauth::anthropic::get_valid_anthropic_access_token(state).await {
                 tracing::info!("Vault delegate failed — falling back to DB OAuth token");
                 return build_anthropic_request(state, body, &token, _timeout_secs, true)
                     .send()

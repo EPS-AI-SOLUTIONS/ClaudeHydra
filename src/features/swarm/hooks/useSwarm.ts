@@ -153,7 +153,13 @@ export function useSwarm() {
   // ── Delegate task ───────────────────────────────────────────────────────
 
   const delegate = useCallback(
-    async (prompt: string, pattern: OrchestrationPattern = 'parallel', targets: string[] = [], timeoutSecs = 120) => {
+    async (
+      prompt: string,
+      pattern: OrchestrationPattern = 'parallel',
+      targets: string[] = [],
+      timeoutSecs = 120,
+      attachments: SwarmAttachment[] = [],
+    ) => {
       setIsDelegating(true);
       try {
         const resp = await fetch(`${API_BASE}/api/swarm/delegate`, {
@@ -164,6 +170,7 @@ export function useSwarm() {
             pattern,
             targets,
             timeout_secs: timeoutSecs,
+            attachments,
           }),
         });
         const data = await resp.json();
@@ -215,6 +222,8 @@ export function useSwarm() {
       'task_cancelled',
       'peer_discovered',
       'peer_lost',
+      'attachment_received',
+      'media_stream_chunk',
     ];
     for (const type of eventTypes) {
       es.addEventListener(type, handleEvent);

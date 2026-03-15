@@ -53,9 +53,8 @@ async fn check_anthropic_api(state: &AppState) -> bool {
         Err(_) => false,
     };
 
-    // 2. DB OAuth (deprecated path)
-    #[allow(deprecated)]
-    let has_oauth = crate::oauth::get_valid_access_token(state).await.is_some();
+    // 2. DB OAuth path
+    let has_oauth = jaskier_oauth::anthropic::get_valid_anthropic_access_token(state).await.is_some();
 
     // 3. API key (runtime or env var)
     let has_key = {

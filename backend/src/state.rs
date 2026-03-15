@@ -305,6 +305,12 @@ impl HasMemoryPruning for AppState {
     fn mcp_client(&self) -> &Arc<jaskier_hydra_state::McpClientManager> {
         &self.base.mcp_client
     }
+    async fn log_audit(&self, action: &str, data: serde_json::Value) {
+        crate::audit::log_audit(&self.base.db, action, data, None).await;
+    }
+    fn pruning_app_name(&self) -> &'static str {
+        "ClaudeHydra"
+    }
 }
 
 // ── Mechanical trait delegations (12 of 13 base + 1 extra) ─────────────────
@@ -513,7 +519,7 @@ impl jaskier_core::mcp::server::HasMcpServerState for AppState {
 //
 // Dual resolution strategy for backward compatibility during Vault migration:
 // 1. First try: Jaskier Vault (ai_providers/anthropic_max)
-// 2. Fallback: Old DB path (deprecated crate::oauth::get_valid_access_token)
+// 2. Fallback: Old DB path (jaskier_oauth::anthropic::get_valid_anthropic_access_token)
 // 3. Last resort: Runtime API keys / ANTHROPIC_API_KEY env var
 //
 // NOTE: This trait is used by `generate_title_via_anthropic` in jaskier-core::sessions.
@@ -544,9 +550,8 @@ impl jaskier_core::sessions::HasAnthropicCredential for AppState {
             Err(_) => false,
         };
 
-        // 2. Fallback: Old DB OAuth path (deprecated — will be removed after full migration)
-        #[allow(deprecated)]
-        if let Some(token) = crate::oauth::get_valid_access_token(self).await {
+        // 2. Fallback: Old DB OAuth path (will be removed after full Vault migration)
+        if let Some(token) = jaskier_oauth::anthropic::get_valid_anthropic_access_token(self).await {
             if vault_connected {
                 tracing::info!("Using DB OAuth token for title gen (Vault confirmed connected)");
             } else {

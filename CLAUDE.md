@@ -325,10 +325,11 @@ Agent → vault_delegate(url, method, namespace, service, agent="claude")
 - **HasSwarmHub trait**: `swarm_registry()`, `swarm_orchestrator()`, `swarm_tasks()`, `swarm_event_tx()`, `swarm_db()`, `swarm_self_id()`
 - **API endpoints**: `GET /api/swarm/discover`, `GET /api/swarm/peers`, `POST /api/swarm/delegate`, `GET /api/swarm/tasks`, `GET /api/swarm/tasks/{id}`, `GET /api/swarm/events` (SSE)
 - **CH integration**: `swarm.rs` module, `SwarmState` on `AppState`, discovery loop spawned at startup
-- **MCP tool**: `swarm_delegate_task` (prompt, pattern, targets, timeout_secs)
-- **DB migration**: `033_swarm_ipc.sql` — `ch_swarm_tasks` table (pattern, source_peer, target_peers JSONB, results JSONB)
-- **Frontend**: `SwarmView.tsx` with `@xyflow/react` agent network graph, `useSwarm.ts` hook with SSE events, peer discovery, task delegation
-- **Tests**: 12 unit tests in jaskier-swarm crate
+- **MCP tool**: `swarm_delegate_task` (prompt, pattern, targets, timeout_secs, attachments)
+- **Multimodal attachments** (Task 33): `SwarmAttachment` type (content_type, url, name), SSE events `AttachmentReceived`/`MediaStreamChunk`, sequential forwarding of attachments between agents, review prompt with attachment context
+- **DB migration**: `033_swarm_ipc.sql` — `ch_swarm_tasks` table (pattern, source_peer, target_peers JSONB, results JSONB), `036_swarm_attachments.sql` — attachments JSONB column
+- **Frontend**: `SwarmView.tsx` with `@xyflow/react` agent network graph, `useSwarm.ts` hook with SSE events, peer discovery, task delegation with attachments (URL input, MIME detection, chips), `SwarmBuilder.tsx` with `MediaEdge` edge type
+- **Tests**: 19 unit tests in jaskier-swarm crate (protocol, orchestrator, handlers, attachment extraction)
 - **Known peers**: claudehydra(:8082), geminihydra(:8081), grokhydra(:8084), openaihydra(:8083), deepseekhydra(:8085), tissaia(:8080)
 
 ## CRDT Real-time Collaboration (Task 19, 2026-03-14)

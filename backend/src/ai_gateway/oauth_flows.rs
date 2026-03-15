@@ -21,17 +21,22 @@ use tracing;
 //  Types & Enums
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/// Supported AI providers for the unified OAuth flow.
+/// OAuth provider — covers both AI providers (Anthropic, Google) and service
+/// integrations (GitHub, Vercel) that use OAuth PKCE flows.
+///
+/// This is deliberately separate from `super::AiProvider` which enumerates
+/// AI model providers. GitHub and Vercel are not AI providers — they are
+/// service OAuth integrations for repo/deploy access.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum AiProvider {
+pub enum OAuthProvider {
     Anthropic,
     Google,
     GitHub,
     Vercel,
 }
 
-impl std::fmt::Display for AiProvider {
+impl std::fmt::Display for OAuthProvider {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Anthropic => write!(f, "anthropic"),
@@ -61,7 +66,7 @@ pub enum PkceMethod {
 /// whose client_id/secret come from Vault supply them at `new()` time.
 #[derive(Debug, Clone)]
 pub struct OAuthProviderConfig {
-    pub provider: AiProvider,
+    pub provider: OAuthProvider,
     pub authorize_url: String,
     pub token_url: String,
     pub redirect_uri: String,
@@ -104,7 +109,7 @@ fn default_token_type() -> String {
 pub struct LoginResponse {
     pub authorize_url: String,
     pub state: String,
-    pub provider: AiProvider,
+    pub provider: OAuthProvider,
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -116,7 +121,7 @@ pub struct LoginResponse {
 #[derive(Debug, Clone)]
 pub struct PkceState {
     pub code_verifier: String,
-    pub provider: AiProvider,
+    pub provider: OAuthProvider,
     pub created_at: Instant,
 }
 
@@ -156,7 +161,7 @@ pub struct OAuthFlowManager {
     /// Pending PKCE states keyed by the random `state` parameter.
     pkce_states: Arc<RwLock<HashMap<String, PkceState>>>,
     /// Static provider configurations (populated at construction time).
-    provider_configs: HashMap<AiProvider, OAuthProviderConfig>,
+    provider_configs: HashMap<OAuthProvider, OAuthProviderConfig>,
     /// Shared HTTP client for token exchange / refresh requests.
     http_client: reqwest::Client,
 }
@@ -175,11 +180,11 @@ impl OAuthFlowManager {
         let mut provider_configs = HashMap::new();
 
         // Anthropic — always available (hardcoded client_id, no client_secret).
-        provider_configs.insert(AiProvider::Anthropic, Self::default_anthropic_config());
+        provider_configs.insert(OAuthProvider::Anthropic, Self::default_anthropic_config());
 
         // Google — available only when env vars are set.
         if let Some(cfg) = Self::default_google_config() {
-            provider_configs.insert(AiProvider::Google, cfg);
+            provider_configs.insert(OAuthProvider::Google, cfg);
         }
 
         Self {
@@ -196,12 +201,12 @@ impl OAuthFlowManager {
     }
 
     /// Returns `true` if the given provider has a registered config.
-    pub fn has_provider(&self, provider: AiProvider) -> bool {
+    pub fn has_provider(&self, provider: OAuthProvider) -> bool {
         self.provider_configs.contains_key(&provider)
     }
 
     /// Returns an immutable reference to the provider configs map.
-    pub fn provider_configs(&self) -> &HashMap<AiProvider, OAuthProviderConfig> {
+    pub fn provider_configs(&self) -> &HashMap<OAuthProvider, OAuthProviderConfig> {
         &self.provider_configs
     }
 
@@ -211,7 +216,7 @@ impl OAuthFlowManager {
     /// authorization URL the frontend should redirect/open.
     pub async fn initiate_login(
         &self,
-        provider: AiProvider,
+        provider: OAuthProvider,
     ) -> anyhow::Result<LoginResponse> {
         let config = self
             .provider_configs
@@ -253,7 +258,7 @@ impl OAuthFlowManager {
             }
 
             // Anthropic-specific: `code=true` param.
-            if provider == AiProvider::Anthropic {
+            if provider == OAuthProvider::Anthropic {
                 pairs.append_pair("code", "true");
             }
 
@@ -291,13 +296,13 @@ impl OAuthFlowManager {
     /// Validate the CSRF state, consume the stored PKCE verifier, and exchange
     /// the authorization code for tokens at the provider's token endpoint.
     ///
-    /// Returns `(AiProvider, OAuthTokens)` — the caller is responsible for
+    /// Returns `(OAuthProvider, OAuthTokens)` — the caller is responsible for
     /// persisting tokens to Vault via vault_bridge.
     pub async fn handle_callback(
         &self,
         state: &str,
         code: &str,
-    ) -> anyhow::Result<(AiProvider, OAuthTokens)> {
+    ) -> anyhow::Result<(OAuthProvider, OAuthTokens)> {
         // Consume PKCE state (validates + removes atomically).
         let pkce = {
             let mut states = self.pkce_states.write().await;
@@ -316,7 +321,7 @@ impl OAuthFlowManager {
 
         // Build token exchange request — provider-specific format.
         let tokens = match provider {
-            AiProvider::Anthropic => {
+            OAuthProvider::Anthropic => {
                 self.exchange_anthropic(config, code, state, &pkce.code_verifier)
                     .await?
             }
@@ -341,7 +346,7 @@ impl OAuthFlowManager {
     /// Google and standard providers use form-encoded POST; Anthropic uses JSON.
     pub async fn refresh_token(
         &self,
-        provider: AiProvider,
+        provider: OAuthProvider,
         refresh_token: &str,
     ) -> anyhow::Result<OAuthTokens> {
         let config = self
@@ -350,7 +355,7 @@ impl OAuthFlowManager {
             .ok_or_else(|| anyhow::anyhow!("Provider {provider} is not configured for refresh"))?;
 
         let tokens = match provider {
-            AiProvider::Anthropic => {
+            OAuthProvider::Anthropic => {
                 self.refresh_anthropic(config, refresh_token).await?
             }
             _ => {
@@ -396,7 +401,7 @@ impl OAuthFlowManager {
     /// authorize URL. No client_secret is required (public client).
     pub fn default_anthropic_config() -> OAuthProviderConfig {
         OAuthProviderConfig {
-            provider: AiProvider::Anthropic,
+            provider: OAuthProvider::Anthropic,
             authorize_url: ANTHROPIC_AUTHORIZE_URL.to_string(),
             token_url: ANTHROPIC_TOKEN_URL.to_string(),
             redirect_uri: ANTHROPIC_REDIRECT_URI.to_string(),
@@ -429,7 +434,7 @@ impl OAuthFlowManager {
         extra_params.insert("prompt".to_string(), "consent".to_string());
 
         Some(OAuthProviderConfig {
-            provider: AiProvider::Google,
+            provider: OAuthProvider::Google,
             authorize_url: GOOGLE_AUTHORIZE_URL.to_string(),
             token_url: GOOGLE_TOKEN_URL.to_string(),
             redirect_uri,
@@ -708,30 +713,30 @@ fn parse_token_response(
 mod tests {
     use super::*;
 
-    // ── AiProvider Display + Serialize ──────────────────────────────────────
+    // ── OAuthProvider Display + Serialize ──────────────────────────────────────
 
     #[test]
     fn ai_provider_display() {
-        assert_eq!(AiProvider::Anthropic.to_string(), "anthropic");
-        assert_eq!(AiProvider::Google.to_string(), "google");
-        assert_eq!(AiProvider::GitHub.to_string(), "github");
-        assert_eq!(AiProvider::Vercel.to_string(), "vercel");
+        assert_eq!(OAuthProvider::Anthropic.to_string(), "anthropic");
+        assert_eq!(OAuthProvider::Google.to_string(), "google");
+        assert_eq!(OAuthProvider::GitHub.to_string(), "github");
+        assert_eq!(OAuthProvider::Vercel.to_string(), "vercel");
     }
 
     #[test]
     fn ai_provider_serde_roundtrip() {
-        let json = serde_json::to_string(&AiProvider::Anthropic).unwrap();
+        let json = serde_json::to_string(&OAuthProvider::Anthropic).unwrap();
         assert_eq!(json, r#""anthropic""#);
-        let back: AiProvider = serde_json::from_str(&json).unwrap();
-        assert_eq!(back, AiProvider::Anthropic);
+        let back: OAuthProvider = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, OAuthProvider::Anthropic);
     }
 
     #[test]
     fn ai_provider_hash_eq() {
         let mut map = HashMap::new();
-        map.insert(AiProvider::Google, "test");
-        assert_eq!(map.get(&AiProvider::Google), Some(&"test"));
-        assert_eq!(map.get(&AiProvider::Anthropic), None);
+        map.insert(OAuthProvider::Google, "test");
+        assert_eq!(map.get(&OAuthProvider::Google), Some(&"test"));
+        assert_eq!(map.get(&OAuthProvider::Anthropic), None);
     }
 
     // ── PkceMethod ─────────────────────────────────────────────────────────
@@ -799,7 +804,7 @@ mod tests {
         let resp = LoginResponse {
             authorize_url: "https://example.com/auth".into(),
             state: "csrf-123".into(),
-            provider: AiProvider::Google,
+            provider: OAuthProvider::Google,
         };
         let json = serde_json::to_value(&resp).unwrap();
         assert_eq!(json["provider"], "google");
@@ -930,7 +935,7 @@ mod tests {
     #[test]
     fn default_anthropic_config_constants() {
         let cfg = OAuthFlowManager::default_anthropic_config();
-        assert_eq!(cfg.provider, AiProvider::Anthropic);
+        assert_eq!(cfg.provider, OAuthProvider::Anthropic);
         assert_eq!(cfg.client_id, ANTHROPIC_CLIENT_ID);
         assert_eq!(cfg.authorize_url, ANTHROPIC_AUTHORIZE_URL);
         assert_eq!(cfg.token_url, ANTHROPIC_TOKEN_URL);
@@ -955,16 +960,16 @@ mod tests {
     #[test]
     fn manager_always_has_anthropic() {
         let mgr = OAuthFlowManager::new(reqwest::Client::new());
-        assert!(mgr.has_provider(AiProvider::Anthropic));
+        assert!(mgr.has_provider(OAuthProvider::Anthropic));
     }
 
     #[test]
     fn manager_register_provider() {
         let mut mgr = OAuthFlowManager::new(reqwest::Client::new());
-        assert!(!mgr.has_provider(AiProvider::GitHub));
+        assert!(!mgr.has_provider(OAuthProvider::GitHub));
 
         mgr.register_provider(OAuthProviderConfig {
-            provider: AiProvider::GitHub,
+            provider: OAuthProvider::GitHub,
             authorize_url: "https://github.com/login/oauth/authorize".into(),
             token_url: "https://github.com/login/oauth/access_token".into(),
             redirect_uri: "http://localhost:8082/api/auth/github/callback".into(),
@@ -975,7 +980,7 @@ mod tests {
             extra_params: HashMap::new(),
         });
 
-        assert!(mgr.has_provider(AiProvider::GitHub));
+        assert!(mgr.has_provider(OAuthProvider::GitHub));
     }
 
     // ── PkceState TTL ──────────────────────────────────────────────────────
@@ -990,9 +995,9 @@ mod tests {
     #[tokio::test]
     async fn initiate_login_returns_valid_url() {
         let mgr = OAuthFlowManager::new(reqwest::Client::new());
-        let resp = mgr.initiate_login(AiProvider::Anthropic).await.unwrap();
+        let resp = mgr.initiate_login(OAuthProvider::Anthropic).await.unwrap();
 
-        assert_eq!(resp.provider, AiProvider::Anthropic);
+        assert_eq!(resp.provider, OAuthProvider::Anthropic);
         assert!(!resp.state.is_empty());
 
         let parsed = url::Url::parse(&resp.authorize_url).unwrap();
@@ -1013,19 +1018,19 @@ mod tests {
         let mgr = OAuthFlowManager::new(reqwest::Client::new());
         assert_eq!(mgr.pending_states_count().await, 0);
 
-        let resp = mgr.initiate_login(AiProvider::Anthropic).await.unwrap();
+        let resp = mgr.initiate_login(OAuthProvider::Anthropic).await.unwrap();
         assert_eq!(mgr.pending_states_count().await, 1);
 
         let states = mgr.pkce_states.read().await;
         let pkce = states.get(&resp.state).unwrap();
-        assert_eq!(pkce.provider, AiProvider::Anthropic);
+        assert_eq!(pkce.provider, OAuthProvider::Anthropic);
         assert!(!pkce.code_verifier.is_empty());
     }
 
     #[tokio::test]
     async fn initiate_login_unconfigured_provider_errors() {
         let mgr = OAuthFlowManager::new(reqwest::Client::new());
-        let result = mgr.initiate_login(AiProvider::GitHub).await;
+        let result = mgr.initiate_login(OAuthProvider::GitHub).await;
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("not configured"));
     }
@@ -1041,7 +1046,7 @@ mod tests {
     #[tokio::test]
     async fn handle_callback_consumes_state() {
         let mgr = OAuthFlowManager::new(reqwest::Client::new());
-        let resp = mgr.initiate_login(AiProvider::Anthropic).await.unwrap();
+        let resp = mgr.initiate_login(OAuthProvider::Anthropic).await.unwrap();
         assert_eq!(mgr.pending_states_count().await, 1);
 
         // The actual HTTP call will fail (no server), but the state should be
@@ -1061,7 +1066,7 @@ mod tests {
                 "old-state".to_string(),
                 PkceState {
                     code_verifier: "v".into(),
-                    provider: AiProvider::Anthropic,
+                    provider: OAuthProvider::Anthropic,
                     created_at: Instant::now() - Duration::from_secs(700),
                 },
             );
@@ -1069,7 +1074,7 @@ mod tests {
                 "fresh-state".to_string(),
                 PkceState {
                     code_verifier: "v2".into(),
-                    provider: AiProvider::Google,
+                    provider: OAuthProvider::Google,
                     created_at: Instant::now(),
                 },
             );
@@ -1087,7 +1092,7 @@ mod tests {
     #[tokio::test]
     async fn refresh_unconfigured_provider_errors() {
         let mgr = OAuthFlowManager::new(reqwest::Client::new());
-        let result = mgr.refresh_token(AiProvider::Vercel, "rt-xxx").await;
+        let result = mgr.refresh_token(OAuthProvider::Vercel, "rt-xxx").await;
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("not configured"));
     }

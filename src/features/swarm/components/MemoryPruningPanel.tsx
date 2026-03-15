@@ -172,8 +172,8 @@ function CycleDetails({ cycleId }: { cycleId: string }) {
           </tr>
         </thead>
         <tbody>
-          {entries.map((entry: PruneLogEntry, i: number) => (
-            <tr key={i} style={{ borderBottom: '1px solid #1a1a2e' }}>
+          {entries.map((entry: PruneLogEntry) => (
+            <tr key={`${entry.entity_name}-${entry.action}`} style={{ borderBottom: '1px solid #1a1a2e' }}>
               <td style={{ padding: '8px', color: '#e0e0ff', fontFamily: 'monospace', fontSize: '12px' }}>
                 {entry.entity_name}
                 {entry.merged_into && <div style={{ fontSize: '11px', color: '#8b8ba7' }}>→ {entry.merged_into}</div>}
@@ -370,10 +370,14 @@ export function MemoryPruningPanel() {
 
                 {/* Similarity threshold */}
                 <div>
-                  <label style={{ fontSize: '12px', color: '#8b8ba7', display: 'block', marginBottom: '4px' }}>
+                  <label
+                    htmlFor="prune-similarity"
+                    style={{ fontSize: '12px', color: '#8b8ba7', display: 'block', marginBottom: '4px' }}
+                  >
                     Próg podobieństwa: {(config.similarity_threshold * 100).toFixed(0)}%
                   </label>
                   <input
+                    id="prune-similarity"
                     type="range"
                     min="50"
                     max="99"
@@ -385,10 +389,14 @@ export function MemoryPruningPanel() {
 
                 {/* Min age */}
                 <div>
-                  <label style={{ fontSize: '12px', color: '#8b8ba7', display: 'block', marginBottom: '4px' }}>
+                  <label
+                    htmlFor="prune-min-age"
+                    style={{ fontSize: '12px', color: '#8b8ba7', display: 'block', marginBottom: '4px' }}
+                  >
                     Min. wiek wpisu (godz.): {config.min_age_hours}
                   </label>
                   <input
+                    id="prune-min-age"
                     type="range"
                     min="0"
                     max="168"
@@ -400,10 +408,14 @@ export function MemoryPruningPanel() {
 
                 {/* Max entries */}
                 <div>
-                  <label style={{ fontSize: '12px', color: '#8b8ba7', display: 'block', marginBottom: '4px' }}>
+                  <label
+                    htmlFor="prune-max-entries"
+                    style={{ fontSize: '12px', color: '#8b8ba7', display: 'block', marginBottom: '4px' }}
+                  >
                     Maks. wpisów pamięci: {config.max_memory_entries}
                   </label>
                   <input
+                    id="prune-max-entries"
                     type="number"
                     min="10"
                     max="10000"
@@ -423,10 +435,14 @@ export function MemoryPruningPanel() {
 
                 {/* Interval */}
                 <div>
-                  <label style={{ fontSize: '12px', color: '#8b8ba7', display: 'block', marginBottom: '4px' }}>
+                  <label
+                    htmlFor="prune-interval"
+                    style={{ fontSize: '12px', color: '#8b8ba7', display: 'block', marginBottom: '4px' }}
+                  >
                     Interwał auto-pruning (sek.): {config.auto_prune_interval_secs}
                   </label>
                   <input
+                    id="prune-interval"
                     type="number"
                     min="300"
                     max="86400"
@@ -447,10 +463,14 @@ export function MemoryPruningPanel() {
 
                 {/* Max cluster size */}
                 <div>
-                  <label style={{ fontSize: '12px', color: '#8b8ba7', display: 'block', marginBottom: '4px' }}>
+                  <label
+                    htmlFor="prune-max-cluster"
+                    style={{ fontSize: '12px', color: '#8b8ba7', display: 'block', marginBottom: '4px' }}
+                  >
                     Maks. rozmiar klastra: {config.max_cluster_size}
                   </label>
                   <input
+                    id="prune-max-cluster"
                     type="range"
                     min="2"
                     max="20"

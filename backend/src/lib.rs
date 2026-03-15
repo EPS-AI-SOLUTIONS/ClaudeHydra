@@ -9,15 +9,10 @@ pub mod mcp;
 pub mod memory_pruning;
 pub mod model_registry;
 pub mod models;
-pub mod oauth;
-pub mod oauth_github;
-pub mod oauth_google;
-pub mod oauth_vercel;
 pub mod ocr;
 pub mod rate_limits;
 pub mod sandbox;
 pub mod semantic_cache;
-pub mod service_tokens;
 pub mod state;
 pub mod swarm;
 pub mod system_monitor;
@@ -146,11 +141,12 @@ pub struct ApiDoc;
 /// (Anthropic PKCE callback) is CH-specific and has no conflict.
 fn ch_primary_auth_routes() -> Router<AppState> {
     Router::new()
-        // Anthropic OAuth PKCE — replaces shared Google OAuth at these paths
-        .route("/api/auth/status", get(oauth::auth_status))
-        .route("/api/auth/login", post(oauth::auth_login))
-        .route("/api/auth/callback", post(oauth::auth_callback))
-        .route("/api/auth/logout", post(oauth::auth_logout))
+        // Anthropic OAuth PKCE — replaces shared Google OAuth at these paths.
+        // Uses jaskier_oauth shared crate directly (local oauth.rs removed).
+        .route("/api/auth/status", get(jaskier_oauth::anthropic::anthropic_auth_status::<AppState>))
+        .route("/api/auth/login", post(jaskier_oauth::anthropic::anthropic_auth_login::<AppState>))
+        .route("/api/auth/callback", post(jaskier_oauth::anthropic::anthropic_auth_callback::<AppState>))
+        .route("/api/auth/logout", post(jaskier_oauth::anthropic::anthropic_auth_logout::<AppState>))
 }
 
 /// CH WebSocket chat route (maps to `ws_route` config slot).
