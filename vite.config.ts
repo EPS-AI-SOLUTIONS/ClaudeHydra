@@ -26,6 +26,11 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
+        // Disable SW generation during build — vite-plugin-pwa 0.21 is incompatible
+        // with Vite 6+ Environment API in monorepo with mixed Vite versions (6.4 + 7.3).
+        // The secondary Rollup build picks up vite@7.3's node:module chunks and fails.
+        // Re-enable when vite-plugin-pwa releases Vite 6/7 compatible version.
+        disable: mode === 'production',
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
           runtimeCaching: [
