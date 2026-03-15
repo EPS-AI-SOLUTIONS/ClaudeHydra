@@ -296,9 +296,11 @@ export default defineConfig(({ mode }) => {
               return 'shared-core';
             }
             // Markdown renderers are lazy-loaded — keep them out of shared-ui
-            // so vendor-markdown is NOT in the critical path (saves ~329 KB)
+            // so vendor-markdown is NOT in the critical path (saves ~329 KB).
+            // Must return an explicit chunk name (not undefined) to prevent
+            // Rollup from inlining them back into shared-ui.
             if (id.includes('MarkdownRenderer')) {
-              return undefined;
+              return 'lazy-markdown-renderer';
             }
             if (
               id.includes('/packages/hydra-app/') ||
