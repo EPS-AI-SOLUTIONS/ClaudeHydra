@@ -8,6 +8,12 @@
   "theme_color": "#0a0a0f",
   "icons": [
     {
+      "src": "/logodark-192.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/logodark.webp",
       "sizes": "512x512",
       "type": "image/webp",

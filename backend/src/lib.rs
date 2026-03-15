@@ -504,7 +504,7 @@ fn build_ch_config(state: AppState) -> HydraRouterConfig<AppState> {
 /// Webhook routes for Grafana alerts
 fn ch_auto_qa_routes() -> Router<AppState> {
     Router::new()
-        .route("/api/webhooks/grafana", post(auto_qa::grafana_webhook))
+        .route("/api/webhooks/grafana", post(auto_qa::grafana_webhook::<AppState>))
 }
 
 /// Build the application router with the given shared state.

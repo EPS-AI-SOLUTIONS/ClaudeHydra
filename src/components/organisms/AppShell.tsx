@@ -16,6 +16,7 @@
 import { ChatViewThemeProvider } from '@jaskier/chat-module';
 import { cn } from '@jaskier/ui';
 import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RuneRain, ThemedBackground } from '@/components/atoms';
 import { CommandPalette } from '@/components/molecules/CommandPalette';
 import { Sidebar } from '@/components/organisms/Sidebar';
@@ -62,6 +63,19 @@ function AppShellInner({ children }: AppShellProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const currentView = useViewStore((s) => s.currentView);
+  const { i18n } = useTranslation();
+
+  // Sync <html lang="..."> with i18next language (accessibility: WCAG 3.1.1)
+  useEffect(() => {
+    document.documentElement.lang = i18n.language;
+    const handleLanguageChanged = (lng: string) => {
+      document.documentElement.lang = lng;
+    };
+    i18n.on('languageChanged', handleLanguageChanged);
+    return () => {
+      i18n.off('languageChanged', handleLanguageChanged);
+    };
+  }, [i18n]);
 
   // Health & system stats
   const healthStatus = useHealthStatus();

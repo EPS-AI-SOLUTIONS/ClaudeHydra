@@ -102,6 +102,8 @@ impl AppState {
             circuit_provider: "anthropic",
             // ClaudeHydra uses Anthropic OAuth — env vars loaded below separately.
             api_key_env_vars: &["ANTHROPIC_API_KEY"],
+            mcp_servers_table: "ch_mcp_servers",
+            mcp_tools_table: "ch_mcp_discovered_tools",
         }).await;
 
         // ── Inject legacy key names for backward compatibility ──────
@@ -206,7 +208,9 @@ impl AppState {
             .expect("Failed to build HTTP client");
 
         let db = PgPool::connect_lazy("postgres://test@localhost:19999/test").expect("lazy pool");
-        let mcp_client = Arc::new(jaskier_hydra_state::McpClientManager::new(db.clone(), http_client.clone()));
+        let mcp_client = Arc::new(jaskier_hydra_state::McpClientManager::with_tables(
+            db.clone(), http_client.clone(), "ch_mcp_servers", "ch_mcp_discovered_tools",
+        ));
         let circuit_breaker = Arc::new(CircuitBreaker::new("anthropic"));
         let (a2a_task_tx_base, _) = tokio::sync::broadcast::channel(100);
         let (a2a_task_tx, _) = tokio::sync::broadcast::channel(100);

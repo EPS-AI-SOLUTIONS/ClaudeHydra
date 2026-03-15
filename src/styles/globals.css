@@ -8,9 +8,11 @@
 
 /* ============================================
    FOCUS VISIBLE — Keyboard Navigation
+   Custom focus ring for accessibility (WCAG 2.1 §2.4.7)
    ============================================ */
 :focus-visible {
-  outline: none;
+  outline: 2px solid var(--focus-ring-color, #3b82f6);
+  outline-offset: 2px;
 }
 
 /* ============================================

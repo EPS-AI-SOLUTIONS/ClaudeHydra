@@ -83,6 +83,7 @@
   --matrix-overlay: rgba(0, 0, 0, 0.6);
   --matrix-tooltip-bg: rgba(15, 20, 25, 0.95);
   --matrix-focus-ring: rgba(255, 255, 255, 0.4);
+  --focus-ring-color: #3b82f6;
   --matrix-code-bg: rgba(0, 0, 0, 0.3);
   --matrix-badge-bg: rgba(255, 255, 255, 0.15);
   --matrix-error: #f87171;
@@ -120,6 +121,7 @@
   --matrix-overlay: rgba(255, 255, 255, 0.6);
   --matrix-tooltip-bg: rgba(255, 255, 255, 0.95);
   --matrix-focus-ring: rgba(5, 120, 87, 0.4);
+  --focus-ring-color: #2d6a4f;
   --matrix-code-bg: rgba(0, 0, 0, 0.06);
   --matrix-badge-bg: rgba(5, 150, 105, 0.12);
 }
