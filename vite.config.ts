@@ -1,12 +1,12 @@
 ﻿/// <reference types="vitest/config" />
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { VitePWA } from 'vite-plugin-pwa';
-import wasm from 'vite-plugin-wasm';
-import topLevelAwait from 'vite-plugin-top-level-await';
-import { visualizer } from 'rollup-plugin-visualizer';
+import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig, loadEnv } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
+import topLevelAwait from 'vite-plugin-top-level-await';
+import wasm from 'vite-plugin-wasm';
 
 export default defineConfig(({ mode }) => {
   // Load ALL env vars (empty prefix = no VITE_ filter)
@@ -101,10 +101,21 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    // Worker environment config — externalize WASM runtime imports for Web Workers
+    worker: {
+      rollupOptions: {
+        external: (id: string) => id.endsWith('.node') || id.startsWith('/wasm/') || id.includes('../pkg'),
+      },
+    },
     build: {
       target: 'esnext',
       sourcemap: true,
       rollupOptions: {
+        // Externalize:
+        // 1. Native .node binaries (e.g. @tailwindcss/oxide platform packages)
+        // 2. WASM runtime imports (resolved at runtime from /public, not at build time)
+        // 3. WASM pkg references (from vite-plugin-wasm commonjs transform)
+        external: (id: string) => id.endsWith('.node') || id.startsWith('/wasm/') || id.includes('../pkg'),
         output: {
           manualChunks: {
             'vendor-motion': ['motion'],
@@ -125,5 +136,3 @@ export default defineConfig(({ mode }) => {
     },
   };
 });
-
-
