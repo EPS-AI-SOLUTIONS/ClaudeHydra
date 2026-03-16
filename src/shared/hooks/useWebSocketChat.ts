@@ -30,8 +30,12 @@ import { wsServerMessageSchema } from '@/shared/api/schemas';
 import { env } from '@/shared/config/env';
 import { dispatchViewHint } from '@/shared/hooks/usePredictivePrefetch';
 
-// Re-export shared constants for backward compatibility
+// Re-export shared constants and types for backward compatibility
 export { MAX_RECONNECT_ATTEMPTS } from '@jaskier/chat-module';
+export type { WsStatus } from '@jaskier/chat-module';
+
+/** Derived connection status for UI display */
+export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
 
 // ============================================================================
 // TYPES (CH-specific callback interface)
@@ -131,8 +135,17 @@ export function useWebSocketChat(callbacks: WsCallbacks) {
     [result],
   );
 
+  // Derive a simplified connection status for UI display
+  const connectionStatus: ConnectionStatus =
+    result.status === 'connected'
+      ? 'connected'
+      : result.status === 'reconnecting'
+        ? 'reconnecting'
+        : 'disconnected';
+
   return {
     status: result.status,
+    connectionStatus,
     isStreaming: result.isStreaming,
     streamingSessionId: result.streamingSessionId,
     connectionGaveUp: result.connectionGaveUp,

@@ -33,6 +33,9 @@ primary_region = 'arn'
 [env]
   RUST_LOG = "info"
   RUST_LOG_FORMAT = "json"
+  # Sentry error tracking — set via `fly secrets set SENTRY_DSN=https://...@sentry.io/...`
+  # When unset, Sentry is a zero-cost no-op. Env var listed here for documentation only.
+  # SENTRY_DSN = ""
 
 [[vm]]
   memory = '512mb'

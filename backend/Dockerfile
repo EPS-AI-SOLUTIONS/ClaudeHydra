@@ -57,9 +57,16 @@ COPY services/jaskier-auto-scaler/Cargo.toml ./services/jaskier-auto-scaler/Carg
 COPY services/jaskier-cli/Cargo.toml ./services/jaskier-cli/Cargo.toml
 COPY services/jaskier-vault-mcp/Cargo.toml ./services/jaskier-vault-mcp/Cargo.toml
 # Stub out ALL workspace members (src stubs needed for cargo chef prepare)
-RUN for pkg in ClaudeHydra GeminiHydra Tissaia OpenAIHydra GrokHydra DeepSeekHydra LocalHydra Regis FitPlanner67; do \
+# Apps with only [[bin]] (no [lib]): ClaudeHydra, GeminiHydra, Tissaia, Regis
+# Apps with [lib] (need lib.rs stub): OpenAIHydra, GrokHydra, DeepSeekHydra, LocalHydra, FitPlanner67
+RUN for pkg in ClaudeHydra GeminiHydra Tissaia Regis; do \
       mkdir -p apps/$pkg/backend/src && \
       echo 'fn main() {}' > apps/$pkg/backend/src/main.rs; \
+    done && \
+    for pkg in OpenAIHydra GrokHydra DeepSeekHydra LocalHydra FitPlanner67; do \
+      mkdir -p apps/$pkg/backend/src && \
+      echo 'fn main() {}' > apps/$pkg/backend/src/main.rs && \
+      echo 'pub fn stub() {}' > apps/$pkg/backend/src/lib.rs; \
     done && \
     mkdir -p apps/Vesemir/src && \
     echo 'fn main() {}' > apps/Vesemir/src/main.rs && \
@@ -97,9 +104,16 @@ COPY ClaudeHydra/backend/src ./apps/ClaudeHydra/backend/src
 COPY ClaudeHydra/backend/migrations ./apps/ClaudeHydra/backend/migrations
 # Note: tests/ excluded by .dockerignore — not needed for production binary builds
 # Stub the other workspace members (src only, Cargo.toml already in recipe)
-RUN for pkg in GeminiHydra Tissaia OpenAIHydra GrokHydra DeepSeekHydra LocalHydra Regis FitPlanner67; do \
+# Apps with only [[bin]] (no [lib]): GeminiHydra, Tissaia, Regis
+# Apps with [lib] (need lib.rs stub): OpenAIHydra, GrokHydra, DeepSeekHydra, LocalHydra, FitPlanner67
+RUN for pkg in GeminiHydra Tissaia Regis; do \
       mkdir -p apps/$pkg/backend/src && \
       echo 'fn main() {}' > apps/$pkg/backend/src/main.rs; \
+    done && \
+    for pkg in OpenAIHydra GrokHydra DeepSeekHydra LocalHydra FitPlanner67; do \
+      mkdir -p apps/$pkg/backend/src && \
+      echo 'fn main() {}' > apps/$pkg/backend/src/main.rs && \
+      echo 'pub fn stub() {}' > apps/$pkg/backend/src/lib.rs; \
     done && \
     mkdir -p apps/Vesemir/src && \
     echo 'fn main() {}' > apps/Vesemir/src/main.rs && \
@@ -110,23 +124,4 @@ RUN for pkg in GeminiHydra Tissaia OpenAIHydra GrokHydra DeepSeekHydra LocalHydr
       echo 'fn main() {}' > services/$svc/src/main.rs; \
     done && \
     mkdir -p services/JaskierRAG/proxy/src && \
-    echo 'fn main() {}' > services/JaskierRAG/proxy/src/main.rs
-RUN cargo build --release -p claudehydra-backend --bin claudehydra-backend --bin migrate-credentials-to-vault
-
-# ── Stage 4: Minimal runtime ──
-FROM debian:trixie-slim AS runtime
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl git \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/claudehydra-backend /usr/local/bin/app
-COPY --from=builder /app/target/release/migrate-credentials-to-vault /usr/local/bin/
-COPY ClaudeHydra/backend/migrations ./migrations
-# Skarbiec Krasnali: Credentials now managed by Jaskier Vault.
-# These env vars are optional fallbacks — Vault is the primary credential source.
-# ANTHROPIC_API_KEY, GOOGLE_API_KEY, AUTH_SECRET — set via `fly secrets set` or Vault.
-ENV PORT=8082
-EXPOSE 8082
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8082/api/health || exit 1
-USER 1000
-CMD ["app"]
+    echo 

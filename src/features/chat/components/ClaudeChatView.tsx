@@ -498,6 +498,9 @@ export function ClaudeChatView() {
         activeSessionTitle={activeSession?.title}
         activeSessionCreatedAt={activeSession?.createdAt}
         onClearChat={clearChat}
+        wsConnectionStatus={ws.connectionStatus}
+        wsConnectionGaveUp={ws.connectionGaveUp}
+        onWsReconnect={ws.manualReconnect}
       />
 
       {/* Model fallback notification */}

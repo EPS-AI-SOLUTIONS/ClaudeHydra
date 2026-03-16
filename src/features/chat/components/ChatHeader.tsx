@@ -14,8 +14,10 @@ import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type ModelOption, ModelSelector } from '@/components/molecules/ModelSelector';
+import type { ConnectionStatus } from '@/shared/hooks/useWebSocketChat';
 import { copyToClipboard } from '@/shared/utils/clipboard';
 import { formatDateTime, formatTime } from '@/shared/utils/locale';
+import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import type { ChatMessage } from './MessageBubble';
 
 // ---------------------------------------------------------------------------
@@ -45,6 +47,12 @@ interface ChatHeaderProps {
   activeSessionCreatedAt?: number;
   /** Called when the user clicks Clear. */
   onClearChat: () => void;
+  /** Live WebSocket connection status. */
+  wsConnectionStatus?: ConnectionStatus;
+  /** Whether the WebSocket has given up reconnecting. */
+  wsConnectionGaveUp?: boolean;
+  /** Callback to manually trigger WS reconnection. */
+  onWsReconnect?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,6 +71,9 @@ export const ChatHeader = memo(function ChatHeader({
   activeSessionTitle,
   activeSessionCreatedAt,
   onClearChat,
+  wsConnectionStatus,
+  wsConnectionGaveUp,
+  onWsReconnect,
 }: ChatHeaderProps) {
   const { t } = useTranslation();
   const [sessionCopied, setSessionCopied] = useState(false);
@@ -108,9 +119,18 @@ export const ChatHeader = memo(function ChatHeader({
           <h2 className="text-lg font-semibold text-[var(--matrix-accent)] font-mono">
             {t('chat.title', 'Claude Chat')}
           </h2>
-          <p data-testid="chat-status-text" className="text-xs text-[var(--matrix-text-secondary)]">
-            {claudeConnected ? `${modelCount} models available` : 'Offline — configure API key in Settings'}
-          </p>
+          <div className="flex items-center gap-2">
+            <p data-testid="chat-status-text" className="text-xs text-[var(--matrix-text-secondary)]">
+              {claudeConnected ? `${modelCount} models available` : 'Offline — configure API key in Settings'}
+            </p>
+            {wsConnectionStatus && onWsReconnect && (
+              <ConnectionStatusBadge
+                connectionStatus={wsConnectionStatus}
+                connectionGaveUp={wsConnectionGaveUp ?? false}
+                onReconnect={onWsReconnect}
+              />
+            )}
+          </div>
         </div>
       </div>
 

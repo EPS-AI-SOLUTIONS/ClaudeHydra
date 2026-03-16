@@ -152,6 +152,11 @@ async fn main() -> shuttle_axum::ShuttleAxum {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     app_builder::enable_ansi();
+    // Initialize Sentry before tracing so the sentry-tracing layer can
+    // attach to the already-initialized client. The guard must live until
+    // the end of main() to flush pending events on shutdown.
+    // Opt-in: only active when SENTRY_DSN env var is set.
+    let _sentry_guard = app_builder::init_sentry("claudehydra");
     let log_buffer = app_builder::init_tracing(1000);
 
     dotenvy::dotenv().ok();
