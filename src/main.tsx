@@ -18,8 +18,10 @@ import { useViewStore } from '@/stores/viewStore';
 import '@/i18n';
 import './styles/globals.css';
 
-// Telemetry — loaded async to avoid blocking initial render (~300kB OTel + Zone.js)
-import('@jaskier/core').then(({ initTelemetry }) => {
+// Telemetry — loaded async via subpath to avoid pulling 131KB OTel into critical path.
+// Using '@jaskier/core/telemetry' (NOT '@jaskier/core') ensures Vite splits OTel
+// into a separate chunk that is only fetched when this dynamic import() resolves.
+import('@jaskier/core/telemetry').then(({ initTelemetry }) => {
   initTelemetry({
     serviceName: 'claudehydra-frontend',
   });

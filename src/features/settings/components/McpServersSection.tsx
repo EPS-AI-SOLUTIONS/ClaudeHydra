@@ -103,13 +103,15 @@ function ServerToolsList({ serverId }: { serverId: string }) {
     return <p className={cn('text-xs font-mono pl-6', theme.textMuted)}>{t('common.loading', 'Loading...')}</p>;
   }
 
-  if (!tools?.length) {
+  const toolsList = Array.isArray(tools) ? tools : [];
+
+  if (!toolsList.length) {
     return <p className={cn('text-xs font-mono pl-6', theme.textMuted)}>{t('mcp.noTools', 'No tools discovered')}</p>;
   }
 
   return (
     <div className="pl-6 space-y-1">
-      {tools.map((tool) => (
+      {toolsList.map((tool) => (
         <div key={tool.id} className="flex items-start gap-2">
           <Wrench size={12} className="text-[var(--matrix-accent)] mt-0.5 shrink-0" />
           <div>
@@ -205,7 +207,8 @@ function ServerRow({ server }: { server: McpServer }) {
 export const McpServersSection = memo(() => {
   const { t } = useTranslation();
   const theme = useViewTheme();
-  const { data: servers, isLoading } = useMcpServers();
+  const { data: rawServers, isLoading } = useMcpServers();
+  const servers = Array.isArray(rawServers) ? rawServers : [];
   const [showAddForm, setShowAddForm] = useState(false);
 
   return (
@@ -231,12 +234,12 @@ export const McpServersSection = memo(() => {
 
       {isLoading && <p className={cn('text-xs font-mono', theme.textMuted)}>{t('common.loading', 'Loading...')}</p>}
 
-      {!isLoading && !servers?.length && !showAddForm && (
+      {!isLoading && !servers.length && !showAddForm && (
         <p className={cn('text-xs font-mono', theme.textMuted)}>{t('mcp.noServers', 'No MCP servers configured')}</p>
       )}
 
       <div className="space-y-2">
-        {servers?.map((server) => (
+        {servers.map((server) => (
           <ServerRow key={server.id} server={server} />
         ))}
       </div>
