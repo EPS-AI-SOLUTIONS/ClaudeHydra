@@ -547,7 +547,9 @@ pub fn create_router(state: AppState) -> Router {
         .with_state(state.clone());
 
     // PERF: HTTP latency tracking middleware — records every request duration
+    // PERF: ETag/If-None-Match — returns 304 Not Modified for unchanged GET responses
     gateway_routes.merge(hydra_router)
+        .layer(axum::middleware::from_fn(jaskier_core::etag::etag_middleware))
         .layer(axum::middleware::from_fn_with_state(
             state,
             jaskier_core::profiling::latency_middleware::<AppState>,
@@ -581,6 +583,7 @@ pub fn create_test_router(state: AppState) -> Router {
         .with_state(state.clone());
 
     gateway_routes.merge(hydra_router)
+        .layer(axum::middleware::from_fn(jaskier_core::etag::etag_middleware))
         .layer(axum::middleware::from_fn_with_state(
             state,
             jaskier_core::profiling::latency_middleware::<AppState>,

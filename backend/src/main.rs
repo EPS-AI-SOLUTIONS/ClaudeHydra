@@ -1,5 +1,6 @@
 use http::{Method, header};
 use tower_http::compression::CompressionLayer;
+use tower_http::compression::predicate::{DefaultPredicate, NotForContentType, Predicate};
 use tower_http::cors::CorsLayer;
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::trace::TraceLayer;
@@ -118,7 +119,16 @@ fn build_app(state: AppState) -> axum::Router {
                 )
             }),
         )
-        .layer(CompressionLayer::new())
+        // Skip compression for SSE streams — CompressionLayer buffers chunks,
+        // killing real-time progress for streaming chat, delegations, and OCR.
+        .layer(CompressionLayer::new()
+            .br(true)
+            .gzip(true)
+            .zstd(true)
+            .compress_when(
+                DefaultPredicate::new()
+                    .and(NotForContentType::new("text/event-stream")),
+            ))
 }
 
 // ── Shuttle deployment entry point ──────────────────────────────────

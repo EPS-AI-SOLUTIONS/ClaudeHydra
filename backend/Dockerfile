@@ -124,4 +124,29 @@ RUN for pkg in GeminiHydra Tissaia Regis; do \
       echo 'fn main() {}' > services/$svc/src/main.rs; \
     done && \
     mkdir -p services/JaskierRAG/proxy/src && \
-    echo 
+    echo 'fn main() {}' > services/JaskierRAG/proxy/src/main.rs
+RUN cargo build --release -p claudehydra-backend --bin claudehydra-backend --bin migrate-credentials-to-vault
+
+# Strip debug symbols — reduces binary size by ~40-50%
+RUN strip /app/target/release/claudehydra-backend /app/target/release/migrate-credentials-to-vault
+
+# ── Stage 4: Minimal runtime ──
+FROM debian:trixie-slim AS runtime
+
+# Only install essential runtime deps: ca-certificates (HTTPS), curl (healthcheck)
+# git removed — not needed at runtime (agent git tools use host git via tool calls)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+COPY --from=builder /app/target/release/claudehydra-backend /usr/local/bin/app
+COPY --from=builder /app/target/release/migrate-credentials-to-vault /usr/local/bin/
+COPY ClaudeHydra/backend/migrations ./migrations
+# Skarbiec Krasnali: Credentials now managed by Jaskier Vault.
+# These env vars are optional fallbacks — Vault is the primary credential source.
+# ANTHROPIC_API_KEY, GOOGLE_API_KEY, AUTH_SECRET — set via `fly secrets set` or Vault.
+ENV PORT=8082
+EXPOSE 8082
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8082/api/health || exit 1
+USER 1000
+CMD ["app"]
