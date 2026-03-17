@@ -13,13 +13,9 @@ import { BrowserProxySection } from './BrowserProxySection';
 import { CompactionSection } from './CompactionSection';
 import { CompletionSoundSection } from './CompletionSoundSection';
 import { CustomInstructionsSection } from './CustomInstructionsSection';
-// TODO: Remove after ai_gateway migration complete
-// import { GoogleOAuthSection } from './GoogleOAuthSection';
 import { MaxIterationsSection } from './MaxIterationsSection';
 import { MaxTokensSection } from './MaxTokensSection';
 import { McpServersSection } from './McpServersSection';
-// TODO: Remove after ai_gateway migration complete
-// import { OAuthSection } from './OAuthSection';
 import { TelemetrySection } from './TelemetrySection';
 import { TemperatureSection } from './TemperatureSection';
 import VaultStatusSection from './VaultStatusSection';
@@ -67,21 +63,6 @@ export const SettingsView = memo(() => {
             <WasmEdgePanel />
           </div>
         </Card>
-
-        {/* TODO: Remove after ai_gateway migration complete */}
-        {false && (
-          <>
-            {/* Anthropic OAuth Section */}
-            <Card>
-              <div className="p-6">{/* <OAuthSection /> */}</div>
-            </Card>
-
-            {/* Google OAuth Section */}
-            <Card>
-              <div className="p-6">{/* <GoogleOAuthSection /> */}</div>
-            </Card>
-          </>
-        )}
 
         {/* Working Folder Section */}
         <Card>
