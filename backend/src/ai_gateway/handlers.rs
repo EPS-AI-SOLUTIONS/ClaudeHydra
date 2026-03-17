@@ -19,6 +19,7 @@ use serde_json::{json, Value};
 
 use super::{
     AiProvider, AuthType, HasAiGateway,
+    oauth_flows::OAuthProvider,
     vault_bridge::{HasVaultBridge, VaultError},
 };
 
@@ -356,16 +357,48 @@ where
 
     match config.auth_type {
         AuthType::OAuthPkce => {
-            // TODO: delegate to OAuthFlowManager::initiate_login() once oauth_flows.rs is created
-            tracing::info!(provider = %provider_enum, "initiating OAuth PKCE flow");
-            Json(json!({
-                "provider": provider_enum.to_string(),
-                "auth_type": "oauth_pkce",
-                "status": "login_initiated",
-                "message": format!("OAuth PKCE flow for {} — authorize_url will be provided by OAuthFlowManager", provider_enum),
-                "next_step": "POST /api/ai/providers/{provider}/callback with authorization code",
-            }))
-            .into_response()
+            let oauth_provider = match provider_enum {
+                AiProvider::Anthropic => OAuthProvider::Anthropic,
+                AiProvider::Google => OAuthProvider::Google,
+                _ => {
+                    return Json(json!({
+                        "error": "oauth_not_supported",
+                        "message": format!("{} does not support OAuth PKCE", provider_enum),
+                    }))
+                    .into_response();
+                }
+            };
+
+            let oauth_manager = state.oauth_manager();
+            match oauth_manager.initiate_login(oauth_provider).await {
+                Ok(login_resp) => {
+                    tracing::info!(
+                        provider = %provider_enum,
+                        authorize_url_len = login_resp.authorize_url.len(),
+                        "OAuth PKCE flow initiated via OAuthFlowManager",
+                    );
+                    Json(json!({
+                        "provider": provider_enum.to_string(),
+                        "auth_type": "oauth_pkce",
+                        "status": "login_initiated",
+                        "authorize_url": login_resp.authorize_url,
+                        "state": login_resp.state,
+                        "next_step": "POST /api/ai/providers/{provider}/callback with authorization code",
+                    }))
+                    .into_response()
+                }
+                Err(e) => {
+                    tracing::error!(provider = %provider_enum, error = %e, "OAuth initiation failed");
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({
+                            "error": "oauth_initiation_failed",
+                            "message": e.to_string(),
+                        })),
+                    )
+                        .into_response()
+                }
+            }
         }
         AuthType::SessionToken => {
             tracing::info!(provider = %provider_enum, "session token connection requested");
@@ -418,7 +451,7 @@ where
                 ),
                 "instructions": [
                     format!(
-                        "vault_set(namespace='{}', service='{}', data={{api_key: 'sk-...'}})",
+                        "vault_set(namespace='{}', service='{}', data={{api_key: 'mock-key-...'}})",
                         config.vault_namespace, config.vault_service,
                     ),
                 ],
@@ -493,17 +526,35 @@ where
         "processing OAuth callback",
     );
 
-    // TODO: delegate to OAuthFlowManager::exchange_code() once oauth_flows.rs is created
-    // The exchange result (access_token, refresh_token, expires_at) goes directly to Vault:
-    //   vault_client.store_credential(namespace, service, token_data)
-    // NEVER to PostgreSQL.
+    // Exchange authorization code for tokens via OAuthFlowManager
+    let oauth_manager = state.oauth_manager();
+    let tokens = match oauth_manager.handle_callback(&body.state, &body.code).await {
+        Ok((_oauth_provider, tokens)) => tokens,
+        Err(e) => {
+            tracing::error!(
+                provider = %provider_enum,
+                error = %e,
+                "OAuth code exchange failed",
+            );
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "oauth_exchange_failed",
+                    "message": e.to_string(),
+                })),
+            )
+                .into_response();
+        }
+    };
 
+    // Store exchanged tokens in Vault (NEVER in PostgreSQL)
     let vault = state.vault_client();
     let credential_data = json!({
-        "access_token": "pending_exchange",
-        "refresh_token": "pending_exchange",
-        "state": body.state,
-        "code_received": true,
+        "access_token": tokens.access_token,
+        "refresh_token": tokens.refresh_token,
+        "expires_in": tokens.expires_in,
+        "token_type": tokens.token_type,
+        "scope": tokens.scope,
     });
 
     match vault
@@ -515,11 +566,12 @@ where
         .await
     {
         Ok(()) => {
-            tracing::info!(provider = %provider_enum, "OAuth callback processed — tokens stored in Vault");
+            tracing::info!(provider = %provider_enum, "OAuth tokens exchanged and stored in Vault");
             Json(json!({
                 "provider": provider_enum.to_string(),
                 "status": "connected",
                 "message": "OAuth tokens exchanged and stored in Jaskier Vault.",
+                "expires_in": tokens.expires_in,
             }))
             .into_response()
         }
@@ -645,22 +697,45 @@ where
 
     match config.auth_type {
         AuthType::OAuthPkce => {
-            // TODO: delegate to OAuthFlowManager::refresh_token() once oauth_flows.rs is created
-            Json(json!({
-                "provider": provider_enum.to_string(),
-                "status": "refresh_initiated",
-                "auth_type": "oauth_pkce",
-                "message": "OAuth token refresh initiated. Tokens will be updated in Vault.",
-            }))
-            .into_response()
+            // Vault uses zero-trust: raw tokens (including refresh_token) are
+            // never exposed to the backend via MaskedCredential. Token refresh
+            // must go through a full reconnect flow.
+            //
+            // Check if the credential is still connected — if so, verify via
+            // a lightweight test; otherwise instruct reconnection.
+            let vault = state.vault_client();
+            let status = vault.get_provider_status(&provider).await;
+
+            if status.is_connected {
+                Json(json!({
+                    "provider": provider_enum.to_string(),
+                    "status": "valid",
+                    "auth_type": "oauth_pkce",
+                    "message": "OAuth credential is currently valid. If expired, reconnect via /connect.",
+                    "last_verified": status.last_verified,
+                    "expires_at": status.expires_at,
+                }))
+                .into_response()
+            } else {
+                Json(json!({
+                    "provider": provider_enum.to_string(),
+                    "status": "reconnect_required",
+                    "auth_type": "oauth_pkce",
+                    "message": "OAuth credential expired or not found. Reconnect via POST /api/ai/providers/{provider}/connect.",
+                    "action": format!("POST /api/ai/providers/{}/connect", provider_enum),
+                }))
+                .into_response()
+            }
         }
         AuthType::SessionToken | AuthType::CookieSession => {
-            // TODO: delegate to SessionManager::refresh_session() once session_manager.rs is created
+            // Session-based providers require browser proxy re-login; no automated refresh available.
+            // See: POST /api/browser-proxy/login for manual session renewal.
             Json(json!({
                 "provider": provider_enum.to_string(),
-                "status": "refresh_initiated",
+                "status": "manual_refresh_required",
                 "auth_type": config.auth_type.to_string(),
                 "message": "Session refresh requires browser proxy re-login. Trigger via /api/browser-proxy/login.",
+                "action": "POST /api/browser-proxy/login",
             }))
             .into_response()
         }

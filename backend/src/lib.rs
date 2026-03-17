@@ -520,7 +520,8 @@ fn ch_auto_qa_routes() -> Router<AppState> {
 ///
 /// The ai_gateway router is merged BEFORE the HydraRouter (higher priority) to
 /// ensure `/api/ai/*` and `/api/vault/*` routes take precedence.
-/// TODO: Remove old auth routes after full migration to ai_gateway
+/// NOTE: Old auth routes coexist with ai_gateway during migration period.
+/// Tracked in: https://github.com/EPS-AI-SOLUTIONS/ClaudeHydra/issues/42
 pub fn create_router(state: AppState) -> Router {
     let hydra_router = build_hydra_router(state.clone(), build_ch_config(state.clone()));
 

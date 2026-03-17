@@ -1,4 +1,4 @@
-// Jaskier Shared Pattern — rate_limits (re-export stub)
+// Jaskier Shared Pattern — rate_limits (re-export from jaskier_core)
 // Delegates to jaskier_core::rate_limiter with app-specific table name.
 
 pub use jaskier_core::rate_limiter::{

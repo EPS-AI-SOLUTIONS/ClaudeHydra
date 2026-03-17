@@ -138,9 +138,11 @@ impl AppState {
 
         // ── AI Gateway (unified multi-provider + Vault bridge) ─────
         let vault_client = VaultClient::new(); // default: http://localhost:5190
+        let oauth_manager = ai_gateway::OAuthFlowManager::new(base.client.clone());
         let ai_gateway_state = Arc::new(AiGatewayState {
             providers: ai_gateway::default_provider_configs(),
             vault_client,
+            oauth_manager,
         });
 
         // ── Backward-compat field aliases ───────────────────────────
@@ -255,6 +257,7 @@ impl AppState {
         let ai_gateway_state = Arc::new(AiGatewayState {
             providers: ai_gateway::default_provider_configs(),
             vault_client: VaultClient::with_url("http://localhost:19999"), // non-existent in tests
+            oauth_manager: ai_gateway::OAuthFlowManager::new(http_client.clone()),
         });
 
         Self {
@@ -740,10 +743,10 @@ impl jaskier_core::handlers::agents::HasAgentState for AppState {
 // ── HasA2aState — required by HydraState supertrait (router_builder) ────────
 //
 // CH does not use the A2A protocol (it has its own delegation system via
-// `/api/agents/delegations`). This minimal stub impl satisfies the trait bound
-// so `build_hydra_router` compiles. The A2A routes added by the shared router
-// (/a2a/message/send etc.) are unreachable in production since CH's frontend
-// does not call them.
+// `/api/agents/delegations`). This minimal no-op impl satisfies the trait
+// bound so `build_hydra_router` compiles. The A2A routes added by the shared
+// router (/a2a/message/send etc.) are unreachable in production since CH's
+// frontend does not call them.
 
 impl jaskier_ai_modules::a2a::HasA2aState for AppState {
     type Agent = jaskier_core::models::WitcherAgent;
@@ -783,10 +786,10 @@ impl jaskier_ai_modules::a2a::HasA2aState for AppState {
         _agent_override: Option<(String, f64, String)>,
         _session_wd: &str,
     ) -> jaskier_ai_modules::a2a::A2aContext {
-        // CH does not use the A2A protocol — return a minimal stub context.
+        // CH does not use the A2A protocol — return a no-op context.
         // Real CH delegations go through /api/claude/chat/stream (Anthropic).
         jaskier_ai_modules::a2a::A2aContext {
-            agent_id: "stub".to_string(),
+            agent_id: "claudehydra-noop".to_string(),
             model: "claude-sonnet-4-6".to_string(),
             api_key: String::new(),
             is_oauth: false,

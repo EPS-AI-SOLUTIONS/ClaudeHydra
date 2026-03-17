@@ -98,6 +98,8 @@ pub struct AiGatewayState {
     pub providers: HashMap<AiProvider, ProviderConfig>,
     /// Client for communicating with Jaskier Vault (The Sentinel).
     pub vault_client: vault_bridge::VaultClient,
+    /// Unified OAuth PKCE flow manager for all providers.
+    pub oauth_manager: oauth_flows::OAuthFlowManager,
 }
 
 // ── HasAiGateway trait ────────────────────────────────────────────────────────
@@ -111,6 +113,11 @@ pub trait HasAiGateway: Send + Sync + 'static {
     /// Convenience: look up a single provider's config.
     fn provider_config(&self, provider: AiProvider) -> Option<&ProviderConfig> {
         self.ai_gateway().providers.get(&provider)
+    }
+
+    /// Access the unified OAuth PKCE flow manager.
+    fn oauth_manager(&self) -> &oauth_flows::OAuthFlowManager {
+        &self.ai_gateway().oauth_manager
     }
 }
 

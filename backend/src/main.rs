@@ -167,7 +167,7 @@ async fn main() -> anyhow::Result<()> {
     // the end of main() to flush pending events on shutdown.
     // Opt-in: only active when SENTRY_DSN env var is set.
     let _sentry_guard = app_builder::init_sentry("claudehydra");
-    let log_buffer = app_builder::init_tracing(1000);
+    let log_buffer = app_builder::init_tracing_with_service_name(1000, "claudehydra");
 
     dotenvy::dotenv().ok();
 

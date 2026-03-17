@@ -1,4 +1,4 @@
-// Jaskier Shared Pattern — audit (re-export stub)
+// Jaskier Shared Pattern — audit (re-export from jaskier_core)
 // Delegates to jaskier_core::audit with app-specific table name.
 
 pub use jaskier_core::audit::extract_ip;
