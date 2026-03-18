@@ -50,5 +50,5 @@ call "%LIB%" :toast "ClaudeHydra v4" "DEV server starting on port 5199"
 
 :: Start frontend dev server
 echo !CYAN![DEV]!RESET! Starting frontend dev server on port 5199...
-endlocal && cd /d "%~dp0" && pnpm run dev
+endlocal && cd /d "%~dp0" && bun run dev
 

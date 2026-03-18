@@ -11,7 +11,7 @@ export interface CollabPeer {
   isAgent: boolean;
 }
 
-export interface UseCollabDocumentOptions {
+interface UseCollabDocumentOptions {
   /** Application ID (e.g., "claudehydra") */
   appId: string;
   /** Document key (e.g., session ID) */
@@ -28,7 +28,7 @@ export interface UseCollabDocumentOptions {
   autoConnect?: boolean;
 }
 
-export interface UseCollabDocumentReturn {
+interface UseCollabDocumentReturn {
   /** The Yjs document instance */
   doc: Y.Doc;
   /** The shared text type (main content) */
@@ -154,10 +154,8 @@ export function useCollabDocument(options: UseCollabDocumentOptions): UseCollabD
 
       states.forEach((state, clientId) => {
         if (clientId === doc.clientID) return;
-        // biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation (TS4111)
         const user = state['user'] as { name?: string; color?: string; isAgent?: boolean } | undefined;
         if (user) {
-          // biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation (TS4111)
           const cursor = state['cursor'] as { anchor?: number; head?: number } | undefined;
           peerList.push({
             clientId,

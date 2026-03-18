@@ -44,7 +44,7 @@ interface NodeData {
   peerId?: string;
 }
 
-export function AgentNode({ data }: { data: NodeData }) {
+function AgentNode({ data }: { data: NodeData }) {
   return (
     <div style={{ ...nodeStyle, border: '2px solid #3b82f6' }}>
       <Handle type="target" position={Position.Top} />
@@ -58,7 +58,7 @@ export function AgentNode({ data }: { data: NodeData }) {
   );
 }
 
-export function McpNode({ data }: { data: NodeData }) {
+function McpNode({ data }: { data: NodeData }) {
   return (
     <div style={{ ...nodeStyle, border: '2px solid #eab308' }}>
       <Handle type="target" position={Position.Top} />
@@ -72,7 +72,7 @@ export function McpNode({ data }: { data: NodeData }) {
   );
 }
 
-export function DbNode({ data }: { data: NodeData }) {
+function DbNode({ data }: { data: NodeData }) {
   return (
     <div style={{ ...nodeStyle, border: '2px solid #22c55e' }}>
       <Handle type="target" position={Position.Top} />
@@ -86,7 +86,7 @@ export function DbNode({ data }: { data: NodeData }) {
   );
 }
 
-export function SandboxNode({ data }: { data: NodeData }) {
+function SandboxNode({ data }: { data: NodeData }) {
   return (
     <div style={{ ...nodeStyle, border: '2px solid #10b981', background: '#0f2e1f' }}>
       <Handle type="target" position={Position.Top} />
@@ -132,7 +132,7 @@ interface MediaEdgeProps {
   markerEnd?: string;
 }
 
-export function MediaEdge({
+function MediaEdge({
   id,
   sourceX,
   sourceY,
@@ -340,7 +340,6 @@ export function SwarmBuilder({ events = [] }: { events?: SwarmEventType[] }) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  // biome-ignore lint/suspicious/noExplicitAny: ReactFlow instance type is complex and internal
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [isRunning, setIsRunning] = useState(false);
   const { delegate } = useSwarm();
@@ -475,7 +474,6 @@ export function SwarmBuilder({ events = [] }: { events?: SwarmEventType[] }) {
     const currentEdges = reactFlowInstance.getEdges();
 
     // Find all agent nodes in the graph
-    // biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation (TS4111)
     const agentNodes = currentNodes.filter((n: Node) => n.type === 'agent' && n.data?.['peerId']);
 
     if (agentNodes.length === 0) {
@@ -483,7 +481,6 @@ export function SwarmBuilder({ events = [] }: { events?: SwarmEventType[] }) {
       return;
     }
 
-    // biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation (TS4111)
     const targets = agentNodes.map((n: Node) => n.data['peerId']);
     const prompt = window.prompt('Enter task prompt for the selected agents:');
 

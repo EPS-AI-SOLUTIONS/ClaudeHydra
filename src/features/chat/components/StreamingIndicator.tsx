@@ -12,7 +12,7 @@ import { memo } from 'react';
 // Types
 // ---------------------------------------------------------------------------
 
-export interface StreamingIndicatorProps {
+interface StreamingIndicatorProps {
   /** Whether a streaming response is currently active. */
   isStreaming: boolean;
 }

@@ -13,7 +13,6 @@ export const queryClient = new QueryClient({
       retry: (failureCount, error) => {
         // Don't retry on 4xx errors or avoid multiple retries on 500
         if (error instanceof Error && 'status' in error) {
-          // biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation (TS4111)
           const status = (error as Record<string, unknown>)['status'] as number;
           if (status >= 400 && status < 500) return false;
           if (status >= 500) return failureCount < 1; // max 1 retry for 500 errors

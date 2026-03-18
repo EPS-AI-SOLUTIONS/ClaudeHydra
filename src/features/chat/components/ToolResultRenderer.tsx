@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 // Types
 // ---------------------------------------------------------------------------
 
-export interface ToolResultRendererProps {
+interface ToolResultRendererProps {
   /** Parsed tool output segments to render. */
   segments: ToolSegment[];
   /** Whether the current theme is light mode. */
@@ -45,8 +45,6 @@ export const ToolResultRenderer = memo<ToolResultRendererProps>(({ segments, isL
           key={`tool-${segment.name}-${segment.content.slice(0, 20)}`}
           className={cn('my-2 rounded-lg border', detailsClasses)}
         >
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: summary is natively interactive in details */}
-          {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-expanded needed for screen readers */}
           <summary
             aria-expanded="false"
             tabIndex={0}

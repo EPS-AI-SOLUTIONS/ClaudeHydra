@@ -14,7 +14,7 @@ const providerInfoSchema = z.object({
   available: z.boolean(),
 });
 
-export const healthSchema = z.object({
+const healthSchema = z.object({
   status: z.string(),
   version: z.string(),
   uptime_seconds: z.number(),
@@ -27,7 +27,7 @@ export type Health = z.infer<typeof healthSchema>;
 // System Stats
 // ---------------------------------------------------------------------------
 
-export const systemStatsSchema = z.object({
+const systemStatsSchema = z.object({
   cpu_usage: z.number(),
   memory_used_mb: z.number(),
   memory_total_mb: z.number(),
@@ -42,7 +42,7 @@ export type SystemStats = z.infer<typeof systemStatsSchema>;
 // Agents
 // ---------------------------------------------------------------------------
 
-export const agentSchema = z.object({
+const agentSchema = z.object({
   id: z.string(),
   name: z.string(),
   role: z.string(),
@@ -61,7 +61,7 @@ export const agentsListSchema = z.array(agentSchema);
 // Claude Models
 // ---------------------------------------------------------------------------
 
-export const claudeModelSchema = z.object({
+const claudeModelSchema = z.object({
   id: z.string(),
   name: z.string(),
   tier: z.string(),
@@ -77,7 +77,7 @@ export const claudeModelsSchema = z.array(claudeModelSchema);
 // Claude Chat
 // ---------------------------------------------------------------------------
 
-export const usageSchema = z.object({
+const usageSchema = z.object({
   input_tokens: z.number(),
   output_tokens: z.number(),
 });
@@ -94,7 +94,7 @@ export const claudeChatResponseSchema = z.object({
 // Settings
 // ---------------------------------------------------------------------------
 
-export const settingsSchema = z.object({
+const settingsSchema = z.object({
   default_model: z.string(),
   temperature: z.number(),
   max_tokens: z.number(),
@@ -123,7 +123,7 @@ export type Settings = z.infer<typeof settingsSchema>;
 // OAuth Status
 // ---------------------------------------------------------------------------
 
-export const oauthStatusSchema = z.object({
+const oauthStatusSchema = z.object({
   authenticated: z.boolean(),
   expired: z.boolean().optional(),
   expires_at: z.number().optional(),
@@ -132,14 +132,14 @@ export const oauthStatusSchema = z.object({
 
 export type OAuthStatus = z.infer<typeof oauthStatusSchema>;
 
-export const oauthLoginResponseSchema = z.object({
+const oauthLoginResponseSchema = z.object({
   auth_url: z.string(),
   state: z.string(),
 });
 
 export type OAuthLoginResponse = z.infer<typeof oauthLoginResponseSchema>;
 
-export const oauthCallbackResponseSchema = z.object({
+const oauthCallbackResponseSchema = z.object({
   status: z.string(),
   authenticated: z.boolean(),
   expires_at: z.number(),
@@ -151,7 +151,7 @@ export type OAuthCallbackResponse = z.infer<typeof oauthCallbackResponseSchema>;
 // Messages
 // ---------------------------------------------------------------------------
 
-export const messageSchema = z.object({
+const messageSchema = z.object({
   role: z.string(),
   content: z.string(),
   model: z.string().optional(),
@@ -163,7 +163,7 @@ export type Message = z.infer<typeof messageSchema>;
 // Sessions
 // ---------------------------------------------------------------------------
 
-export const sessionSummarySchema = z.object({
+const sessionSummarySchema = z.object({
   id: z.string(),
   title: z.string(),
   created_at: z.string(),
@@ -179,7 +179,7 @@ const sessionsListSchema = z.array(sessionSummarySchema);
 
 export type SessionsList = z.infer<typeof sessionsListSchema>;
 
-export const sessionSchema = z.object({
+const sessionSchema = z.object({
   id: z.string(),
   title: z.string(),
   created_at: z.string(),
@@ -194,14 +194,14 @@ export type Session = z.infer<typeof sessionSchema>;
 // OCR
 // ---------------------------------------------------------------------------
 
-export const ocrPageSchema = z.object({
+const ocrPageSchema = z.object({
   page_number: z.number(),
   text: z.string(),
 });
 
 export type OcrPage = z.infer<typeof ocrPageSchema>;
 
-export const ocrResponseSchema = z.object({
+const ocrResponseSchema = z.object({
   text: z.string(),
   pages: z.array(ocrPageSchema),
   total_pages: z.number(),

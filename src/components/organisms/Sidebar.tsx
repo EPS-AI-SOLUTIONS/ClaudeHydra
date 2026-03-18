@@ -575,7 +575,6 @@ export function Sidebar() {
   }, [isMobile, setSidebarCollapsed]);
 
   // Auto-close mobile drawer on view change (currentView is intentional trigger)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: currentView triggers close on navigation
   useEffect(() => {
     if (isMobile) setMobileDrawerOpen(false);
   }, [currentView, isMobile, setMobileDrawerOpen]);

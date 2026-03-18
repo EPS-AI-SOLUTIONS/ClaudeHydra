@@ -91,7 +91,6 @@ function PeerNode({ data }: { data: { peer: SwarmPeer; isSelf: boolean } }) {
           height: '10px',
           borderRadius: '50%',
           background: STATUS_COLORS[peer.status] || '#6b7280',
-          // biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation (TS4111)
           boxShadow: peer.status === 'online' ? `0 0 8px ${STATUS_COLORS['online']}` : 'none',
         }}
       />
@@ -335,7 +334,6 @@ export function SwarmView() {
               <Controls style={{ background: '#1e293b', borderColor: '#334155' }} />
               <MiniMap
                 nodeColor={(node) => {
-                  // biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation (TS4111)
                   const peer = node.data?.['peer'] as SwarmPeer | undefined;
                   if (!peer) return '#6b7280';
                   return STATUS_COLORS[peer.status] || '#6b7280';

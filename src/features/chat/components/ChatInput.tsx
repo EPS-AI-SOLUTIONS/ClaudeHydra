@@ -33,7 +33,7 @@ export interface Attachment {
   mimeType: string;
 }
 
-export interface ChatInputProps {
+interface ChatInputProps {
   onSend: (message: string, attachments: Attachment[]) => void;
   disabled?: boolean;
   isLoading?: boolean;

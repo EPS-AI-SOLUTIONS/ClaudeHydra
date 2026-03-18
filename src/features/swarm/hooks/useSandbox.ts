@@ -11,10 +11,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 export type SandboxLanguage = 'node' | 'python' | 'rust' | 'bash';
 
-export type SandboxStatus = 'creating' | 'ready' | 'running' | 'stopped' | 'error';
-export type ExecutionStatus = 'success' | 'error' | 'timeout' | 'container_error';
+type SandboxStatus = 'creating' | 'ready' | 'running' | 'stopped' | 'error';
+type ExecutionStatus = 'success' | 'error' | 'timeout' | 'container_error';
 
-export interface ResourceLimits {
+interface ResourceLimits {
   memory_mb: number;
   cpu_shares: number;
   timeout_secs: number;
@@ -46,7 +46,7 @@ export interface SandboxExecution {
   executed_at: string;
 }
 
-export interface SandboxHealth {
+interface SandboxHealth {
   docker_available: boolean;
   active_sessions: number;
   total_executions: number;

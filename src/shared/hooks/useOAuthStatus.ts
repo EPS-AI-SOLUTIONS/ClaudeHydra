@@ -10,9 +10,9 @@ import type { OAuthCallbackResponse, OAuthLoginResponse, OAuthStatus } from '@/s
 const OAUTH_DISMISSED_KEY = 'jaskier_oauth_dismissed';
 const OAUTH_QUERY_KEY = ['oauth-status'] as const;
 
-export type OAuthPhase = 'idle' | 'waiting_code' | 'exchanging' | 'authenticated' | 'error';
+type OAuthPhase = 'idle' | 'waiting_code' | 'exchanging' | 'authenticated' | 'error';
 
-export interface UseOAuthStatusReturn {
+interface UseOAuthStatusReturn {
   status: OAuthStatus | undefined;
   isLoading: boolean;
   phase: OAuthPhase;

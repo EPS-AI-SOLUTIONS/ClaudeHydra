@@ -446,7 +446,6 @@ export function AgentsView() {
               <div className="text-[var(--matrix-text-secondary)] italic">Awaiting logs...</div>
             )}
             {logs.map((entry: BackendLogEntry, i: number) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: Logs can share timestamp, array index needed for uniqueness
               <div key={`${entry.timestamp}-${i}`} className="flex items-start gap-2 break-all">
                 <span className="text-[var(--matrix-text-secondary)] opacity-50 shrink-0">
                   {formatTimestamp(entry.timestamp)}

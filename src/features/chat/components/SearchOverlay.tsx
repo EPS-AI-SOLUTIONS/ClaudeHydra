@@ -63,7 +63,6 @@ export function SearchOverlay({ messages, onMatchChange, onClose }: SearchOverla
   }, [matches, currentMatchIdx, onMatchChange]);
 
   // Reset index when debounced query changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: debouncedQuery is intentional — resets match index whenever the search query settles
   useEffect(() => {
     setCurrentMatchIdx(0);
   }, [debouncedQuery]);

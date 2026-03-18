@@ -8,9 +8,9 @@ import { useAuthStatus } from '@jaskier/core';
 import { apiDelete, apiGet, apiPost } from '@/shared/api/client';
 
 // Re-export phase type for backward compatibility
-export type GoogleAuthPhase = AuthPhase;
+type GoogleAuthPhase = AuthPhase;
 
-export interface GoogleAuthStatus {
+interface GoogleAuthStatus {
   authenticated: boolean;
   method?: 'oauth' | 'api_key' | 'env';
   expired?: boolean;
@@ -20,7 +20,7 @@ export interface GoogleAuthStatus {
   oauth_available?: boolean;
 }
 
-export interface UseGoogleAuthStatusReturn {
+interface UseGoogleAuthStatusReturn {
   status: GoogleAuthStatus | undefined;
   isLoading: boolean;
   phase: GoogleAuthPhase;

@@ -15,7 +15,7 @@ export interface DailyTokenUsage {
   request_count: number;
 }
 
-export interface TokenUsageResponse {
+interface TokenUsageResponse {
   data: DailyTokenUsage[];
   days: number;
 }
@@ -29,7 +29,7 @@ export interface DailyLatency {
   request_count: number;
 }
 
-export interface LatencyResponse {
+interface LatencyResponse {
   data: DailyLatency[];
   days: number;
 }
@@ -42,7 +42,7 @@ export interface ModelSuccessRate {
   success_rate: number;
 }
 
-export interface SuccessRateResponse {
+interface SuccessRateResponse {
   data: ModelSuccessRate[];
   days: number;
 }
@@ -54,7 +54,7 @@ export interface ToolUsageStat {
   avg_duration_ms: number | null;
 }
 
-export interface TopToolsResponse {
+interface TopToolsResponse {
   data: ToolUsageStat[];
   days: number;
   limit: number;
@@ -70,7 +70,7 @@ export interface CostBreakdown {
   total_cost_usd: number;
 }
 
-export interface CostResponse {
+interface CostResponse {
   data: CostBreakdown[];
   total_cost_usd: number;
   projected_monthly_usd: number;

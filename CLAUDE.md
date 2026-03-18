@@ -242,7 +242,7 @@
 - **Metrics endpoint**: `/api/metrics` (Prometheus format) -- request count, latency histogram, cache stats, swarm peer count, active sessions
 
 ## Process Compose (R13, 2026-03-15)
-- **19 processes** with health probes: backend, frontend, PostgreSQL, Qdrant, gemini-browser-proxy, 6 Hydra apps, JaskierMCP v3.0, JaskierVaultMCP, JaskierNotifierMCP, JaskierKnowledge, JaskierRAG, Vesemir, worklog-api
+- **20 processes** with health probes: 6 backends (ClaudeHydra, GeminiHydra, Tissaia, GrokHydra, OpenAIHydra, DeepSeekHydra), 6 frontends, 3 Docker DB instances, vault-mcp (Rust), jaskier-knowledge, neo4j, monitoring-stack, docker-engine, pre-warm-cargo/turbo
 - **Health probes**: HTTP GET on `/api/health` for all backends, TCP for databases
 - **JaskierMCP v3.0**: 17 tools (up from 12), new: semantic search, knowledge graph query, workspace stats, process health, batch operations
 

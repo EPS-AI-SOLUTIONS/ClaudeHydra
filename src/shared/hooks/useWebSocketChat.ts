@@ -41,7 +41,7 @@ export type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
 // TYPES (CH-specific callback interface)
 // ============================================================================
 
-export interface WsCallbacks {
+interface WsCallbacks {
   onStart?: (msg: WsStartMessage, sessionId: string | null) => void;
   onToken?: (content: string, sessionId: string | null) => void;
   onToolCall?: (msg: WsToolCallMessage, sessionId: string | null) => void;

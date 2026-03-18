@@ -10,7 +10,7 @@ import { apiGet, apiPost } from '@/shared/api/client';
 // Types
 // ---------------------------------------------------------------------------
 
-export interface ProviderInfo {
+interface ProviderInfo {
   provider: string;
   plan_name: string;
   auth_type: 'oauth_pkce' | 'session_token' | 'cookie_session' | 'api_key_via_vault' | 'none';
@@ -21,13 +21,13 @@ export interface ProviderInfo {
   last_error: string | null;
 }
 
-export interface ConnectResponse {
+interface ConnectResponse {
   authorize_url?: string;
   message?: string;
   provider: string;
 }
 
-export interface TestResult {
+interface TestResult {
   success: boolean;
   latency_ms: number;
   model_used?: string;

@@ -10,11 +10,7 @@ import { useViewStore } from '../viewStore';
 const getState = () => useViewStore.getState();
 
 /** Shorthand to call an action */
-const act = <K extends keyof ReturnType<typeof useViewStore.getState>>(
-  key: K,
-  // biome-ignore lint: any needed for generic action invocation
-  ...args: any[]
-) => {
+const act = <K extends keyof ReturnType<typeof useViewStore.getState>>(key: K, ...args: any[]) => {
   const fn = getState()[key];
   if (typeof fn === 'function') return (fn as (...a: unknown[]) => unknown)(...args);
   throw new Error(`${String(key)} is not a function`);

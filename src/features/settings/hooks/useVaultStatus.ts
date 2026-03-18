@@ -6,7 +6,12 @@ import { VAULT_API, VAULT_POLLING, VAULT_QUERY_KEYS } from '@jaskier/vault-clien
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost } from '@/shared/api/client';
 
-export type { AuditEntry, VaultHealth } from '@jaskier/vault-client';
+type;
+{
+  AuditEntry, VaultHealth;
+}
+from;
+('@jaskier/vault-client');
 
 // ---------------------------------------------------------------------------
 // Hook

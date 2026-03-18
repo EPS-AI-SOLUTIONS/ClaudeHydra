@@ -50,7 +50,7 @@ function isDynamicImportError(error: Error | null): boolean {
 // COMPONENT
 // ============================================================================
 
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };

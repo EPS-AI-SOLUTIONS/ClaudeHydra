@@ -98,10 +98,8 @@ function AppShellInner({ children }: AppShellProps) {
       connectionHealth,
       ...(displayModel && { selectedModel: displayModel }),
       ...(raw && {
-        // biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation (TS4111)
         cpuUsage: Math.round(raw['cpu_usage_percent'] ?? raw['cpu_usage'] ?? 0),
         ramUsage: Math.round(
-          // biome-ignore lint/complexity/useLiteralKeys: index signature requires bracket notation (TS4111)
           ((raw['memory_used_mb'] ?? raw['memory_used'] ?? 0) / (raw['memory_total_mb'] ?? raw['memory_total'] ?? 1)) *
             100,
         ),

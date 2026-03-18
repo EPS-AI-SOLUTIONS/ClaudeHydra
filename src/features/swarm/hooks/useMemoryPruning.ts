@@ -10,7 +10,7 @@ const API_BASE = '/api/memory/prune';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export interface PruningMetrics {
+interface PruningMetrics {
   total_cycles: number;
   total_deleted: number;
   total_merged: number;
@@ -21,7 +21,7 @@ export interface PruningMetrics {
   uptime_seconds: number;
 }
 
-export interface PruningStatsResponse {
+interface PruningStatsResponse {
   metrics: PruningMetrics;
   is_running: boolean;
 }
@@ -51,7 +51,7 @@ export interface PruneLogEntry {
   tokens_after: number;
 }
 
-export interface PruningConfig {
+interface PruningConfig {
   enabled: boolean;
   similarity_threshold: number;
   min_age_hours: number;

@@ -47,7 +47,7 @@ function releaseClient(): void {
   }
 }
 
-export interface UseWasmWorkerResult {
+interface UseWasmWorkerResult {
   /** Whether the WASM module is loaded and ready */
   isReady: boolean;
   /** WASM module version */

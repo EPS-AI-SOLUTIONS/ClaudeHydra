@@ -53,7 +53,7 @@ call "%LIB%" :health_check 8082 15
 
 :: Build frontend
 echo !CYAN![BUILD]!RESET! Building frontend...
-call pnpm run build
+call bun run build
 
 :: Open Chrome in app mode
 start "" chrome --app=http://localhost:4199
@@ -63,5 +63,5 @@ call "%LIB%" :toast "ClaudeHydra v4" "Release preview on port 4199"
 
 :: Start preview (foreground)
 echo !CYAN![PREVIEW]!RESET! Starting preview on port 4199...
-endlocal && cd /d "%~dp0" && pnpm run preview
+endlocal && cd /d "%~dp0" && bun run preview
 

@@ -64,7 +64,7 @@ function EmptyChatState({ onSuggestionSelect }: { onSuggestionSelect: (text: str
 // Types
 // ---------------------------------------------------------------------------
 
-export interface VirtualizedMessageAreaProps {
+interface VirtualizedMessageAreaProps {
   messages: ChatMessage[];
   welcomeMessage?: string;
   setChatRef: (el: HTMLDivElement | null) => void;
@@ -133,7 +133,6 @@ export const VirtualizedMessageArea = memo<VirtualizedMessageAreaProps>(function
   // Also scroll when the last message is streaming (content changing)
   const lastMessage = messages[messages.length - 1];
   const isLastStreaming = lastMessage?.streaming;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lastMessage?.content.length is intentional — triggers scroll on each streaming token
   useEffect(() => {
     if (isLastStreaming && messages.length > 0) {
       virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });

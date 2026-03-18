@@ -10,7 +10,7 @@ const API_BASE = '/api/semantic-cache';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export interface CacheMetrics {
+interface CacheMetrics {
   total_queries: number;
   exact_hits: number;
   partial_hits: number;
@@ -23,26 +23,26 @@ export interface CacheMetrics {
   uptime_seconds: number;
 }
 
-export interface CollectionStats {
+interface CollectionStats {
   points_count: number;
   segments_count: number;
   status: string;
   vectors_count: number;
 }
 
-export interface CacheStatsResponse {
+interface CacheStatsResponse {
   metrics: CacheMetrics;
   collection: CollectionStats | null;
 }
 
-export interface CacheHealthResponse {
+interface CacheHealthResponse {
   qdrant_reachable: boolean;
   embedding_configured: boolean;
   cache_enabled: boolean;
   collection_exists: boolean;
 }
 
-export interface CacheConfig {
+interface CacheConfig {
   qdrant_url: string;
   collection_name: string;
   embedding_model: string;
@@ -67,7 +67,7 @@ export interface CacheEntry {
   ttl_expires_at: string;
 }
 
-export interface CacheEntriesResponse {
+interface CacheEntriesResponse {
   entries: CacheEntry[];
   next_offset: string | null;
   total_estimate: number;

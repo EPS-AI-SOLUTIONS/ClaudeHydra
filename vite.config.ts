@@ -1,8 +1,9 @@
 /// <reference types="vitest/config" />
+
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
-import { join, resolve } from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import type { Plugin } from 'vite';
 import { defineConfig, loadEnv } from 'vite';

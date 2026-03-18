@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export interface SwarmAttachment {
+interface SwarmAttachment {
   contentType: string;
   url: string;
   name?: string;
@@ -42,7 +42,7 @@ export interface SwarmTaskSummary {
   attachments?: SwarmAttachment[];
 }
 
-export interface SwarmResult {
+interface SwarmResult {
   peer_id: string;
   peer_name: string;
   agent_id: string | null;
@@ -56,7 +56,7 @@ export interface SwarmResult {
   completed_at: string;
 }
 
-export interface SwarmTask {
+interface SwarmTask {
   id: string;
   pattern: string;
   source_peer: string;

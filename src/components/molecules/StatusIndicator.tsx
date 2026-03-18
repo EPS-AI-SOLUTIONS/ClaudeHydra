@@ -18,7 +18,7 @@ import type { HTMLAttributes } from 'react';
 // ---------------------------------------------------------------------------
 
 export type StatusState = 'online' | 'offline' | 'pending' | 'error';
-export type StatusSize = 'sm' | 'md';
+type StatusSize = 'sm' | 'md';
 
 interface StatusIndicatorProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Current status state. */

@@ -158,7 +158,6 @@ export const LogsView = memo(() => {
               <div className="space-y-0.5 max-h-[65vh] overflow-y-auto">
                 {logs.map((entry: BackendLogEntry, i: number) => (
                   <div
-                    // biome-ignore lint/suspicious/noArrayIndexKey: Logs can share timestamp, array index needed for uniqueness
                     key={`${entry.timestamp}-${i}`}
                     className={cn(
                       'flex items-start gap-3 px-3 py-2 rounded-lg transition-colors',

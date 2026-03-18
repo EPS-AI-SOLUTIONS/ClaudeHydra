@@ -20,7 +20,9 @@ const {
 });
 
 export const useViewStore = useBaseStore;
-export { useCurrentChatHistory, useCurrentSession, useCurrentSessionId };
+{
+  useCurrentChatHistory, useCurrentSession, useCurrentSessionId;
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

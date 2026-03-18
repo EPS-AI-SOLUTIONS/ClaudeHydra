@@ -150,7 +150,6 @@ export function CommandPalette() {
 
   return createPortal(
     <>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop overlay — click dismisses modal */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
         onClick={() => setOpen(false)}

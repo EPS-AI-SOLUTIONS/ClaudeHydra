@@ -353,7 +353,6 @@ export const TabBar = memo(() => {
             if (!targetTab) return null;
             return (
               <>
-                {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop overlay — click dismisses context menu */}
                 <div
                   className="fixed inset-0 z-50"
                   onClick={() => setContextMenu(null)}

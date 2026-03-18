@@ -11,12 +11,12 @@ import { X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { memo } from 'react';
 
-export interface ImagePreviewProps {
+interface ImagePreviewProps {
   src: string;
   onClear: () => void;
 }
 
-export const ImagePreview = memo<ImagePreviewProps>(({ src, onClear }) => (
+const ImagePreview = memo<ImagePreviewProps>(({ src, onClear }) => (
   <motion.div
     layout
     initial={{ opacity: 0, scale: 0.8, y: 10 }}

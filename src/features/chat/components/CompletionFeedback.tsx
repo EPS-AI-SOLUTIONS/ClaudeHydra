@@ -15,7 +15,7 @@ import { memo, type ReactNode } from 'react';
 // Types
 // ---------------------------------------------------------------------------
 
-export interface CompletionFeedbackProps {
+interface CompletionFeedbackProps {
   /** Whether the completion flash animation is currently active. */
   flashActive: boolean;
   /** Additional CSS class names for the container. */

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-export interface RoomStats {
+interface RoomStats {
   room_key: string;
   peer_count: number;
   document_size_bytes: number;
@@ -8,7 +8,7 @@ export interface RoomStats {
   last_update: string;
 }
 
-export interface CollabStats {
+interface CollabStats {
   active_rooms: number;
   total_peers: number;
   total_documents: number;

@@ -15,21 +15,21 @@ import { apiDelete, apiGet, apiPost } from '@/shared/api/client';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
-export interface SessionTagsResponse {
+interface SessionTagsResponse {
   session_id: string;
   tags: string[];
 }
 
-export interface TagCount {
+interface TagCount {
   tag: string;
   count: number;
 }
 
-export interface AllTagsResponse {
+interface AllTagsResponse {
   tags: TagCount[];
 }
 
-export interface SearchResult {
+interface SearchResult {
   session_id: string;
   session_title: string;
   message_id: string | null;
@@ -40,7 +40,7 @@ export interface SearchResult {
   rank: number | null;
 }
 
-export interface SearchResponse {
+interface SearchResponse {
   results: SearchResult[];
   total: number;
   query: string | null;

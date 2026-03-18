@@ -135,7 +135,7 @@ function processInline(s: string): string {
   return s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>');
 }
 
-export const OcrResultPanel = memo(function OcrResultPanel({
+const OcrResultPanel = memo(function OcrResultPanel({
   pages,
   totalPages,
   processingTimeMs,
@@ -323,7 +323,6 @@ th{font-weight:bold;background:#f0f0f0}h1,h2,h3{margin:16px 0 8px}</style>
               backgroundColor: 'var(--matrix-bg-secondary)',
               border: '1px solid var(--matrix-border)',
             }}
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: DOMPurify sanitized
             dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
           />
         ) : (
