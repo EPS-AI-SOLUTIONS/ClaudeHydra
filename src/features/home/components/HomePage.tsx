@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge, Button } from '@/components/atoms';
 import { useSessionSync } from '@/features/chat/hooks/useSessionSync';
 import { HealthDashboard } from '@/features/health/components/HealthDashboard';
+import { PasskeyLoginSection } from '@/features/home/components/PasskeyLoginSection';
 import { OAuthBanner } from '@/features/settings/components/OAuthBanner';
 import { type ChatSession, useViewStore } from '@/stores/viewStore';
 
@@ -239,6 +240,9 @@ export const HomePage = memo(() => {
 
         {/* ====== OAuth Startup Suggestion ====== */}
         <OAuthBanner />
+
+        {/* ====== WebAuthn Passkey Login ====== */}
+        <PasskeyLoginSection />
 
         {/* ====== Recent Sessions ====== */}
         <AnimatePresence>
