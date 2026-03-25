@@ -153,12 +153,12 @@ export default defineConfig(({ mode }) => {
       // incompatible with Vite 6+ monorepo due to secondary Rollup build
       // resolving wrong Vite version). The actual SW lives in public/sw.js.
       swManifestPlugin(),
-      // Bundle size tracking: always generate stats.html on build, auto-open in analyze mode
-      ...(isProd
-        ? [(visualizer as any)({ open: false, filename: 'dist/stats.html', gzipSize: true, brotliSize: true })]
-        : mode === 'analyze'
-          ? [(visualizer as any)({ open: true, filename: 'dist/stats.html', gzipSize: true, brotliSize: true })]
-          : []),
+      // Bundle size tracking: only generate stats.html in analyze mode (not production)
+      // stats.html is ~3MB and should never ship in dist/
+      // Usage: MODE=analyze bun run build
+      ...(mode === 'analyze'
+        ? [(visualizer as any)({ open: true, filename: 'stats.html', gzipSize: true, brotliSize: true })]
+        : []),
     ],
     resolve: {
       alias: {
@@ -210,14 +210,15 @@ export default defineConfig(({ mode }) => {
     },
     // Worker environment config — externalize WASM runtime imports for Web Workers
     worker: {
-      rollupOptions: {
+      rolldownOptions: {
         external: (id: string) => id.endsWith('.node') || id.startsWith('/wasm/') || id.includes('../pkg'),
       },
     },
     build: {
       target: 'esnext',
-      sourcemap: true,
-      rollupOptions: {
+      // Disable source maps in production to save ~7.5MB
+      sourcemap: !isProd,
+      rolldownOptions: {
         // Externalize:
         // 1. Native .node binaries (e.g. @tailwindcss/oxide platform packages)
         // 2. WASM runtime imports (resolved at runtime from /public, not at build time)
