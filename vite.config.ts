@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
@@ -64,8 +64,13 @@ function swManifestPlugin(): Plugin {
         // skip
       }
 
-      writeFileSync(join(distDir, 'sw-manifest.json'), JSON.stringify(entries, null, 2));
-      console.log(`[sw-manifest] Generated ${entries.length} precache entries`);
+      try {
+        mkdirSync(distDir, { recursive: true });
+        writeFileSync(join(distDir, 'sw-manifest.json'), JSON.stringify(entries, null, 2));
+        console.log(`[sw-manifest] Generated ${entries.length} precache entries`);
+      } catch (e) {
+        console.warn(`[sw-manifest] Skipped: ${e instanceof Error ? e.message : e}`);
+      }
     },
   };
 }
