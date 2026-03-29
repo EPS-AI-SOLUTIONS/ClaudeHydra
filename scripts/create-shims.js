@@ -78,9 +78,11 @@ export const CommandPalette = () => null;
 export const EmptyState = () => null;
 export const FooterControls = () => null;
 export const LogoButton = () => null;
+export const RuneRain = () => null;
 export const SessionItem = () => null;
 export const SessionSearch = () => null;
 export const TabBar = () => null;
+export const ThemedBackground = () => null;
 export const ViewSkeleton = () => null;
 export const ThemeContext = null;
 export const ThemeProvider = ({ children }) => children;
@@ -104,6 +106,31 @@ export {};
 
 // ── @jaskier/core ──
 const coreIndex = `export const cn = (...args) => args.filter(Boolean).join(' ');
+export const fnv1a32 = (s) => 0;
+export const processMarkdownSync = (md) => md;
+export const chatLanguages = {};
+export const formatDate = (d) => String(d);
+export const formatDateTime = (d) => String(d);
+export const formatNumber = (n) => String(n);
+export const formatTime = (d) => String(d);
+export const getLocale = () => 'pl';
+export const copyToClipboard = async () => {};
+export const readFileAsDataUrl = async () => '';
+export const readFileAsText = async () => '';
+export const useFocusTrap = () => ({});
+export const useDebounce = (v) => v;
+export const useIsMobile = () => false;
+export const useAuthStatus = () => ({ phase: 'idle', isAuthenticated: false });
+export const useSettingsQuery = () => ({ data: {}, isLoading: false });
+export const createTelemetryChecker = () => ({ isEnabled: () => false });
+export const useCompletionFeedback = () => {};
+export const useOnlineStatus = () => true;
+export const useCompletionSound = () => ({ play: () => {}, settings: {} });
+export const CompletionSoundPreview = () => null;
+export const getCompletionVolume = () => 0.5;
+export const isCompletionSoundEnabled = () => false;
+export const setCompletionSoundEnabled = () => {};
+export const setCompletionVolume = () => {};
 export {};
 `;
 
@@ -319,11 +346,13 @@ createShim("@jaskier/auth", `export const AuthProvider = ({ children }) => child
 export const useAuth = () => ({ user: null, isAuthenticated: false, isLoading: false, login: () => {}, logout: () => {} });
 export const LoginView = () => null;
 export const ProtectedRoute = ({ children }) => children;
+export const credentialToJSON = (c) => c;
+export const parseRequestOptionsFromJSON = (o) => o;
 export {};
 `);
 
 // ── @jaskier/state ──
-createShim("@jaskier/state", `export const createAppStore = () => ({});
+createShim("@jaskier/state", `export const createAppStore = (fn) => fn;
 export const useAppStore = () => ({});
 export {};
 `);
@@ -332,24 +361,45 @@ export {};
 createShim("@jaskier/chat-module", `export const ChatView = () => null;
 export const ChatInput = () => null;
 export const MessageList = () => null;
+export const OfflineBanner = () => null;
+export const ChatViewThemeProvider = ({ children }) => children;
 export const useChatSession = () => ({});
+export const useViewTheme = () => ({ isDark: true, theme: 'dark' });
+export const useWebSocketChat = () => ({ send: () => {}, status: 'closed' });
+export const splitToolOutput = (text) => [{ type: 'text', content: text }];
+export const stripParallelHeader = (text) => text;
+export const MAX_RECONNECT_ATTEMPTS = 5;
 export {};
 `);
 
 // ── @jaskier/vault-client ──
 createShim("@jaskier/vault-client", `export const VaultClient = class { async get() { return null; } };
 export const useVault = () => ({ status: 'disconnected' });
+export const VAULT_API = { HEALTH: '/api/vault/health', NAMESPACES: '/api/vault/namespaces', AUDIT: '/api/vault/audit' };
+export const VAULT_POLLING = { HEALTH: 30000, AUDIT: 60000 };
+export const VAULT_QUERY_KEYS = { health: ['vault-health'], namespaces: ['vault-namespaces'], audit: ['vault-audit'] };
+export const VAULT_DASHBOARD_URL = 'http://localhost:5190';
+export const VAULT_STATUS_CONFIG = {};
+export const resolveVaultStatus = () => ({ label: 'Unknown', color: 'gray' });
+export const vaultFormatDate = (d) => d;
+export const vaultStatusColor = () => 'green';
 export {};
 `);
 
 // ── @jaskier/wasm-worker ──
 createShim("@jaskier/wasm-worker", `export const useWasmWorker = () => ({ isReady: false, maskPii: async (t) => t, countTokens: async () => 0 });
+export const WasmClient = class { constructor() {} async init() {} async maskPii(t) { return { masked: t, count: 0 }; } async countTokens() { return 0; } };
+export const clearWasmCache = async () => {};
+export const getWasmCacheInfo = async () => ({ cached: false, size: 0 });
 export {};
 `);
 
 // ── @jaskier/i18n ──
 createShim("@jaskier/i18n", `export const createI18nConfig = () => ({});
+export const initI18n = () => ({});
 export const useTranslation = () => ({ t: (k) => k, i18n: { language: 'pl', changeLanguage: () => {} } });
+const i18n = { t: (k) => k, language: 'pl', changeLanguage: () => {} };
+export default i18n;
 export {};
 `);
 
