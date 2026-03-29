@@ -1,6 +1,9 @@
 {
   "framework": "vite",
-  "installCommand": "corepack enable && pnpm install",
-  "buildCommand": "tsc -b && vite build",
-  "outputDirectory": "dist"
+  "installCommand": "rm -f package-lock.json && bun install --no-save --ignore-workspace && node scripts/create-shims.js",
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+  ]
 }

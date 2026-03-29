@@ -10,7 +10,7 @@ primary_region = 'arn'
   # Build context is the workspace root (required for shared crates/).
   # Deploy: flyctl deploy --config ClaudeHydra/backend/fly.toml --dockerfile ClaudeHydra/backend/Dockerfile
   # Multi-region: ci/deploy-multiregion.sh ch arn,fra,waw
-  dockerfile = "ClaudeHydra/backend/Dockerfile"
+  dockerfile = "apps/ClaudeHydra/backend/Dockerfile"
   build_context = "."
 
 [deploy]
@@ -31,7 +31,8 @@ primary_region = 'arn'
     path = "/api/health"
 
 [env]
-  RUST_LOG = "info"
+  # QW67: Production log level — warn for third-party, info for jaskier crates
+  RUST_LOG = "warn,claudehydra=info,jaskier=info,tower_http=warn,axum=warn,sqlx=warn"
   RUST_LOG_FORMAT = "json"
   # Sentry error tracking — set via `fly secrets set SENTRY_DSN=https://...@sentry.io/...`
   # When unset, Sentry is a zero-cost no-op. Env var listed here for documentation only.

@@ -39,7 +39,7 @@ COPY crates/jaskier-semantic-cache/Cargo.toml ./crates/jaskier-semantic-cache/Ca
 COPY crates/jaskier-graph/Cargo.toml ./crates/jaskier-graph/Cargo.toml
 COPY crates/jaskier-wasm-core/Cargo.toml ./crates/jaskier-wasm-core/Cargo.toml
 # Copy ALL app backend manifests (workspace members -- cargo metadata requires all present)
-COPY ClaudeHydra/backend/Cargo.toml ./apps/ClaudeHydra/backend/Cargo.toml
+COPY apps/ClaudeHydra/backend/Cargo.toml ./apps/ClaudeHydra/backend/Cargo.toml
 COPY apps/GeminiHydra/backend/Cargo.toml ./apps/GeminiHydra/backend/Cargo.toml
 COPY apps/Tissaia/backend/Cargo.toml ./apps/Tissaia/backend/Cargo.toml
 COPY apps/OpenAIHydra/backend/Cargo.toml ./apps/OpenAIHydra/backend/Cargo.toml
@@ -99,9 +99,9 @@ RUN cargo chef cook --release -p claudehydra-backend --recipe-path recipe.json
 # Now copy the real source (after cook — source changes don't bust the deps layer)
 COPY Cargo.toml Cargo.lock ./
 COPY crates/ ./crates/
-COPY ClaudeHydra/backend/Cargo.toml ./apps/ClaudeHydra/backend/Cargo.toml
-COPY ClaudeHydra/backend/src ./apps/ClaudeHydra/backend/src
-COPY ClaudeHydra/backend/migrations ./apps/ClaudeHydra/backend/migrations
+COPY apps/ClaudeHydra/backend/Cargo.toml ./apps/ClaudeHydra/backend/Cargo.toml
+COPY apps/ClaudeHydra/backend/src ./apps/ClaudeHydra/backend/src
+COPY apps/ClaudeHydra/backend/migrations ./apps/ClaudeHydra/backend/migrations
 # Note: tests/ excluded by .dockerignore — not needed for production binary builds
 # Stub the other workspace members (src only, Cargo.toml already in recipe)
 # Apps with only [[bin]] (no [lib]): GeminiHydra, Tissaia, Regis
@@ -140,7 +140,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 COPY --from=builder /app/target/release/claudehydra-backend /usr/local/bin/app
 COPY --from=builder /app/target/release/migrate-credentials-to-vault /usr/local/bin/
-COPY ClaudeHydra/backend/migrations ./migrations
+COPY apps/ClaudeHydra/backend/migrations ./migrations
 # Skarbiec Krasnali: Credentials now managed by Jaskier Vault.
 # These env vars are optional fallbacks — Vault is the primary credential source.
 # ANTHROPIC_API_KEY, GOOGLE_API_KEY, AUTH_SECRET — set via `fly secrets set` or Vault.
