@@ -8,8 +8,6 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import type { Plugin } from 'vite';
 import { defineConfig, loadEnv } from 'vite';
 import viteCompression from 'vite-plugin-compression';
-import topLevelAwait from 'vite-plugin-top-level-await';
-import wasm from 'vite-plugin-wasm';
 
 /**
  * Generates sw-manifest.json in dist/ after build completes.
@@ -145,8 +143,6 @@ export default defineConfig(({ mode }) => {
     // qw58: Disable screen clearing in CI for readable logs
     clearScreen: !process.env.CI,
     plugins: [
-      wasm(),
-      topLevelAwait(),
       wasmPrecompressedServe(),
       react(),
       tailwindcss(),
